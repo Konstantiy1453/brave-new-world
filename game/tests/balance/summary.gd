@@ -369,10 +369,10 @@ static func markdown(
 	for row: Dictionary in rows:
 		lines.append("| %s | %s | %s | %s |" % [row.area, row.target, row.measured, row.status])
 	lines.append("")
-	(
-		lines
-		. append(
-			"| Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop 180 / 360 / 720 | Techs at award |"
+	lines.append(
+		(
+			"| Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day"
+			+ " | Min cash | Pop 180 / 360 / 720 | Techs at award |"
 		)
 	)
 	lines.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|")

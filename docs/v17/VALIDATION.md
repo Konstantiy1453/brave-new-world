@@ -51,3 +51,19 @@ Other §4 items are confirmed by reading the code at the cited lines and are re-
 | `v16_research_priority.gd`, `v16_event_acceptance.gd` | Fixtures written only with `--fixtures` | W1 bug 5 |
 | `world_v16_seed.gd` | Skips the frozen hash comparison when the evidence file is missing | W0; it used to hang |
 | `v16_interaction_probe.gd`, `v16_scroll_probe.gd` | User-data check accepts any `userdata_` folder | Runner isolates per suite |
+
+## Phase 1
+
+**Automated test.** `v17_bugs` 43 checks, 0 failures. All 38 headless suites green.
+
+Reproduced on pre-fix code (tag `v17-phase0`, temporary worktree) before the fixes landed: bug 1 chain ended `water:工程未能投入运行`;
+bug 3 size 0 became 1 on handover; bug 4 Esc closed the menu; bug 6 aid addressed to the capital with the outpost starving; bug 11 still
+paused after closing when previously running.
+
+**Source-project window, screenshot viewed.** `world_v17_seam`: camera on the antimeridian, 6 outlier rows on the seam column against 8 on
+control columns; `evidence/v17/tests/world_v17_seam.png` viewed, no dashed seam visible.
+
+**Formatting.** `gdformat` over 76 scripts: 38 suites green before and after; 950 harness run records identical via
+`tools/compare_balance.py`; 3 of 3 replays byte-identical.
+
+Export filter exclusions are checked against `export_presets.cfg` here. PCK contents are verified at the release step (Phase 8).
