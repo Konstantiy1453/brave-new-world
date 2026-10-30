@@ -1,0 +1,336 @@
+extends RefCounted
+const D=preload("res://ui/design.gd")
+const WG=preload("res://world/world_gen.gd")
+const RES={"ore":"铁矿","copper":"铜矿","crystal":"工业晶体","food":"食品","materials":"建材","parts":"部件"}
+
+static func region(g,b):
+	var r:Dictionary=g.sim.state.world.regions[g.selected]
+	D.label(b,"REGION  /  %02d"%(g.selected+1),13,D.TEAL)
+	D.label(b,r.name,27)
+	D.label(b,"%s  ·  %.1f°C"%[r.terrain,r.temperature],16,D.MUTED)
+	var chooser=OptionButton.new()
+	for reg in g.sim.state.world.regions:chooser.add_item(reg.name,int(reg.id))
+	chooser.select(g.selected)
+	chooser.item_selected.connect(func(id):
+		g.selected=id
+		if g.local_view:g.map.show_region(id)
+		else:g.map.focus_region(id)
+		g.refresh_sidebar())
+	b.add_child(chooser)
+	D.label(b,"耕作潜力  %d%%    水源  %d%%\n海拔  %d m    地区面积随星球尺寸变化"%[r.fertility*100,r.water*100,r.elevation],16,D.MUTED)
+	for key in ["ore","copper","crystal"]:
+		var row=D.row(b)
+		D.icon(row,key,24)
+		D.label(row,"%s储量  %s t"%[RES[key],g.money(r.deposits[key])],16,D.INK,false)
+	var s:Dictionary=g.settlement()
+	if s.is_empty():
+		D.label(b,"尚未开发",18,D.GOLD)
+		D.label(b,"选择矿区作为首府更易建立出口现金流。河谷适合作为粮食据点。海岛无陆路连接。",16,D.MUTED)
+		var btn=D.button(b,"在此建立"+("第二据点" if g.sim.state.settlements.size()>0 else "首府"),func():g.act("settle",{"region":g.selected}))
+		btn.disabled=g.sim.state.settlements.size()>=2
+		if btn.disabled:btn.tooltip_text="Demo 每局最多两处据点。"
+		D.button(b,"查看地区地表",func():g.navigate("region"))
+		return
+	D.label(b,"人口 %d  ·  住房 %d\n就业 %d  /  劳动人口 %d\n研究员 %d  ·  未成年 %d"%[s.population,s.get("housing",0),s.get("employed",0),int(s.workers)+int(s.scientists),s.scientists,s.children],16)
+	D.label(b,"本地食品储备  %.1f 天"%s.get("food_days",0),18,D.GOLD)
+	D.label(b,"电力 %.0f / %.0f  ·  供水 %.0f / %.0f\n（可用供给 / 需求）"%[s.get("power_supply",0),s.get("power_demand",0),s.get("water_supply",0),s.get("water_demand",0)],16,D.MUTED)
+	for shortage in s.get("shortages",[]):D.label(b,"!  "+str(shortage),15,D.RED)
+	D.button(b,"建设设施  +",func():g.open_page("build"))
+	D.button(b,"批量生产 / 库存目标",func():g.open_page("manage"))
+	D.button(b,"进入地区 / 查看设施",func():g.navigate("region"))
+	D.label(b,"设施状态",14,D.TEAL)
+	for index in range(s.buildings.size()):
+		var item=s.buildings[index]
+		var spec:Dictionary=g.sim.config.buildings.get(item.kind,{"name":"民营生活服务社"})
+		var active=bool(item.get("active",false))
+		D.label(b,"%s · %s"%[spec.get("name",item.kind),"运营" if active else str(item.get("status","建设 / 待工"))],15,D.INK if active else D.MUTED)
+		if item.get("owner","public")=="public":
+			var idx=index
+			var bt=D.button(b,"暂停此设施" if item.get("enabled",true) else "恢复此设施",func():g.act("toggle",{"region":g.selected,"index":idx}))
+			bt.add_theme_font_size_override("font_size",14)
+			bt.custom_minimum_size.y=30
+			var preview:Dictionary=g.sim.toggle_preview(int(s.region),idx)
+			bt.tooltip_text="停用规则：不提供产能或住房。切换后住房 %s，住房缺口 %s"%[str(preview.get("housing_after","—")),str(preview.get("housing_shortfall","—"))]
+
+static func populate(g,b,page):
+	match page:
+		"contract":contract(g,b)
+		"build":build(g,b)
+		"economy":economy(g,b)
+		"research":research(g,b)
+		"transport":transport(g,b)
+		"enterprise":enterprise(g,b)
+		"events":events(g,b)
+		"save":settings(g,b)
+		"guide":guide(g,b)
+		"world":world_info(g,b)
+	var feedback=D.label(b,"",16,D.GOLD)
+	feedback.name="Feedback"
+
+static func world_info(g,b):
+	var world:Dictionary=g.sim.state.world
+	D.label(b,"种子 %d  ·  %s"%[world.seed,world.version],24,D.GOLD)
+	D.label(b,"球面与平铺使用同一世界。地区的气温、水源、土地和矿藏影响建设、农业与运输。",18,D.MUTED)
+	var generation:Dictionary=world.get("generation",{})
+	var stats:Dictionary=world.get("statistics",{})
+	if generation.is_empty():
+		D.label(D.card(b),"这是旧版经营测试地图。读档保留原有大陆、矿区与道路；新建游戏可体验种子驱动的大陆、气候和水系。",18,D.GOLD)
+	else:
+		var terrain=D.card(b)
+		D.label(terrain,"海陆与地形",22,D.TEAL)
+		D.label(terrain,"星球半径 %.0f km  ·  陆地 %.1f%%  /  水域 %.1f%%"%[world.radius_km,float(stats.get("land_fraction",0))*100,(1-float(stats.get("land_fraction",0)))*100],18)
+		D.label(terrain,"大块陆地 %d  ·  岛屿 %d  ·  山脉带 %d"%[stats.get("continent_count",0),stats.get("island_count",0),generation.get("mountain_ranges",[]).size()],18)
+		D.label(terrain,"陆地最高点 %.0f m  ·  平均海深 %.0f m"%[stats.get("max_elevation_m",0),stats.get("mean_ocean_depth_m",0)],18)
+		D.label(terrain,"海陆数量按当前世界网格的连通块统计；近岸小礁与局部细节会在更高显示精度下出现。",16,D.MUTED)
+		var climate=D.card(b)
+		D.label(climate,"大气与气候",22,D.TEAL)
+		D.label(climate,"气压 %.2f atm  ·  氧气比例 %.1f%%"%[generation.get("pressure_atm",1),float(generation.get("oxygen_fraction",.21))*100],18)
+		D.label(climate,"平均气温 %.1f°C  ·  平均湿润度 %.0f%%"%[stats.get("mean_temperature_c",0),float(stats.get("mean_rainfall",0))*100],18)
+		D.label(climate,"首版均为可呼吸的宜居环境。气压、纬度与海拔参与温度估计，湿润度结合海陆和山地；氧比例是环境设定，不模拟人体生理。",16,D.MUTED)
+		var hydro=D.card(b)
+		D.label(hydro,"水系与生态",22,D.TEAL)
+		D.label(hydro,"已生成河道 %d 条  ·  湖泊 %d 处"%[world.get("rivers",[]).size(),world.get("lakes",[]).size()],18)
+		var names={"ocean":"海洋","lake":"湖泊","forest":"森林","rainforest":"雨林","grassland":"草地","savanna":"稀树草原","desert":"沙漠","tundra":"苔原","alpine":"高山","ice":"冰雪","wetland":"湿地"}
+		var biomes:Dictionary=stats.get("biome_counts",{})
+		for key in biomes:
+			D.label(hydro,"%s  ·  %d 个环境网格"%[names.get(key,key),biomes[key]],16,D.MUTED)
+	var views=D.row(b)
+	D.button(views,"球面总览",func():g.close_modal();g.navigate("planet"))
+	D.button(views,"平铺地图",func():g.close_modal();g.navigate("flat"))
+
+static func contract(g,b):
+	var state:Dictionary=g.sim.state
+	var c:Dictionary=g.sim.config.contract
+	var row=D.row(b)
+	D.portrait(row,"liaison",210,320)
+	var v=D.col(row)
+	v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var title="殖民外包协议  /  第一期"
+	if state.status=="success":title="契约履行完毕  /  总督资格已授予"
+	if state.status=="failed":title="合同终止  /  经营失败"
+	D.label(v,title,24,D.GOLD)
+	var difficulty:Dictionary=g.sim.progression.difficulty[state.get("difficulty","normal")]
+	D.label(v,"在登陆第 %d 日前建立两据点分工、产业与民营服务，满足下列条件并维持经营连盈。成功后按正经营结余 %.0f%% 向公司分成，可继续或代管下一颗星球。"%[difficulty.deadline,c.company_tax_rate*100],18)
+	var op:Dictionary=g.sim.config.openings[state.advantage]
+	D.label(v,"开局支持：¥ %.0f；食品 %.0f t、建材 %.0f t、部件 %.0f t。\n人口：工人 %d、研究员 %d、未成年 %d。"%[op.cash*difficulty.capital,op.food,op.materials,op.parts,op.workers,op.scientists,op.children],17,D.TEAL)
+	D.label(v,"本局公共资金 ¥ %s。初期公司物资随登陆部署，各地实物库存独立核算。居民移民资金与企业外部投资另列账户。"%g.money(state.cash),17,D.MUTED)
+	D.label(v,"连续经营结余非负：%d / %d 天\n当地进度：第 %d / %d 日\n持续问题进入公司审查：整改窗口 %d 日，最后介入 %d 日。可通过自救或有条件援助恢复。"%[state.get("streak",0),c.streak_days,state.day,difficulty.deadline,difficulty.review_days,difficulty.intervention_days],17,D.TEAL)
+	if state.status=="planning":D.button(v,"接受协议，开始勘察  →",g.close_modal)
+	elif state.status=="success":
+		D.button(v,"继续担任总督 / 沙盒经营",g.close_modal)
+		D.button(v,"查看 B 代管与下一颗星球",func():g.open_page("career"))
+	elif state.status=="failed":
+		D.label(v,str(state.get("failure_reason","经营条件未达标。详情见账本与日志。")),18,D.RED)
+		D.button(v,"失败报告 / 恢复登陆检查点",func():g.open_page("career"))
+		D.button(v,"查看公司审查经过",func():g.open_page("company"))
+	else:D.button(v,"返回经营",g.close_modal)
+	var checks:Dictionary=g.sim.contract_progress()
+	var names={"connected":"两据点有效连接","food":"各地至少七天食品","housing":"全部居民拥有住房","employment":"各地就业率达45%","industry":"农业或加工运行","enterprise":"民营企业营业","solvent":"没有到期欠款"}
+	var grid=GridContainer.new()
+	grid.columns=2
+	grid.add_theme_constant_override("h_separation",35)
+	b.add_child(grid)
+	for key in names:D.label(grid,"%s   %s"%["✓" if checks[key] else "○",names[key]],17,D.TEAL if checks[key] else D.MUTED,false)
+
+static func build(g,b):
+	D.label(b,g.sim.state.world.regions[g.selected].name+" / 建设目录",23,D.TEAL)
+	D.label(b,"工程消耗当前据点的实物库存。竣工后按劳力、电力、水源和原料限产；鼠标停留可查看配方。",17,D.MUTED)
+	for key in g.sim.config.buildings:
+		var spec:Dictionary=g.sim.build_preview(g.selected,key)
+		var card=D.card(b)
+		var r=D.row(card)
+		D.icon(r,str(key).trim_prefix("mine_"),31)
+		var text=D.col(r)
+		text.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		D.label(text,spec.name,20)
+		D.label(text,"¥ %d  |  建材 %d  部件 %d  |  %d 天  |  岗位 %d  电 %.0f  水 %.0f"%[spec.cost,spec.materials,spec.parts,spec.days,spec.jobs,spec.power,spec.water],16,D.GOLD)
+		var kind=key
+		D.button(r,"下达建设",func():g.act("build",{"region":g.selected,"kind":kind}),str(spec.description))
+		D.label(card,spec.description+"  日维护 ¥ %.1f。"%spec.maintenance,16,D.MUTED)
+
+static func economy(g,b):
+	var state:Dictionary=g.sim.state
+	var row=D.row(b)
+	for pair in [["公共账户",state.cash],["居民账户",state.resident_cash],["企业账户",state.enterprise_cash]]:
+		var c=D.card(row)
+		c.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		D.label(c,pair[0],15,D.MUTED)
+		D.label(c,"¥ "+g.money(pair[1]),29,D.GOLD)
+	var net=float(state.get("operating_net",0))
+	D.label(b,"本期公共经营净额：%+.2f / 日   ·   预计现金可维持：%s"%[net,("%.1f 天"%(maxf(0,state.cash)/abs(net))) if net<0 else "经营净流入"],19,D.TEAL)
+	D.label(b,"本日经营支出 ¥ %.2f · 到期欠款 ¥ %.2f · 连续欠款 %d 日"%[state.get("expense_daily",0),state.get("debt",0),state.get("grace_days",0)],17,D.GOLD)
+	var finance:float=0.0
+	for entry in state.ledger:
+		if int(entry.day)>int(state.day)-7 and not bool(entry.operating) and entry.from=="external" and entry.to=="public":finance+=float(entry.amount)
+	D.label(b,"最近7日非经营外部流入 ¥ %.2f · 援助、事件拨款与生涯注资单列，不计连盈。"%finance,17,D.TEAL)
+	D.button(b,"查看公司审查原因、整改期限与救助义务",func():g.open_page("company"))
+	D.label(b,"口径：建设投资、融资不计入持续经营；工资和消费为内部转账。公司在总督阶段按正经营结余收取 %.0f%%；援助追加分成另列。"%(float(g.sim.config.contract.company_tax_rate)*100),16,D.MUTED)
+	for s in state.settlements:
+		var c=D.card(b)
+		D.label(c,s.name+" / 实际本地库存",20)
+		var r=D.row(c)
+		for key in RES:
+			var v=D.col(r)
+			v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+			D.icon(v,key)
+			D.label(v,RES[key]+"\n%.1f t\n%+.1f /日"%[s.stock.get(key,0),s.stock_delta.get(key,0)],16)
+		D.label(c,"\n".join(PackedStringArray(s.get("shortages",[]))),16,D.RED)
+	D.label(b,"最近资金流水（来源 → 去向 / 金额）",20,D.TEAL)
+	var ledger:Array=state.ledger
+	for i in range(ledger.size()-1,maxi(-1,ledger.size()-(31 if g.detailed_info else 7)),-1):
+		var e:Dictionary=ledger[i]
+		var accounts={"external":"外部","public":"公共","residents":"居民","enterprise":"企业"}
+		D.label(b,"D%d  %s  |  %s → %s  ¥ %.2f"%[e.get("day",0),e.get("category",""),accounts.get(e.get("from",""),e.get("from","")),accounts.get(e.get("to",""),e.get("to","")),e.get("amount",0)],16,D.MUTED)
+
+static func research(g,b):
+	var state:Dictionary=g.sim.state
+	var row=D.row(b)
+	D.portrait(row,"scientist",145,190)
+	var v=D.col(row)
+	v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	D.label(v,"许 知  /  科研负责人",24)
+	D.label(v,"“基础产业不会因为技术进步而失去价值。把每一吨矿石、每一滴水用得更好。”",18,D.MUTED)
+	var current=str(state.research.get("current",""))
+	D.label(v,"在研：%s  ·  累计进度 %.1f"%[g.sim.config.techs.get(current,{"name":"尚未选择"}).name,state.research.get("progress",0)],18,D.GOLD)
+	D.label(v,"需要运营中的教学研究所与研究员。选择项目后自动投入经费；完成当前项目后可切换下一项研究。",16,D.MUTED)
+	if not current.is_empty():
+		var funding=D.row(v)
+		for value in [0.5,1.0,2.0]:
+			var priority=value
+			D.button(funding,str(value)+"× 投入",func():g.act("research",{"tech":current,"priority":priority}))
+		D.label(v,"当前研究经费强度："+str(state.research.get("priority",1))+"×",16,D.TEAL)
+	for key in g.sim.config.techs:
+		var t:Dictionary=g.sim.config.techs[key]
+		var c=D.card(b)
+		var r=D.row(c)
+		var l=D.label(r,t.name+"  /  "+str(t.cost)+" 研究点",21)
+		l.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		var id=key
+		var done=key in state.research.get("completed",[])
+		var bt=D.button(r,"已完成" if done else "设为优先",func():g.act("research",{"tech":id}))
+		bt.disabled=done
+		D.label(c,t.description+"  前置："+("无" if t.requires.is_empty() else ", ".join(t.requires)),17,D.MUTED)
+
+static func transport(g,b):
+	D.label(b,"矿物向港口汇集，食品向居民流动。",25,D.TEAL)
+	D.label(b,"货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。第二据点的材料由拓展物资提供，后续需要加工、进口或实际运输。",18,D.MUTED)
+	var state:Dictionary=g.sim.state
+	if state.settlements.size()<2:
+		D.label(b,"尚需建立第二据点。请在行星总览选择青溪河谷等可达地区。",21,D.GOLD)
+		return
+	var a:int=state.settlements[0].region
+	var z:int=state.settlements[1].region
+	for mode in [false,true]:
+		var route:Dictionary=WG.new().route(state.world,a,z,mode)
+		var c=D.card(b)
+		D.label(c,"跨山工程线路" if mode else "绕山经济线路",21)
+		D.label(c,"距离 %.0f km  ·  单程 %d 天  ·  建设 ¥ %.0f"%[route.distance,route.days,route.cost],18,D.GOLD)
+		var mt=mode
+		var bt=D.button(c,"线路已建成" if not state.route.is_empty() else "建设此线路",func():g.act("connect",{"a":a,"b":z,"mountain":mt}))
+		bt.disabled=not route.reachable or not state.route.is_empty()
+		bt.tooltip_text=route.get("reason","")
+	if not state.route.is_empty():
+		D.label(b,"当前线路："+str(state.route.get("distance",0))+" km  ·  "+str(state.route.get("days",0))+" 天\n累计运输："+str(state.get("transported_total",0))+" t",18,D.TEAL)
+	D.label(b,"在途批次  /  "+str(state.shipments.size()),20)
+	for sh in state.shipments:
+		D.label(b,"%s → %s   %s %.1f t  /  还有 %d 天抵达"%[state.world.regions[int(sh.from)].name,state.world.regions[int(sh.to)].name,RES.get(sh.resource,sh.resource),sh.amount,sh.remaining],16,D.MUTED)
+
+static func enterprise(g,b):
+	D.label(b,"从统一经营，走向混合经济",25,D.GOLD)
+	D.label(b,"开放本地生活服务业。外部投资者以自己的资金入场，自主租用经营点、雇工、支付设备维护，向居民提供维修、洗衣和通讯服务，按利润缴本地税；公共矿山与关键设施继续由你管理。",18)
+	var e:Dictionary=g.sim.state.get("enterprise",{})
+	var forecast:Dictionary=g.sim.enterprise_preview(g.selected)
+	D.label(b,"所选地区潜在日收入 %.2f / 日成本 %.2f / 预计利润 %+.2f"%[forecast.get("daily_demand",0),forecast.get("daily_cost",0),forecast.get("estimated_profit",0)],18,D.GOLD)
+	D.label(b,str(forecast.get("reason","")),16,D.MUTED)
+	if e.is_empty():
+		D.label(b,"选址："+g.sim.state.world.regions[g.selected].name,21,D.TEAL)
+		D.button(b,"批准本地区生活服务经营许可",func():g.act("enterprise",{"region":g.selected}))
+	else:
+		var c=D.card(b)
+		D.label(c,str(e.get("name","青溪餐食合作社")),23)
+		D.label(c,"%s  ·  %s  ·  雇员 %d"%[g.sim.state.world.regions[int(e.region)].name,e.status,e.get("employees",0)],20,D.TEAL)
+		D.label(c,"本日利润 ¥ %.2f  |  累计销售 ¥ %.2f\n累计工资 ¥ %.2f  |  已缴本地税 ¥ %.2f\n企业独立账户 ¥ %.2f"%[e.get("profit",0),e.get("sales_total",0),e.get("wages_total",0),e.get("tax_total",0),g.sim.state.enterprise_cash],19,D.GOLD)
+		D.label(c,str(e.get("reason","")),17,D.MUTED)
+		D.button(c,"付费重组 / 迁入所选地区 · ¥ %.0f"%forecast.get("recovery_cost",0),func():g.act("enterprise_recover",{"region":g.selected}))
+	D.label(b,"本地企业利润税率",18,D.TEAL)
+	var row=D.row(b)
+	for rate in [0.05,0.10,0.20]:
+		var tax=rate
+		D.button(row,str(int(rate*100))+"%",func():g.act("policy",{"tax":tax}))
+	D.label(b,"基本供应政策：食品保留天数（各地最低自动贸易储备）",17,D.MUTED)
+	var rr=D.row(b)
+	for reserve in [7,10,15]:
+		var val=reserve
+		D.button(rr,str(reserve)+" 天",func():g.act("policy",{"food_reserve":val}))
+	D.label(b,"当前税率 %.0f%% · 食品底线 %.0f 天"%[g.sim.state.policy.tax*100,g.sim.state.policy.food_reserve],17,D.GOLD)
+	var allowed=bool(g.sim.state.policy.private_allowed)
+	D.button(b,"暂停批准新经营许可" if allowed else "允许商业服务业",func():g.act("policy",{"private_allowed":not allowed}))
+
+static func events(g,b):
+	var row=D.row(b)
+	D.portrait(row,"engineer",200,290)
+	var v=D.col(row)
+	v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	D.label(v,"林 砾  /  工程负责人",24,D.TEAL)
+	var e:Dictionary=g.sim.state.get("event",{})
+	if e.is_empty():
+		D.label(v,"目前没有待处理的通讯。",22)
+		D.label(v,"关注季节性供水、市场采购窗口与人才申请。预警和后果写入经营日志。",18,D.MUTED)
+	else:
+		D.label(v,str(e.get("title","待处理事件")),23,D.GOLD)
+		D.label(v,str(e.get("text","")),18)
+		for option in e.get("choices",[]):
+			var id=option.id
+			D.button(v,option.label,func():g.act("event",{"choice":id}))
+	D.label(b,"殖民日志",21,D.TEAL)
+	var logs:Array=g.sim.state.get("log",[])
+	for i in range(logs.size()-1,maxi(-1,logs.size()-20),-1):
+		var entry=logs[i]
+		D.label(b,"第 %d 日 · %s"%[entry.get("day",0),entry.get("text","")] if entry is Dictionary else str(entry),16,D.MUTED)
+
+static func settings(g,b):
+	D.label(b,"安全存档 / 独立保存世界与经营状态",23,D.TEAL)
+	D.label(b,"手动存档已存在 · 可读取继续" if FileAccess.file_exists("user://manual.json") else "尚无手动存档 · 点击下方保存，或使用左上角存档 / Ctrl+S",18,D.GOLD)
+	D.label(b,"自动存档每 10 个模拟日写入。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。",18,D.MUTED)
+	var r=D.row(b)
+	D.button(r,"保存手动档",func():g.save_slot("user://manual.json"))
+	D.button(r,"读取手动档",func():g.load_path("user://manual.json"))
+	D.button(r,"读取自动档",func():g.load_path("user://autosave.json"))
+	for item in [["危机整改","acceptance_crisis"],["事件中段","acceptance_event_mid"],["总督移交前","acceptance_governor"],["第二星球分红后","acceptance_second_dividend"]]:
+		var path:String="res://data/v16/"+item[1]+".json"
+		var button=D.button(b,"读取1.6验收："+item[0],func():g.load_path(path))
+		button.disabled=not FileAccess.file_exists(path)
+	D.button(b,"读取1.5兼容性示例（中期）",func():g.load_path("res://data/acceptance_midgame.json"))
+	D.button(b,"读取上一版手动档（原文件保留）",func():g.load_path(OS.get_environment("APPDATA")+"/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"))
+	D.label(b,"说明详细度与难度独立；所有核心规则和重要原因始终可见。",16,D.MUTED)
+	D.button(b,"当前详细记录（30条流水 / 20条事件）" if g.detailed_info else "当前精简记录（6条流水 / 6条事件）",g.toggle_information)
+	D.label(b,"窗口分辨率",20)
+	var resolutions=D.row(b)
+	for size in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		var sz=size
+		D.button(resolutions,"%d × %d"%[size.x,size.y],func():DisplayServer.window_set_size(sz))
+	D.label(b,"UI 文字大小",20)
+	var scale_row=D.row(b)
+	for scale_val in [16,18,20]:
+		var sv=scale_val
+		D.button(scale_row,str(sv)+" px",func():g.apply_scale(sv/18.0))
+	D.label(b,"存档目录："+OS.get_user_data_dir(),16,D.MUTED)
+	D.button(b,"截取实际游戏画面  /  F12",g.capture)
+	D.button(b,"返回主菜单（当前未保存进度会丢失）",func():
+		var dialog=ConfirmationDialog.new()
+		dialog.dialog_text="确定返回主菜单？请先保存当前经营进度。"
+		g.add_child(dialog)
+		dialog.confirmed.connect(g.show_menu)
+		dialog.popup_centered())
+
+static func guide(g,b):
+	D.label(b,"推荐种子 260129 · 中型 · 资本支持",25,D.GOLD)
+	var steps=[
+		"01  勘察铁岬盆地并建立首府。登陆物资包含基础住房、水电与货运能力；检查建设面板和本地库存。",
+		"02  建设铁矿与铜矿（或晶体）建立出口现金流。空格继续，顶部选择正常或快进。预留劳动力与公用能力。",
+		"03  加工厂把铁矿与铜矿变成建材、部件。研究所雇用研究员，优先勘探或灌溉。",
+		"04  选择青溪河谷建立第二据点，建设农场。交通运输面板比较绕山和跨山，建成线路后观察在途食品。",
+		"05  在就业和供应允许时批准生活服务企业。它使用自己的投资自动经营，你决定税率和供应底线。",
+		"06  保有至少 7 天食品、足够住房与就业；公共经营连盈 12 天，完成合同后继续沙盒。",
+		"观察  成本过高时不要盲目扩张。关闭窗口不会自动恢复时间，请用空格或顶部速度按钮。食品短缺先查本地水、电、岗位和运输。"]
+	for text in steps:D.label(D.card(b),text,18)

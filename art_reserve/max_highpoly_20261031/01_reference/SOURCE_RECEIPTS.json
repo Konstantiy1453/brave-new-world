@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "reused_reference",
+    "source": "D:\\勇敢新世界\\evidence\\v16\\screenshots_release\\planet_1920x1080_18px.png",
+    "copy": "01_reference\\baseline_v16\\planet_1920x1080_18px.png",
+    "sha256": "1CEFA4DA0910F7A388CC6D9FA8BC9AB4E5EF9A0B770FC8FC62606977B782F023",
+    "scope": "Existing game screenshot or save, not a new Max asset or render"
+  },
+  {
+    "kind": "reused_reference",
+    "source": "D:\\勇敢新世界\\evidence\\v16\\screenshots_release\\region_1920x1080_18px.png",
+    "copy": "01_reference\\baseline_v16\\region_1920x1080_18px.png",
+    "sha256": "53C4FF939160692E6BBB0638F321DA9E302A8DA042706A19CD1DE9479D6B7883",
+    "scope": "Existing game screenshot or save, not a new Max asset or render"
+  },
+  {
+    "kind": "reused_reference",
+    "source": "D:\\勇敢新世界\\evidence\\v16\\screenshots_release\\flat_1920x1080_18px.png",
+    "copy": "01_reference\\baseline_v16\\flat_1920x1080_18px.png",
+    "sha256": "6C1A7D753B6F46167856004923741988E7BDBA37EF5306B86B8BB27FD745B824",
+    "scope": "Existing game screenshot or save, not a new Max asset or render"
+  },
+  {
+    "kind": "reused_reference",
+    "source": "D:\\勇敢新世界\\game\\data\\v16\\acceptance_governor.json",
+    "copy": "02_world_master\\source_copy\\acceptance_governor.json",
+    "sha256": "3BDA26F517BC0D11C92DFEDEE005F67F028469AFF0CD5C563676D6B257B1E281",
+    "scope": "Existing game screenshot or save, not a new Max asset or render"
+  }
+]

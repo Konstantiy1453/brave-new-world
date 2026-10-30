@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "units": {
+    "time": "game day",
+    "month_days": 30,
+    "year_days": 360,
+    "money": "account units",
+    "staff": "persons",
+    "stock": "tonnes"
+  },
+  "scope": "all difficulties share rules; normal is baseline candidate calibration",
+  "difficulty": {
+    "easy": {
+      "capital": 1.25,
+      "risk": 0.8,
+      "review_days": 40,
+      "intervention_days": 25,
+      "deadline": 270,
+      "warning": 16
+    },
+    "normal": {
+      "capital": 1.0,
+      "risk": 1.0,
+      "review_days": 30,
+      "intervention_days": 20,
+      "deadline": 240,
+      "warning": 20
+    },
+    "hard": {
+      "capital": 0.85,
+      "risk": 1.2,
+      "review_days": 24,
+      "intervention_days": 16,
+      "deadline": 210,
+      "warning": 20
+    }
+  },
+  "research": {
+    "reference_staff": 10,
+    "reference_rate": 1.0,
+    "half_staff_ratio": 0.6,
+    "seats_per_lab": 10,
+    "projects_per_lab": 2,
+    "minimum_staff": 3
+  },
+  "company": {
+    "review_threshold": 40,
+    "intervention_threshold": 70,
+    "recovery_per_day": 0.8,
+    "minimum_stage_days": 3,
+    "stable_days": 10,
+    "pollution_threshold": 45,
+    "departure_after": 12,
+    "departure_period": 6,
+    "aid_grace_extension": 10,
+    "offers": {
+      "liquidity": {
+        "name": "周转资金方案",
+        "cash": 1800.0,
+        "food": 0.0,
+        "materials": 0.0,
+        "parts": 0.0,
+        "arrival_days": 2,
+        "repayment": 1200.0,
+        "duration": 60,
+        "surcharge": 0.1,
+        "cash_floor": 300.0
+      },
+      "supplies": {
+        "name": "基本供应与修复方案",
+        "cash": 0.0,
+        "food": 240.0,
+        "materials": 40.0,
+        "parts": 8.0,
+        "arrival_days": 2,
+        "repayment": 700.0,
+        "duration": 60,
+        "surcharge": 0.08,
+        "cash_floor": 300.0
+      }
+    }
+  },
+  "production": {
+    "target_days": 30,
+    "food_min_target": 180.0,
+    "pollution_decay": 0.35,
+    "mine_pollution": 0.12,
+    "processor_pollution": 0.4,
+    "cleanup_cost": 120.0,
+    "cleanup_amount": 25.0,
+    "enterprise_recovery": 450.0
+  },
+  "time": {
+    "fast_multiplier": 4,
+    "seconds_per_day": 5
+  }
+}

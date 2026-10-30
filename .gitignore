@@ -1,0 +1,19 @@
+# Godot editor cache
+game/.godot/
+
+# Build outputs, frozen releases and raw run output (kept on disk, never in history)
+build/
+delivery/
+versions/
+evidence/
+saves/
+
+# Large third-party tools
+tools/*.zip
+tools/*.tpz
+tools/godot-4.5.1/
+
+# Transient files
+*.bak
+*.tmp
+__pycache__/

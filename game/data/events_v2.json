@@ -1,0 +1,793 @@
+{
+  "version": 2,
+  "calendar": "30日/月，360日/年",
+  "units": {
+    "money": "公共资金",
+    "goods": "吨",
+    "duration_days": "从选择后次日起的完整日数，0为持续生效"
+  },
+  "sampling": {
+    "interval_days": 6,
+    "negative_cooldown_days": 18,
+    "max_waiting": 3
+  },
+  "definitions": {
+    "seed_crate": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "weight": 2,
+      "conditions": {
+        "min_day": 9,
+        "building": "port"
+      },
+      "nodes": {
+        "start": {
+          "title": "一箱标错的种子",
+          "text": "货站退回一批耐储种粮。原主放弃追索，清点后可以直接入库。",
+          "choices": [
+            {
+              "id": "take",
+              "label": "签收入库",
+              "goods_reward": {
+                "food": 28
+              },
+              "ending": "种粮入库"
+            },
+            {
+              "id": "decline",
+              "label": "交给过境货船",
+              "ending": "转交货船"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "pump_seal": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "weight": 2,
+      "conditions": {
+        "min_day": 12,
+        "building": "water"
+      },
+      "nodes": {
+        "start": {
+          "title": "泵房里的一滴盐",
+          "text": "密封件出现盐痕。更换需要部件；继续运行会有一段明确的低压期。",
+          "choices": [
+            {
+              "id": "repair",
+              "label": "更换密封",
+              "pay": 25,
+              "goods_cost": {
+                "parts": 1
+              },
+              "ending": "泵站修复"
+            },
+            {
+              "id": "decline",
+              "label": "按低压规程运行",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 0.85,
+                  "duration_days": 6,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "低压运行"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "canteen": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "weight": 2,
+      "conditions": {
+        "min_day": 12,
+        "building": "farm"
+      },
+      "nodes": {
+        "start": {
+          "title": "食堂的旧菜单",
+          "text": "厨师提出改用当地谷物，试做需要一批食品，之后可降低温室的报废损耗。",
+          "choices": [
+            {
+              "id": "trial",
+              "label": "供应试做食材",
+              "goods_cost": {
+                "food": 12
+              },
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 1.08,
+                  "duration_days": 12,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "菜单改良"
+            },
+            {
+              "id": "decline",
+              "label": "维持现有菜单",
+              "ending": "菜单维持"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "workshop": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "weight": 2,
+      "conditions": {
+        "min_day": 12,
+        "building": "processor"
+      },
+      "nodes": {
+        "start": {
+          "title": "技工的定位夹具",
+          "text": "加工班发现一套可复用夹具方案。现在投入少量部件，接下来几日提高加工产出。",
+          "choices": [
+            {
+              "id": "tool",
+              "label": "制作夹具",
+              "pay": 30,
+              "goods_cost": {
+                "parts": 2
+              },
+              "effects": [
+                {
+                  "kind": "processor",
+                  "factor": 1.15,
+                  "duration_days": 10,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "夹具投入"
+            },
+            {
+              "id": "decline",
+              "label": "继续现有工序",
+              "ending": "工序保留"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "freight_labels": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "weight": 2,
+      "conditions": {
+        "min_day": 15,
+        "building": "port",
+        "exports": 80
+      },
+      "nodes": {
+        "start": {
+          "title": "颜色不同的货签",
+          "text": "货站提议用颜色区分食品和工程货物。培训占用经费，短期提高装卸吞吐。",
+          "choices": [
+            {
+              "id": "train",
+              "label": "组织培训",
+              "pay": 45,
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 1.2,
+                  "duration_days": 12,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "货签统一"
+            },
+            {
+              "id": "decline",
+              "label": "继续手工复核",
+              "ending": "手工复核"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "dust": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "weight": 2,
+      "conditions": {
+        "min_day": 15,
+        "mine": true
+      },
+      "nodes": {
+        "start": {
+          "title": "筛网上的细灰",
+          "text": "矿区筛网积灰。可以更换滤网，或低速运行等待下次维护。",
+          "choices": [
+            {
+              "id": "filter",
+              "label": "更换滤网",
+              "pay": 35,
+              "goods_cost": {
+                "materials": 3
+              },
+              "ending": "滤网更新"
+            },
+            {
+              "id": "decline",
+              "label": "低速生产",
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.8,
+                  "duration_days": 5,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "低速除尘"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "archive_grant": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "weight": 2,
+      "conditions": {
+        "min_day": 16,
+        "scientists": 3
+      },
+      "nodes": {
+        "start": {
+          "title": "地学站的回信",
+          "text": "外地地学站愿意购买本地匿名气候观测副本；数据不包含调查权。",
+          "choices": [
+            {
+              "id": "share",
+              "label": "授权公开副本",
+              "reward": 90,
+              "ending": "气候资料公开"
+            },
+            {
+              "id": "decline",
+              "label": "暂不共享",
+              "ending": "资料保留"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "market_day": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "weight": 2,
+      "conditions": {
+        "min_day": 20,
+        "settlements": 2
+      },
+      "nodes": {
+        "start": {
+          "title": "两地的第一个集市",
+          "text": "两地居民想安排一次小集市。公共食品做交通补给，外地参展商的补贴计为一次性收入。",
+          "choices": [
+            {
+              "id": "host",
+              "label": "安排公共补给",
+              "goods_cost": {
+                "food": 15
+              },
+              "reward": 75,
+              "ending": "集市落幕"
+            },
+            {
+              "id": "decline",
+              "label": "推迟集市",
+              "ending": "集市推迟"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "quiet_channel": {
+      "version": 1,
+      "type": "short",
+      "category": "discovery",
+      "weight": 2,
+      "conditions": {
+        "min_day": 15,
+        "previous": "water:配水协议"
+      },
+      "nodes": {
+        "start": {
+          "title": "安静的水渠",
+          "text": "节制取水后，水渠出现稳定回流。记录这次变化可以给今后的农场维护留下资料。",
+          "choices": [
+            {
+              "id": "record",
+              "label": "整理回流记录",
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 1.04,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "回流资料归档"
+            },
+            {
+              "id": "decline",
+              "label": "仅保留日志",
+              "ending": "简报归档"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "appointment_gift": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "weight": 2,
+      "conditions": {
+        "min_day": 20,
+        "status": "success"
+      },
+      "nodes": {
+        "start": {
+          "title": "任命后的工具箱",
+          "text": "总督任命获得公开确认。旧承包商送来一箱通用维修部件，没有附加义务。",
+          "choices": [
+            {
+              "id": "take",
+              "label": "登记公共资产",
+              "goods_reward": {
+                "parts": 4
+              },
+              "ending": "工具箱入库"
+            },
+            {
+              "id": "decline",
+              "label": "转赠当地学校",
+              "ending": "工具箱转赠"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "water": {
+      "version": 1,
+      "type": "chain",
+      "category": "dilemma",
+      "weight": 12,
+      "conditions": {
+        "min_day": 6,
+        "building": "water"
+      },
+      "nodes": {
+        "start": {
+          "title": "第二条水位线",
+          "text": "泵站下方出现新的水痕。调查可确认盐分；直接增建泵站虽快，验收时可能必须处理盐渍化。",
+          "choices": [
+            {
+              "id": "survey",
+              "label": "派三人实测",
+              "pay": 45,
+              "investigate": 3,
+              "work": 5,
+              "next": "plan"
+            },
+            {
+              "id": "build",
+              "label": "直接增建净水泵站",
+              "build": "water",
+              "next": "inspection"
+            },
+            {
+              "id": "conserve",
+              "label": "签署节制取水规程",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.1,
+                  "duration_days": 0,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "mine",
+                  "factor": 0.9,
+                  "duration_days": 0,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "farm",
+                  "factor": 1.08,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "配水协议"
+            },
+            {
+              "id": "decline",
+              "label": "保留现有取水规模",
+              "ending": "水线封存"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "plan": {
+          "title": "盐分沿着旧水线",
+          "text": "实测确认盐分集中在旧渠底。新泵站若配合分流维护，可以同时稳定供水与温室。",
+          "choices": [
+            {
+              "id": "build",
+              "label": "增建并纳入分流验收",
+              "build": "water",
+              "next": "inspection"
+            },
+            {
+              "id": "conserve",
+              "label": "只实行节制取水",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.1,
+                  "duration_days": 0,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "mine",
+                  "factor": 0.9,
+                  "duration_days": 0,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "farm",
+                  "factor": 1.08,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "配水协议"
+            },
+            {
+              "id": "decline",
+              "label": "封存调查结果",
+              "ending": "水线封存"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "inspection": {
+          "title": "泵站竣工后的第一杯水",
+          "text": "新设施已实际竣工。验收显示高取水量会带出盐分；清渠需要支出，留下盐分则永久降低当地农场产出。",
+          "choices": [
+            {
+              "id": "flush",
+              "label": "清渠并维持分流",
+              "pay": 90,
+              "goods_cost": {
+                "materials": 4
+              },
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.15,
+                  "duration_days": 0,
+                  "maintenance": 0.6
+                },
+                {
+                  "kind": "farm",
+                  "factor": 1.1,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "调蓄验收"
+            },
+            {
+              "id": "careful",
+              "label": "采用实测分流方案",
+              "requires_survey": true,
+              "pay": 35,
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.15,
+                  "duration_days": 0,
+                  "maintenance": 0.3
+                },
+                {
+                  "kind": "farm",
+                  "factor": 1.1,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "精测验收"
+            },
+            {
+              "id": "decline",
+              "label": "接受含盐供水",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.2,
+                  "duration_days": 0,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "farm",
+                  "factor": 0.88,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "含盐扩张"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "industry": {
+      "version": 1,
+      "type": "chain",
+      "category": "opportunity",
+      "weight": 9,
+      "conditions": {
+        "min_day": 12,
+        "building": "processor",
+        "exports": 60
+      },
+      "nodes": {
+        "start": {
+          "title": "送不到的旺季",
+          "text": "外部承包商要一批本地加工部件。货款按实际抵达结算；进口部件不能充作本地产出。需要货站余量装船，航程三日。",
+          "choices": [
+            {
+              "id": "accept",
+              "label": "签订部件交付单",
+              "pay": 25,
+              "order": {
+                "amount": 4,
+                "price": 62,
+                "days": 24
+              },
+              "next": "review"
+            },
+            {
+              "id": "small",
+              "label": "先做小批量订单",
+              "pay": 10,
+              "order": {
+                "amount": 2,
+                "price": 55,
+                "days": 24
+              },
+              "next": "review"
+            },
+            {
+              "id": "decline",
+              "label": "保留现货自主销售",
+              "ending": "谢绝旺季"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "review": {
+          "title": "码头复核单",
+          "text": "买方更新了收货安排。可按原单继续、以手续费换十日缓冲，或减少承诺但结清已经交付的货物。",
+          "choices": [
+            {
+              "id": "continue",
+              "label": "按原截止日期履约",
+              "order_action": "continue"
+            },
+            {
+              "id": "extend",
+              "label": "支付改签费延长十日",
+              "pay": 35,
+              "order_action": "extend"
+            },
+            {
+              "id": "reduce",
+              "label": "协商减量并结清现有交货",
+              "pay": 20,
+              "order_action": "reduce"
+            }
+          ],
+          "default": "continue",
+          "deadline_days": 6
+        },
+        "delivered": {
+          "title": "带着签名的收货单",
+          "text": "买方已签收全部承诺部件，货款按每批实际到货计入当地经营收入。可建立长期操作规范，或以一次订单结束合作。",
+          "choices": [
+            {
+              "id": "standard",
+              "label": "保留装卸操作规范",
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 1.05,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "准时交付"
+            },
+            {
+              "id": "decline",
+              "label": "本次订单结案",
+              "ending": "单次交付"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        }
+      }
+    },
+    "archaeology": {
+      "version": 1,
+      "type": "chain",
+      "category": "discovery",
+      "weight": 9,
+      "conditions": {
+        "min_day": 10,
+        "mine": true
+      },
+      "nodes": {
+        "start": {
+          "title": "岩层下的值班簿",
+          "text": "采掘边缘露出一间旧测候室。封存柜里有失联勘探队的值班簿；地方大学也愿意购买独家后续调查权。",
+          "choices": [
+            {
+              "id": "survey",
+              "label": "派三人整理现场",
+              "pay": 50,
+              "investigate": 3,
+              "work": 7,
+              "next": "records"
+            },
+            {
+              "id": "sell",
+              "label": "出售独家调查权",
+              "reward": 180,
+              "sell_rights": true,
+              "next": "sale_report",
+              "delay": 8
+            },
+            {
+              "id": "decline",
+              "label": "封存入口",
+              "ending": "遗址封存"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "records": {
+          "title": "最后一次换班",
+          "text": "记录表明队员为避免山洪主动撤离；没有神秘失踪。尚有一份矿尘筛分样本。可归档并保护测候室，或交大学接手样本分析。",
+          "choices": [
+            {
+              "id": "protect",
+              "label": "保护遗址并公开记录",
+              "pay": 35,
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 1.05,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "值班簿归档"
+            },
+            {
+              "id": "sample",
+              "label": "派三人分析筛分样本",
+              "pay": 35,
+              "investigate": 3,
+              "work": 5,
+              "next": "findings"
+            },
+            {
+              "id": "sell",
+              "label": "出售后续样本调查权",
+              "reward": 240,
+              "sell_rights": true,
+              "next": "sale_report",
+              "delay": 8
+            },
+            {
+              "id": "decline",
+              "label": "结束现场工作",
+              "ending": "勘探队去向查明"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "findings": {
+          "title": "筛网上留下的说明",
+          "text": "样本没有新增矿藏，只提供一套更适合本地粉尘的筛分办法。采用后可提高矿场效率，测候室则留作公共档案点。",
+          "choices": [
+            {
+              "id": "apply",
+              "label": "采用筛分办法并归档",
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 1.12,
+                  "duration_days": 0,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "样本完成"
+            },
+            {
+              "id": "decline",
+              "label": "保留记录暂不改工艺",
+              "ending": "样本保管"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 6
+        },
+        "sale_report": {
+          "title": "大学的结项简报",
+          "text": "大学确认旧队已在山洪前撤离，样本进入公开展陈。后续独家调查权已经转让，本地不再领取同一研究成果。",
+          "choices": [
+            {
+              "id": "close",
+              "label": "收录结项简报",
+              "ending": "调查权转让"
+            }
+          ],
+          "default": "close",
+          "deadline_days": 6
+        }
+      }
+    }
+  }
+}
