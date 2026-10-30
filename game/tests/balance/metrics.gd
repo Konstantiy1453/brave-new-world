@@ -15,6 +15,7 @@ var _research_spend: float = 0.0
 var _window_expense: float = 0.0
 var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
+var _last_entry: Dictionary = {}
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -64,6 +65,7 @@ func sample(sim: RefCounted) -> void:
 		record.audit_error_count += issues.size()
 		if record.audit_errors.size() < 5:
 			record.audit_errors.append({"day": day, "issues": issues})
+	record.stage_days = state.contract.completed.duplicate()
 	if POPULATION_CHECKPOINTS.has(day):
 		record.population[str(day)] = _population(state)
 	if day == 180:
@@ -107,15 +109,18 @@ func _scientist_share(state: Dictionary) -> float:
 	return float(scientists) / maxi(1, adults)
 
 
+## Counts every entry once, including those made by actions between two ticks.
 func _scan_ledger(state: Dictionary, day: int) -> void:
 	var entries: Array = state.ledger
 	var index: int = entries.size() - 1
 	while index >= 0:
 		var entry: Dictionary = entries[index]
-		if int(entry.day) != day:
+		if is_same(entry, _last_entry):
 			break
 		_count_entry(entry, day)
 		index -= 1
+	if not entries.is_empty():
+		_last_entry = entries.back()
 
 
 func _count_entry(entry: Dictionary, day: int) -> void:

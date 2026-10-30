@@ -68,8 +68,119 @@ const LEDGER: Dictionary = {
 	"event.order_fee": "订单装船港务",
 	"event.upkeep": "事件设施维护",
 	"career.invest": "生涯资金注资",
+	"contract.reward": "合同阶段发展资金",
+	"road.upkeep": "道路养护",
+	"recruit": "招募移民",
 	"legacy.event": "旧版事件",
 }
+
+const STAGE_NAMES: Dictionary = {
+	"foothold": "第一阶段 · 立足",
+	"division": "第二阶段 · 分工",
+	"self_reliance": "第三阶段 · 自立",
+}
+const LICENCE_NAMES: Dictionary = {
+	"expedition": "第二据点远征许可",
+	"third_settlement": "第三据点许可",
+}
+const ATTRACTIVENESS_PARTS: Dictionary = {
+	"beds": "住房",
+	"food": "食品保障",
+	"jobs": "工作机会",
+	"wage": "工资政策",
+	"services": "生活服务",
+	"pollution": "污染",
+	"shortages": "水电短缺",
+	"company": "公司审查",
+}
+
+
+## Text of one contract goal, with what it needs and the page that moves it.
+static func goal(row: Dictionary) -> Dictionary:
+	var value: float = float(row.value)
+	var target: float = float(row.target)
+	match str(row.key):
+		"settlements":
+			return {"text": "建立据点 %d / %d" % [value, target], "hint": "在地图上选址并建立首府", "page": ""}
+		"exports_total":
+			return {
+				"text": "累计出口 ¥ %.0f / %.0f" % [value, target],
+				"hint": "建设矿场并保持货运站运转",
+				"page": "build"
+			}
+		"food_days":
+			return {
+				"text": "各据点食品 %.1f / %.0f 天" % [value, target],
+				"hint": "货运站会自动进口；农场更省钱",
+				"page": "build"
+			}
+		"stage_streak":
+			return {
+				"text": "连续经营结余非负 %d / %d 天" % [value, target],
+				"hint": "收入不低于支出且没有欠款",
+				"page": "economy"
+			}
+		"research_staffed":
+			return {
+				"text": "在研项目 %d / %d" % [value, target], "hint": "建研究所并分配研究员", "page": "research"
+			}
+		"connected":
+			return {
+				"text": "相互连通的据点 %d / %d" % [value, target],
+				"hint": "建立第二据点并修路",
+				"page": "transport"
+			}
+		"local_food_share":
+			return {
+				"text": "本地食品自给 %.0f%% / %.0f%%（近 30 日）" % [value * 100.0, target * 100.0],
+				"hint": "在肥沃地块建农场",
+				"page": "build"
+			}
+		"processing_days":
+			return {
+				"text": "加工运行 %d / %d 天" % [value, target],
+				"hint": "建复合加工厂，并保证铁矿和铜矿供应",
+				"page": "build"
+			}
+		"population":
+			return {
+				"text": "人口 %d / %d" % [value, target],
+				"hint": "增加住房、提高工资或招募移民",
+				"page": "population"
+			}
+		"technologies":
+			return {"text": "完成技术 %d / %d" % [value, target], "hint": "分配更多研究员", "page": "research"}
+		"employment":
+			return {
+				"text": "就业率 %.0f%% / %.0f%%" % [value * 100.0, target * 100.0],
+				"hint": "新建设施创造岗位",
+				"page": "build"
+			}
+		"housed":
+			return {
+				"text": "全部居民有住房" if value >= target else "仍有居民缺少住房",
+				"hint": "建设模块住区",
+				"page": "build"
+			}
+		"enterprise_profit_days":
+			return {
+				"text": "民营企业连续盈利 %d / %d 天" % [value, target],
+				"hint": "批准服务社，居民越多需求越大",
+				"page": "enterprise"
+			}
+		"non_mining_share":
+			return {
+				"text": "非矿业收入占比 %.0f%% / %.0f%%（近 30 日）" % [value * 100.0, target * 100.0],
+				"hint": "出口加工品、食品订单或扩大本地服务",
+				"page": "economy"
+			}
+		"no_review":
+			return {
+				"text": "没有进行中的公司审查" if value >= target else "公司审查尚未结束",
+				"hint": "解决公司关系页列出的原因",
+				"page": "company"
+			}
+	return {"text": str(row.key), "hint": "", "page": ""}
 
 
 static func building_name(config: Dictionary, kind: String) -> String:

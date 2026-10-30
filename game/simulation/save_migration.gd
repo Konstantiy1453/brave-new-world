@@ -160,6 +160,7 @@ static func convert_v2(old: Dictionary) -> Dictionary:
 		var enterprise: Dictionary = old.enterprise
 		enterprise.status = ENTERPRISE_STATUS.get(enterprise.status, Keys.E_OPEN)
 		enterprise.reason = ENTERPRISE_REASON.get(enterprise.reason, Keys.ER_FITTING)
+		enterprise.profit_days = 0
 	for entry: Dictionary in old.ledger:
 		_convert_entry(entry)
 	for bill: Dictionary in old.arrears:
@@ -187,6 +188,8 @@ static func convert_v2(old: Dictionary) -> Dictionary:
 			archive.hash = ""
 		archive.erase("snapshot")
 	old.schema = 3
+	load("res://simulation/sim.gd").ensure_systems(old)
+	old.rng_state = (absi(int(old.get("rng_state", 1))) % 2147483646) + 1
 	return {"state": old, "blobs": blobs}
 
 

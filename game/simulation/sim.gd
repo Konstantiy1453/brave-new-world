@@ -18,6 +18,7 @@ const Enterprise = preload("res://simulation/enterprise.gd")
 const Contract = preload("res://simulation/contract.gd")
 const Sites = preload("res://simulation/sites.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
+const Market = preload("res://simulation/market.gd")
 const SAVE_VERSION: int = 3
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -28,12 +29,18 @@ var state: Dictionary = {}
 var geo: Dictionary = {}
 var config: Dictionary = {}
 var progression: Dictionary = {}
+var pop_rules: Dictionary = {}
+var contract_rules: Dictionary = {}
+var market_rules: Dictionary = {}
 var blobs: Dictionary = {"checkpoint": PackedByteArray(), "archives": {}}
 
 
 func _init() -> void:
 	config = Rules.economy()
 	progression = Rules.progression()
+	pop_rules = Rules.read("population")
+	contract_rules = Rules.read("contract")
+	market_rules = Rules.read("market")
 
 
 func new_game(
@@ -89,9 +96,11 @@ func new_game(
 		"immigrants_total": 0
 	}
 	state.difficulty = difficulty
-	state.rng_state = int(state.world.seed)
+	state.rng_state = (absi(int(state.world.seed)) % 2147483646) + 1
+	state.policy.wage = float(pop_rules.wage.default)
 	Research.ensure(self)
 	Company.ensure(self)
+	ensure_systems(state)
 	_transfer(
 		"external",
 		"public",
@@ -103,6 +112,13 @@ func new_game(
 	_log("合同已签署。请勘察后选择登陆点；铁岬盆地适合双矿开局。")
 	Career.ensure(self)
 	EventsV2.ensure(self)
+
+
+## Adds the state of systems newer than a save. Safe to run on any state, any number of times.
+static func ensure_systems(target: Dictionary) -> void:
+	Contract.ensure_state(target)
+	Population.ensure_state(target)
+	Market.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -133,6 +149,13 @@ func act(action: String, args: Dictionary = {}) -> String:
 				int(args.get("b", -1)),
 				bool(args.get("mountain", false))
 			)
+		"recruit":
+			return Population.recruit(
+				self,
+				int(args.get("region", -1)),
+				str(args.get("kind", "worker")),
+				int(args.get("count", 0))
+			)
 		"enterprise":
 			return Enterprise.found(self, int(args.get("region", -1)))
 		"enterprise_recover":
@@ -162,6 +185,11 @@ func _set_policy(args: Dictionary) -> String:
 		float(args.get("food_reserve", state.policy.food_reserve)), 3.0, 25.0
 	)
 	state.policy.private_allowed = bool(args.get("private_allowed", state.policy.private_allowed))
+	state.policy.wage = clampf(
+		float(args.get("wage", state.policy.wage)),
+		float(pop_rules.wage.min),
+		float(pop_rules.wage.max)
+	)
 	_log("贸易保留 %.0f 天食品，企业利润税 %.0f%%。" % [state.policy.food_reserve, state.policy.tax * 100.0])
 	return ""
 
@@ -191,7 +219,9 @@ func tick() -> void:
 		if s.arrival <= 0:
 			Population.feed(self, s)
 	Logistics.dispatch(self)
-	_public_expense(float(config.economy.admin), "admin", "external")
+	Logistics.road_daily(self)
+	Market.daily(self)
+	_public_expense(_admin_cost(), "admin", "external")
 	Population.daily(self)
 	Company.social_environment(self)
 	_event_tick()
@@ -221,6 +251,18 @@ func tick() -> void:
 	while state.ledger.size() > LEDGER_LIMIT:
 		state.ledger.pop_front()
 	Career.tick(self)
+
+
+## Growth has running costs: a base, a per-resident part and a per-settlement part.
+func _admin_cost() -> float:
+	var residents: int = 0
+	for s: Dictionary in state.settlements:
+		residents += int(s.population)
+	return (
+		float(config.economy.admin)
+		+ float(config.economy.admin_per_resident) * residents
+		+ float(config.economy.admin_per_settlement) * state.settlements.size()
+	)
 
 
 func _event_tick() -> void:
@@ -435,12 +477,22 @@ func audit() -> Array:
 			errors.append("population partition")
 		if s.employed_workers > s.workers or s.employed_scientists > s.scientists:
 			errors.append("duplicate job allocation")
+		if int(s.workers) < 0 or int(s.scientists) < 0 or int(s.children) < 0:
+			errors.append("negative population")
+		if float(s.attractiveness) < 0.0 or float(s.attractiveness) > 2.0:
+			errors.append("attractiveness out of range")
 		for key: String in KEYS:
 			if s.stock[key] < -0.00001:
 				errors.append("negative stock " + key)
 			holdings[key] += float(s.stock[key])
 	for cargo: Dictionary in state.shipments:
 		holdings[cargo.resource] += float(cargo.amount)
+	for party: Dictionary in state.recruits:
+		if int(party.count) <= 0 or settlement(int(party.region)).is_empty():
+			errors.append("recruit party invalid")
+	for good: String in state.market.saturation:
+		if float(state.market.saturation[good]) < 0.0:
+			errors.append("negative market saturation")
 	for key: String in KEYS:
 		if (
 			absf(
@@ -486,6 +538,22 @@ func research_release(id: String) -> void:
 
 func company_view() -> Dictionary:
 	return Company.view(self)
+
+
+func build_forecast(region: int, kind: String) -> Dictionary:
+	return Production.build_forecast(self, region, kind)
+
+
+func population_view(region: int) -> Dictionary:
+	return Population.view(self, region)
+
+
+func contract_view() -> Dictionary:
+	return Contract.view(self)
+
+
+func market_view() -> Array:
+	return Market.view(self)
 
 
 func contract_progress() -> Dictionary:

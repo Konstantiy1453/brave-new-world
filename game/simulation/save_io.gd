@@ -136,6 +136,10 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 		return error
 	if int(candidate.schema) != SCHEMA:
 		return "存档版本或阶段无效"
+	if int(candidate.contract.stage) < 1 or int(candidate.contract.stage) > 4:
+		return "合同阶段无效"
+	if float(candidate.policy.get("wage", 0.0)) <= 0.0:
+		return "工资政策无效"
 	if not candidate.status in RUN_STATUSES or not sim.config.openings.has(candidate.advantage):
 		return "存档版本或阶段无效"
 	error = _validate_world(candidate)
@@ -323,7 +327,24 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 		"resource_sinks": sim._stock(),
 		"rng_state": 0,
 		"births_total": 0,
-		"immigrants_total": 0
+		"immigrants_total": 0,
+		"contract":
+		{
+			"stage": 0,
+			"stage_started": 0,
+			"completed": {},
+			"missed": [],
+			"licences": [],
+			"stage_streak": 0,
+			"food_window": [],
+			"income_window": [],
+			"processing_days": 0,
+			"today_food": 0,
+			"milestones": []
+		},
+		"market": {"saturation": {}},
+		"recruits": [{"region": 0, "kind": "", "count": 0, "arrive_day": 0}],
+		"recruit_campaigns": []
 	}
 
 
@@ -341,7 +362,8 @@ static func _enterprise_shape() -> Dictionary:
 		"tax_total": 0,
 		"loss_days": 0,
 		"reason": "",
-		"rent": 0
+		"rent": 0,
+		"profit_days": 0
 	}
 
 
@@ -424,14 +446,19 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 		"cohorts": [{"count": 0, "mature_day": 0}],
 		"port_used": 0,
 		"port_capacity": 0,
-		"food_consumed": 0
+		"food_consumed": 0,
+		"arrival_accrual": 0,
+		"science_accrual": 0,
+		"birth_accrual": 0,
+		"attractiveness": 0,
+		"attractiveness_parts": {}
 	}
 
 
 static func _validate_settlements(
 	sim: RefCounted, candidate: Dictionary, site_count: int
 ) -> String:
-	if candidate.settlements.size() > 2:
+	if candidate.settlements.size() > int(sim.contract_rules.settlement_cap.after_award):
 		return "据点数据不合法"
 	var settlement_shape: Dictionary = _settlement_shape(sim)
 	for s: Variant in candidate.settlements:

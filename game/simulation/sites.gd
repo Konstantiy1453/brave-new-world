@@ -3,6 +3,7 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
+const Contract = preload("res://simulation/contract.gd")
 
 
 static func settle(sim: RefCounted, region: int) -> String:
@@ -10,8 +11,8 @@ static func settle(sim: RefCounted, region: int) -> String:
 		return "请选择候选地区"
 	if not sim.settlement(region).is_empty():
 		return "此地区已经建立据点"
-	if sim.state.settlements.size() >= 2:
-		return "本合同最多开发两个地区"
+	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
+		return "需要先完成合同阶段，取得下一处据点的远征许可"
 	var first: bool = sim.state.settlements.is_empty()
 	var reg: Dictionary = sim.state.world.regions[region]
 	if first:
@@ -48,6 +49,9 @@ static func settle(sim: RefCounted, region: int) -> String:
 	var workers: int = int(op.workers) if first else 18
 	var scientists: int = int(op.scientists) if first else 0
 	var children: int = int(op.children) if first else 0
+	var landing_beds: int = int(
+		sim.pop_rules.housing.capital if first else sim.pop_rules.housing.outpost
+	)
 	var s: Dictionary = {
 		"region": region,
 		"name": reg.name,
@@ -59,8 +63,13 @@ static func settle(sim: RefCounted, region: int) -> String:
 		"stock_delta": sim._stock(),
 		"buildings": [],
 		"jobs": 0,
-		"housing": 80 if first else 40,
-		"base_housing": 80 if first else 40,
+		"housing": landing_beds,
+		"base_housing": landing_beds,
+		"arrival_accrual": 0.0,
+		"science_accrual": 0.0,
+		"birth_accrual": 0.0,
+		"attractiveness": 1.0,
+		"attractiveness_parts": {},
 		"food_days": 0.0,
 		"shortages": [],
 		"employed": 0,

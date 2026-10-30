@@ -49,6 +49,7 @@ func _initialize() -> void:
 		)
 	var a = Sim.new()
 	a.new_game(20261029, "capital", 1)
+	a.state.contract.licences.append("expedition")
 	a.act("settle", {"region": 0})
 	a.state.settlements[0].workers = 10
 	a.state.settlements[0].population = 26

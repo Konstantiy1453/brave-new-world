@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "units": {"time": "game day", "money": "account units", "share": "fraction 0-1"},
+  "scaled_goals": ["exports_total", "population"],
+  "difficulty_scale": {"easy": 0.8, "normal": 1.0, "hard": 1.2},
+  "deadlines": {
+    "easy": [120, 250, 360],
+    "normal": [90, 200, 300],
+    "hard": [75, 170, 260]
+  },
+  "overdue_distrust_per_day": 1.2,
+  "windows": {"local_food": 30, "non_mining": 30},
+  "settlement_cap": {"initial": 1, "expedition": 2, "third_settlement": 3, "after_award": 6, "connected_limit": 2},
+  "stages": [
+    {
+      "id": "foothold",
+      "reward_cash": 1500.0,
+      "licence": "expedition",
+      "goals": {
+        "settlements": 1,
+        "exports_total": 3000.0,
+        "food_days": 10.0,
+        "stage_streak": 10,
+        "research_staffed": 1
+      }
+    },
+    {
+      "id": "division",
+      "reward_cash": 2500.0,
+      "licence": "third_settlement",
+      "goals": {
+        "connected": 2,
+        "local_food_share": 0.8,
+        "processing_days": 20,
+        "population": 120,
+        "technologies": 2
+      }
+    },
+    {
+      "id": "self_reliance",
+      "reward_cash": 0.0,
+      "licence": "",
+      "goals": {
+        "population": 180,
+        "employment": 0.6,
+        "housed": 1,
+        "enterprise_profit_days": 30,
+        "non_mining_share": 0.25,
+        "stage_streak": 30,
+        "no_review": 1
+      }
+    }
+  ],
+  "milestones": [
+    {"id": "population_1000", "goal": "population", "target": 1000, "reward": 2000.0},
+    {"id": "five_settlements", "goal": "settlements", "target": 5, "reward": 2000.0},
+    {"id": "three_megaprojects", "goal": "megaprojects", "target": 3, "reward": 3000.0},
+    {"id": "all_tier2", "goal": "tier2_techs", "target": 1, "reward": 1500.0}
+  ]
+}

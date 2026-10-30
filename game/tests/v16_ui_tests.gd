@@ -54,6 +54,10 @@ func run():
 	g.sim.state.success_day = -1
 	g.sim.state.events_v2.next_draw = 9999
 	g.sim.state.events_v2.instances = []
+	g.sim.state.contract.stage = 3
+	var one_step: Dictionary = g.sim.contract_rules.duplicate(true)
+	one_step.stages[2].goals = {"settlements": 1}
+	g.sim.contract_rules = one_step
 	g.last_status = "active"
 	g.paused = false
 	g.speed = 4

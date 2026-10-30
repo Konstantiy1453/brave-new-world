@@ -7,6 +7,7 @@ const Career = preload("res://simulation/career.gd")
 const ProgressionPages = preload("res://ui/progression_pages.gd")
 const Events = preload("res://simulation/events_v2.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
+const Contract = preload("res://simulation/contract.gd")
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
@@ -164,6 +165,7 @@ func build_shell():
 		["经营账本", "economy"],
 		["科研教育", "research"],
 		["交通运输", "transport"],
+		["人口移民", "population"],
 		["民营经济", "enterprise"],
 		["公司关系", "company"],
 		["殖民合同", "contract"],
@@ -434,14 +436,21 @@ func refresh():
 		pop += int(s.population)
 	var net = float(sim.state.get("operating_net", 0))
 	top_stats.text = (
-		"公共资金  ¥ %s    经营结余  %+.0f /日\n人口  %d    据点  %d / 2    种子  %d"
-		% [money(sim.state.cash), net, pop, sim.state.settlements.size(), int(sim.state.world.seed)]
+		"公共资金  ¥ %s    经营结余  %+.0f /日\n人口  %d    据点  %d / %d    种子  %d"
+		% [
+			money(sim.state.cash),
+			net,
+			pop,
+			sim.state.settlements.size(),
+			Contract.settlement_cap(sim),
+			int(sim.state.world.seed)
+		]
 	)
 	date_label.text = (
 		"生涯 %d 日 / 登陆 %d 日 · %s"
 		% [sim.state.career.global_day, sim.state.day, "已暂停" if paused else str(speed) + " 倍速"]
 	)
-	var steps = ["勘察登陆 → 生活与矿场 → 自动出口 → 河谷农业 → 两地物流 → 民营企业 → 总督"]
+	var steps = ["立足：登陆、矿场、出口、科研 → 分工：第二据点、食品、加工 → 自立：人口、企业、非矿业收入 → 总督"]
 	var hint = "先签署合同，并在右侧选择登陆区域。"
 	if sim.state.status != "planning":
 		var phase = {"active": "契约考核中", "success": "总督阶段", "failed": "经营终止"}
@@ -596,6 +605,7 @@ func open_page(page: String):
 		"research": "知识就是生产力 / 科研教育",
 		"transport": "跨区货运 / 两地分工",
 		"enterprise": "混合经济 / 民营经营许可",
+		"population": "人口 / 吸引力与招募",
 		"contract": "殖民经营对赌协议",
 		"events": "远端通讯 / 当前事件",
 		"save": "档案与显示设置",

@@ -50,6 +50,7 @@ const RESULTS_BEGIN: String = "<!-- results:begin -->"
 const RESULTS_END: String = "<!-- results:end -->"
 const HISTORY_BEGIN: String = "<!-- history:begin -->"
 const POLL_SECONDS: float = 0.5
+const LEVER_DAYS: int = 180
 
 var options: Dictionary = {}
 
@@ -72,7 +73,7 @@ func run() -> void:
 	else:
 		for index: int in range(cases.size()):
 			runs.append(_run_case(cases[index], false))
-	var extras: Dictionary = {"determinism": _determinism_check()}
+	var extras: Dictionary = {"determinism": _determinism_check(), "labour_lever": _labour_lever()}
 	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
 
 
@@ -223,6 +224,31 @@ func _run_parallel() -> Array:
 			quit(1)
 			return []
 	return runs
+
+
+## A/B of the wage policy: the same colonies at 1.0x and 1.3x wages, with recruiting switched off
+## so that only attractiveness moves arrivals.
+func _labour_lever() -> Dictionary:
+	var arrivals: Dictionary = {"1.0": [], "1.3": []}
+	for seed_value: int in SEEDS.slice(0, QUICK_SEEDS):
+		for wage: String in arrivals:
+			var sim: RefCounted = Sim.new()
+			sim.new_game(seed_value, "capital", SIZE_MEDIUM, "normal")
+			var bot: RefCounted = BOTS.balanced.new()
+			bot.recruit_batch = 0
+			bot.fixed_wage = float(wage)
+			bot.begin(sim, seed_value)
+			for _day: int in range(LEVER_DAYS):
+				bot.on_day()
+				sim.tick()
+				if sim.state.status == "failed":
+					break
+			arrivals[wage].append(int(sim.state.immigrants_total))
+	return {
+		"days": LEVER_DAYS,
+		"base": Summary.median(arrivals["1.0"]),
+		"raised": Summary.median(arrivals["1.3"]),
+	}
 
 
 ## Replays a recorded action log on a fresh simulation and compares final states byte for byte.

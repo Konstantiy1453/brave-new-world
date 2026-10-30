@@ -15,6 +15,7 @@ func check(ok: bool, label: String) -> void:
 func make():
 	var sim = Sim.new()
 	sim.new_game(260129, "science", 1)
+	sim.state.contract.licences.append("expedition")
 	sim.act("settle", {"region": 0})
 	return sim
 

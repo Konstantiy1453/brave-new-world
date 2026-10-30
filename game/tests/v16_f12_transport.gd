@@ -12,6 +12,7 @@ func _init()->void:
 	Watchdog.arm(self)
 	var base=Sim.new()
 	base.new_game(260129,"capital",1)
+	base.state.contract.licences.append("expedition")
 	check(base.act("settle",{"region":0})=="","land first colony")
 	check(base.act("settle",{"region":1})=="","deploy second colony")
 	check(base.act("connect",{"a":0,"b":1})=="","construct real shared road")

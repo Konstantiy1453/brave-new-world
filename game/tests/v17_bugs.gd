@@ -104,6 +104,7 @@ func _bug6_aid_goes_to_shortage() -> void:
 	var sim: RefCounted = Sim.new()
 	sim.new_game(260129, "capital", 1, "normal")
 	sim.act("settle", {"region": 0})
+	sim.state.contract.licences.append("expedition")
 	sim.act("settle", {"region": 1})
 	sim.state.events_v2.next_draw = 99999
 	for _i: int in range(12):

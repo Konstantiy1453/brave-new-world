@@ -1,5 +1,7 @@
 extends RefCounted
 const Keys = preload("res://simulation/keys.gd")
+const Contract = preload("res://simulation/contract.gd")
+const Population = preload("res://simulation/population.gd")
 
 
 ## One causal source per economic/social/environmental chain, retained stage letters.
@@ -64,21 +66,45 @@ static func social_environment(sim) -> void:
 		var underemployment: bool = (
 			int(sim.state.day) > 20 and float(s.employed) < float(adult) * 0.35
 		)
-		var distressed: bool = s.housing < s.population or s.starvation > 0 or underemployment
+		var low_appeal: bool = (
+			float(s.get("attractiveness", 1.0)) < float(sim.pop_rules.departure.threshold)
+		)
+		var distressed: bool = (
+			s.housing < s.population or s.starvation > 0 or underemployment or low_appeal
+		)
 		s.social_days = int(s.social_days) + 1 if distressed else maxi(0, int(s.social_days) - 1)
 		if (
 			int(s.social_days) >= int(cfg.departure_after)
-			and int(s.social_days) % int(cfg.departure_period) == 0
+			and int(s.social_days) % _departure_period(sim, cfg) == 0
 			and s.workers > 2
 		):
-			s.workers -= 1
-			s.population -= 1
-			sim.state.departed_total += 1
+			var leaving: int = mini(
+				int(s.workers) - 2,
+				maxi(1, int(float(s.population) * float(sim.pop_rules.departure.share)))
+			)
+			s.workers -= leaving
+			s.population -= leaving
+			sim.state.departed_total += leaving
 			sim._reconcile_jobs(s)
-			sim._log(s.name + "：持续缺乏住房、工作或食品，1 名工人离开星球。")
+			sim._log("%s：持续缺乏住房、工作或食品，%d 名工人离开星球。" % [s.name, leaving])
 
 
 ## The settlement that most lacks what this aid carries; ties go to the earliest settlement.
+## Better wages keep people through hard times: departures come less often.
+static func _departure_period(sim: RefCounted, cfg: Dictionary) -> int:
+	return maxi(1, int(round(float(cfg.departure_period) * Population.wage_multiplier(sim))))
+
+
+## Distress counts in proportion to the people it touches, so a small outpost in trouble cannot
+## cost the whole charter at the full rate. Floor and slope are in progression.json.
+static func _population_weight(sim: RefCounted, s: Dictionary, cfg: Dictionary) -> float:
+	var total: int = 0
+	for place: Dictionary in sim.state.settlements:
+		total += int(place.population)
+	var share: float = float(s.population) / maxi(1, total)
+	return clampf(share * float(cfg.social_share_slope), float(cfg.social_share_floor), 1.0)
+
+
 static func aid_target(sim, d: Dictionary) -> int:
 	var best: int = -1
 	var worst: float = -INF
@@ -239,13 +265,16 @@ static func tick(sim) -> void:
 			economic = maxf(economic, minf(2.4, 0.6 + float(s.starvation) * 0.12))
 			reason = "必要食品短缺；进口、开港、调拨、限产或申请物资"
 		if int(s.social_days) > 0 and int(s.starvation) == 0:
-			social = maxf(social, minf(0.7, float(s.social_days) * 0.035))
+			var rate: float = minf(
+				float(cfg.social_rate_cap), float(s.social_days) * float(cfg.social_rate_per_day)
+			)
+			social = maxf(social, rate * _population_weight(sim, s, cfg))
 		if float(s.pollution) > float(cfg.pollution_threshold):
 			environment = maxf(
 				environment, (float(s.pollution) - float(cfg.pollution_threshold)) * 0.02
 			)
-	if sim.state.status != "success" and int(sim.state.day) > int(diff.deadline):
-		economic = maxf(economic, 1.5)
+	if Contract.overdue(sim):
+		economic = maxf(economic, float(sim.contract_rules.overdue_distrust_per_day))
 		reason = "主要合同超过期限；完成未达目标后停止此项风险"
 	for a in c.aid:
 		if a.status == "breached":

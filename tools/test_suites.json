@@ -5,6 +5,7 @@
   "suites": [
     {"name": "v17_bugs", "script": "res://tests/v17_bugs.gd", "success": "V17_BUGS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_saves", "script": "res://tests/v17_saves.gd", "success": "V17_SAVES_RESULT checks=\\d+ failures=0"},
+    {"name": "v17_contract_population", "script": "res://tests/v17_contract_population.gd", "success": "V17_CONTRACT_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},
     {"name": "ui_contract", "script": "res://tests/ui_contract.gd", "success": "PASS: UI boots"},
@@ -36,7 +37,6 @@
     {"name": "review_save_nested", "script": "res://../tools/review_save_nested_regressions.gd"},
     {"name": "review_save_nested_type", "script": "res://../tools/review_save_nested_type.gd"},
     {"name": "review_save_guards", "script": "res://../tools/review_save_guards.gd"},
-    {"name": "review_population", "script": "res://../tools/review_population_boundaries.gd"},
     {"name": "review_enterprise", "script": "res://../tools/review_enterprise_capacity.gd"},
     {"name": "review_outpost_jobs", "script": "res://../tools/review_outpost_jobs.gd"},
     {"name": "review_island", "script": "res://../tools/review_island.gd"},

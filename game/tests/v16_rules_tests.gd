@@ -120,7 +120,7 @@ func company_paths() -> void:
 	s._transfer("public", "external", s.state.cash, "test fund exhaustion", false)
 	s._public_expense(100.0, "test necessary unpaid invoices", "external")
 	var stages: Array = []
-	for day in range(1, 110):
+	for day in range(1, 220):
 		s.state.day = day
 		s.state.grace_days = day
 		C.tick(s)
@@ -163,11 +163,12 @@ func company_paths() -> void:
 		"aid delivered as financing not local profit"
 	)
 	rescue._repay()
-	for day in range(3, 65):
+	rescue._transfer("external", "public", 2500.0, "test income", false)
+	for day in range(3, 100):
 		rescue.state.day = day
 		C.tick(rescue)
 	check(rescue.state.company.aid[0].status == "fulfilled", "aid principal and duration complete")
-	check(rescue.state.company.aid[0].paid == 1200, "aid real repayment recorded")
+	check(rescue.state.company.aid[0].paid == 2100, "aid real repayment recorded")
 	check(
 		rescue.state.company.stage in ["normal", "recovery"],
 		"solved risk stops escalation and recovers"

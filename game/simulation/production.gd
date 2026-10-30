@@ -3,6 +3,9 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
+const Market = preload("res://simulation/market.gd")
+const Population = preload("res://simulation/population.gd")
+const SITE_BUILDING_CAP: int = 40
 const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 
@@ -29,7 +32,7 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 	return d
 
 
-static func build(sim: RefCounted, region: int, kind: String) -> String:
+static func build_refusal(sim: RefCounted, region: int, kind: String) -> String:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty():
 		return "请先建立据点"
@@ -37,8 +40,8 @@ static func build(sim: RefCounted, region: int, kind: String) -> String:
 		return "远征队尚在途中，请等待抵达"
 	if not sim.config.buildings.has(kind):
 		return "无此设施"
-	if s.buildings.size() >= 24:
-		return "本地区已达到 24 处设施的土地开发上限"
+	if s.buildings.size() >= SITE_BUILDING_CAP:
+		return "本地区已达到 %d 处设施的土地开发上限" % SITE_BUILDING_CAP
 	var d: Dictionary = build_preview(sim, region, kind)
 	var reg: Dictionary = sim.state.world.regions[region]
 	if kind.begins_with("mine_") and float(reg.deposits.get(d.output, 0)) <= 0:
@@ -55,6 +58,15 @@ static func build(sim: RefCounted, region: int, kind: String) -> String:
 		return "公共资金不足：需要 %.0f" % d.cost
 	if s.stock.materials < float(d.materials) or s.stock.parts < float(d.parts):
 		return "本地仓库不足：需要 %.0f 建材 / %.0f 部件；远方库存需运输" % [d.materials, d.parts]
+	return ""
+
+
+static func build(sim: RefCounted, region: int, kind: String) -> String:
+	var refusal: String = build_refusal(sim, region, kind)
+	if refusal != "":
+		return refusal
+	var s: Dictionary = sim.settlement(region)
+	var d: Dictionary = build_preview(sim, region, kind)
 	sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
@@ -117,6 +129,10 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			continue
 		if b.kind == "service":
 			continue
+		if _depleted(sim, s, b):
+			b.status = Keys.B_DEPLETED
+			sim._short(s, Keys.SH_DEPLETED, b.kind)
+			continue
 		var d: Dictionary = sim.config.buildings[b.kind]
 		var private_reserved: int = (
 			6
@@ -173,6 +189,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 	for b in s.buildings:
 		if b.kind == "service" or b.remaining > 0 or not b.get("enabled", true):
 			continue
+		if _depleted(sim, s, b):
+			continue
 		var d: Dictionary = sim.config.buildings[b.kind]
 		var eff: float = float(b.efficiency)
 		if b.kind.begins_with("mine_") or b.kind in ["processor", "farm", "foodworks"]:
@@ -191,8 +209,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.status = Keys.B_RUNNING if b.active else Keys.B_IDLE
 		sim._public_expense(
 			(
-				float(b.employed) * sim.config.economy.wage
-				+ float(b.specialists) * sim.config.economy.scientist_wage
+				float(b.employed) * Population.worker_wage(sim)
+				+ float(b.specialists) * Population.scientist_wage(sim)
 			),
 			"wages.public",
 			"residents"
@@ -239,10 +257,12 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					)
 				)
 				produce(sim, s, "food", amount, "农业生产")
+				sim.state.contract.today_food = float(sim.state.contract.today_food) + amount
 				if amount <= 0:
 					b.status = Keys.B_TARGET_FULL
 			"processor":
 				var scale: float = 0.0
+				var wanted_any: bool = false
 				# Coproduct recipe runs when either output has genuine demand; no stock deletion.
 				for output in d.outputs:
 					var wanted: float = maxf(0, target(sim, s, output) - float(s.stock[output]))
@@ -253,6 +273,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 							- float(s.get("exportable", {}).get(output, 0))
 						)
 					)
+					wanted_any = wanted_any or wanted > 0.0
 					scale = maxf(
 						scale,
 						(
@@ -263,7 +284,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				scale = minf(eff, scale)
 				for key in d.inputs:
 					scale = minf(scale, float(s.stock[key]) / float(d.inputs[key]))
-				if scale < eff:
+				if scale < eff and wanted_any:
 					sim._short(s, Keys.SH_PROCESSOR_INPUT)
 				for key in d.inputs:
 					consume(sim, s, key, float(d.inputs[key]) * scale)
@@ -277,12 +298,20 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					)
 				if scale <= 0:
 					b.active = false
-					b.status = Keys.B_NO_INPUT
+					b.status = Keys.B_NO_INPUT if wanted_any else Keys.B_TARGET_FULL
 			"lab":
 				pass
 			"foodworks":
 				pass
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)
+
+
+## A mine with nothing left to dig lets its crew go and stops costing money.
+static func _depleted(sim: RefCounted, s: Dictionary, b: Dictionary) -> bool:
+	if not str(b.kind).begins_with("mine_"):
+		return false
+	var output: String = sim.config.buildings[b.kind].output
+	return float(sim.state.world.regions[int(s.region)].deposits[output]) <= 0.0
 
 
 static func water_factor(sim: RefCounted) -> float:
@@ -306,7 +335,7 @@ static func ration_active(sim: RefCounted) -> bool:
 static func free_workers(sim: RefCounted, s: Dictionary) -> int:
 	var committed: int = 0
 	for b in s.buildings:
-		if b.kind == "service" or not b.get("enabled", true):
+		if b.kind == "service" or not b.get("enabled", true) or _depleted(sim, s, b):
 			continue
 		committed += int(sim.config.buildings[b.kind].jobs)
 	if (
@@ -430,3 +459,85 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 	sim._refresh(s)
 	Research.rebalance(sim, false)
 	return ""
+
+
+## Everything a player or bot needs before committing: cost, output, money per day, payback.
+static func build_forecast(sim: RefCounted, region: int, kind: String) -> Dictionary:
+	var spec: Dictionary = build_preview(sim, region, kind)
+	if spec.is_empty():
+		return {}
+	var s: Dictionary = sim.settlement(region)
+	var reg: Dictionary = sim.state.world.regions[region]
+	var fee: float = float(sim.config.economy.port_fee)
+	var outputs: Dictionary = {}
+	var revenue: float = 0.0
+	var kind_name: String = kind
+	var reserve_days: float = -1.0
+	if kind_name.begins_with("mine_"):
+		var good: String = spec.output
+		var rate: float = (
+			float(spec.rate)
+			* float(reg.grade.get(good, 1.0))
+			* (1.2 if sim._has("survey") else 1.0)
+		)
+		outputs[good] = rate
+		revenue = rate * Market.price(sim, good) * (1.0 - fee)
+		var mines: int = 1
+		for b: Dictionary in s.get("buildings", []):
+			if b.kind == kind:
+				mines += 1
+		reserve_days = float(reg.deposits.get(good, 0.0)) / maxf(0.001, rate * mines)
+	elif kind_name == "farm":
+		var climate: float = clampf(1.0 - absf(float(reg.temperature) - 20.0) / 42.0, 0.25, 1.0)
+		var rate: float = (
+			float(spec.rate)
+			* float(reg.fertility)
+			* climate
+			* (1.2 if sim._has("irrigation") else 1.0)
+		)
+		outputs.food = rate
+		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+	elif kind_name == "processor":
+		var boost: float = 1.3 if sim._has("processing") else 1.0
+		for good: String in spec.outputs:
+			var made: float = float(spec.outputs[good]) * boost
+			outputs[good] = made
+			revenue += made * Market.price(sim, good) * (1.0 - fee)
+		for good: String in spec.inputs:
+			revenue -= float(spec.inputs[good]) * Market.price(sim, good) * (1.0 - fee)
+	elif kind_name == "foodworks":
+		revenue = (
+			float(spec.daily_payment) * (1.0 - fee)
+			- float(spec.food_input) * float(sim.config.prices.food) * (1.0 + fee)
+		)
+	var wages: float = (
+		float(spec.jobs) * Population.worker_wage(sim)
+		+ float(spec.get("specialists", 0)) * Population.scientist_wage(sim)
+	)
+	var net: float = revenue - wages - float(spec.maintenance)
+	var outlay: float = (
+		float(spec.cost)
+		+ float(spec.materials) * float(sim.config.prices.materials)
+		+ float(spec.parts) * float(sim.config.prices.parts)
+	)
+	return {
+		"kind": kind,
+		"name": spec.name,
+		"cost": float(spec.cost),
+		"materials": float(spec.materials),
+		"parts": float(spec.parts),
+		"days": int(spec.days),
+		"jobs": int(spec.jobs),
+		"specialists": int(spec.get("specialists", 0)),
+		"power": float(spec.power),
+		"water": float(spec.water),
+		"maintenance": float(spec.maintenance),
+		"outputs": outputs,
+		"revenue_per_day": revenue,
+		"wages_per_day": wages,
+		"net_per_day": net,
+		"payback_days": outlay / net if net > 0.0 else -1.0,
+		"reserve_days": reserve_days,
+		"free_workers": free_workers(sim, s) if not s.is_empty() else 0,
+		"disabled_reason": build_refusal(sim, region, kind),
+	}

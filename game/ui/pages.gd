@@ -134,6 +134,8 @@ static func populate(g, b, page):
 			transport(g, b)
 		"enterprise":
 			enterprise(g, b)
+		"population":
+			population(g, b)
 		"save":
 			settings(g, b)
 		"guide":
@@ -255,33 +257,28 @@ static func world_info(g, b):
 
 static func contract(g, b):
 	var state: Dictionary = g.sim.state
-	var c: Dictionary = g.sim.config.contract
+	var view: Dictionary = g.sim.contract_view()
 	var row = D.row(b)
 	D.portrait(row, "liaison", 210, 320)
 	var v = D.col(row)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var title = "殖民外包协议  /  第一期"
+	var title: String = "殖民外包协议"
 	if state.status == "success":
 		title = "契约履行完毕  /  总督资格已授予"
 	if state.status == "failed":
 		title = "合同终止  /  经营失败"
 	D.label(v, title, 24, D.GOLD)
-	var difficulty: Dictionary = g.sim.progression.difficulty[state.get("difficulty", "normal")]
-	D.label(
-		v,
-		(
-			"在登陆第 %d 日前建立两据点分工、产业与民营服务，满足下列条件并维持经营连盈。成功后按正经营结余 %.0f%% 向公司分成，可继续或代管下一颗星球。"
-			% [difficulty.deadline, c.company_tax_rate * 100]
-		),
-		18
-	)
+	D.label(v, "分三个阶段建立一个能自立的殖民地。完成阶段可获得发展资金和新据点许可；错过期限不会立刻判负，但会进入公司审查。", 18)
 	var op: Dictionary = g.sim.config.openings[state.advantage]
+	var capital: float = float(
+		g.sim.progression.difficulty[state.get("difficulty", "normal")].capital
+	)
 	D.label(
 		v,
 		(
-			"开局支持：¥ %.0f；食品 %.0f t、建材 %.0f t、部件 %.0f t。\n人口：工人 %d、研究员 %d、未成年 %d。"
+			"开局支持：¥ %.0f；食品 %.0f t、建材 %.0f t、部件 %.0f t。工人 %d、研究员 %d、未成年 %d。"
 			% [
-				op.cash * difficulty.capital,
+				float(op.cash) * capital,
 				op.food,
 				op.materials,
 				op.parts,
@@ -293,59 +290,59 @@ static func contract(g, b):
 		17,
 		D.TEAL
 	)
-	D.label(
-		v,
-		"本局公共资金 ¥ %s。初期公司物资随登陆部署，各地实物库存独立核算。居民移民资金与企业外部投资另列账户。" % g.money(state.cash),
-		17,
-		D.MUTED
-	)
-	D.label(
-		v,
-		(
-			"连续经营结余非负：%d / %d 天\n当地进度：第 %d / %d 日\n持续问题进入公司审查：整改窗口 %d 日，最后介入 %d 日。可通过自救或有条件援助恢复。"
-			% [
-				state.get("streak", 0),
-				c.streak_days,
-				state.day,
-				difficulty.deadline,
-				difficulty.review_days,
-				difficulty.intervention_days
-			]
-		),
-		17,
-		D.TEAL
-	)
 	if state.status == "planning":
 		D.button(v, "接受协议，开始勘察  →", g.close_modal)
 	elif state.status == "success":
 		D.button(v, "继续担任总督 / 沙盒经营", g.close_modal)
 		D.button(v, "查看 B 代管与下一颗星球", func(): g.open_page("career"))
 	elif state.status == "failed":
-		D.label(v, str(state.get("failure_reason", "经营条件未达标。详情见账本与日志。")), 18, D.RED)
+		D.label(v, str(state.get("failure_reason", "经营条件未达标。")), 18, D.RED)
 		D.button(v, "失败报告 / 恢复登陆检查点", func(): g.open_page("career"))
 		D.button(v, "查看公司审查经过", func(): g.open_page("company"))
 	else:
 		D.button(v, "返回经营", g.close_modal)
-	var checks: Dictionary = g.sim.contract_progress()
-	var names = {
-		"connected": "两据点有效连接",
-		"food": "各地至少七天食品",
-		"housing": "全部居民拥有住房",
-		"employment": "各地就业率达45%",
-		"industry": "农业或加工运行",
-		"enterprise": "民营企业营业",
-		"solvent": "没有到期欠款"
-	}
-	var grid = D.grid(b, 2)
-	grid.add_theme_constant_override("h_separation", 35)
-	for key in names:
-		D.label(
-			grid,
-			"%s   %s" % ["✓" if checks[key] else "○", names[key]],
+	for stage: Dictionary in view.stages:
+		_contract_stage(g, b, stage, int(view.current))
+	if state.status == "success":
+		D.label(b, "行星里程碑（可选）：已达成 %d 项" % view.milestones.size(), 18, D.TEAL)
+
+
+static func _contract_stage(g, b, stage: Dictionary, current: int):
+	var card = D.card(b)
+	var done: bool = int(stage.completed_day) >= 0
+	var head: String = str(Labels.STAGE_NAMES.get(stage.id, stage.id))
+	if done:
+		head += "  ·  第 %d 日完成" % int(stage.completed_day)
+	elif int(stage.stage) == current:
+		head += "  ·  期限第 %d 日" % int(stage.deadline)
+	D.label(card, head, 21, D.GOLD if int(stage.stage) == current else D.TEAL)
+	var rewards: PackedStringArray = []
+	if float(stage.reward_cash) > 0.0:
+		rewards.append("发展资金 ¥ %.0f" % float(stage.reward_cash))
+	if str(stage.licence) != "":
+		rewards.append(str(Labels.LICENCE_NAMES.get(stage.licence, stage.licence)))
+	if int(stage.stage) == 3:
+		rewards.append("总督资格")
+	D.label(card, "奖励：" + "、".join(rewards), 16, D.MUTED)
+	if done or int(stage.stage) > current:
+		return
+	for goal_row: Dictionary in stage.goals:
+		var text: Dictionary = Labels.goal(goal_row)
+		var line = D.row(card)
+		var caption = D.label(
+			line,
+			"%s  %s" % ["✓" if goal_row.ok else "○", text.text],
 			17,
-			D.TEAL if checks[key] else D.MUTED,
-			false
+			D.TEAL if goal_row.ok else D.INK
 		)
+		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not goal_row.ok and str(text.page) != "":
+			var page: String = text.page
+			var fix = D.button(line, "去处理", func(): g.open_page(page), str(text.hint))
+			D.font_size(fix, 14)
+			fix.custom_minimum_size.y = 30
+		elif not goal_row.ok:
+			D.label(line, str(text.hint), 15, D.MUTED, false)
 
 
 static func build(g, b):
@@ -453,6 +450,22 @@ static func economy(g, b):
 		for shortage in s.get("shortages", []):
 			lines.append(Labels.shortage(g.sim.config, shortage))
 		D.label(c, "\n".join(lines), 16, D.RED)
+	D.label(b, "出口价格（出口越多，价格越低；每日缓慢恢复）", 20, D.TEAL)
+	for row_data: Dictionary in g.sim.market_view():
+		D.label(
+			b,
+			(
+				"%s  ¥ %.1f / t（基准 %.1f，%.0f%%）"
+				% [
+					RES.get(row_data.good, row_data.good),
+					row_data.price,
+					row_data.base,
+					row_data.factor * 100.0
+				]
+			),
+			16,
+			D.INK if float(row_data.factor) > 0.8 else D.GOLD
+		)
 	D.label(b, "最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)
 	var ledger: Array = state.ledger
 	for i in range(ledger.size() - 1, maxi(-1, ledger.size() - (31 if g.detailed_info else 7)), -1):
@@ -487,12 +500,30 @@ static func transport(g, b):
 	for mode in [false, true]:
 		var route: Dictionary = WG.new().route(g.sim.geo, a, z, mode)
 		var c = D.card(b)
-		D.label(c, "跨山工程线路" if mode else "绕山经济线路", 21)
-		D.label(
-			c,
-			"距离 %.0f km  ·  单程 %d 天  ·  建设 ¥ %.0f" % [route.distance, route.days, route.cost],
-			18,
-			D.GOLD
+		D.label(c, "工程公路（跨山）" if mode else "河谷公路（绕山）", 21)
+		var road_rules: Dictionary = g.sim.config.roads["engineered" if mode else "valley"]
+		(
+			D
+			. label(
+				c,
+				(
+					"距离 %.0f km  ·  单程 %d 天  ·  建设 ¥ %.0f\n运力 %d t/日  ·  养护 ¥ %.1f/日  ·  封路风险 %s"
+					% [
+						route.distance,
+						route.days,
+						route.cost,
+						int(road_rules.capacity),
+						float(road_rules.upkeep),
+						(
+							"约每 %.0f 日一次" % (1.0 / float(road_rules.closure_chance_per_day))
+							if float(road_rules.closure_chance_per_day) > 0.0
+							else "无"
+						),
+					]
+				),
+				18,
+				D.GOLD
+			)
 		)
 		var mt = mode
 		var bt = D.button(
@@ -711,3 +742,64 @@ static func guide(g, b):
 	]
 	for text in steps:
 		D.label(D.card(b), text, 18)
+
+
+static func population(g, b):
+	var s: Dictionary = g.settlement()
+	if s.is_empty():
+		D.label(b, "请选择已建立的据点。", 20)
+		return
+	var v: Dictionary = g.sim.population_view(int(s.region))
+	D.label(b, s.name + " / 人口与移民", 24, D.TEAL)
+	D.label(b, "吸引力 %.2f  ·  约每月 %.1f 人迁入" % [v.attractiveness, v.arrivals_per_month], 20, D.GOLD)
+	var parts = D.card(b)
+	D.label(parts, "吸引力构成（基础 1.00）", 17, D.TEAL)
+	for key: String in v.parts:
+		var amount: float = float(v.parts[key])
+		D.label(
+			parts,
+			"%s  %+.2f" % [Labels.ATTRACTIVENESS_PARTS.get(key, key), amount],
+			16,
+			D.INK if amount >= 0.0 else D.RED
+		)
+	D.label(
+		b,
+		(
+			"人口 %d  ·  住房 %d  ·  空床位 %d  ·  招募在途 %d"
+			% [int(s.population), int(s.housing), int(v.free_beds), int(v.in_transit)]
+		),
+		18
+	)
+	D.label(b, "工资政策（基准工资的倍数）：提高工资增加吸引力、减少离开，但所有工资支出同比增加。", 17, D.MUTED)
+	var wage_row = D.row(b)
+	var wage = D.spin(
+		wage_row,
+		"PolicyWage",
+		g.sim.pop_rules.wage.min,
+		g.sim.pop_rules.wage.max,
+		0.05,
+		float(v.wage),
+		"×"
+	)
+	D.button(wage_row, "应用工资", func(): g.act("policy", {"wage": wage.value}), "", "ApplyWage")
+	D.label(b, "招募：立即付费，%d 日后抵达，需要预留床位；90 日内每多一次招募，单价上涨 10%%。" % int(v.travel_days), 17, D.MUTED)
+	var recruit_row = D.row(b)
+	var count = D.spin(
+		recruit_row, "RecruitCount", 1, g.sim.pop_rules.recruitment.max_per_campaign, 1, 10, "人"
+	)
+	var region: int = int(s.region)
+	D.button(
+		recruit_row,
+		"招募工人 · ¥ %.0f/人" % float(v.worker_price),
+		func(): g.act("recruit", {"region": region, "kind": "worker", "count": int(count.value)}),
+		"",
+		"RecruitWorkers"
+	)
+	D.button(
+		recruit_row,
+		"招募研究员 · ¥ %.0f/人" % float(v.scientist_price),
+		func():
+			g.act("recruit", {"region": region, "kind": "scientist", "count": int(count.value)}),
+		"",
+		"RecruitScientists"
+	)

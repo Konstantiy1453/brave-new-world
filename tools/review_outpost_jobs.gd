@@ -7,6 +7,7 @@ func _initialize() -> void:
 	Watchdog.arm(self)
 	var s = Sim.new()
 	s.new_game(20261029, "capital", 1)
+	s.state.contract.licences.append("expedition")
 	s.act("settle", {"region": 0})
 	for kind in ["mine_ore", "mine_copper", "mine_crystal"]:
 		s.act("build", {"region": 0, "kind": kind})

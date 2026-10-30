@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "units": {"time": "game day", "money": "account units", "people": "persons", "share": "fraction 0-1"},
+  "housing": {"capital": 60, "outpost": 24},
+  "immigration": {
+    "base_per_month": 6.0,
+    "savings_per_person": 60.0,
+    "scientist_share_per_lab": 0.12,
+    "scientist_share_max": 0.3
+  },
+  "attractiveness": {
+    "base": 1.0,
+    "min": 0.0,
+    "max": 2.0,
+    "beds_over": -0.6,
+    "beds_none": -0.4,
+    "beds_roomy": 0.2,
+    "beds_roomy_share": 0.1,
+    "food_critical_days": 3.0,
+    "food_critical": -0.5,
+    "food_low_days": 7.0,
+    "food_low": -0.2,
+    "food_good_days": 14.0,
+    "food_good": 0.1,
+    "jobs_open_share": 0.05,
+    "jobs_open": 0.2,
+    "jobless_share": 0.3,
+    "jobless": -0.3,
+    "wage_per_multiplier": 1.0,
+    "service_enterprise": 0.1,
+    "pollution_threshold": 35.0,
+    "pollution_per_point": -0.01,
+    "shortage": -0.2,
+    "company_review": -0.2
+  },
+  "wage": {"min": 0.8, "max": 1.6, "default": 1.0},
+  "recruitment": {
+    "worker_price": 120.0,
+    "scientist_price": 200.0,
+    "travel_days": 10,
+    "price_step": 0.1,
+    "window_days": 90,
+    "max_per_campaign": 20
+  },
+  "departure": {"threshold": 0.5, "share": 0.01},
+  "births": {"per_adult_per_year": 0.01}
+}

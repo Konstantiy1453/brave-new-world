@@ -93,3 +93,24 @@ Cold load, which regenerates the world, is measured in Phase 5 against the new g
 | `world_v16_legacy_load.gd` | Compares `geo.grid` and regions against the old save | World split |
 | `v16_career_review.gd` | Archive corruption removes the hash; ledger fixture uses `key` | Archives are sibling files |
 | `v16_events_tests.gd`, `v16_economy_tests.gd`, `v16_rules_tests.gd`, `v16_ui_tests.gd` | English keys, `sim.geo` | Display strings left the logic |
+
+## Phase 3
+
+**Balance harness.** `--full`: floor, three award bands, passive and sloppy failure, export mix, audits and determinism pass. See `BALANCE.md`.
+
+**Misses reported against §5.2 at this phase:**
+
+- Population and money at day 720, and openings spread. Colonies run out of deposits around day 470–530: two settlements and the six fixed regions cannot carry a 720-day economy. Phase 5 brings many sites and deep deposits; re-measure there.
+- Research rows belong to Phase 4. Event rows belong to Phase 6.
+
+**Automated test.** All headless suites green, including the new `v17_contract_population`.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `tools/review_population_boundaries.gd` | Removed; births and arrivals covered by `v17_contract_population` | It tested the fixed 360-day birth clock |
+| `sim_tests.gd` | Full-contract and tax checks moved to `v17_contract_population` and the harness; licence granted up front | One-step contract is gone |
+| `v16_rules_tests.gd` | Longer company windows; ¥2,100 aid repayment | Appendix C aid terms and §5.2 failure timing |
+| `v16_ui_tests.gd` | Long-frame award forced through a one-goal stage | The old contract could complete in one tick |
+| `v16_economy_tests.gd`, `v16_f12_transport.gd`, `v16_flow.gd`, `v17_bugs.gd`, `tools/review_outpost_jobs.gd`, `tools/review_sim.gd` | Grant the expedition licence | Second settlement is now licensed |

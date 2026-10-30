@@ -25,6 +25,7 @@ const INCOME_GROWTH: float = 2.5
 const EXPORT_CONCENTRATION: float = 0.60
 const PAUSE_INTERVAL_DAYS: float = 20.0
 const DISTINCT_EVENTS: int = 15
+const LABOUR_LEVER: float = 0.20
 
 
 static func median(values: Array) -> float:
@@ -338,6 +339,17 @@ static func _audit_row(rows: Array, runs: Array, extras: Dictionary) -> void:
 		"%d errors in %d runs" % [total, runs.size()],
 		_verdict(total == 0, not runs.is_empty())
 	)
+	if extras.has("labour_lever"):
+		var lever: Dictionary = extras.labour_lever
+		var base: float = float(lever.base)
+		var gain: float = float(lever.raised) / base - 1.0 if base > 0.0 else 0.0
+		_row(
+			rows,
+			"Labour lever",
+			"wage 1.0x to 1.3x changes 180-day immigration by >= 20%",
+			"%.0f to %.0f arrivals (%+.0f%%)" % [base, float(lever.raised), gain * 100.0],
+			_verdict(absf(gain) >= LABOUR_LEVER, base > 0.0)
+		)
 	if extras.has("determinism"):
 		var replay: Dictionary = extras.determinism
 		_row(

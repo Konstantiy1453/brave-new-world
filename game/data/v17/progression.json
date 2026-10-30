@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -13,31 +13,31 @@
     "easy": {
       "capital": 1.25,
       "risk": 0.8,
-      "review_days": 40,
-      "intervention_days": 25,
+      "review_days": 60,
+      "intervention_days": 45,
       "deadline": 270,
       "warning": 16
     },
     "normal": {
       "capital": 1.0,
       "risk": 1.0,
-      "review_days": 30,
-      "intervention_days": 20,
+      "review_days": 50,
+      "intervention_days": 40,
       "deadline": 240,
       "warning": 20
     },
     "hard": {
       "capital": 0.85,
       "risk": 1.2,
-      "review_days": 24,
-      "intervention_days": 16,
+      "review_days": 40,
+      "intervention_days": 30,
       "deadline": 210,
       "warning": 20
     }
   },
   "research": {
     "reference_staff": 10,
-    "reference_rate": 1.0,
+    "reference_rate": 2.0,
     "half_staff_ratio": 0.6,
     "seats_per_lab": 10,
     "projects_per_lab": 2,
@@ -61,9 +61,9 @@
         "materials": 0.0,
         "parts": 0.0,
         "arrival_days": 2,
-        "repayment": 1200.0,
-        "duration": 60,
-        "surcharge": 0.1,
+        "repayment": 2100.0,
+        "duration": 90,
+        "surcharge": 0.08,
         "cash_floor": 300.0
       },
       "supplies": {
@@ -73,12 +73,16 @@
         "materials": 40.0,
         "parts": 8.0,
         "arrival_days": 2,
-        "repayment": 700.0,
-        "duration": 60,
+        "repayment": 1400.0,
+        "duration": 90,
         "surcharge": 0.08,
         "cash_floor": 300.0
       }
-    }
+    },
+    "social_rate_per_day": 0.045,
+    "social_rate_cap": 1.1,
+    "social_share_slope": 1.5,
+    "social_share_floor": 0.2
   },
   "production": {
     "target_days": 30,

@@ -125,6 +125,7 @@ func run():
 			for difficulty in ["normal"] if fixture_mode else ["normal", "easy", "hard"]:
 				var s = Sim.new()
 				s.new_game(seed_value, advantage, 1, difficulty)
+				s.state.contract.licences.append("expedition")
 				C.capture_checkpoint(s)
 				recording = fixture_mode
 				opening(s)

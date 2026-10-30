@@ -18,8 +18,9 @@ static func ensure(sim) -> void:
 		r.investigations = {}
 
 
-static func rate(staff: float) -> float:
-	return 0.0 if staff <= 0 else pow(staff / 10.0, log(0.6) / log(0.5))
+## R(n) = R10 * (n / 10)^a with a = ln 0.6 / ln 0.5, so R(5) / R(10) = 0.6 and R(0) = 0.
+static func rate(staff: float, reference: float = 1.0) -> float:
+	return 0.0 if staff <= 0 else reference * pow(staff / 10.0, log(0.6) / log(0.5))
 
 
 static func total(sim) -> int:
@@ -153,7 +154,9 @@ static func rebalance(sim, advance: bool) -> void:
 			p.reason = "科研经费不足；保留研究量"
 			continue
 		p.effective = n
-		p.rate = rate(n) * (1.35 if sim.state.advantage == "science" else 1.0)
+		p.rate = (
+			rate(n, float(cfg.reference_rate)) * (1.35 if sim.state.advantage == "science" else 1.0)
+		)
 		p.reason = "研究中（实验所技术工优先于公共生产）" if n == int(p.staff) else "人员不足，按登记顺序缩编"
 		usable -= n
 		research_used += n
@@ -177,7 +180,13 @@ static func rebalance(sim, advance: bool) -> void:
 			s.jobs += n
 			employ -= researchers_here
 			sim._public_expense(
-				n * float(sim.config.economy.scientist_wage), "research.wages", "residents"
+				(
+					n
+					* float(sim.config.economy.scientist_wage)
+					* float(sim.state.policy.get("wage", 1.0))
+				),
+				"research.wages",
+				"residents"
 			)
 	r.current = ""
 	r.progress = 0.0

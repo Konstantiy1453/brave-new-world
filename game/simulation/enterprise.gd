@@ -2,20 +2,22 @@ extends RefCounted
 ## The private enterprise: licensing, daily operation and recovery.
 
 const Keys = preload("res://simulation/keys.gd")
+const Population = preload("res://simulation/population.gd")
 
 
 static func found(sim: RefCounted, region: int) -> String:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty() or s.arrival > 0:
 		return "需要已经运转的据点"
-	if s.buildings.size() >= 24:
-		return "本地区已经达到 24 处设施的土地开发上限"
+	if s.buildings.size() >= 40:
+		return "本地区已经达到 40 处设施的土地开发上限"
 	if not sim.state.enterprise.is_empty():
 		return "本 Demo 已有一家民营企业"
 	if not sim.state.policy.private_allowed:
 		return "当前政策未允许商业服务业"
-	if sim.state.day < 15 or sim.state.exports_total < 100:
-		return "投资人要求运营至少 15 天且累计出口达到 100"
+	var forecast: Dictionary = preview(sim, region)
+	if float(forecast.estimated_profit) < 0.0:
+		return "当地需求不足：预计每日亏损 %.1f；需要更多居民" % -float(forecast.estimated_profit)
 	if s.stock.materials < 8 or s.stock.parts < 2:
 		return "企业要向本地仓库购买 8 建材和 2 部件"
 	sim._transfer("external", "enterprise", 900.0, "enterprise.capital", false)
@@ -37,7 +39,8 @@ static func found(sim: RefCounted, region: int) -> String:
 		"tax_total": 0.0,
 		"loss_days": 0,
 		"reason": Keys.ER_FITTING,
-		"rent": 2.0
+		"rent": 2.0,
+		"profit_days": 0
 	}
 	var b: Dictionary = sim._building("service", 4)
 	b.owner = "private"
@@ -72,7 +75,7 @@ static func run(sim: RefCounted) -> void:
 		e.reason = Keys.ER_PAUSED
 		return
 	var employees: int = mini(6, maxi(0, int(s.workers) - int(s.employed_workers)))
-	var wages: float = employees * float(sim.config.economy.wage)
+	var wages: float = employees * Population.worker_wage(sim)
 	var fixed: float = 3.0 + float(e.rent)
 	if float(sim.state.enterprise_cash) < wages + fixed or employees < 2:
 		e.loss_days += 1
@@ -105,6 +108,7 @@ static func run(sim: RefCounted) -> void:
 	e.wages_total += wages
 	e.tax_total += tax
 	e.loss_days = int(e.loss_days) + 1 if profit < 0 else 0
+	e.profit_days = int(e.get("profit_days", 0)) + 1 if profit > 0 else 0
 	e.status = Keys.E_OPEN
 	e.reason = Keys.ER_RUNNING
 	if e.loss_days >= 15:
@@ -117,7 +121,7 @@ static func preview(sim: RefCounted, region: int) -> Dictionary:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty():
 		return {}
-	var wages: float = 6 * float(sim.config.economy.wage)
+	var wages: float = 6 * Population.worker_wage(sim)
 	var sales: float = minf(float(s.population) * 0.35, 25.2)
 	return {
 		"region": region,
