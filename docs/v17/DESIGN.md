@@ -89,3 +89,33 @@ Scientists go first to investigations, then to projects in the order staffed, th
 
 Upgrades: mine L2 (deep_mining: +60%, +4 jobs) and L3 (automation: ×2.2, +6 jobs); habitat L2 (medicine: 70 beds); lab L2; processor L2 (electronics: ×1.5, +3 jobs); farm L2 (hydroponics: ×1.4, +3 power); port L2 (logistics: ×1.5). Automation also takes 30% of jobs from mines and processing plants. A building keeps working at its old level while it is upgraded. Paving a road (paved_roads): half the road's cost and 30 t of materials for +50% capacity, one day less, 70% less closure risk.
 
+## World generation, CC-GEO-2.0 (data/v17/geography.json)
+
+Continents are 2-6 soft blobs with lobes, warped by noise, plus island chains. Plates: one per continent, offset from its core, plus 4-8 oceanic. Where two plates converge a mountain belt rises along their warped Voronoi edge; over open ocean it makes island arcs. Sea level is the raw-height quantile that gives the seeded land share (28-42% by area), found once on the 144 × 72 grid. Temperature falls with latitude and height; rainfall has latitude bands and loses what mountains here and upwind have taken. Rivers are the existing D8 drainage.
+
+Each land cell gets fertility, water, ruggedness, coast, cold, arid and flood risks, and mineral potentials (ore and copper on mountain flanks and basins, crystal on high ridges, plus seeded fields). Sites: quotas per archetype taken rarest first, then Poisson-disk filling. A world with too few or too many continents or under three viable start pairs is rebuilt from the next sub-seed, up to 10 times; the last resort carves a fertile basin and records it.
+
+A viable start has water ≥ 0.35 and ≥ 8,000 t of ore and copper or ≥ 3,000 t of crystal, on a landmass of at least 64 cells, with a site of fertility ≥ 0.6 within 10 road days.
+
+| Size | Sites | Separation |
+|---|---|---|
+| Small | 14-20 | 24° |
+| Medium | 20-30 | 19° |
+| Large | 28-40 | 15° |
+
+## Plots and knowledge
+
+Slots lie on a 6-unit grid around the town centre, skipping sea, river corridors and the main street. Deposit plots take outer slots (3,000 t of ore, 2,000 t of copper or 1,200 t of crystal per plot, at most 6 per good), then farm plots on the lowest ground, then general plots from the centre out. Some deposits add a deep plot (×1.4 tonnes, ×1.25 grade, needs deep_mining) and a hidden one (found by a prospecting survey). A mine digs its own plot's reserves at its own grade; a farm uses its plot's fertility.
+
+Known figures are shown as ranges around the truth: ±40% from orbit, ±12% after a ground survey (¥150, 4 days) or settling, exact with the survey technology. With prospecting a survey costs half and reveals hidden deposits within 30°.
+
+## Roads
+
+| Variant | Speed | Base cost | Per km | Capacity | Upkeep | Closure |
+|---|---|---|---|---|---|---|
+| Valley | 300 km/day, slowed by height and slope | ¥390 | ¥1.05 | 28 t/day | ¥1.5 | None |
+| Engineered | 260 km/day, little slowed | ¥600 | ¥1.63 | 42 t/day | ¥5 | About every 120 days, 3-8 days |
+| Sea (shipping, ports at both ends) | 340 km/day | ¥700 | ¥0.35 | 36 t/day | ¥4, fees ×1.5 | None |
+
+One road per pair of settlements. Each road dispatches surplus to deficit on its own, construction stock first; towns pass food and construction stock on to portless towns beyond them, up to 5 hops. Workers without a job move to vacancies along open roads, at most 3 per road per day.
+

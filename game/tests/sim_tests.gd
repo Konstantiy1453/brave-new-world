@@ -39,6 +39,14 @@ func equivalent(a: Variant, b: Variant) -> bool:
 	return JSON.stringify(a, "", true, true) == JSON.stringify(b, "", true, true)
 
 
+## Sites have no fixed roles now: the first one alone on its landmass stands for the island.
+func island_site(sim) -> int:
+	for reg in sim.state.world.regions:
+		if reg.neighbors.is_empty():
+			return int(reg.id)
+	return -1
+
+
 func make(advantage: String = "capital"):
 	var s = Sim.new()
 	s.new_game(20261029, advantage, 1)
@@ -84,7 +92,10 @@ func run_tests() -> void:
 	)
 	check(close(saved_cash, a.state.cash), "rejected construction takes no cash")
 	s.stock = saved_stock
-	check(a.act("settle", {"region": 4}) != "", "cannot establish disconnected ocean outpost")
+	check(
+		a.act("settle", {"region": island_site(a)}) != "",
+		"cannot establish disconnected ocean outpost"
+	)
 	check(a.act("settle", {"region": 1}) == "", "second land outpost possible")
 	check(a.act("connect", {"a": 0, "b": 1, "mountain": false}) == "", "build actual land route")
 	for wait_day in range(10):
@@ -286,7 +297,10 @@ func _scenario(advantage: String) -> void:
 func _boundary_tests() -> void:
 	var s = make()
 	var planned: String = JSON.stringify(s.state, "", true, true)
-	check(s.act("settle", {"region": 4}) != "", "isolated island cannot trap initial contract")
+	check(
+		s.act("settle", {"region": island_site(s)}) != "",
+		"isolated island cannot trap initial contract"
+	)
 	check(JSON.stringify(s.state, "", true, true) == planned, "rejected island landing atomic")
 	s.act("settle", {"region": 0})
 	s.act("build", {"region": 0, "kind": "mine_ore"})
@@ -327,14 +341,18 @@ func _boundary_tests() -> void:
 	var finite = make()
 	finite.act("settle", {"region": 0})
 	finite.act("build", {"region": 0, "kind": "mine_crystal"})
-	finite.state.world.regions[0].deposits.crystal = 0.25
+	var seam: Dictionary = finite.state.world.regions[0].plots[
+		int(finite.settlement(0).buildings.back().plot)
+	]
+	finite.state.world.regions[0].deposits.crystal -= float(seam.reserves) - 0.25
+	seam.reserves = 0.25
 	for i in range(8):
 		finite.tick()
 	check(
 		close(finite.state.resource_sources.crystal, 0.25),
 		"finite mineral exhaustion never overproduces"
 	)
-	check(close(finite.state.world.regions[0].deposits.crystal, 0.0), "finite deposit reaches zero")
+	check(close(float(seam.reserves), 0.0), "finite deposit reaches zero")
 	var process = make()
 	process.act("settle", {"region": 0})
 	process.act("build", {"region": 0, "kind": "processor"})

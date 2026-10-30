@@ -10,6 +10,7 @@ const FILES: Dictionary = {
 	"population": "res://data/v17/population.json",
 	"contract": "res://data/v17/contract.json",
 	"market": "res://data/v17/market.json",
+	"geography": "res://data/v17/geography.json",
 }
 const REQUIRED: Dictionary = {
 	"economy":
@@ -37,7 +38,8 @@ const REQUIRED: Dictionary = {
 		"wage",
 		"recruitment",
 		"departure",
-		"births"
+		"births",
+		"migration"
 	],
 	"contract":
 	[
@@ -51,6 +53,20 @@ const REQUIRED: Dictionary = {
 		"milestones"
 	],
 	"market": ["version", "units", "decay_per_day", "depth", "floor", "scale"],
+	"geography":
+	[
+		"version",
+		"units",
+		"land_fraction",
+		"continents",
+		"attempts",
+		"site_count",
+		"archetypes",
+		"validator",
+		"plots",
+		"survey",
+		"names"
+	],
 }
 
 static var _loaded: Dictionary = {}

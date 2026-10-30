@@ -3,6 +3,7 @@ extends RefCounted
 
 const STATUS_PASS: String = "PASS"
 const STATUS_MISS: String = "MISS"
+const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
 const AWARD_BANDS: Dictionary = {
 	"easy": [90, 150],
@@ -350,6 +351,8 @@ static func _audit_row(rows: Array, runs: Array, extras: Dictionary) -> void:
 			"%.0f to %.0f arrivals (%+.0f%%)" % [base, float(lever.raised), gain * 100.0],
 			_verdict(absf(gain) >= LABOUR_LEVER, base > 0.0)
 		)
+	if extras.has("geography") and not extras.geography.is_empty():
+		_geography_rows(rows, extras.geography)
 	if extras.has("determinism"):
 		var replay: Dictionary = extras.determinism
 		_row(
@@ -359,6 +362,50 @@ static func _audit_row(rows: Array, runs: Array, extras: Dictionary) -> void:
 			"%d/%d replays identical" % [int(replay.identical), int(replay.cases)],
 			_verdict(int(replay.identical) == int(replay.cases), int(replay.cases) > 0)
 		)
+
+
+static func _geography_rows(rows: Array, geo: Dictionary) -> void:
+	var parts: PackedStringArray = []
+	var sized: bool = true
+	for key: String in ["0", "1", "2"]:
+		var row: Dictionary = geo.sites.get(key, {"min": 0, "max": 0})
+		var band: Array = SITE_BANDS[int(key)]
+		parts.append("%d-%d" % [int(row.min), int(row.max)])
+		sized = sized and int(row.min) >= int(band[0]) and int(row.max) <= int(band[1])
+	var common: int = 0
+	var seeds: int = int(geo.seeds)
+	for key: String in geo.best:
+		if float(geo.best[key]) / seeds >= 0.1:
+			common += 1
+	var land: Array = geo.land
+	var continents: Array = geo.continents.keys()
+	continents.sort()
+	var land_ok: bool = float(land[0]) >= 0.25 and float(land[1]) <= 0.45
+	_row(
+		rows,
+		"Geography",
+		"sites 14-20 / 20-30 / 28-40; 3+ start pairs; 3+ start archetypes; land 25-45%; continents 2-6",
+		(
+			"sites %s; pairs min %d; %d archetypes; land %.0f-%.0f%%; continents %s"
+			% [
+				" / ".join(parts),
+				int(geo.pairs_min),
+				common,
+				float(land[0]) * 100.0,
+				float(land[1]) * 100.0,
+				",".join(PackedStringArray(continents)),
+			]
+		),
+		_verdict(sized and int(geo.pairs_min) >= 3 and common >= 3 and land_ok)
+	)
+	var trade: float = float(geo.road_trade)
+	_row(
+		rows,
+		"Road trade-off",
+		"cheaper road is the slower one for 30-70% of pairs",
+		"%.0f%% of %d pairs" % [trade, int(geo.road_pairs)],
+		_verdict(trade >= 30.0 and trade <= 70.0)
+	)
 
 
 static func _sum_field(runs: Array, key: String) -> int:

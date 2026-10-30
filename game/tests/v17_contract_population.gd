@@ -53,6 +53,7 @@ func run() -> void:
 	_aid_terms()
 	_needs_first()
 	_depleted_mines()
+	_jobless_towns_draw_nobody()
 	_forecast()
 	print("V17_CONTRACT_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
@@ -187,6 +188,9 @@ func _immigration() -> void:
 	var open: RefCounted = make()
 	var home: Dictionary = open.settlement(0)
 	home.buildings.append(open._building("habitat", 0))
+	# People come for work: without jobs on offer a town draws nobody.
+	for _i: int in range(4):
+		home.buildings.append(open._building("mine_ore", 0))
 	open._refresh(home)
 	var savings: float = float(open.state.resident_cash)
 	for _i: int in range(60):
@@ -344,16 +348,19 @@ func _roads() -> void:
 	check(sim.act("settle", {"region": 1}) == "", "outpost for the road test")
 	check(sim.act("connect", {"a": 0, "b": 1, "mountain": true}) == "", "engineered road built")
 	check(
-		int(sim.state.route.capacity) == 42 and is_equal_approx(float(sim.state.route.upkeep), 5.0),
+		(
+			int(sim.state.roads[0].capacity) == 42
+			and is_equal_approx(float(sim.state.roads[0].upkeep), 5.0)
+		),
 		"engineered figures"
 	)
 	var closed: int = 0
 	for _i: int in range(1200):
 		sim.state.day = int(sim.state.day) + 1
-		if int(sim.state.route.get("blocked_until", 0)) < int(sim.state.day):
-			var before: int = int(sim.state.route.get("blocked_until", 0))
+		if int(sim.state.roads[0].get("blocked_until", 0)) < int(sim.state.day):
+			var before: int = int(sim.state.roads[0].get("blocked_until", 0))
 			Logistics.road_daily(sim)
-			if int(sim.state.route.blocked_until) != before:
+			if int(sim.state.roads[0].blocked_until) != before:
 				closed += 1
 	check(closed >= 3 and closed <= 25, "rockfall about once per 120 days: %d in 1200" % closed)
 	var calm: RefCounted = make()
@@ -362,8 +369,8 @@ func _roads() -> void:
 	calm.act("connect", {"a": 0, "b": 1, "mountain": false})
 	check(
 		(
-			int(calm.state.route.capacity) == 28
-			and is_equal_approx(float(calm.state.route.upkeep), 1.5)
+			int(calm.state.roads[0].capacity) == 28
+			and is_equal_approx(float(calm.state.roads[0].upkeep), 1.5)
 		),
 		"valley figures"
 	)
@@ -371,7 +378,7 @@ func _roads() -> void:
 	for _i: int in range(300):
 		calm.state.day = int(calm.state.day) + 1
 		Logistics.road_daily(calm)
-	check(int(calm.state.route.get("blocked_until", 0)) == 0, "a valley road does not close")
+	check(int(calm.state.roads[0].get("blocked_until", 0)) == 0, "a valley road does not close")
 	check(float(calm.state.operating_net) < net, "road upkeep is an operating cost")
 
 
@@ -409,7 +416,9 @@ func _depleted_mines() -> void:
 	for _i: int in range(5):
 		sim.tick()
 	var region: Dictionary = sim.state.world.regions[0]
-	region.deposits.ore = 0.0
+	for plot: Dictionary in region.plots:
+		if plot.kind == "deposit" and plot.resource == "ore":
+			plot.reserves = 0.0
 	sim.tick()
 	var mine: Dictionary = {}
 	for building: Dictionary in sim.settlement(0).buildings:
@@ -442,3 +451,14 @@ func _forecast() -> void:
 	sim.state.cash = 0.0
 	check(sim.build_forecast(0, "mine_ore").disabled_reason != "", "unaffordable options say why")
 	check(Rules.read("market").has("version"), "rule files carry a version")
+
+
+func _jobless_towns_draw_nobody() -> void:
+	var sim: RefCounted = make()
+	var home: Dictionary = sim.settlement(0)
+	home.buildings.append(sim._building("habitat", 0))
+	sim._refresh(home)
+	for _i: int in range(60):
+		sim.tick()
+	check(int(sim.state.immigrants_total) == 0, "a town with most people out of work draws nobody")
+	check(Population.job_prospects(sim, home) == 0.0, "its job prospects are zero")

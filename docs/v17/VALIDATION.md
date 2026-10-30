@@ -136,3 +136,34 @@ Cold load, which regenerates the world, is measured in Phase 5 against the new g
 |---|---|---|
 | `v16_rules_tests.gd` | Clears the science opening's survey head start in the concentration test | The head start would finish its 12-point test project on day one |
 
+## Phase 5
+
+**Balance harness.** `--full`, 950 runs, 0 audit errors, 3/3 replays identical. Floor, standard and hard award bands, openings, failure rows, population (374 / 839), research, money (83%, ×3.46), labour lever (+27%), geography and road trade-off (57%) pass. See `BALANCE.md`.
+
+**Misses reported against §5.2 at this phase:**
+
+- Easy award median 153 against a band of 90-150.
+- Research-first award median day 195 against the standard band of 120-180. It reaches 8 technologies, more than the 6 asked for, so it is spending too much on research.
+- Export mix: median 34%, but one seed reaches 82% against the limit of 60%.
+- Event rows belong to Phase 6.
+- 9 of 60 balanced runs on standard miss the award or are taken over by the company later. No §5.2 row covers this, but a sensible player should not lose; Phase 8 looks at it.
+
+**Automated test.** 42 headless suites green, including the new `v17_sites` and `v17_world_stats` (200 seeds: sites 14-20 / 20-30 / 28-40, land 28-42%, continents 2-6, 3+ start pairs on every seed, three archetypes as best start at 10% or more: mining basin 58%, cold 20%, highland 19%; no basin carved; every name unique; first pair connectable by valley road on all 200).
+
+**Source-project window.** The four window suites pass. Cold region load measured once at 749 ms on this machine; frame spikes not yet measured (Phase 8). A cached world reads from disk in 32 ms.
+
+**Screenshot viewed.** Globe, flat map, region view and research page from the source project at 1600 × 900: continents, mountain belts, islands, automatic labels, buildings on plots, faint free plots, shoreline, tech tree.
+
+**Exported EXE, human playtest:** NOT_RUN at this phase.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `sim_tests.gd` | The island is found by having no neighbours; finite deposit test sets a plot's reserves | Sites have no fixed roles or numbers; reserves live on plots |
+| `v16_rules_tests.gd` | Post-mining fixture empties deposit plots and sets farm plots' fertility | Same |
+| `v17_contract_population.gd` | Depleted-mine test empties plots; immigration test adds jobs; `state.roads` | Plots; arrivals need jobs; road network |
+| `world_v16_legacy_load.gd` | Old site fields must be byte-identical; sites may gain fields | Migration adds plots to each region |
+| `world_v16_region.gd`, `v16_f12_transport.gd`, `tools/review_save_nested_regressions.gd` | `state.roads[0]` | One route became a network |
+| `world_v16_ui_sync.gd` | Looks for the inactive accent in the baked mesh's surfaces | Building models are baked |
+

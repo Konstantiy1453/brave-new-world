@@ -1,16 +1,47 @@
 {
   "version": 1,
-  "units": {"time": "game day", "money": "account units", "share": "fraction 0-1"},
-  "scaled_goals": ["exports_total", "population"],
-  "difficulty_scale": {"easy": 0.8, "normal": 1.0, "hard": 1.2},
+  "units": {
+    "time": "game day",
+    "money": "account units",
+    "share": "fraction 0-1"
+  },
+  "scaled_goals": [
+    "exports_total",
+    "population"
+  ],
+  "difficulty_scale": {
+    "easy": 0.8,
+    "normal": 1.0,
+    "hard": 1.2
+  },
   "deadlines": {
-    "easy": [120, 250, 360],
-    "normal": [90, 200, 300],
-    "hard": [75, 170, 260]
+    "easy": [
+      120,
+      250,
+      360
+    ],
+    "normal": [
+      90,
+      200,
+      300
+    ],
+    "hard": [
+      75,
+      170,
+      260
+    ]
   },
   "overdue_distrust_per_day": 1.2,
-  "windows": {"local_food": 30, "non_mining": 30},
-  "settlement_cap": {"initial": 1, "expedition": 2, "third_settlement": 3, "after_award": 6, "connected_limit": 2},
+  "windows": {
+    "local_food": 30,
+    "non_mining": 30
+  },
+  "settlement_cap": {
+    "initial": 1,
+    "expedition": 2,
+    "third_settlement": 3,
+    "after_award": 6
+  },
   "stages": [
     {
       "id": "foothold",
@@ -52,9 +83,29 @@
     }
   ],
   "milestones": [
-    {"id": "population_1000", "goal": "population", "target": 1000, "reward": 2000.0},
-    {"id": "five_settlements", "goal": "settlements", "target": 5, "reward": 2000.0},
-    {"id": "three_megaprojects", "goal": "megaprojects", "target": 3, "reward": 3000.0},
-    {"id": "all_tier2", "goal": "tier2_techs", "target": 1, "reward": 1500.0}
+    {
+      "id": "population_1000",
+      "goal": "population",
+      "target": 1000,
+      "reward": 2000.0
+    },
+    {
+      "id": "five_settlements",
+      "goal": "settlements",
+      "target": 5,
+      "reward": 2000.0
+    },
+    {
+      "id": "three_megaprojects",
+      "goal": "megaprojects",
+      "target": 3,
+      "reward": 3000.0
+    },
+    {
+      "id": "all_tier2",
+      "goal": "tier2_techs",
+      "target": 1,
+      "reward": 1500.0
+    }
   ]
 }

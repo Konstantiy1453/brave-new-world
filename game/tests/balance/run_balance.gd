@@ -51,6 +51,7 @@ const RESULTS_END: String = "<!-- results:end -->"
 const HISTORY_BEGIN: String = "<!-- history:begin -->"
 const POLL_SECONDS: float = 0.5
 const LEVER_DAYS: int = 180
+const GEOGRAPHY_SEEDS: int = 200
 
 var options: Dictionary = {}
 
@@ -74,6 +75,8 @@ func run() -> void:
 		for index: int in range(cases.size()):
 			runs.append(_run_case(cases[index], false))
 	var extras: Dictionary = {"determinism": _determinism_check(), "labour_lever": _labour_lever()}
+	if options.mode == "full":
+		extras.geography = _geography()
 	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
 
 
@@ -224,6 +227,27 @@ func _run_parallel() -> Array:
 			quit(1)
 			return []
 	return runs
+
+
+## Geography over 200 seeds, from its own process: worlds there are built without any cache.
+func _geography() -> Dictionary:
+	var out: String = ProjectSettings.globalize_path(OUT_DIR + "/tmp/world_stats.json")
+	var arguments: PackedStringArray = [
+		"--headless",
+		"--path",
+		ProjectSettings.globalize_path("res://"),
+		"--script",
+		"res://tests/v17_world_stats.gd",
+		"--",
+		"--seeds=%d" % GEOGRAPHY_SEEDS,
+		"--json=" + out,
+	]
+	OS.execute(OS.get_executable_path(), arguments)
+	if not FileAccess.file_exists(out):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(out))
+	DirAccess.remove_absolute(out)
+	return parsed if parsed is Dictionary else {}
 
 
 ## A/B of the wage policy: the same colonies at 1.0x and 1.3x wages, with recruiting switched off

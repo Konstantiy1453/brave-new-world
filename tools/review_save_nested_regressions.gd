@@ -28,7 +28,7 @@ func _initialize():
 		["shipment_resource", ["shipments", 0, "resource"], "invalid"],
 		["shipment_amount", ["shipments", 0, "amount"], {}],
 		["research_completed", ["research", "completed"], 3],
-		["route_coordinates", ["route", "coordinates"], [4]],
+		["route_coordinates", ["roads", 0, "coordinates"], [4]],
 		["policy_value", ["policy", "tax"], "high"],
 		["enterprise_employees", ["enterprise", "employees"], []],
 		["resource_account", ["resource_sources"], 6],

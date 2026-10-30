@@ -34,28 +34,20 @@ static func region(g, b):
 				g.map.focus_region(id)
 			g.refresh_sidebar()
 	)
-	D.label(
-		b,
-		"耕作潜力  %d%%    水源  %d%%\n海拔  %d m" % [r.fertility * 100, r.water * 100, r.elevation],
-		16,
-		D.MUTED
-	)
-	for key in ["ore", "copper", "crystal"]:
-		var row = D.row(b)
-		D.icon(row, key, 24)
-		D.label(row, "%s储量  %s t" % [RES[key], g.money(r.deposits[key])], 16, D.INK, false)
+	_site_filter(g, b)
+	var known: Dictionary = g.sim.site_view(g.selected)
+	_site_facts(g, b, known)
 	var s: Dictionary = g.settlement()
 	if s.is_empty():
 		D.label(b, "尚未开发", 18, D.GOLD)
-		D.label(b, "选择矿区作为首府更易建立出口现金流。河谷适合作为粮食据点。海岛无陆路连接。", 16, D.MUTED)
-		var btn = D.button(
+		_survey_button(g, b, known)
+		var first: bool = g.sim.state.settlements.is_empty()
+		D.button(
 			b,
-			"在此建立" + ("第二据点" if g.sim.state.settlements.size() > 0 else "首府"),
-			func(): g.act("settle", {"region": g.selected})
+			"在此建立首府" if first else "派遣远征队建立据点",
+			func(): g.act("settle", {"site": g.selected}),
+			"首府需要这块大陆上还有其他可达地点；远征需要出发据点备齐人员和物资。"
 		)
-		btn.disabled = g.sim.state.settlements.size() >= 2
-		if btn.disabled:
-			btn.tooltip_text = "Demo 每局最多两处据点。"
 		D.button(b, "查看地区地表", func(): g.navigate("region"))
 		return
 	D.label(
@@ -138,6 +130,108 @@ static func region(g, b):
 				D.font_size(raise_level, 14)
 				raise_level.custom_minimum_size.y = 30
 				raise_level.disabled = str(upgrade.disabled_reason) != ""
+
+
+static func _site_filter(g, b):
+	var names: Array = []
+	for row: Array in Labels.SITE_FILTERS:
+		names.append(row[1])
+	D.option(
+		b,
+		"SiteFilter",
+		names,
+		g.site_filter,
+		func(id):
+			g.site_filter = id
+			g.map.set_marker_filter(Labels.SITE_FILTERS[id][0])
+	)
+
+
+## Figures with their uncertainty: a range until the site has been surveyed well enough.
+static func _estimate_text(g, row: Dictionary, band: float) -> String:
+	if band <= 0.0:
+		return g.money(row.mid)
+	return "%s–%s" % [g.money(row.low), g.money(row.high)]
+
+
+static func _share_text(row: Dictionary, band: float) -> String:
+	if band <= 0.0:
+		return "%d%%" % (float(row.mid) * 100.0)
+	return "%d–%d%%" % [float(row.low) * 100.0, float(row.high) * 100.0]
+
+
+static func _site_facts(g, b, known: Dictionary):
+	var band: float = float(known.band)
+	var quality: String = "精确数据" if band <= 0.0 else ("地面勘察 ±%d%%" % (band * 100.0))
+	if int(known.survey) == 0 and g.settlement().is_empty():
+		quality = "轨道估算 ±%d%%" % (band * 100.0)
+	D.label(b, quality, 15, D.TEAL)
+	D.label(
+		b,
+		(
+			"耕作潜力  %s    水源  %s\n海拔  %d m"
+			% [
+				_share_text(known.fertility, band * 0.5),
+				_share_text(known.water, band * 0.5),
+				known.elevation
+			]
+		),
+		16,
+		D.MUTED
+	)
+	for key in ["ore", "copper", "crystal"]:
+		var row = D.row(b)
+		D.icon(row, key, 24)
+		D.label(
+			row,
+			"%s储量  %s t" % [RES[key], _estimate_text(g, known.deposits[key], band)],
+			16,
+			D.INK,
+			false
+		)
+	var plots: Dictionary = known.plots
+	D.label(
+		b,
+		(
+			"空闲地块：建设 %d · 农田 %d · 铁 %d · 铜 %d · 晶体 %d"
+			% [plots.general, plots.farm, plots.ore, plots.copper, plots.crystal]
+		),
+		15,
+		D.MUTED
+	)
+	var notes: PackedStringArray = []
+	if bool(known.coast):
+		notes.append("沿海")
+	if bool(known.river):
+		notes.append("有河流")
+	if float(known.risks.cold) > 0.3:
+		notes.append("寒冷")
+	if float(known.risks.arid) > 0.3:
+		notes.append("干旱")
+	if float(known.risks.flood) > 0.3:
+		notes.append("易涝")
+	if float(known.development) > 1.05:
+		notes.append("建设费 ×%.2f" % float(known.development))
+	if known.neighbors.is_empty():
+		notes.append("孤立陆地：需要海运")
+	if not notes.is_empty():
+		D.label(b, " · ".join(notes), 15, D.GOLD)
+
+
+static func _survey_button(g, b, known: Dictionary):
+	if int(known.surveying) > 0:
+		D.label(b, "勘察队在途，余 %d 天" % int(known.surveying), 15, D.TEAL)
+		return
+	var deep: bool = g.sim.state.research.completed.has("prospecting")
+	if int(known.survey) >= 1 and not deep:
+		return
+	var at: int = int(known.id)
+	D.button(
+		b,
+		"%s · ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
+		func(): g.act("survey", {"site": at}),
+		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。"
+	)
 
 
 static func populate(g, b, page):
@@ -404,6 +498,9 @@ static func build(g, b):
 		if bool(spec.get("megaproject", false)):
 			D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 16, D.TEAL)
 		D.label(card, spec.description + "  日维护 ¥ %.1f。" % spec.maintenance, 16, D.MUTED)
+		var refusal: String = str(g.sim.build_forecast(g.selected, key).disabled_reason)
+		if refusal != "" and not locked:
+			D.label(card, refusal, 15, D.GOLD)
 
 
 static func economy(g, b):
@@ -516,72 +613,20 @@ static func transport(g, b):
 	D.label(b, "货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。第二据点的材料由拓展物资提供，后续需要加工、进口或实际运输。", 18, D.MUTED)
 	var state: Dictionary = g.sim.state
 	if state.settlements.size() < 2:
-		D.label(b, "尚需建立第二据点。请在行星总览选择青溪河谷等可达地区。", 21, D.GOLD)
+		D.label(b, "尚需建立第二据点。请在行星总览选择可达地点，并派出远征队。", 21, D.GOLD)
 		return
-	var a: int = state.settlements[0].region
-	var z: int = state.settlements[1].region
-	for mode in [false, true]:
-		var route: Dictionary = WG.new().route(g.sim.geo, a, z, mode)
-		var c = D.card(b)
-		D.label(c, "工程公路（跨山）" if mode else "河谷公路（绕山）", 21)
-		var road_rules: Dictionary = g.sim.config.roads["engineered" if mode else "valley"]
-		(
-			D
-			. label(
-				c,
-				(
-					"距离 %.0f km  ·  单程 %d 天  ·  建设 ¥ %.0f\n运力 %d t/日  ·  养护 ¥ %.1f/日  ·  封路风险 %s"
-					% [
-						route.distance,
-						route.days,
-						route.cost,
-						int(road_rules.capacity),
-						float(road_rules.upkeep),
-						(
-							"约每 %.0f 日一次" % (1.0 / float(road_rules.closure_chance_per_day))
-							if float(road_rules.closure_chance_per_day) > 0.0
-							else "无"
-						),
-					]
-				),
-				18,
-				D.GOLD
-			)
-		)
-		var mt = mode
-		var bt = D.button(
-			c,
-			"线路已建成" if not state.route.is_empty() else "建设此线路",
-			func(): g.act("connect", {"a": a, "b": z, "mountain": mt})
-		)
-		bt.disabled = not route.reachable or not state.route.is_empty()
-		bt.tooltip_text = route.get("reason", "")
-	if not state.route.is_empty():
-		D.label(
-			b,
-			(
-				"当前线路："
-				+ str(state.route.get("distance", 0))
-				+ " km  ·  "
-				+ str(state.route.get("days", 0))
-				+ " 天\n累计运输："
-				+ str(state.get("transported_total", 0))
-				+ " t"
-			),
-			18,
-			D.TEAL
-		)
-		var paving: Dictionary = g.sim.config.road_upgrade
-		if state.research.completed.has(paving.tech) and not bool(state.route.get("paved", false)):
-			D.button(
-				b,
-				(
-					"铺装道路 · ¥ %.0f + 建材 %.0f t"
-					% [float(state.route.cost) * float(paving.cost_factor), float(paving.materials)]
-				),
-				func(): g.act("upgrade_road"),
-				"运力 +50%，单程 -1 天，封路风险 -70%"
-			)
+	var a: int = (
+		int(g.selected) if not g.settlement().is_empty() else int(state.settlements[0].region)
+	)
+	D.label(b, "从 %s 出发的线路" % state.world.regions[a].name, 20, D.GOLD)
+	for other: Dictionary in state.settlements:
+		var z: int = int(other.region)
+		if z != a:
+			_road_options(g, b, a, z)
+	var paving: Dictionary = g.sim.config.road_upgrade
+	for road: Dictionary in state.roads:
+		_road_card(g, b, road, paving)
+	D.label(b, "累计运输 %.0f t" % float(state.get("transported_total", 0)), 18, D.TEAL)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
 		D.label(
@@ -598,6 +643,100 @@ static func transport(g, b):
 			),
 			16,
 			D.MUTED
+		)
+
+
+static func _road_options(g, b, a: int, z: int):
+	var state: Dictionary = g.sim.state
+	var c = D.card(b)
+	D.label(c, "%s → %s" % [state.world.regions[a].name, state.world.regions[z].name], 21)
+	for variant: String in ["valley", "engineered", "sea"]:
+		var quote: Dictionary = g.sim.road_quote(a, z, variant)
+		var spec: Dictionary = g.sim.config.roads[variant]
+		if not bool(quote.reachable):
+			if variant != "sea":
+				D.label(c, "%s：%s" % [spec.name, str(quote.reason)], 16, D.MUTED)
+			continue
+		var risk: String = "无"
+		if float(quote.closure_chance) > 0.0:
+			risk = "约每 %.0f 日一次" % (1.0 / float(quote.closure_chance))
+		(
+			D
+			. label(
+				c,
+				(
+					"%s：%.0f km · 单程 %d 天 · 建设 ¥ %.0f · 运力 %d t/日 · 养护 ¥ %.1f/日 · 封路 %s"
+					% [
+						spec.name,
+						float(quote.distance),
+						int(quote.days),
+						float(quote.cost),
+						int(quote.capacity),
+						float(quote.upkeep),
+						risk,
+					]
+				),
+				17,
+				D.GOLD
+			)
+		)
+		var chosen: String = variant
+		var order = D.button(
+			c,
+			"建设" + str(spec.name),
+			func(): g.act("connect", {"a": a, "b": z, "variant": chosen}),
+			str(quote.refusal)
+		)
+		order.disabled = str(quote.refusal) != ""
+
+
+static func _road_card(g, b, road: Dictionary, paving: Dictionary):
+	var state: Dictionary = g.sim.state
+	var c = D.card(b)
+	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
+	var blocked: bool = WG.road_blocked(road, int(state.day))
+	D.label(
+		c,
+		(
+			"%s%s：%s ↔ %s"
+			% [
+				spec.name,
+				"（已铺装）" if bool(road.get("paved", false)) else "",
+				state.world.regions[int(road.a)].name,
+				state.world.regions[int(road.b)].name
+			]
+		),
+		19,
+		D.RED if blocked else D.TEAL
+	)
+	D.label(
+		c,
+		(
+			"单程 %d 天 · 运力 %d t/日 · 今日已发 %.1f t · 养护 ¥ %.1f/日%s"
+			% [
+				int(road.days),
+				int(road.capacity),
+				float(road.sent_today),
+				float(road.get("upkeep", 0.0)),
+				" · 封路至第 %d 日" % int(road.blocked_until) if blocked else ""
+			]
+		),
+		17
+	)
+	if (
+		state.research.completed.has(paving.tech)
+		and not bool(road.get("paved", false))
+		and str(road.get("variant", "valley")) != "sea"
+	):
+		var id: int = int(road.id)
+		D.button(
+			c,
+			(
+				"铺装道路 · ¥ %.0f + 建材 %.0f t"
+				% [float(road.cost) * float(paving.cost_factor), float(paving.materials)]
+			),
+			func(): g.act("upgrade_road", {"road": id}),
+			"运力 +50%，单程 -1 天，封路风险 -70%"
 		)
 
 
@@ -763,7 +902,7 @@ static func settings(g, b):
 	)
 
 
-static func guide(g, b):
+static func guide(_g, b):
 	D.label(b, "推荐种子 260129 · 中型 · 资本支持", 25, D.GOLD)
 	var steps = [
 		"01  勘察铁岬盆地并建立首府。登陆物资包含基础住房、水电与货运能力；检查建设面板和本地库存。",

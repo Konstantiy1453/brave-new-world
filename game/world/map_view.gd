@@ -19,6 +19,10 @@ func setup(data: Dictionary) -> void:
 	signature = ""
 	marker_signature = ""
 	transport_signature = ""
+	height_field = PackedFloat32Array()
+	forest_field = PackedFloat32Array()
+	marker_filter = "all"
+	hovered_region = -1
 	world = data
 	flat_user_zoomed = false
 	flat_center = Vector2.ZERO
@@ -79,23 +83,22 @@ func sync_state(data: Dictionary) -> void:
 func _marker_signature() -> String:
 	var settled: Array = []
 	for place: Dictionary in state.get("settlements", []):
-		settled.append(int(place.region))
-	return "%d|%s" % [selected_region, str(settled)]
+		var farms: int = 0
+		for building: Dictionary in place.get("buildings", []):
+			if str(building.kind) == "farm":
+				farms += 1
+		settled.append([int(place.region), place.get("buildings", []).size(), farms])
+	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
 
 
 func _transport_signature() -> String:
-	var route: Dictionary = state.get("route", {})
+	var roads: Array = []
+	for road: Dictionary in state.get("roads", []):
+		roads.append([int(road.get("id", 0)), Geo.road_blocked(road, int(state.get("day", 0)))])
 	var moving: Array = []
 	for cargo: Dictionary in state.get("shipments", []):
 		moving.append([int(cargo.from), int(cargo.remaining), int(cargo.total_days)])
-	return (
-		"%s|%s|%s"
-		% [
-			str(route.get("reachable", false)),
-			str(Geo.road_blocked(route, int(state.get("day", 0)))),
-			str(moving),
-		]
-	)
+	return "%s|%s" % [str(roads), str(moving)]
 
 
 func show_planet() -> void:
@@ -171,6 +174,8 @@ func show_region(id: int) -> void:
 		region_ground = entry.ground
 		local_river_segments = entry.rivers.duplicate(true)
 		local_lakes = entry.lakes.duplicate(true)
+		height_field = entry.heights
+		forest_field = entry.forests
 	else:
 		surface = Node3D.new()
 		surface.name = "RegionalSurface_" + str(id)
@@ -204,7 +209,9 @@ func show_region(id: int) -> void:
 			"surface": surface,
 			"ground": region_ground,
 			"rivers": local_river_segments.duplicate(true),
-			"lakes": local_lakes.duplicate(true)
+			"lakes": local_lakes.duplicate(true),
+			"heights": height_field,
+			"forests": forest_field,
 		}
 	signature = _building_signature()
 	if buildings_root == null or str(surface.get_meta("building_signature", "")) != signature:
@@ -255,12 +262,15 @@ func pan(dx: float, dy: float) -> void:
 	camera_pivot.z = clampf(camera_pivot.z, -15.0, 15.0)
 
 
-func pick_region(screen_pos: Vector2) -> int:
+## The site marker under a screen position, among those the filter shows.
+func _region_at(screen_pos: Vector2) -> int:
 	if mode not in ["planet", "flat"] or camera == null:
 		return -1
 	var nearest: int = -1
 	var best: float = 43.0
 	for reg in world.regions:
+		if not _marker_shown(reg):
+			continue
 		var point: Vector3 = (
 			_flat_point(reg.lat, reg.lon)
 			if mode == "flat"
@@ -274,6 +284,25 @@ func pick_region(screen_pos: Vector2) -> int:
 		if distance < best:
 			best = distance
 			nearest = int(reg.id)
+	return nearest
+
+
+## Shows the name of the site under the pointer. Rebuilds markers only when that site changes.
+func hover_region(screen_pos: Vector2) -> void:
+	var under: int = _region_at(screen_pos)
+	if under != hovered_region:
+		hovered_region = under
+		_update_markers()
+
+
+func set_marker_filter(key: String) -> void:
+	if key != marker_filter:
+		marker_filter = key
+		_update_markers()
+
+
+func pick_region(screen_pos: Vector2) -> int:
+	var nearest: int = _region_at(screen_pos)
 	if nearest >= 0:
 		selected_region = nearest
 		_update_markers()

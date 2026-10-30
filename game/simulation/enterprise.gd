@@ -3,14 +3,16 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 const Population = preload("res://simulation/population.gd")
+const Sites = preload("res://simulation/sites.gd")
 
 
 static func found(sim: RefCounted, region: int) -> String:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty() or s.arrival > 0:
 		return "需要已经运转的据点"
-	if s.buildings.size() >= 40:
-		return "本地区已经达到 40 处设施的土地开发上限"
+	var ground: int = Sites.find_plot(sim, region, "service")
+	if ground < 0:
+		return "本地区没有空闲的建设用地"
 	if not sim.state.enterprise.is_empty():
 		return "本 Demo 已有一家民营企业"
 	if not sim.state.policy.private_allowed:
@@ -44,6 +46,7 @@ static func found(sim: RefCounted, region: int) -> String:
 	}
 	var b: Dictionary = sim._building("service", 4)
 	b.owner = "private"
+	b.plot = ground
 	s.buildings.append(b)
 	sim._log("远岸生活服务社获准落地：私人实缴 900，自主装修、雇人、销售并纳税。")
 	return ""

@@ -76,8 +76,10 @@ func run():
 	check(map.surface.get_child(0) == terrain, "return keeps terrain")
 	check(map.buildings_root != buildings, "return refreshes changed buildings")
 	check(map.signature == map._building_signature(), "dynamic signature current")
-	map.state.route = Geo.new().route(world, 0, 1, false)
-	map.state.route.blocked_until = 5
+	var road: Dictionary = Geo.new().route(world, 0, 1, false)
+	road.id = 0
+	road.blocked_until = 5
+	map.state.roads = [road]
 	for day in [4, 5, 6]:
 		map.state.day = day
 		map.sync_state(map.state)

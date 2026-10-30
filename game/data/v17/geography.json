@@ -1,0 +1,368 @@
+{
+  "version": 1,
+  "units": {
+    "land_fraction": "share of the sphere's area",
+    "deposits": "tonnes before the potential factor",
+    "days": "game days",
+    "fertility": "0-1",
+    "water": "0-1",
+    "band": "fraction of the true value, plus or minus"
+  },
+  "land_fraction": [
+    0.28,
+    0.42
+  ],
+  "continents": [
+    2,
+    6
+  ],
+  "continent_cells": 64,
+  "attempts": 10,
+  "site_count": [
+    [
+      14,
+      20
+    ],
+    [
+      20,
+      30
+    ],
+    [
+      28,
+      40
+    ]
+  ],
+  "separation_degrees": [
+    24.0,
+    19.0,
+    15.0
+  ],
+  "archetypes": {
+    "mining_basin": {
+      "name": "矿产盆地",
+      "quota": [
+        3,
+        3,
+        4
+      ],
+      "development": 1.0,
+      "deposits": {
+        "ore": [
+          13000,
+          21000
+        ],
+        "copper": [
+          6000,
+          10000
+        ],
+        "crystal": [
+          800,
+          1800
+        ]
+      },
+      "features": [
+        "盆地",
+        "谷地"
+      ]
+    },
+    "fertile_valley": {
+      "name": "肥沃河谷",
+      "quota": [
+        2,
+        3,
+        4
+      ],
+      "development": 1.0,
+      "deposits": {
+        "ore": [
+          1500,
+          2600
+        ],
+        "copper": [
+          400,
+          800
+        ],
+        "crystal": [
+          100,
+          250
+        ]
+      },
+      "features": [
+        "河谷",
+        "溪谷",
+        "河湾"
+      ]
+    },
+    "highland_mining": {
+      "name": "高山矿区",
+      "quota": [
+        2,
+        2,
+        3
+      ],
+      "development": 1.4,
+      "deposits": {
+        "ore": [
+          5500,
+          9000
+        ],
+        "copper": [
+          10000,
+          15000
+        ],
+        "crystal": [
+          5500,
+          9500
+        ]
+      },
+      "features": [
+        "高原",
+        "台地",
+        "山麓"
+      ]
+    },
+    "grassland": {
+      "name": "温带草原",
+      "quota": [
+        2,
+        3,
+        4
+      ],
+      "development": 1.0,
+      "deposits": {
+        "ore": [
+          6000,
+          10000
+        ],
+        "copper": [
+          3500,
+          6000
+        ],
+        "crystal": [
+          800,
+          1500
+        ]
+      },
+      "features": [
+        "原野",
+        "草甸"
+      ]
+    },
+    "coastal_plain": {
+      "name": "滨海平原",
+      "quota": [
+        2,
+        3,
+        4
+      ],
+      "development": 1.0,
+      "deposits": {
+        "ore": [
+          4000,
+          7000
+        ],
+        "copper": [
+          2200,
+          4000
+        ],
+        "crystal": [
+          600,
+          1200
+        ]
+      },
+      "features": [
+        "海岸",
+        "湾",
+        "岬"
+      ]
+    },
+    "island": {
+      "name": "海岛",
+      "quota": [
+        1,
+        2,
+        3
+      ],
+      "development": 1.1,
+      "deposits": {
+        "ore": [
+          2500,
+          4500
+        ],
+        "copper": [
+          1800,
+          3200
+        ],
+        "crystal": [
+          5000,
+          9000
+        ]
+      },
+      "features": [
+        "群岛",
+        "岛"
+      ]
+    },
+    "lake_basin": {
+      "name": "湖盆",
+      "quota": [
+        1,
+        1,
+        2
+      ],
+      "development": 1.0,
+      "deposits": {
+        "ore": [
+          4500,
+          7500
+        ],
+        "copper": [
+          4000,
+          7000
+        ],
+        "crystal": [
+          1000,
+          2000
+        ]
+      },
+      "features": [
+        "湖畔",
+        "泽地"
+      ]
+    },
+    "arid": {
+      "name": "干旱荒原",
+      "quota": [
+        1,
+        1,
+        2
+      ],
+      "development": 1.15,
+      "deposits": {
+        "ore": [
+          9000,
+          15000
+        ],
+        "copper": [
+          8000,
+          14000
+        ],
+        "crystal": [
+          2000,
+          4000
+        ]
+      },
+      "features": [
+        "荒原",
+        "戈壁"
+      ]
+    },
+    "cold": {
+      "name": "寒地",
+      "quota": [
+        1,
+        1,
+        2
+      ],
+      "development": 1.25,
+      "deposits": {
+        "ore": [
+          7000,
+          12000
+        ],
+        "copper": [
+          4500,
+          8000
+        ],
+        "crystal": [
+          4500,
+          8000
+        ]
+      },
+      "features": [
+        "冻原",
+        "雪原"
+      ]
+    }
+  },
+  "validator": {
+    "start_water": 0.35,
+    "start_tonnes": 8000.0,
+    "start_crystal": 3000.0,
+    "partner_fertility": 0.6,
+    "partner_days": 10,
+    "min_pairs": 3
+  },
+  "plots": {
+    "tonnes_per_plot": {
+      "ore": 3000.0,
+      "copper": 2000.0,
+      "crystal": 1200.0
+    },
+    "max_deposit_plots": 6,
+    "general_base": 14,
+    "general_flat_bonus": 12,
+    "farm_max": 10,
+    "farm_fertility_step": 0.12,
+    "grade_spread": 0.15,
+    "fertility_spread": 0.12,
+    "deep_chance": 0.55,
+    "deep_tonnes": 1.4,
+    "deep_grade": 1.25,
+    "hidden_chance": 0.45,
+    "hidden_tonnes": 0.8,
+    "town_minimum": 10
+  },
+  "survey": {
+    "cost": 150.0,
+    "days": 4,
+    "orbital_band": 0.4,
+    "ground_band": 0.12,
+    "prospecting_radius_degrees": 30.0,
+    "prospecting_cost_factor": 0.5
+  },
+  "names": {
+    "adjectives": [
+      "铁",
+      "赤",
+      "青",
+      "苍",
+      "白",
+      "寒",
+      "暖",
+      "雾",
+      "云",
+      "星",
+      "澄",
+      "碧",
+      "远",
+      "长",
+      "磐",
+      "金",
+      "银",
+      "霜",
+      "晨",
+      "暮"
+    ],
+    "nouns": [
+      "岬",
+      "溪",
+      "脊",
+      "风",
+      "汐",
+      "栖",
+      "石",
+      "松",
+      "岩",
+      "川",
+      "林",
+      "湾",
+      "峰",
+      "泉",
+      "原",
+      "坪",
+      "岭",
+      "渊"
+    ]
+  }
+}

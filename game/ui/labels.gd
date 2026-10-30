@@ -73,6 +73,7 @@ const LEDGER: Dictionary = {
 	"road.upkeep": "道路养护",
 	"recruit": "招募移民",
 	"invest.upgrade": "设施升级",
+	"invest.survey": "地面勘察",
 	"research.contract": "科研委托收入",
 	"legacy.event": "旧版事件",
 }
@@ -84,6 +85,23 @@ const TECH_BRANCHES: Dictionary = {
 	"logistics": "物流",
 	"society": "社会",
 }
+const SITE_FILTERS: Array = [
+	["all", "全部地点"],
+	["ore", "铁矿丰富"],
+	["copper", "铜矿丰富"],
+	["crystal", "晶体丰富"],
+	["farm", "适合耕作"],
+	["coast", "沿海"],
+	["mining_basin", "矿产盆地"],
+	["fertile_valley", "肥沃河谷"],
+	["highland_mining", "高山矿区"],
+	["grassland", "温带草原"],
+	["coastal_plain", "滨海平原"],
+	["island", "海岛"],
+	["lake_basin", "湖盆"],
+	["arid", "干旱荒原"],
+	["cold", "寒地"],
+]
 const STAGE_NAMES: Dictionary = {
 	"foothold": "第一阶段 · 立足",
 	"division": "第二阶段 · 分工",

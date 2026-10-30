@@ -418,7 +418,7 @@ static func validate(sim, candidate: Dictionary) -> String:
 			or a.repayment < 0
 			or a.duration <= 0
 			or a.region < 0
-			or a.region >= 6
+			or a.region >= candidate.world.regions.size()
 			or not a.status in ["in_transit", "active", "fulfilled", "breached", "cancelled"]
 		):
 			return "援助条款无效"

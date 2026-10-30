@@ -64,7 +64,8 @@ func new_game(
 		"external_in": 0.0,
 		"external_out": 0.0,
 		"settlements": [],
-		"route": {},
+		"roads": [],
+		"surveys": [],
 		"shipments": [],
 		"research": {"current": "", "progress": 0.0, "completed": [], "priority": 1.0},
 		"events": [],
@@ -109,7 +110,7 @@ func new_game(
 		false
 	)
 	_transfer("external", "residents", 2200.0, "savings.settlers", false)
-	_log("合同已签署。请勘察后选择登陆点；铁岬盆地适合双矿开局。")
+	_log("合同已签署。请勘察后选择登陆点。")
 	Career.ensure(self)
 	EventsV2.ensure(self)
 
@@ -121,6 +122,8 @@ static func ensure_systems(target: Dictionary) -> void:
 	Market.ensure_state(target)
 	Production.ensure_state(target)
 	Research.ensure_state(target)
+	Logistics.ensure_state(target)
+	Sites.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -149,16 +152,21 @@ func act(action: String, args: Dictionary = {}) -> String:
 		return "本局已经结束，请读取存档或开始新局"
 	match action:
 		"settle":
-			return Sites.settle(self, int(args.get("region", -1)))
+			return Sites.settle(self, _site_arg(args), int(args.get("from", -1)))
 		"build":
-			return Production.build(self, int(args.get("region", -1)), str(args.get("kind", "")))
+			return Production.build(
+				self, _site_arg(args), str(args.get("kind", "")), int(args.get("plot", -1))
+			)
 		"connect":
 			return Logistics.connect_road(
 				self,
 				int(args.get("a", -1)),
 				int(args.get("b", -1)),
-				bool(args.get("mountain", false))
+				bool(args.get("mountain", false)),
+				str(args.get("variant", ""))
 			)
+		"survey":
+			return Sites.survey(self, _site_arg(args))
 		"recruit":
 			return Population.recruit(
 				self,
@@ -189,10 +197,20 @@ func act(action: String, args: Dictionary = {}) -> String:
 		"upgrade":
 			return Production.upgrade(self, int(args.get("region", -1)), int(args.get("index", -1)))
 		"upgrade_road":
-			return Logistics.upgrade_road(self)
+			return Logistics.upgrade_road(self, int(args.get("road", 0)))
 		"research_contract":
 			return Research.set_contract(self, int(args.get("staff", 0)))
 	return "未知操作"
+
+
+## `site` is the location argument; `region` stays accepted for older action logs and tests.
+func _site_arg(args: Dictionary) -> int:
+	return int(args.get("site", args.get("region", -1)))
+
+
+## Survey rules and site tables. A method, so modules need no second copy of the file.
+func progression_geo() -> Dictionary:
+	return Rules.read("geography")
 
 
 func _set_policy(args: Dictionary) -> String:
@@ -236,6 +254,7 @@ func tick() -> void:
 			Population.feed(self, s)
 	Logistics.dispatch(self)
 	Logistics.road_daily(self)
+	Sites.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
 	Population.daily(self)
@@ -506,6 +525,7 @@ func audit() -> Array:
 	for party: Dictionary in state.recruits:
 		if int(party.count) <= 0 or settlement(int(party.region)).is_empty():
 			errors.append("recruit party invalid")
+	errors.append_array(_audit_sites())
 	for good: String in state.market.saturation:
 		if float(state.market.saturation[good]) < 0.0:
 			errors.append("negative market saturation")
@@ -521,6 +541,41 @@ func audit() -> Array:
 			> 0.00001
 		):
 			errors.append("material conservation " + key)
+	return errors
+
+
+func _audit_sites() -> Array:
+	var errors: Array = []
+	for s: Dictionary in state.settlements:
+		var plots: Array = state.world.regions[int(s.region)].plots
+		var used: Dictionary = {}
+		for b: Dictionary in s.buildings:
+			var plot: int = int(b.plot)
+			if plot < 0:
+				continue
+			if plot >= plots.size():
+				errors.append("building on missing plot")
+			elif used.has(plot):
+				errors.append("plot used twice")
+			used[plot] = true
+	for reg: Dictionary in state.world.regions:
+		var known: Dictionary = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
+		for plot: Dictionary in reg.plots:
+			if plot.kind != "deposit":
+				continue
+			if float(plot.reserves) < -0.00001:
+				errors.append("negative reserves")
+			if (
+				not bool(plot.hidden)
+				and (int(plot.depth) == 0 or bool(reg.get("deep_known", false)))
+			):
+				known[plot.resource] += float(plot.reserves)
+		for good: String in known:
+			if absf(float(known[good]) - float(reg.deposits[good])) > 0.01:
+				errors.append("deposit total differs from plots")
+	for road: Dictionary in state.roads:
+		if settlement(int(road.a)).is_empty() or settlement(int(road.b)).is_empty():
+			errors.append("road to no settlement")
 	return errors
 
 
@@ -556,8 +611,16 @@ func company_view() -> Dictionary:
 	return Company.view(self)
 
 
-func build_forecast(region: int, kind: String) -> Dictionary:
-	return Production.build_forecast(self, region, kind)
+func build_forecast(region: int, kind: String, plot: int = -1) -> Dictionary:
+	return Production.build_forecast(self, region, kind, plot)
+
+
+func site_view(site: int) -> Dictionary:
+	return Sites.view(self, site)
+
+
+func road_quote(a: int, b: int, variant: String) -> Dictionary:
+	return Logistics.quote(self, a, b, variant)
 
 
 func population_view(region: int) -> Dictionary:

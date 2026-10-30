@@ -214,9 +214,13 @@ func postmining() -> void:
 	var s = make()
 	s._transfer("external", "public", 30000.0, "post mining fixture controlled investment", false)
 	var h: Dictionary = s.settlement(0)
-	s.state.world.regions[0].fertility = 1.0
 	s.state.world.regions[0].temperature = 20.0
 	s.state.world.regions[0].deposits = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
+	for plot in s.state.world.regions[0].plots:
+		if plot.kind == "deposit":
+			plot.reserves = 0.0
+		elif plot.kind == "farm":
+			plot.fertility = 1.0
 	s.act("build", {"region": 0, "kind": "lab"})
 	s.act("research_allocate", {"tech": "adaptation", "staff": 10})
 	for day in range(45):

@@ -28,6 +28,7 @@ var modal_box: VBoxContainer
 var modal_feedback: Label
 var selected: int = 0
 var selected_tech: String = ""
+var site_filter: int = 0
 var local_view: bool = false
 var paused: bool = true
 var speed: int = 1
@@ -382,6 +383,8 @@ func _unhandled_input(event):
 		return
 	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		map.orbit(event.relative.x, event.relative.y)
+	elif event is InputEventMouseMotion and not local_view and map.has_method("hover_region"):
+		map.hover_region(event.position)
 	if (
 		event is InputEventMouseMotion
 		and Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE)
@@ -461,7 +464,7 @@ func refresh():
 		)
 		if sim.state.settlements.size() < 2:
 			hint += "  |  建议：矿区负责出口，河谷负责食物。"
-		elif sim.state.route.is_empty():
+		elif sim.state.roads.is_empty():
 			hint += "  |  两据点尚未连接，打开交通运输。"
 		else:
 			hint += "  |  自动贸易与运输按本地库存运行。"

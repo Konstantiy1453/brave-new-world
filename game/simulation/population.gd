@@ -154,7 +154,8 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 	s.attractiveness = result.value
 	s.attractiveness_parts = result.parts
 	s.arrival_accrual = (
-		float(s.arrival_accrual) + float(rules.base_per_month) * float(result.value) / 30.0
+		float(s.arrival_accrual)
+		+ float(rules.base_per_month) * float(result.value) * job_prospects(sim, s) / 30.0
 	)
 	var whole: int = int(floor(float(s.arrival_accrual)))
 	var beds: int = free_beds(sim, s)
@@ -173,6 +174,16 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 		_admit(sim, s, arrivals - scientists, scientists)
 	# Would-be arrivals do not queue up behind a full town.
 	s.arrival_accrual = minf(float(s.arrival_accrual), 1.0)
+
+
+## People do not move to a town where many are already out of work: 1 with few jobless, 0 with many.
+static func job_prospects(sim: RefCounted, s: Dictionary) -> float:
+	var rules: Dictionary = sim.pop_rules.immigration
+	var adults: int = maxi(1, int(s.workers) + int(s.scientists))
+	var jobless: float = float(maxi(0, adults - int(s.employed))) / adults
+	var free_share: float = float(rules.jobless_free_share)
+	var stop_share: float = float(rules.jobless_stop_share)
+	return clampf(1.0 - (jobless - free_share) / (stop_share - free_share), 0.0, 1.0)
 
 
 static func _births(sim: RefCounted, s: Dictionary) -> void:
@@ -237,8 +248,38 @@ static func _recruit_arrivals(sim: RefCounted) -> void:
 	sim.state.recruits = keep
 
 
+## Jobless workers move along open roads to towns with vacancies and free beds.
+static func _migrate(sim: RefCounted) -> void:
+	var limit: int = int(sim.pop_rules.migration.per_road_per_day)
+	for road: Dictionary in sim.state.roads:
+		if int(road.get("blocked_until", 0)) >= int(sim.state.day):
+			continue
+		var a: Dictionary = sim.settlement(int(road.a))
+		var b: Dictionary = sim.settlement(int(road.b))
+		if int(a.arrival) > 0 or int(b.arrival) > 0:
+			continue
+		_move_workers(sim, a, b, limit)
+		_move_workers(sim, b, a, limit)
+
+
+static func _move_workers(sim: RefCounted, from: Dictionary, to: Dictionary, limit: int) -> void:
+	# A young outpost keeps its crew: they are waiting for buildings, not out of work for good.
+	var kept: int = maxi(int(from.employed_workers), int(sim.pop_rules.migration.keep_workers))
+	var idle: int = int(from.workers) - kept
+	var open: int = int(to.jobs) - int(to.employed)
+	var moving: int = mini(mini(idle, open), mini(free_beds(sim, to), limit))
+	if moving <= 0:
+		return
+	from.workers = int(from.workers) - moving
+	from.population = int(from.population) - moving
+	to.workers = int(to.workers) + moving
+	to.population = int(to.population) + moving
+	to.employed = int(to.employed) + moving
+
+
 static func daily(sim: RefCounted) -> void:
 	_recruit_arrivals(sim)
+	_migrate(sim)
 	for s: Dictionary in sim.state.settlements:
 		if s.arrival > 0:
 			continue
@@ -313,7 +354,11 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 	if s.is_empty():
 		return {}
 	var result: Dictionary = attractiveness(sim, s)
-	var rate: float = float(sim.pop_rules.immigration.base_per_month) * float(result.value)
+	var rate: float = (
+		float(sim.pop_rules.immigration.base_per_month)
+		* float(result.value)
+		* job_prospects(sim, s)
+	)
 	return {
 		"attractiveness": result.value,
 		"parts": result.parts,

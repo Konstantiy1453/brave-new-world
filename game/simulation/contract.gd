@@ -5,6 +5,7 @@ extends RefCounted
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
+const Logistics = preload("res://simulation/logistics.gd")
 const STAGE_COUNT: int = 3
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
 
@@ -61,7 +62,7 @@ static func settlement_cap(sim: RefCounted) -> int:
 	else:
 		for licence: String in sim.state.contract.licences:
 			cap = maxi(cap, int(rules.get(licence, 0)))
-	return mini(cap, int(rules.connected_limit))
+	return cap
 
 
 static func population_total(sim: RefCounted) -> int:
@@ -98,11 +99,7 @@ static func non_mining_share(sim: RefCounted) -> float:
 
 
 static func _connected(sim: RefCounted) -> int:
-	if sim.state.settlements.size() < 2 or sim.state.route.is_empty():
-		return mini(1, sim.state.settlements.size())
-	if WorldGen.road_blocked(sim.state.route, int(sim.state.day)):
-		return 1
-	return 2
+	return Logistics.largest_connected(sim)
 
 
 static func _min_food_days(sim: RefCounted) -> float:
@@ -138,6 +135,26 @@ static func _research_staffed(sim: RefCounted) -> int:
 	return count
 
 
+## A review only holds up the award while something other than the late contract is wrong.
+## Otherwise a colony that met every goal late could never clear the review that its lateness caused.
+static func _review_blocks_award(sim: RefCounted) -> bool:
+	var company: Dictionary = sim.state.company
+	if not company.stage in ["review", "intervention"]:
+		return false
+	if float(sim.state.debt) > 0.01:
+		return true
+	for s: Dictionary in sim.state.settlements:
+		if int(s.starvation) > 0:
+			return true
+	for aid: Dictionary in company.aid:
+		if aid.status == "breached":
+			return true
+	for name: String in ["social", "environment"]:
+		if float(company.sources.get(name, {}).get("rate", 0.0)) > 0.0:
+			return true
+	return false
+
+
 ## Current value of one goal, in the units of its target.
 static func goal_value(sim: RefCounted, key: String) -> float:
 	match key:
@@ -170,7 +187,7 @@ static func goal_value(sim: RefCounted, key: String) -> float:
 		"non_mining_share":
 			return non_mining_share(sim)
 		"no_review":
-			return 0.0 if sim.state.company.stage in ["review", "intervention"] else 1.0
+			return 0.0 if _review_blocks_award(sim) else 1.0
 	return 0.0
 
 

@@ -12,6 +12,8 @@ var world: Dictionary = {}
 var state: Dictionary = {}
 var mode: String = "planet"
 var selected_region: int = 0
+var hovered_region: int = -1
+var marker_filter: String = "all"
 var camera: Camera3D
 var planet: Node3D
 var flat_world: Node3D

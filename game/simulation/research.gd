@@ -225,6 +225,7 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 				p.effective = 0
 				p.rate = 0.0
 				sim._log("科研完成：" + sim.config.techs[key].name)
+				sim.Sites.on_technology(sim, key)
 	r.contract.effective = 0
 	if int(r.contract.staff) > 0 and project_count < max_projects:
 		var n: int = mini(int(r.contract.staff), usable)

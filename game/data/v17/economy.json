@@ -643,7 +643,13 @@
       "closure_days": [
         0,
         0
-      ]
+      ],
+      "speed_km_per_day": 300.0,
+      "min_days": 2,
+      "base_cost": 390.0,
+      "cost_per_km": 1.05,
+      "reason": "沿河谷绕山",
+      "name": "河谷公路（绕山）"
     },
     "engineered": {
       "capacity": 42,
@@ -652,7 +658,31 @@
       "closure_days": [
         3,
         8
-      ]
+      ],
+      "speed_km_per_day": 260.0,
+      "min_days": 2,
+      "base_cost": 600.0,
+      "cost_per_km": 1.63,
+      "reason": "跨山工程",
+      "name": "工程公路（跨山）",
+      "closure_cost": 300.0
+    },
+    "sea": {
+      "capacity": 36,
+      "upkeep": 4.0,
+      "closure_chance_per_day": 0.0,
+      "closure_days": [
+        0,
+        0
+      ],
+      "speed_km_per_day": 340.0,
+      "min_days": 3,
+      "base_cost": 700.0,
+      "cost_per_km": 0.35,
+      "reason": "沿海航线",
+      "name": "沿海航线",
+      "tech": "shipping",
+      "fee_factor": 1.5
     }
   },
   "enterprise": {

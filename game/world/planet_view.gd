@@ -38,11 +38,11 @@ func _build_planet() -> void:
 		if image != null and image.get_width() == 1536 and image.get_height() == 768:
 			last_atlas_cached = true
 		else:
-			var context: Dictionary = (
-				Geo.SeedGeo.context(int(world.seed)).duplicate(true)
-				if str(world.version) != "CC-GEO-1.4"
-				else {}
-			)
+			var context: Dictionary = {}
+			if str(world.version) == Geo.VERSION:
+				context = Geo.Plates.context(int(world.seed))
+			elif str(world.version) != "CC-GEO-1.4":
+				context = Geo.SeedGeo.context(int(world.seed)).duplicate(true)
 			# A small authoritative preview is visible immediately. Only the high
 			# detail atlas runs in background; camera and economy remain responsive.
 			image = _grid_preview()
@@ -79,7 +79,11 @@ void fragment(){
  vec2 ddy=vec2(abs(dFdy(uv.x))<abs(dFdy(wrapped.x))?dFdy(uv.x):dFdy(wrapped.x),dFdy(uv.y));
  vec4 tex=textureGrad(atlas,uv,ddx,ddy);
  vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float relief=clamp((textureGrad(atlas,uv-vec2(step_uv.x,0),ddx,ddy).a-textureGrad(atlas,uv+vec2(step_uv.x,0),ddx,ddy).a+textureGrad(atlas,uv-vec2(0,step_uv.y),ddx,ddy).a-textureGrad(atlas,uv+vec2(0,step_uv.y),ddx,ddy).a)*26.0,-.24,.24);
+ float slope=textureGrad(atlas,uv-vec2(step_uv.x,0),ddx,ddy).a;
+ slope-=textureGrad(atlas,uv+vec2(step_uv.x,0),ddx,ddy).a;
+ slope+=textureGrad(atlas,uv-vec2(0,step_uv.y),ddx,ddy).a;
+ slope-=textureGrad(atlas,uv+vec2(0,step_uv.y),ddx,ddy).a;
+ float relief=clamp(slope*26.0,-.24,.24);
  relief*=smoothstep(.50,.57,tex.a);
  float daylight=max(dot(n,normalize(sun_direction)),0.0);
  float shade=.065+daylight*.83;
@@ -158,15 +162,21 @@ func _render_atlas_tile(
 		var lat: float = 90.0 - (float(y) + .5) * 180.0 / height
 		for x in range(width):
 			var lon: float = (float(x) + .5) * 360.0 / width - 180.0
-			var g: Dictionary = (
-				Geo.sample_geo(lat, lon, tile_noise, version)
-				if version == "CC-GEO-1.4"
-				else Geo.SeedGeo.sample_with_context(lat, lon, tile_noise, context)
-			)
+			var g: Dictionary = _atlas_sample(lat, lon, tile_noise, version, context)
 			var color := _geo_color(g, lat, lon, tile_noise)
 			color.a = clampf(.5 + float(g.height) * .45, .01, .99)
 			image.set_pixel(x, y - row_start, color)
 	return {"image": image, "row": row_start}
+
+
+func _atlas_sample(
+	lat: float, lon: float, tile_noise: FastNoiseLite, version: String, context: Dictionary
+) -> Dictionary:
+	if version == Geo.VERSION:
+		return Geo.Plates.sample_with_context(lat, lon, tile_noise, context)
+	if version == "CC-GEO-1.4":
+		return Geo.sample_geo(lat, lon, tile_noise, version)
+	return Geo.SeedGeo.sample_with_context(lat, lon, tile_noise, context)
 
 
 func _poll_atlas_job() -> void:
@@ -283,49 +293,47 @@ func _update_markers() -> void:
 	for child in marker_root.get_children():
 		marker_root.remove_child(child)
 		child.queue_free()
+	var labelled: Dictionary = {}
+	for reg: Dictionary in _labelled_sites():
+		labelled[int(reg.id)] = true
 	for reg in world.regions:
-		var root := Node3D.new()
-		var point: Vector3 = Geo.unit_point(reg.lat, reg.lon) * 3.052
-		root.set_meta("point", point)
-		marker_root.add_child(root)
-		var settled: bool = false
-		for settlement in state.get("settlements", []):
-			if int(settlement.region) == int(reg.id):
-				settled = true
-		var c := Color("e8c77f") if settled else Color("76e5d6")
-		if int(reg.id) == selected_region:
-			c = Color("fff0b9")
-		var dot := _sphere(
-			root,
-			point,
-			.036 if settled else .025,
-			_mat("marker" + str(reg.id) + str(settled) + str(selected_region), c, 0, 1, 1.6),
-			12,
-			6
-		)
-		dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		var ring_points: Array[Vector3] = []
-		var normal := point.normalized()
-		var tangent := normal.cross(Vector3.UP).normalized()
-		var bitangent := normal.cross(tangent).normalized()
-		for k in range(41):
-			var angle := float(k) / 40.0 * TAU
-			ring_points.append(
+		if _marker_shown(reg):
+			_globe_marker(reg, labelled.has(int(reg.id)))
+	_draw_globe_climate()
+
+
+func _globe_marker(reg: Dictionary, with_label: bool) -> void:
+	var root := Node3D.new()
+	var point: Vector3 = Geo.unit_point(reg.lat, reg.lon) * 3.052
+	root.set_meta("point", point)
+	marker_root.add_child(root)
+	var settled: bool = _is_settled(int(reg.id))
+	var c := Color("e8c77f") if settled else Color("76e5d6")
+	if int(reg.id) == selected_region:
+		c = Color("fff0b9")
+	var dot := _sphere(
+		root, point, .036 if settled else .025, _mat("marker" + c.to_html(), c, 0, 1, 1.6), 12, 6
+	)
+	dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var ring_points: Array[Vector3] = []
+	var normal := point.normalized()
+	var tangent := normal.cross(Vector3.UP).normalized()
+	var bitangent := normal.cross(tangent).normalized()
+	for k in range(41):
+		var angle := float(k) / 40.0 * TAU
+		ring_points.append(
+			(
 				(
-					(
-						(
-							normal * 3.058
-							+ tangent * cos(angle) * .074
-							+ bitangent * sin(angle) * .074
-						)
-						. normalized()
-					)
-					* 3.058
+					(normal * 3.058 + tangent * cos(angle) * .074 + bitangent * sin(angle) * .074)
+					. normalized()
 				)
+				* 3.058
 			)
-		_line(root, ring_points, c, .85)
+		)
+	_line(root, ring_points, c, .85)
+	if with_label:
 		var label := Label3D.new()
-		label.text = ("◆ " if settled else "%02d  " % (int(reg.id) + 1)) + str(reg.name)
+		label.text = ("◆ " if settled else "") + str(reg.name)
 		label.font = label_font
 		label.font_size = 48
 		label.pixel_size = .0028
@@ -336,24 +344,51 @@ func _update_markers() -> void:
 		label.outline_modulate = Color("091621")
 		label.outline_size = 8
 		root.add_child(label)
-		if settled:
-			var rng := RandomNumberGenerator.new()
-			rng.seed = 1000 + int(reg.id)
-			for j in range(15):
-				var light_point: Vector3 = (
-					(
-						(
-							normal * 3.02
-							+ tangent * rng.randf_range(-.055, .055)
-							+ bitangent * rng.randf_range(-.055, .055)
-						)
-						. normalized()
-					)
-					* 3.012
+	if not settled:
+		return
+	var sizes: Dictionary = _footprint_sizes(_settlement_at(int(reg.id)))
+	if float(sizes.farmland) > 0.0:
+		_disc(root, normal * 3.0205, normal, float(sizes.farmland), _footprint_mat("farm"))
+	_disc(root, normal * 3.021, normal, float(sizes.town), _footprint_mat("town"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1000 + int(reg.id)
+	for j in range(15):
+		var light_point: Vector3 = (
+			(
+				(
+					normal * 3.02
+					+ tangent * rng.randf_range(-.055, .055)
+					+ bitangent * rng.randf_range(-.055, .055)
 				)
-				_sphere(
-					root, light_point, .005, _mat("citylight", Color("ffcf7a"), 0, 1, 2.8), 5, 3
-				)
+				. normalized()
+			)
+			* 3.022
+		)
+		_sphere(root, light_point, .005, _mat("citylight", Color("ffcf7a"), 0, 1, 2.8), 5, 3)
+
+
+func _settlement_at(id: int) -> Dictionary:
+	for settlement in state.get("settlements", []):
+		if int(settlement.region) == id:
+			return settlement
+	return {}
+
+
+func _draw_globe_climate() -> void:
+	var at: Dictionary = _climate_site()
+	if at.is_empty():
+		return
+	var center: Vector3 = Geo.unit_point(float(at.lat), float(at.lon))
+	var seedling: Vector3 = Vector3.UP if absf(center.y) < 0.9 else Vector3.RIGHT
+	var u: Vector3 = center.cross(seedling).normalized()
+	var v: Vector3 = center.cross(u).normalized()
+	var reach: float = deg_to_rad(float(at.radius))
+	var points: Array[Vector3] = []
+	for i in range(97):
+		var angle: float = float(i) / 96.0 * TAU
+		var direction: Vector3 = u * cos(angle) + v * sin(angle)
+		points.append((center * cos(reach) + direction * sin(reach)).normalized() * 3.03)
+	_line(marker_root, points, Color("6fd8c0"), .9)
 
 
 func _update_transport() -> void:
@@ -363,9 +398,11 @@ func _update_transport() -> void:
 	for child in transport_root.get_children():
 		transport_root.remove_child(child)
 		child.queue_free()
-	var r: Dictionary = state.get("route", {})
-	if not r.get("reachable", false):
-		return
+	for r: Dictionary in state.get("roads", []):
+		_draw_road_on_globe(r)
+
+
+func _draw_road_on_globe(r: Dictionary) -> void:
 	var coordinates: Array = r.get("coordinates", []).duplicate()
 	if coordinates.is_empty():
 		for index in r.get("path", []):
@@ -381,7 +418,7 @@ func _update_transport() -> void:
 		1.5
 	)
 	for shipment in state.get("shipments", []):
-		if points.is_empty():
+		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue
 		var progress: float = clampf(
 			(

@@ -8,7 +8,7 @@ const Population = preload("res://simulation/population.gd")
 const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
-const SITE_BUILDING_CAP: int = 40
+const Sites = preload("res://simulation/sites.gd")
 const AUTOMATED_KINDS: Array[String] = [
 	"mine_ore", "mine_copper", "mine_crystal", "processor", "component_plant"
 ]
@@ -123,7 +123,8 @@ static func new_building(_sim: RefCounted, kind: String, remaining: int) -> Dict
 		"efficiency": 0.0,
 		"owner": "public",
 		"level": 1,
-		"upgrade_days": 0
+		"upgrade_days": 0,
+		"plot": -1
 	}
 
 
@@ -135,7 +136,7 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 	return d
 
 
-static func build_refusal(sim: RefCounted, region: int, kind: String) -> String:
+static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int = -1) -> String:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty():
 		return "请先建立据点"
@@ -143,12 +144,16 @@ static func build_refusal(sim: RefCounted, region: int, kind: String) -> String:
 		return "远征队尚在途中，请等待抵达"
 	if not sim.config.buildings.has(kind):
 		return "无此设施"
-	if s.buildings.size() >= SITE_BUILDING_CAP:
-		return "本地区已达到 %d 处设施的土地开发上限" % SITE_BUILDING_CAP
 	var d: Dictionary = build_preview(sim, region, kind)
 	var reg: Dictionary = sim.state.world.regions[region]
-	if kind.begins_with("mine_") and float(reg.deposits.get(d.output, 0)) <= 0:
-		return "本地区没有剩余的已探明矿床"
+	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+	if chosen < 0:
+		return _no_plot_reason(kind)
+	if chosen >= reg.plots.size() or not Sites.plot_fits(sim, reg.plots[chosen], kind):
+		return "这块地不适合此设施"
+	for existing: Dictionary in s.buildings:
+		if int(existing.plot) == chosen:
+			return "这块地已被占用"
 	if d.has("requires_tech") and not sim._has(str(d.requires_tech)):
 		return "需要技术：" + str(sim.config.techs[d.requires_tech].name)
 	if bool(d.get("megaproject", false)):
@@ -172,8 +177,16 @@ static func build_refusal(sim: RefCounted, region: int, kind: String) -> String:
 	return ""
 
 
-static func build(sim: RefCounted, region: int, kind: String) -> String:
-	var refusal: String = build_refusal(sim, region, kind)
+static func _no_plot_reason(kind: String) -> String:
+	if kind.begins_with("mine_"):
+		return "本地区没有可用的矿床地块"
+	if kind == "farm":
+		return "本地区没有可用的农田地块"
+	return "本地区没有空闲的建设用地"
+
+
+static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) -> String:
+	var refusal: String = build_refusal(sim, region, kind, plot)
 	if refusal != "":
 		return refusal
 	var s: Dictionary = sim.settlement(region)
@@ -183,7 +196,9 @@ static func build(sim: RefCounted, region: int, kind: String) -> String:
 	sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
-	s.buildings.append(new_building(sim, kind, int(d.days)))
+	var building: Dictionary = new_building(sim, kind, int(d.days))
+	building.plot = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+	s.buildings.append(building)
 	sim._log(s.name + "开始建设" + d.name + "，工期 %d 天。" % int(d.days))
 	return ""
 
@@ -370,17 +385,20 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				)
 			"mine_ore", "mine_copper", "mine_crystal":
 				var resource: String = d.output
+				var seam: Dictionary = Sites.plot_of(sim, s, b)
 				var amount: float = minf(
-					float(reg.deposits[resource]),
+					float(seam.reserves),
 					(
 						float(d.rate)
-						* float(reg.grade.get(resource, 1.0))
+						* float(seam.grade)
 						* eff
 						* (1.2 if sim._has("survey") else 1.0)
 						* output_factor(sim, b)
 					)
 				)
-				reg.deposits[resource] -= amount
+				seam.reserves = float(seam.reserves) - amount
+				if int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
+					reg.deposits[resource] = maxf(0.0, float(reg.deposits[resource]) - amount)
 				produce(sim, s, resource, amount, "矿产开采")
 				if amount <= 0.001:
 					b.active = false
@@ -396,11 +414,12 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					b.status = Keys.B_TARGET_FULL
 			"farm":
 				var climate: float = farm_climate(sim, int(s.region))
+				var field: Dictionary = Sites.plot_of(sim, s, b)
 				var amount: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
 					(
 						float(d.rate)
-						* float(reg.fertility)
+						* float(field.get("fertility", reg.fertility))
 						* climate
 						* eff
 						* (1.2 if sim._has("irrigation") else 1.0)
@@ -453,8 +472,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 static func _depleted(sim: RefCounted, s: Dictionary, b: Dictionary) -> bool:
 	if not str(b.kind).begins_with("mine_"):
 		return false
-	var output: String = sim.config.buildings[b.kind].output
-	return float(sim.state.world.regions[int(s.region)].deposits[output]) <= 0.0
+	var seam: Dictionary = Sites.plot_of(sim, s, b)
+	return seam.is_empty() or float(seam.reserves) <= 0.0
 
 
 ## Farm yield factor from local temperature, shifted by a climate regulator nearby.
@@ -613,12 +632,16 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 
 
 ## Everything a player or bot needs before committing: cost, output, money per day, payback.
-static func build_forecast(sim: RefCounted, region: int, kind: String) -> Dictionary:
+static func build_forecast(
+	sim: RefCounted, region: int, kind: String, plot: int = -1
+) -> Dictionary:
 	var spec: Dictionary = build_preview(sim, region, kind)
 	if spec.is_empty():
 		return {}
 	var s: Dictionary = sim.settlement(region)
 	var reg: Dictionary = sim.state.world.regions[region]
+	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+	var ground: Dictionary = reg.plots[chosen] if chosen >= 0 else {}
 	var fee: float = float(sim.config.economy.port_fee)
 	var outputs: Dictionary = {}
 	var revenue: float = 0.0
@@ -628,21 +651,17 @@ static func build_forecast(sim: RefCounted, region: int, kind: String) -> Dictio
 		var good: String = spec.output
 		var rate: float = (
 			float(spec.rate)
-			* float(reg.grade.get(good, 1.0))
+			* float(ground.get("grade", reg.grade.get(good, 1.0)))
 			* (1.2 if sim._has("survey") else 1.0)
 		)
 		outputs[good] = rate
 		revenue = rate * Market.price(sim, good) * (1.0 - fee)
-		var mines: float = 1.0
-		for b: Dictionary in s.get("buildings", []):
-			if b.kind == kind:
-				mines += output_factor(sim, b)
-		reserve_days = float(reg.deposits.get(good, 0.0)) / maxf(0.001, rate * mines)
+		reserve_days = float(ground.get("reserves", 0.0)) / maxf(0.001, rate)
 	elif kind_name == "farm":
 		var climate: float = farm_climate(sim, region)
 		var rate: float = (
 			float(spec.rate)
-			* float(reg.fertility)
+			* float(ground.get("fertility", reg.fertility))
 			* climate
 			* (1.2 if sim._has("irrigation") else 1.0)
 		)
@@ -694,5 +713,6 @@ static func build_forecast(sim: RefCounted, region: int, kind: String) -> Dictio
 		"payback_days": outlay / net if net > 0.0 else -1.0,
 		"reserve_days": reserve_days,
 		"free_workers": free_workers(sim, s) if not s.is_empty() else 0,
-		"disabled_reason": build_refusal(sim, region, kind),
+		"plot": chosen,
+		"disabled_reason": build_refusal(sim, region, kind, plot),
 	}

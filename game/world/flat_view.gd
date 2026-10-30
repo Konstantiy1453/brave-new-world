@@ -1,6 +1,24 @@
 extends "res://world/region_view.gd"
 ## The flat equirectangular world map.
 
+const LABELLED_SITES: int = 8
+const LABEL_CHAR_WIDTH: float = 0.26
+const LABEL_HEIGHT: float = 0.28
+const LABEL_SPOTS: Array[Vector2] = [
+	Vector2(0, 0.26),
+	Vector2(1, 0),
+	Vector2(-1, 0),
+	Vector2(0, -0.26),
+	Vector2(1, 0.3),
+	Vector2(-1, 0.3),
+	Vector2(1, -0.3),
+	Vector2(-1, -0.3),
+]
+const MARKER_RICH_TONNES: Dictionary = {"ore": 6000.0, "copper": 4000.0, "crystal": 2500.0}
+const MARKER_RICH_FERTILITY: float = 0.55
+const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
+const CLIMATE_RING_DEGREES: float = 35.0
+
 
 func _flat_point(lat: float, lon: float) -> Vector3:
 	return Vector3(lon / 20.0, lat / 20.0, .035)
@@ -15,7 +33,9 @@ uniform sampler2D atlas:source_color,filter_linear_mipmap,repeat_disable;
 void fragment(){
  vec4 tex=texture(atlas,UV);
  vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float relief=clamp((texture(atlas,UV-vec2(step_uv.x,0)).a-texture(atlas,UV+vec2(step_uv.x,0)).a+texture(atlas,UV-vec2(0,step_uv.y)).a-texture(atlas,UV+vec2(0,step_uv.y)).a)*26.0,-.24,.24);
+ float slope=texture(atlas,UV-vec2(step_uv.x,0)).a-texture(atlas,UV+vec2(step_uv.x,0)).a;
+ slope+=texture(atlas,UV-vec2(0,step_uv.y)).a-texture(atlas,UV+vec2(0,step_uv.y)).a;
+ float relief=clamp(slope*26.0,-.24,.24);
  relief*=smoothstep(.50,.57,tex.a);
  ALBEDO=tex.rgb*(.76+relief);
 }
@@ -76,66 +96,231 @@ func _flat_label(
 	return label
 
 
+## Whether a site passes the player's filter. Settled and selected sites always show.
+func _marker_shown(reg: Dictionary) -> bool:
+	if int(reg.id) == selected_region or _is_settled(int(reg.id)):
+		return true
+	match marker_filter:
+		"all":
+			return true
+		"ore", "copper", "crystal":
+			return float(reg.deposits.get(marker_filter, 0.0)) >= MARKER_RICH_TONNES[marker_filter]
+		"farm":
+			return float(reg.fertility) >= MARKER_RICH_FERTILITY
+		"coast":
+			return bool(reg.get("coast", false))
+	return str(reg.get("archetype", "")) == marker_filter
+
+
+func _is_settled(id: int) -> bool:
+	for settlement in state.get("settlements", []):
+		if int(settlement.region) == id:
+			return true
+	return false
+
+
+## Names stay readable with forty sites: only the selected, hovered, settled and the richest.
+func _labelled_sites() -> Array:
+	var ranked: Array = []
+	for reg in world.regions:
+		if _marker_shown(reg):
+			ranked.append(reg)
+	ranked.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			var sa: float = _site_rank(a)
+			var sb: float = _site_rank(b)
+			return int(a.id) < int(b.id) if sa == sb else sa > sb
+	)
+	var labelled: Array = []
+	for reg: Dictionary in ranked:
+		var id: int = int(reg.id)
+		if (
+			id == selected_region
+			or id == hovered_region
+			or _is_settled(id)
+			or labelled.size() < LABELLED_SITES
+		):
+			labelled.append(reg)
+	return labelled
+
+
+func _site_rank(reg: Dictionary) -> float:
+	var id: int = int(reg.id)
+	if id == selected_region or id == hovered_region:
+		return INF
+	if _is_settled(id):
+		return 1.0e12
+	var value: float = float(reg.fertility) * 40000.0
+	for good: String in ["ore", "copper", "crystal"]:
+		value += float(reg.deposits.get(good, 0.0)) * float(GOOD_WEIGHT[good])
+	return value
+
+
+## Tries the spots around a marker until a label fits without touching one already placed.
+func _place_flat_label(point: Vector3, text: String, placed: Array) -> Vector3:
+	var width: float = maxf(1.0, text.length() * LABEL_CHAR_WIDTH)
+	var best: Vector3 = point + Vector3(0.0, 0.26, 0.03)
+	for offset: Vector2 in LABEL_SPOTS:
+		var at := Vector2(point.x, point.y) + Vector2(offset.x * (width * 0.5 + 0.12), offset.y)
+		at.x = clampf(at.x, -8.6 + width * 0.5, 8.6 - width * 0.5)
+		var box := Rect2(
+			at - Vector2(width * 0.5, LABEL_HEIGHT * 0.5), Vector2(width, LABEL_HEIGHT)
+		)
+		var clear: bool = true
+		for other: Rect2 in placed:
+			clear = clear and not box.intersects(other)
+		if clear:
+			placed.append(box)
+			return Vector3(at.x, at.y, 0.03)
+	return best
+
+
 func _update_flat_markers() -> void:
 	if flat_marker_root == null or not is_instance_valid(flat_marker_root):
 		return
 	for child in flat_marker_root.get_children():
 		flat_marker_root.remove_child(child)
 		child.queue_free()
+	_draw_flat_footprints()
+	var labelled: Dictionary = {}
+	for reg: Dictionary in _labelled_sites():
+		labelled[int(reg.id)] = true
+	var placed: Array = []
+	for reg in _labelled_sites():
+		_flat_marker(reg, true, placed)
 	for reg in world.regions:
-		var settled: bool = false
-		for settlement in state.get("settlements", []):
-			if int(settlement.region) == int(reg.id):
-				settled = true
-		var color := Color("edc779") if settled else Color("7ae0d6")
-		if int(reg.id) == selected_region:
-			color = Color("fff2bd")
-		var point := _flat_point(reg.lat, reg.lon)
-		var ring: Array[Vector3] = []
-		for i in range(41):
-			var angle := float(i) / 40.0 * TAU
-			ring.append(
-				(
-					point
-					+ (
-						Vector3(cos(angle), sin(angle), 0)
-						* (.085 if int(reg.id) == selected_region else .055)
-					)
+		if _marker_shown(reg) and not labelled.has(int(reg.id)):
+			_flat_marker(reg, false, placed)
+
+
+func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
+	var settled: bool = _is_settled(int(reg.id))
+	var color := Color("edc779") if settled else Color("7ae0d6")
+	if int(reg.id) == selected_region:
+		color = Color("fff2bd")
+	var point := _flat_point(reg.lat, reg.lon)
+	var ring: Array[Vector3] = []
+	for i in range(41):
+		var angle := float(i) / 40.0 * TAU
+		ring.append(
+			(
+				point
+				+ (
+					Vector3(cos(angle), sin(angle), 0)
+					* (.085 if int(reg.id) == selected_region else .055)
 				)
 			)
-		var holder := Node3D.new()
-		flat_marker_root.add_child(holder)
-		_line(holder, ring, color, .8)
-		_sphere(
-			holder,
-			point,
-			.025,
-			_mat("flatdot" + str(reg.id) + str(selected_region) + str(settled), color, 0, 1, 1.3),
-			8,
-			4
 		)
-		# Fixed cartographic offsets keep the clustered starting candidates readable.
-		var label_offset: Vector3 = Vector3(.65, .26, .03)
-		if int(reg.id) == 0:
-			label_offset = Vector3(-.80, .3, .03)
-		if int(reg.id) == 3:
-			label_offset = Vector3(-.90, -.20, .03)
-		if int(reg.id) == 2:
-			label_offset = Vector3(.65, .48, .03)
-		if int(reg.id) == 1:
-			label_offset = Vector3(.90, -.15, .03)
-		if int(reg.id) == 5:
-			label_offset = Vector3(.40, -.25, .03)
-		var label_position: Vector3 = point + label_offset
-		label_position.x = clampf(label_position.x, -8.0, 8.0)
-		_flat_label(
-			holder,
-			label_position,
-			("◆ " if settled else "%02d " % (int(reg.id) + 1)) + str(reg.name),
-			color,
-			.0068,
-			40
+	var holder := Node3D.new()
+	flat_marker_root.add_child(holder)
+	_line(holder, ring, color, .8)
+	_sphere(holder, point, .025, _marker_material(color), 8, 4)
+	if not with_label:
+		return
+	var text: String = ("◆ " if settled else "") + str(reg.name)
+	_flat_label(holder, _place_flat_label(point, text, placed), text, color, .0068, 40)
+
+
+func _marker_material(color: Color) -> StandardMaterial3D:
+	return _mat("marker" + color.to_html(), color, 0, 1, 1.3)
+
+
+## Built-up area and farmland on the flat map: colonies visibly spread as they grow.
+func _draw_flat_footprints() -> void:
+	for settlement in state.get("settlements", []):
+		var reg: Dictionary = world.regions[int(settlement.region)]
+		var sizes: Dictionary = _footprint_sizes(settlement)
+		var point := _flat_point(reg.lat, reg.lon) + Vector3(0, 0, -.004)
+		if float(sizes.farmland) > 0.0:
+			_disc(
+				flat_marker_root,
+				point,
+				Vector3.BACK,
+				float(sizes.farmland) * .3,
+				_footprint_mat("farm")
+			)
+		_disc(
+			flat_marker_root,
+			point + Vector3(0, 0, .002),
+			Vector3.BACK,
+			float(sizes.town) * .3,
+			_footprint_mat("town")
 		)
+	_draw_flat_climate()
+
+
+func _draw_flat_climate() -> void:
+	var at: Dictionary = _climate_site()
+	if at.is_empty():
+		return
+	var radius: float = float(at.radius)
+	var points: Array[Vector3] = []
+	for i in range(73):
+		var angle: float = float(i) / 72.0 * TAU
+		points.append(
+			_flat_point(
+				clampf(float(at.lat) + cos(angle) * radius, -89.0, 89.0),
+				float(at.lon) + sin(angle) * radius
+			)
+		)
+	_line(flat_marker_root, points, Color("6fd8c0"), .8)
+
+
+## The site of a finished climate regulator, with the radius it reaches.
+func _climate_site() -> Dictionary:
+	for settlement in state.get("settlements", []):
+		for building: Dictionary in settlement.get("buildings", []):
+			if str(building.kind) == "climate_regulator" and int(building.get("remaining", 0)) <= 0:
+				var reg: Dictionary = world.regions[int(settlement.region)]
+				return {
+					"lat": float(reg.lat), "lon": float(reg.lon), "radius": CLIMATE_RING_DEGREES
+				}
+	return {}
+
+
+## Radii in globe units for a settlement's built-up area and farmland.
+func _footprint_sizes(settlement: Dictionary) -> Dictionary:
+	var built: int = 0
+	var farms: int = 0
+	for building: Dictionary in settlement.get("buildings", []):
+		if int(building.get("remaining", 0)) > 0:
+			continue
+		if str(building.kind) in ["farm", "hydroponic_farm"]:
+			farms += 1
+		else:
+			built += 1
+	return {
+		"town": 0.05 + sqrt(float(built)) * 0.022,
+		"farmland": 0.0 if farms == 0 else 0.07 + sqrt(float(built + farms * 3)) * 0.024,
+	}
+
+
+func _footprint_mat(kind: String) -> StandardMaterial3D:
+	var color := Color(0.82, 0.66, 0.42, 0.72) if kind == "town" else Color(0.45, 0.62, 0.32, 0.5)
+	var material := _mat("footprint" + kind, color, 0, 1)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+
+func _disc(
+	parent: Node3D, center: Vector3, normal: Vector3, radius: float, material: Material
+) -> void:
+	var seedling: Vector3 = Vector3.UP if absf(normal.y) < 0.9 else Vector3.RIGHT
+	var u: Vector3 = normal.cross(seedling).normalized()
+	var v: Vector3 = normal.cross(u).normalized()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in range(16):
+		var a: float = float(i) / 16.0 * TAU
+		var b: float = float(i + 1) / 16.0 * TAU
+		st.add_vertex(center)
+		st.add_vertex(center + (u * cos(a) + v * sin(a)) * radius)
+		st.add_vertex(center + (u * cos(b) + v * sin(b)) * radius)
+	st.generate_normals()
+	var node := _mesh(parent, st.commit(), Vector3.ZERO, material)
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 func _update_flat_transport() -> void:
@@ -144,9 +329,11 @@ func _update_flat_transport() -> void:
 	for child in flat_transport_root.get_children():
 		flat_transport_root.remove_child(child)
 		child.queue_free()
-	var route: Dictionary = state.get("route", {})
-	if not route.get("reachable", false):
-		return
+	for route: Dictionary in state.get("roads", []):
+		_draw_road_on_flat(route)
+
+
+func _draw_road_on_flat(route: Dictionary) -> void:
 	var route_color := (
 		Color("d77963") if Geo.road_blocked(route, int(state.get("day", 0))) else Color("e7bb75")
 	)
@@ -166,7 +353,7 @@ func _update_flat_transport() -> void:
 		points.append(point)
 	_line(flat_transport_root, segment, route_color, 1.1)
 	for shipment in state.get("shipments", []):
-		if points.is_empty():
+		if points.is_empty() or int(shipment.get("road", 0)) != int(route.get("id", 0)):
 			continue
 		var progress: float = clampf(
 			(

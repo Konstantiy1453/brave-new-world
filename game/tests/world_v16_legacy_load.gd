@@ -26,13 +26,13 @@ func run():
 	sim.new_game(42, "capital")
 	var error: String = sim.load_game(path)
 	check(error == "", "signed32 complete v1.5 save loads through actual simulation")
-	check(
-		(
-			var_to_bytes(sim.geo.grid) == var_to_bytes(original.world.grid)
-			and var_to_bytes(sim.state.world.regions) == var_to_bytes(original.world.regions)
-		),
-		"legacy world is byte-preserved through migration"
-	)
+	var same_sites: bool = var_to_bytes(sim.geo.grid) == var_to_bytes(original.world.grid)
+	for index: int in range(original.world.regions.size()):
+		var old_site: Dictionary = original.world.regions[index]
+		for field: String in old_site:
+			var migrated: Variant = sim.state.world.regions[index][field]
+			same_sites = same_sites and var_to_bytes(migrated) == var_to_bytes(old_site[field])
+	check(same_sites, "legacy world is byte-preserved through migration; sites only gain fields")
 	var valid: PackedByteArray = var_to_bytes(sim.state)
 	var bad = Sim.new()
 	bad.state = sim.state.duplicate(true)

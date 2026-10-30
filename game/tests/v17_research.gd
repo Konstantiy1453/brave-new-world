@@ -226,12 +226,11 @@ func _upgrades() -> void:
 		"a level 2 mine needs +4 jobs"
 	)
 	check(is_equal_approx(Production.output_factor(sim, s.buildings[index]), 1.6), "+60% output")
-	var before: float = float(sim.state.world.regions[0].deposits.ore)
+	var before: float = float(sim.state.resource_sources.ore)
 	sim.tick()
-	var dug: float = before - float(sim.state.world.regions[0].deposits.ore)
-	var plain: float = (
-		float(sim.config.buildings.mine_ore.rate) * float(sim.state.world.regions[0].grade.ore)
-	)
+	var dug: float = float(sim.state.resource_sources.ore) - before
+	var seam: Dictionary = sim.state.world.regions[0].plots[int(s.buildings[index].plot)]
+	var plain: float = float(sim.config.buildings.mine_ore.rate) * float(seam.grade)
 	check(dug > plain * 1.2, "the level 2 mine really digs more")
 	grant(sim, ["automation"])
 	check(
@@ -304,7 +303,7 @@ func _road_paving() -> void:
 	var a: Dictionary = sim.settlement(0)
 	supply(sim, a, "materials", 200.0)
 	check(sim.act("connect", {"a": 0, "b": 1, "mountain": true}) == "", "the road is built")
-	var route: Dictionary = sim.state.route
+	var route: Dictionary = sim.state.roads[0]
 	var capacity: int = int(route.capacity)
 	var days: int = int(route.days)
 	check(sim.act("upgrade_road") != "", "paving waits for the technology")

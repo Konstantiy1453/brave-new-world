@@ -86,7 +86,7 @@
     "social_rate_per_day": 0.045,
     "social_rate_cap": 1.1,
     "social_share_slope": 1.5,
-    "social_share_floor": 0.2
+    "social_share_floor": 0.1
   },
   "production": {
     "target_days": 30,

@@ -29,7 +29,7 @@ func _init()->void:
 		var s=Sim.new()
 		s.state=snapshot.duplicate(true)
 		s.state.day=day # Controlled cutoff fixture, not a chronology/save test.
-		s.state.route.blocked_until=5
+		s.state.roads[0].blocked_until=5
 		var src:Dictionary=s.settlement(0)
 		var dst:Dictionary=s.settlement(1)
 		src.stock.materials-=3.0
@@ -45,7 +45,7 @@ func _init()->void:
 		var dispatch=Sim.new()
 		dispatch.state=snapshot.duplicate(true)
 		dispatch.state.day=day
-		dispatch.state.route.blocked_until=5
+		dispatch.state.roads[0].blocked_until=5
 		for place in dispatch.state.settlements: dispatch._produce(place,"food",500.0,"F12 controlled surplus fixture")
 		dispatch._consume(dispatch.settlement(1),"materials",float(dispatch.settlement(1).stock.materials))
 		dispatch._dispatch()

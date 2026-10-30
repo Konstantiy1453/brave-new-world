@@ -14,7 +14,9 @@
     "base_per_month": 6.0,
     "savings_per_person": 60.0,
     "scientist_share_per_lab": 0.12,
-    "scientist_share_max": 0.3
+    "scientist_share_max": 0.3,
+    "jobless_free_share": 0.1,
+    "jobless_stop_share": 0.35
   },
   "attractiveness": {
     "base": 1.0,
@@ -64,5 +66,9 @@
   "births": {
     "per_adult_per_year": 0.01,
     "clinic_factor": 1.5
+  },
+  "migration": {
+    "per_road_per_day": 3,
+    "keep_workers": 18
   }
 }

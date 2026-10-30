@@ -18,6 +18,7 @@ const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
 const ARCHIVE_SUFFIX: String = ".arch"
 const RUN_STATUSES: Array[String] = ["planning", "active", "success", "failed"]
+const MAX_SITES: int = 64
 
 
 ## Serializes on the calling thread. Returns everything a worker needs to finish the write.
@@ -146,7 +147,7 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 	if error != "":
 		return error
 	var site_count: int = candidate.world.regions.size()
-	error = _validate_route(candidate, site_count)
+	error = _validate_roads(candidate, site_count)
 	if error != "":
 		return error
 	if not candidate.enterprise.is_empty():
@@ -262,7 +263,9 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 					"land_fraction": 0,
 					"river": false,
 					"grid_index": 0,
-					"development_multiplier": 0
+					"development_multiplier": 0,
+					"survey": 0,
+					"plots": [{"kind": "", "x": 0, "z": 0}]
 				}
 			],
 			"candidates": [0]
@@ -285,9 +288,12 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 				"amount": 0,
 				"remaining": 0,
 				"total_days": 0,
-				"expedition": false
+				"expedition": false,
+				"road": 0
 			}
 		],
+		"roads": [_road_shape()],
+		"surveys": [{"site": 0, "days": 0}],
 		"research":
 		{
 			"current": "",
@@ -296,7 +302,6 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 			"priority": 0,
 			"contract": {"staff": 0, "effective": 0, "earned": 0}
 		},
-		"route": {},
 		"enterprise": {},
 		"events": [""],
 		"event": {},
@@ -379,7 +384,8 @@ static func _validate_world(candidate: Dictionary) -> String:
 	if (
 		world.grid_width != WorldGen.GW
 		or world.grid_height != WorldGen.GH
-		or world.regions.size() != 6
+		or world.regions.is_empty()
+		or world.regions.size() > MAX_SITES
 	):
 		return "世界网格或地区数量不合法"
 	if not world.version in WorldGen.SUPPORTED_VERSIONS:
@@ -387,41 +393,40 @@ static func _validate_world(candidate: Dictionary) -> String:
 	return WorldGen.world_compatibility_error(world)
 
 
-static func _validate_route(candidate: Dictionary, site_count: int) -> String:
-	if candidate.route.is_empty():
-		return ""
-	var error: String = shape(
-		candidate.route,
-		{
-			"reachable": false,
-			"distance": 0,
-			"days": 0,
-			"cost": 0,
-			"path": [0],
-			"coordinates": [[0]],
-			"mountain": false,
-			"a": 0,
-			"b": 0,
-			"capacity": 0,
-			"blocked_until": 0,
-			"sent_today": 0
-		},
-		"route"
-	)
-	if error != "":
-		return error
-	var route: Dictionary = candidate.route
-	if (
-		route.days < 1
-		or route.a < 0
-		or route.a >= site_count
-		or route.b < 0
-		or route.b >= site_count
-	):
-		return "运输线路无效"
-	for pair: Array in route.coordinates:
-		if pair.size() != 2:
-			return "运输坐标无效"
+static func _road_shape() -> Dictionary:
+	return {
+		"id": 0,
+		"reachable": false,
+		"distance": 0,
+		"days": 0,
+		"cost": 0,
+		"path": [0],
+		"coordinates": [[0]],
+		"mountain": false,
+		"variant": "",
+		"a": 0,
+		"b": 0,
+		"capacity": 0,
+		"blocked_until": 0,
+		"sent_today": 0
+	}
+
+
+static func _validate_roads(candidate: Dictionary, site_count: int) -> String:
+	for index: int in range(candidate.roads.size()):
+		var road: Dictionary = candidate.roads[index]
+		if (
+			int(road.id) != index
+			or road.days < 1
+			or road.a < 0
+			or road.a >= site_count
+			or road.b < 0
+			or road.b >= site_count
+		):
+			return "运输线路无效"
+		for pair: Array in road.coordinates:
+			if pair.size() != 2:
+				return "运输坐标无效"
 	return ""
 
 

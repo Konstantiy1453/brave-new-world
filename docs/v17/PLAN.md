@@ -54,7 +54,7 @@ The header holds `version`, `sha256` and `raw_size` of the payload, plus `planet
 | `market.gd` | Dynamic export prices and saturation | 3 |
 | `research.gd` | Existing; tree, labs, contracts, previews | 4 |
 | `megaprojects.gd` | University, lift port, climate regulator | 4 |
-| `sites.gd` | Site and plot queries, survey and prospecting, settlement cap | 5 |
+| `sites.gd` | Founding settlements, plot queries, survey and prospecting, migration of old regions to sites | 5 |
 | `events_v2.gd` | Existing; cooldowns, decisions versus notices, scaled magnitudes | 6 |
 | `company.gd`, `career.gd` | Existing; aid delivery target, handover options, archive files | 1, 2, 8 |
 | `tutorial.gd` | Named completion predicates; no `eval` | 7 |

@@ -1,36 +1,127 @@
 extends RefCounted
-## Trade, road dispatch, shipments and reservations.
+## Trade, the road network, shipments and reservations. A road joins two settlements and comes in
+## three variants (valley, engineered, sea); each one dispatches surplus to deficit on its own.
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
+const Routes = preload("res://world/routes.gd")
 const Market = preload("res://simulation/market.gd")
 ## Port capacity goes to the most valuable tonne first.
 const EXPORT_ORDER: Array[String] = ["components", "parts", "crystal", "copper", "materials", "ore"]
+## Construction stock first: its need is small and stops, while food can fill a road for weeks.
+const DISPATCH_ORDER: Array[String] = [
+	"materials", "parts", "food", "components", "ore", "copper", "crystal"
+]
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const HUB_FOOD_DAYS: float = 3.0
+const HUNGRY_DAYS: float = 7.0
+const TERMINAL_MATERIALS: float = 12.0
+const MAX_SUPPLY_HOPS: int = 5
 
 
-static func connect_road(sim: RefCounted, a: int, b: int, mountain: bool) -> String:
+## Older saves have one `route`; it becomes the first road of the network.
+static func ensure_state(state: Dictionary) -> void:
+	if not state.has("roads"):
+		state.roads = []
+		var old: Dictionary = state.get("route", {})
+		if bool(old.get("reachable", false)):
+			var road: Dictionary = old.duplicate(true)
+			road.id = 0
+			road.variant = "engineered" if bool(old.get("mountain", false)) else "valley"
+			state.roads.append(road)
+	state.erase("route")
+	for cargo: Dictionary in state.shipments:
+		if not cargo.has("road"):
+			cargo.road = -1 if bool(cargo.expedition) or state.roads.is_empty() else 0
+
+
+## The route a road between two sites would take, in the number scheme of this world.
+static func route_between(sim: RefCounted, a: int, b: int, variant: String) -> Dictionary:
+	if str(sim.geo.version) == WorldGen.VERSION or variant == "sea":
+		return Routes.find(sim.geo, a, b, variant, sim.config.roads)
+	var found: Dictionary = WorldGen.new().route(sim.geo, a, b, variant == "engineered")
+	found.variant = variant
+	return found
+
+
+## A road between these two settlements, or an empty dictionary.
+static func road_between(sim: RefCounted, a: int, b: int) -> Dictionary:
+	for road: Dictionary in sim.state.roads:
+		if int(road.a) == a and int(road.b) == b or int(road.a) == b and int(road.b) == a:
+			return road
+	return {}
+
+
+## What building this road would take, with the reason it cannot be built yet.
+static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionary:
+	var found: Dictionary = route_between(sim, a, b, variant)
+	var refusal: String = ""
+	if not found.reachable:
+		refusal = str(found.get("reason", "不可达"))
+	elif sim.settlement(a).is_empty() or sim.settlement(b).is_empty():
+		refusal = "两端都要是已建立的据点"
+	elif not road_between(sim, a, b).is_empty():
+		refusal = "两地已有运输连接"
+	elif variant == "sea":
+		refusal = _sea_refusal(sim, a, b)
+	if refusal == "" and float(sim.state.cash) < float(found.cost):
+		refusal = "路线投资需要 %.0f 资金" % float(found.cost)
+	if refusal == "" and _terminal_store(sim, a, b).is_empty():
+		refusal = "两端仓库都没有 %.0f 建材修建装卸设施" % TERMINAL_MATERIALS
+	found.refusal = refusal
+	var spec: Dictionary = sim.config.roads[variant]
+	found.upkeep = float(spec.upkeep)
+	found.capacity = int(spec.capacity)
+	found.closure_chance = float(spec.closure_chance_per_day)
+	return found
+
+
+## Whichever end has the materials builds the terminals: a new outpost may have none to spare.
+static func _terminal_store(sim: RefCounted, a: int, b: int) -> Dictionary:
+	for place: int in [a, b]:
+		var s: Dictionary = sim.settlement(place)
+		if float(s.stock.materials) >= TERMINAL_MATERIALS:
+			return s
+	return {}
+
+
+static func _sea_refusal(sim: RefCounted, a: int, b: int) -> String:
+	var tech: String = str(sim.config.roads.sea.tech)
+	if not sim._has(tech):
+		return "需要技术：" + str(sim.config.techs[tech].name)
+	for place: int in [a, b]:
+		if not _has_port(sim.settlement(place)):
+			return "两端都需要运转的货运站"
+	return ""
+
+
+static func _has_port(s: Dictionary) -> bool:
+	for building: Dictionary in s.buildings:
+		if building.kind == "port" and int(building.remaining) <= 0:
+			return true
+	return false
+
+
+static func connect_road(
+	sim: RefCounted, a: int, b: int, mountain: bool, variant: String = ""
+) -> String:
 	if a == b or sim.settlement(a).is_empty() or sim.settlement(b).is_empty():
 		return "请选择两个已建立的不同据点"
-	if not sim.state.route.is_empty():
-		return "两地已有运输连接"
-	var r: Dictionary = WorldGen.new().route(sim.geo, a, b, mountain)
-	if not r.reachable:
-		return r.get("reason", "陆路不可达")
-	var s: Dictionary = sim.settlement(a)
-	if sim.state.cash < r.cost:
-		return "路线投资需要 %.0f 资金" % r.cost
-	if s.stock.materials < 12:
-		return "起点仓库需要 12 建材修建装卸设施"
+	var kind: String = variant if variant != "" else ("engineered" if mountain else "valley")
+	if not sim.config.roads.has(kind):
+		return "未知线路类型"
+	var r: Dictionary = quote(sim, a, b, kind)
+	if str(r.refusal) != "":
+		return str(r.refusal)
 	sim._transfer("public", "external", float(r.cost), "invest.road", false)
-	sim._consume(s, "materials", 12.0)
+	sim._consume(_terminal_store(sim, a, b), "materials", TERMINAL_MATERIALS)
+	r.erase("refusal")
+	r.erase("closure_chance")
+	r.id = sim.state.roads.size()
 	r.blocked_until = 0
 	r.sent_today = 0.0
-	var road_rules: Dictionary = road_variant(sim, mountain)
-	r.capacity = int(road_rules.capacity)
-	r.upkeep = float(road_rules.upkeep)
-	sim.state.route = r
-	sim._log("陆路已连接，单程 %d 天，每天双向合计 %.0f 吨。" % [r.days, r.capacity])
+	sim.state.roads.append(r)
+	sim._log("线路已连接，单程 %d 天，每天双向合计 %.0f 吨。" % [r.days, r.capacity])
 	return ""
 
 
@@ -128,11 +219,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 static func advance_shipments(sim: RefCounted) -> void:
 	var keep: Array = []
 	for cargo in sim.state.shipments:
-		if (
-			not cargo.get("expedition", false)
-			and not sim.state.route.is_empty()
-			and WorldGen.road_blocked(sim.state.route, int(sim.state.day))
-		):
+		if _waiting_on_closure(sim, cargo):
 			keep.append(cargo)
 			continue
 		cargo.remaining -= 1
@@ -145,6 +232,13 @@ static func advance_shipments(sim: RefCounted) -> void:
 	sim.state.shipments = keep
 
 
+static func _waiting_on_closure(sim: RefCounted, cargo: Dictionary) -> bool:
+	var road: int = int(cargo.get("road", 0))
+	if bool(cargo.expedition) or road < 0 or road >= sim.state.roads.size():
+		return false
+	return WorldGen.road_blocked(sim.state.roads[road], int(sim.state.day))
+
+
 static func incoming(sim: RefCounted, region: int, resource: String) -> float:
 	var amount: float = 0.0
 	for cargo in sim.state.shipments:
@@ -154,27 +248,42 @@ static func incoming(sim: RefCounted, region: int, resource: String) -> float:
 
 
 static func dispatch(sim: RefCounted) -> void:
-	if sim.state.route.is_empty():
-		return
-	var r: Dictionary = sim.state.route
+	for r: Dictionary in sim.state.roads:
+		_dispatch_road(sim, r)
+
+
+static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
+	var land: bool = str(r.get("variant", "valley")) != "sea"
+	return float(r.capacity) * (1.4 if land and sim._has("logistics") else 1.0)
+
+
+static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 	r.sent_today = 0.0
 	if WorldGen.road_blocked(r, int(sim.state.day)):
 		return
-	var cap: float = float(r.capacity) * (1.4 if sim._has("logistics") else 1.0)
-	for resource in ["food", "materials", "parts", "components", "ore", "copper", "crystal"]:
+	var cap: float = _road_capacity(sim, r)
+	var spec: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
+	var fee_factor: float = float(spec.get("fee_factor", 1.0))
+	for resource in DISPATCH_ORDER:
 		for pair in [[int(r.a), int(r.b)], [int(r.b), int(r.a)]]:
 			var src: Dictionary = sim.settlement(pair[0])
 			var dst: Dictionary = sim.settlement(pair[1])
 			if src.arrival > 0 or dst.arrival > 0:
 				continue
+			# Never send back along a road what is on its way here along that same road.
+			if _arriving_by(sim, int(r.id), int(src.region), resource):
+				continue
 			var reserve: float = float(sim.config.economy.export_reserve.get(resource, 0.0))
 			var target: float = reserve
 			if resource == "food":
-				reserve = (
-					float(src.population)
-					* sim.config.economy.food_per_person
-					* (sim.state.policy.food_reserve + 1.0)
-				)
+				var eaten: float = float(src.population) * sim.config.economy.food_per_person
+				reserve = eaten * (sim.state.policy.food_reserve + 1.0)
+				# For a town going hungry, food on its way in counts towards the reserve:
+				# that is how a hub passes food along a chain of roads.
+				if float(dst.food_days) < HUNGRY_DAYS:
+					reserve = maxf(
+						eaten * HUB_FOOD_DAYS, reserve - incoming(sim, int(src.region), "food")
+					)
 				target = (
 					float(dst.population)
 					* sim.config.economy.food_per_person
@@ -185,6 +294,8 @@ static func dispatch(sim: RefCounted) -> void:
 				target = reserve
 			elif dst.port_capacity > 0:
 				target = 80.0
+			if resource in ["food", "materials", "parts"]:
+				target += _road_demand(sim, dst, resource, int(r.id))
 			var surplus: float = maxf(0.0, float(src.stock[resource]) - reserve)
 			var deficit: float = maxf(
 				0.0, target - float(dst.stock[resource]) - incoming(sim, int(dst.region), resource)
@@ -193,71 +304,90 @@ static func dispatch(sim: RefCounted) -> void:
 			var fee: float = (
 				float(sim.config.economy.transport_unit_cost)
 				* (0.8 if sim._has("logistics") else 1.0)
+				* fee_factor
 			)
 			amount = minf(amount, float(sim.state.cash) / fee)
 			if amount <= 0.001:
 				continue
 			src.stock[resource] -= amount
 			sim._public_expense(amount * fee, "transport.fee", "external")
-			sim.state.shipments.append(
-				{
-					"from": src.region,
-					"to": dst.region,
-					"resource": resource,
-					"amount": amount,
-					"remaining": int(r.days),
-					"total_days": int(r.days),
-					"expedition": false
-				}
+			(
+				sim
+				. state
+				. shipments
+				. append(
+					{
+						"from": src.region,
+						"to": dst.region,
+						"resource": resource,
+						"amount": amount,
+						"remaining": int(r.days),
+						"total_days": int(r.days),
+						"expedition": false,
+						"road": int(r.id),
+					}
+				)
 			)
 			cap -= amount
 			r.sent_today += amount
 
 
+static func _arriving_by(sim: RefCounted, road: int, region: int, resource: String) -> bool:
+	for cargo: Dictionary in sim.state.shipments:
+		if (
+			int(cargo.get("road", -1)) == road
+			and int(cargo.to) == region
+			and str(cargo.resource) == resource
+		):
+			return true
+	return false
+
+
 static func reserved(sim: RefCounted, s: Dictionary) -> Dictionary:
-	var reserved: Dictionary = sim._stock()
+	var result: Dictionary = sim._stock()
 	for key in Keys.RESOURCES:
-		reserved[key] = EventsV2.reserved(sim, int(s.region), key)
-	if sim.state.route.is_empty():
-		return reserved
-	var r: Dictionary = sim.state.route
-	if WorldGen.road_blocked(r, int(sim.state.day)):
-		return reserved
-	var dest: int = int(r.b) if int(s.region) == int(r.a) else int(r.a)
-	var dst: Dictionary = sim.settlement(dest)
-	if dst.is_empty() or dst.arrival > 0:
-		return reserved
-	var cap: float = float(r.capacity) * (1.4 if sim._has("logistics") else 1.0)
-	for key in Keys.RESOURCES:
-		var target: float = float(sim.config.economy.export_reserve.get(key, 0))
-		if key == "food":
-			target = (
-				float(dst.population)
-				* float(sim.config.economy.food_per_person)
-				* (float(sim.state.policy.food_reserve) + float(r.days) + 2)
+		result[key] = EventsV2.reserved(sim, int(s.region), key)
+	var region: int = int(s.region)
+	for r: Dictionary in sim.state.roads:
+		if region != int(r.a) and region != int(r.b):
+			continue
+		if WorldGen.road_blocked(r, int(sim.state.day)):
+			continue
+		var dest: int = int(r.b) if region == int(r.a) else int(r.a)
+		var dst: Dictionary = sim.settlement(dest)
+		if dst.is_empty() or dst.arrival > 0:
+			continue
+		var cap: float = _road_capacity(sim, r)
+		for key in Keys.RESOURCES:
+			var target: float = float(sim.config.economy.export_reserve.get(key, 0))
+			if key == "food":
+				target = (
+					float(dst.population)
+					* float(sim.config.economy.food_per_person)
+					* (float(sim.state.policy.food_reserve) + float(r.days) + 2)
+				)
+			elif key == "materials":
+				target = 35.0
+			elif key == "parts":
+				target = 12.0
+			elif dst.port_capacity > 0:
+				target = 80.0
+			result[key] += minf(
+				cap, maxf(0, target - float(dst.stock[key]) - incoming(sim, dest, key))
 			)
-		elif key == "materials":
-			target = 35.0
-		elif key == "parts":
-			target = 12.0
-		elif dst.port_capacity > 0:
-			target = 80.0
-		reserved[key] += minf(
-			cap, maxf(0, target - float(dst.stock[key]) - incoming(sim, dest, key))
-		)
-	return reserved
+	return result
 
 
 static func view(sim: RefCounted, region: int) -> Dictionary:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty():
 		return {}
-	var incoming: Dictionary = sim._stock()
+	var coming: Dictionary = sim._stock()
 	for key in Keys.RESOURCES:
-		incoming[key] = incoming(sim, region, key)
+		coming[key] = incoming(sim, region, key)
 	return {
 		"reserved": reserved(sim, s),
-		"incoming": incoming,
+		"incoming": coming,
 		"stock": s.stock,
 		"targets": s.get("targets", {})
 	}
@@ -269,11 +399,13 @@ static func road_variant(sim: RefCounted, mountain: bool) -> Dictionary:
 
 ## Upkeep and closure risk. Rockfall closes an engineered road; cargo waits, it does not vanish.
 static func road_daily(sim: RefCounted) -> void:
-	var r: Dictionary = sim.state.route
-	if r.is_empty():
-		return
+	for r: Dictionary in sim.state.roads:
+		_road_day(sim, r)
+
+
+static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 	sim._public_expense(float(r.get("upkeep", 0.0)), "road.upkeep", "external")
-	var rules: Dictionary = road_variant(sim, bool(r.get("mountain", false)))
+	var rules: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
 	var chance: float = float(rules.closure_chance_per_day)
 	if bool(r.get("paved", false)):
 		chance *= float(sim.config.road_upgrade.closure)
@@ -296,29 +428,39 @@ static func _construction_stock(sim: RefCounted, resource: String) -> float:
 	return float(sim.config.economy.construction_stock[resource])
 
 
-## What a settlement without its own port still needs over the road. A port town imports for it,
-## so an outpost can expand and eat without having to wait for a local surplus.
-static func _road_demand(sim: RefCounted, s: Dictionary, resource: String) -> float:
-	var r: Dictionary = sim.state.route
-	if r.is_empty() or WorldGen.road_blocked(r, int(sim.state.day)):
+## What the portless settlements beyond this one still need, over every road but `arrived_by`.
+## A port town imports for them and a town on the way passes it along, so an outpost at the end
+## of a chain can expand and eat without having to wait for a local surplus.
+static func _road_demand(
+	sim: RefCounted, s: Dictionary, resource: String, arrived_by: int = -1, hops: int = 0
+) -> float:
+	if hops >= MAX_SUPPLY_HOPS:
 		return 0.0
 	var region: int = int(s.region)
-	if region != int(r.a) and region != int(r.b):
-		return 0.0
-	var other_id: int = int(r.b) if region == int(r.a) else int(r.a)
-	var other: Dictionary = sim.settlement(other_id)
-	if other.is_empty() or int(other.arrival) > 0 or float(other.port_capacity) > 0.0:
-		return 0.0
-	var wanted: float = 0.0
-	if resource == "food":
-		wanted = (
-			float(other.population)
-			* float(sim.config.economy.food_per_person)
-			* (float(sim.state.policy.food_reserve) + float(r.days) + 2.0)
+	var total: float = 0.0
+	for r: Dictionary in sim.state.roads:
+		if int(r.id) == arrived_by or (region != int(r.a) and region != int(r.b)):
+			continue
+		if WorldGen.road_blocked(r, int(sim.state.day)):
+			continue
+		var other_id: int = int(r.b) if region == int(r.a) else int(r.a)
+		var other: Dictionary = sim.settlement(other_id)
+		if other.is_empty() or int(other.arrival) > 0 or float(other.port_capacity) > 0.0:
+			continue
+		var wanted: float = 0.0
+		if resource == "food":
+			wanted = (
+				float(other.population)
+				* float(sim.config.economy.food_per_person)
+				* (float(sim.state.policy.food_reserve) + float(r.days) + 2.0)
+			)
+		else:
+			wanted = _construction_stock(sim, resource)
+		wanted += _road_demand(sim, other, resource, int(r.id), hops + 1)
+		total += maxf(
+			0.0, wanted - float(other.stock[resource]) - incoming(sim, other_id, resource)
 		)
-	else:
-		wanted = _construction_stock(sim, resource)
-	return maxf(0.0, wanted - float(other.stock[resource]) - incoming(sim, other_id, resource))
+	return total
 
 
 ## Buys up to the target through the port and returns the capacity left.
@@ -344,10 +486,12 @@ static func _import(
 
 
 ## Paved roads carry more, arrive sooner and close less often.
-static func upgrade_road(sim: RefCounted) -> String:
-	var r: Dictionary = sim.state.route
-	if r.is_empty():
-		return "还没有道路"
+static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
+	if road < 0 or road >= sim.state.roads.size():
+		return "还没有这条道路"
+	var r: Dictionary = sim.state.roads[road]
+	if str(r.get("variant", "valley")) == "sea":
+		return "海运航线无需铺装"
 	if bool(r.get("paved", false)):
 		return "道路已经铺装"
 	var rules: Dictionary = sim.config.road_upgrade
@@ -366,3 +510,36 @@ static func upgrade_road(sim: RefCounted) -> String:
 	r.days = maxi(1, int(r.days) + int(rules.days))
 	sim._log("道路铺装完成：单程 %d 天，每天 %d 吨。" % [int(r.days), int(r.capacity)])
 	return ""
+
+
+## Settlements reachable from each other over open roads: the size of the largest group.
+static func largest_connected(sim: RefCounted) -> int:
+	var settled: Array[int] = []
+	for s: Dictionary in sim.state.settlements:
+		settled.append(int(s.region))
+	if settled.is_empty():
+		return 0
+	var best: int = 1
+	var seen: Dictionary = {}
+	for start: int in settled:
+		if seen.has(start):
+			continue
+		var group: Array[int] = [start]
+		seen[start] = true
+		var head: int = 0
+		while head < group.size():
+			var at: int = group[head]
+			head += 1
+			for r: Dictionary in sim.state.roads:
+				if WorldGen.road_blocked(r, int(sim.state.day)):
+					continue
+				var next: int = -1
+				if int(r.a) == at:
+					next = int(r.b)
+				elif int(r.b) == at:
+					next = int(r.a)
+				if next >= 0 and not seen.has(next):
+					seen[next] = true
+					group.append(next)
+		best = maxi(best, group.size())
+	return best

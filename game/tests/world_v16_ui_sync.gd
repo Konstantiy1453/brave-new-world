@@ -52,11 +52,10 @@ func run():
 	check(map.buildings_root != old_root, "paused enabled change refreshes cached building view")
 	var inactive: bool = false
 	for mesh in map.buildings_root.find_children("*", "MeshInstance3D", true, false):
-		if (
-			mesh.material_override is StandardMaterial3D
-			and mesh.material_override.albedo_color == Color("d18061")
-		):
-			inactive = true
+		for surface_index: int in range(mesh.mesh.get_surface_count()):
+			var material: Material = mesh.mesh.surface_get_material(surface_index)
+			if material is StandardMaterial3D and material.albedo_color == Color("d18061"):
+				inactive = true
 	check(inactive, "disabled facility renders inactive accent before next simulation tick")
 	var output: String = "res://../evidence/v17/tests/world_ui_sync_red.json"
 	for arg in OS.get_cmdline_user_args():
