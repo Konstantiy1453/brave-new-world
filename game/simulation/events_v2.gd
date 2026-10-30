@@ -104,6 +104,10 @@ static func _reason(sim,inst:Dictionary,option:Dictionary)->String:
 		if int(s.arrival)>0 or s.buildings.size()>=24: return "据点未到达或开发地块已满"
 		if float(sim.state.cash)<float(b.cost)+float(option.get("pay",0)): return "建设资金不足"
 		if float(s.stock.materials)<float(b.materials) or float(s.stock.parts)<float(b.parts): return "本地建设材料不足"
+		var free:int=sim.free_workers(s)
+		if free<int(b.jobs): return "需要 %d 名工人，目前空闲 %d 名" % [int(b.jobs),free]
+		var free_specialists:int=sim.free_specialists(s)
+		if free_specialists<int(b.get("specialists",0)): return "需要 %d 名专家，目前空闲 %d 名" % [int(b.get("specialists",0)),free_specialists]
 	if option.has("order"):
 		if not _has_building(s,"processor") or not _has_building(s,"port"): return "需要已启用的加工厂和货站"
 	return ""
@@ -318,6 +322,8 @@ static func _description(sim,inst:Dictionary,option:Dictionary)->String:
 	if option.has("build"):
 		var b:Dictionary=sim.build_preview(int(inst.target_region),str(option.build))
 		parts.append("建设 %.0f 资金 / %.0f 建材 / %.0f 部件，%d 日" % [float(b.cost),float(b.materials),float(b.parts),int(b.days)])
+		var place:Dictionary=sim.settlement(int(inst.target_region))
+		if not place.is_empty(): parts.append("需要 %d 名工人，目前空闲 %d 名" % [int(b.jobs),sim.free_workers(place)])
 	if option.has("order"): parts.append("本地加工 %.0f 部件 × %.0f，到货付款，%d 日截止，航程 3 日" % [float(option.order.amount),float(option.order.price),int(option.order.days)])
 	for effect in option.get("effects",[]):
 		var names:Dictionary={"water":"供水","farm":"农产","mine":"采矿","processor":"加工","port":"货站吞吐"}

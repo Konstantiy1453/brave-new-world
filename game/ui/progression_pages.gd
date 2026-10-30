@@ -51,6 +51,7 @@ static func company(g,b):
 	D.label(b,str(v.get("remedy","优先恢复食品和住房，清偿到期欠款；暂停非必要扩张，调拨库存，必要时接受有条件援助。")),17,D.MUTED)
 	for offer in v.get("offers",[]):
 		var description="援助现金 %.0f，食品 %.0ft，建材 %.0ft，部件 %.0ft；%d日后抵达。\n期限%d日，偿还%.0f；期间正经营结余追加分成%.0f%%。仅从超过%.0f现金保底的部分分期偿还。每方案一生涯当前星球仅可领取一次。"%[offer.cash,offer.food,offer.materials,offer.parts,offer.arrival_days,offer.duration,offer.repayment,offer.surcharge*100,offer.cash_floor]
+		if int(offer.get("target_region",-1))>=0:description+="\n送达：%s（当前最缺这批物资的据点）。"%g.sim.state.world.regions[int(offer.target_region)].name
 		var c=D.card(b)
 		D.label(c,str(offer.get("title",offer.get("name","公司援助"))),22,D.TEAL)
 		D.label(c,description,17)
@@ -122,14 +123,35 @@ static func career(g,b):
 		D.label(b,"总督交接预览",23,D.TEAL)
 		D.label(b,"参考最近 %d 日；日收入 %.2f / 日成本 %.2f\n周转留存 %.2f · 玩家分成 %.0f%% · 稳态月分红估计 %.2f"%[p.sample_days,p.daily_income,p.daily_cost,p.reserve_target,p.player_share*100,p.monthly_estimate],18,D.GOLD)
 		D.label(b,p.warning+" 代管方取得剩余分成，不另收管理费。旧星的救助附加义务保留。",17,D.MUTED)
+		D.label(b,"下一颗星球",20,D.TEAL)
+		var next_row=D.row(b)
 		var next_seed=LineEdit.new()
+		next_seed.name="NextSeed"
 		next_seed.text=str(int(g.sim.state.world.seed)+1)
-		b.add_child(next_seed)
+		next_seed.custom_minimum_size.x=170
+		next_row.add_child(next_seed)
+		var next_size=OptionButton.new()
+		next_size.name="NextSize"
+		for label in ["小型 · 短途","中型 · 标准","大型 · 长途"]:next_size.add_item(label)
+		next_size.select(int(g.sim.state.world.size))
+		next_row.add_child(next_size)
+		var next_opening=OptionButton.new()
+		next_opening.name="NextOpening"
+		var opening_keys:Array=["capital","workers","science"]
+		for label in ["资本支持","工人招募","研究合作"]:next_opening.add_item(label)
+		next_opening.select(opening_keys.find(g.sim.state.advantage))
+		next_row.add_child(next_opening)
+		var next_level=OptionButton.new()
+		next_level.name="NextDifficulty"
+		var level_keys:Array=["easy","normal","hard"]
+		for label in ["简单","标准","困难"]:next_level.add_item(label)
+		next_level.select(level_keys.find(g.sim.state.get("difficulty","normal")))
+		next_row.add_child(next_level)
 		D.button(b,"确认交接并前往下一颗星球",func():
 			var dialog=ConfirmationDialog.new()
 			dialog.dialog_text="保留旧星完整快照并交给代管，开始新星球合同。只有完整生涯存档写入成功才提交交接。"
 			g.add_child(dialog)
-			dialog.confirmed.connect(func():g.career_action("handover",{"seed":next_seed.text});dialog.queue_free())
+			dialog.confirmed.connect(func():g.career_action("handover",{"seed":next_seed.text,"size":next_size.selected,"opening":opening_keys[next_opening.selected],"difficulty":level_keys[next_level.selected]});dialog.queue_free())
 			dialog.popup_centered(Vector2i(700,260)))
 	else:D.label(b,"取得当前星球总督资格后可移交；现在仍可查看已取得的代管资产。",18,D.MUTED)
 	var level=OptionButton.new()

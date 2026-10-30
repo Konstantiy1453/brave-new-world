@@ -39,7 +39,6 @@ func act(action:String,args:Dictionary={})->String:
 		"settle": return _settle(int(args.get("region",-1)))
 		"build": return _build(int(args.get("region",-1)),str(args.get("kind","")))
 		"connect": return _connect(int(args.get("a",-1)),int(args.get("b",-1)),bool(args.get("mountain",false)))
-		"research": return _research(str(args.get("tech","")),float(args.get("priority",1.0)))
 		"enterprise": return _enterprise(int(args.get("region",-1)))
 		"enterprise_recover": return _enterprise_recover(int(args.get("region",-1)))
 		"research_allocate": return Research.allocate(self,str(args.get("tech","")),int(args.get("staff",0)))
@@ -164,10 +163,6 @@ func _connect(a:int,b:int,mountain:bool)->String:
 	state.route=r
 	_log("陆路已连接，单程 %d 天，每天双向合计 %.0f 吨。" % [r.days,r.capacity])
 	return ""
-func _research(tech:String,_priority:float)->String:
-	var existing:int=int(state.research.projects.get(tech,{}).get("staff",0))
-	var available:int=int(Research.view(self).available)+existing
-	return Research.allocate(self,tech,mini(10,available))
 func research_view()->Dictionary:
 	return Research.view(self)
 func research_reserve(id:String,staff:int)->String:
@@ -633,6 +628,21 @@ func _fail(reason:String)->void:
 	_log("经营终止："+reason)
 func _has(tech:String)->bool:
 	return state.research.completed.has(tech)
+## Workers not spoken for by any enabled facility, including those still under construction.
+func free_workers(s:Dictionary)->int:
+	var committed:int=0
+	for b in s.buildings:
+		if b.kind=="service" or not b.get("enabled",true): continue
+		committed+=int(config.buildings[b.kind].jobs)
+	if not state.enterprise.is_empty() and int(state.enterprise.region)==int(s.region) and state.enterprise.status!="停业": committed+=6
+	return maxi(0,int(s.workers)-committed)
+## Scientists not assigned to facility specialist posts, research projects or field work.
+func free_specialists(s:Dictionary)->int:
+	var committed:int=0
+	for b in s.buildings:
+		if b.kind=="service" or not b.get("enabled",true): continue
+		committed+=int(config.buildings[b.kind].get("specialists",0))
+	return maxi(0,int(s.scientists)-committed-int(s.employed_scientists))
 func _reconcile_jobs(s:Dictionary)->void:
 	# Rebalance snapshot assignments after migration/training without producing or billing twice.
 	var available:int=int(s.workers)

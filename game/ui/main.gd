@@ -37,9 +37,13 @@ var map_hint:Label
 var difficulty_option:OptionButton
 var difficulty:String="normal"
 var detailed_info:bool=true
+var panel_pause:bool=true
+var resume_on_close:bool=false
+var dev_mode:bool=false
 
 func _ready():
 	Engine.max_fps=60
+	dev_mode=OS.is_debug_build() or OS.get_cmdline_user_args().has("--dev")
 	sim.new_game(260129,"capital",1)
 	map=Map.new()
 	add_child(map)
@@ -61,6 +65,7 @@ func _ready():
 	if preferences.load("user://settings.cfg")==OK:
 		get_window().content_scale_factor=float(preferences.get_value("display","scale",1.0))
 		detailed_info=bool(preferences.get_value("display","details",true))
+		panel_pause=bool(preferences.get_value("gameplay","panel_pause",true))
 	show_menu()
 	var args=OS.get_cmdline_user_args()
 	for a in args:
@@ -70,11 +75,12 @@ func _ready():
 			local_view=true
 			map.show_region(selected)
 	refresh()
-	for a in args:
-		if a.begins_with("--qa-v16="):
-			preload("res://ui/capture_suite_v16.gd").run(self,a.trim_prefix("--qa-v16="))
-		if a.begins_with("--qa-capture="):
-			preload("res://ui/capture_suite.gd").run(self,a.trim_prefix("--qa-capture="))
+	if dev_mode:
+		for a in args:
+			if a.begins_with("--qa-v16="):
+				load("res://ui/capture_suite_v16.gd").run(self,a.trim_prefix("--qa-v16="))
+			if a.begins_with("--qa-capture="):
+				load("res://ui/capture_suite.gd").run(self,a.trim_prefix("--qa-capture="))
 
 func build_shell():
 	var top=PanelContainer.new()
@@ -181,10 +187,9 @@ func _process(delta):
 		if toast_time<=0:toast_label.text=""
 
 func advance_time(delta:float):
-	if paused or menu_open or is_instance_valid(overlay) or sim.state.status in ["planning","failed"] or bool(map.get("region_busy")):return
+	if paused or menu_open or panel_blocks_time() or sim.state.status in ["planning","failed"] or bool(map.get("region_busy")):return
 	if event_pause_required():
-		paused=true
-		accumulator=0
+		forced_pause(true)
 		open_page("events")
 		return
 	accumulator+=delta*speed
@@ -199,29 +204,43 @@ func advance_time(delta:float):
 			sim.save_game("user://autosave.json")
 			autosave_day=sim.state.day
 		if sim.state.status!=last_status and sim.state.status in ["success","failed"]:
-			paused=true
+			forced_pause(false)
 			open_page("contract")
 		last_status=sim.state.status
 		var company_stage:String=str(sim.state.get("company",{}).get("stage","normal"))
-		if company_stage!=prior_company and company_stage in ["review","intervention"] and not is_instance_valid(overlay):
-			paused=true
+		if company_stage!=prior_company and company_stage in ["review","intervention"] and not forced_page_open():
+			forced_pause(true)
 			open_page("company")
-		if event_pause_required() and not is_instance_valid(overlay):
-			paused=true
+		if event_pause_required() and not forced_page_open():
+			forced_pause(true)
 			open_page("events")
-		if paused or is_instance_valid(overlay):
+		if paused or panel_blocks_time():
 			accumulator=0
 			break
 
 func event_pause_required()->bool:
 	return bool(preload("res://simulation/events_v2.gd").view(sim).get("pause_required",false))
 
+## Whether an open panel holds the clock under the current setting.
+func panel_blocks_time()->bool:
+	return is_instance_valid(overlay) and panel_pause
+
+func forced_page_open()->bool:
+	return is_instance_valid(overlay) and current_page in ["contract","company","events"] and paused
+
+## Stops the clock for something the player must see; `resume` restores the speed on close.
+func forced_pause(resume:bool):
+	resume_on_close=resume and not paused
+	paused=true
+	accumulator=0
+
 func set_speed(n:int):
-	if n>0 and (is_instance_valid(overlay) or menu_open):return
+	if n>0 and (panel_blocks_time() or menu_open):return
 	if n>0 and event_pause_required():
 		open_page("events")
 		return
 	paused=n==0
+	resume_on_close=false
 	if paused:accumulator=0
 	if n>0:speed=n
 	refresh()
@@ -240,6 +259,7 @@ func _unhandled_input(event):
 			get_viewport().set_input_as_handled()
 			return
 		if event.keycode==KEY_ESCAPE:
+			if menu_open:return
 			if is_instance_valid(overlay):close_modal()
 			else:open_page("save")
 		if event.keycode==KEY_SPACE and not menu_open:
@@ -327,7 +347,7 @@ func toast(text:String):
 	toast_time=7
 	if is_instance_valid(modal_feedback):modal_feedback.text=text
 
-func close_modal():
+func _free_overlay():
 	if is_instance_valid(overlay):overlay.queue_free()
 	overlay=null
 	modal_box=null
@@ -335,8 +355,15 @@ func close_modal():
 	current_page=""
 	menu_open=false
 
-func modal(title:String,width:int=960):
-	close_modal()
+func close_modal():
+	_free_overlay()
+	if resume_on_close and not event_pause_required() and not sim.state.get("status","") in ["planning","failed"]:
+		paused=false
+	resume_on_close=false
+	refresh()
+
+func modal(title:String,width:int=960,closable:bool=true):
+	_free_overlay()
 	overlay=Control.new()
 	ui.add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -354,7 +381,7 @@ func modal(title:String,width:int=960):
 	var head=D.row(outer)
 	var title_label=D.label(head,title,27,D.INK,false)
 	title_label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	D.button(head,"关闭  ×",close_modal)
+	if closable:D.button(head,"关闭  ×",close_modal)
 	var scroll=ScrollContainer.new()
 	scroll.custom_minimum_size=Vector2(0,535)
 	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -362,11 +389,13 @@ func modal(title:String,width:int=960):
 	outer.add_child(scroll)
 	modal_box=D.col(scroll)
 	modal_box.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	var f=D.label(outer,"经营决策可在暂停时完成；关闭后用空格继续。",15,D.GOLD)
+	var f=D.label(outer,"" if not closable else ("已暂停，可从容决策；关闭后恢复原速度。" if panel_pause else "面板打开时时间继续流逝。"),15,D.GOLD)
 	f.name="Footer"
 	modal_feedback=f
-	paused=true
-	accumulator=0
+	if panel_pause:
+		if not paused:resume_on_close=true
+		paused=true
+		accumulator=0
 	refresh()
 	return modal_box
 
@@ -379,8 +408,10 @@ func open_page(page:String):
 	else:Pages.populate(self,box,page)
 
 func show_menu():
-	var box=modal("殖 民 契 约     /     COLONY CHARTER",1030)
+	var box=modal("殖 民 契 约     /     COLONY CHARTER",1030,false)
 	menu_open=true
+	paused=true
+	resume_on_close=false
 	var h=D.row(box)
 	D.portrait(h,"liaison",260,430)
 	var v=D.col(h)
@@ -421,7 +452,7 @@ func show_menu():
 	launch.add_theme_stylebox_override("normal",D.box(Color("1a3042"),D.TEAL,10))
 	var resume=D.row(v)
 	D.button(resume,"继续上次存档",func():load_path("user://manual.json"))
-	D.button(resume,"读取1.6事件中段",func():load_path("res://data/v16/acceptance_event_mid.json"))
+	if dev_mode:D.button(resume,"读取1.6事件中段",func():load_path("res://data/v16/acceptance_event_mid.json"))
 
 func start_game():
 	var text=seed_edit.text
@@ -439,7 +470,8 @@ func start_game():
 	accumulator=0
 	autosave_day=0
 	last_status="planning"
-	close_modal()
+	resume_on_close=false
+	_free_overlay()
 	open_page("contract")
 
 func load_path(path:String):
@@ -457,6 +489,7 @@ func load_path(path:String):
 	accumulator=0
 	autosave_day=sim.state.day
 	last_status=sim.state.status
+	resume_on_close=false
 	close_modal()
 	refresh()
 	toast("完整存档已恢复；按空格继续经营。")
@@ -468,7 +501,7 @@ func save_slot(path:String):
 func career_action(action:String,args:Dictionary={}):
 	var error:String=""
 	if action=="invest":error=Career.invest(sim,float(args.get("amount",0)))
-	elif action=="handover":error=Career.handover(sim,args.get("seed",260130),sim.state.advantage,sim.state.get("difficulty","normal"),"user://manual.json")
+	elif action=="handover":error=Career.handover(sim,args.get("seed",260130),str(args.get("opening",sim.state.advantage)),str(args.get("difficulty",sim.state.get("difficulty","normal"))),"user://manual.json",int(args.get("size",sim.state.world.size)))
 	elif action=="restart":error=Career.restart(sim,str(args.get("difficulty","normal")),"user://manual.json")
 	if error!="":toast(error);return
 	if action in ["handover","restart"]:
@@ -513,6 +546,14 @@ func apply_scale(value:float):
 	settings.load("user://settings.cfg")
 	settings.set_value("display","scale",value)
 	settings.save("user://settings.cfg")
+
+func toggle_panel_pause():
+	panel_pause=not panel_pause
+	var settings=ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("gameplay","panel_pause",panel_pause)
+	settings.save("user://settings.cfg")
+	open_page("save")
 
 func toggle_information():
 	detailed_info=not detailed_info

@@ -452,9 +452,14 @@ void vertex(){object_normal=normalize(VERTEX);}
 void fragment(){
  vec3 n=normalize(object_normal);
  vec2 uv=vec2(atan(n.x,n.z)/6.283185307+.5,.5-asin(clamp(n.y,-1.0,1.0))/3.14159265);
- vec4 tex=texture(atlas,uv);
+ // atan() jumps at the antimeridian. The half-turn copy of u is continuous there, so the
+ // smaller of the two derivatives keeps the mip level correct on both sides of the seam.
+ vec2 wrapped=vec2(fract(uv.x+.5),uv.y);
+ vec2 ddx=vec2(abs(dFdx(uv.x))<abs(dFdx(wrapped.x))?dFdx(uv.x):dFdx(wrapped.x),dFdx(uv.y));
+ vec2 ddy=vec2(abs(dFdy(uv.x))<abs(dFdy(wrapped.x))?dFdy(uv.x):dFdy(wrapped.x),dFdy(uv.y));
+ vec4 tex=textureGrad(atlas,uv,ddx,ddy);
  vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float relief=clamp((texture(atlas,uv-vec2(step_uv.x,0)).a-texture(atlas,uv+vec2(step_uv.x,0)).a+texture(atlas,uv-vec2(0,step_uv.y)).a-texture(atlas,uv+vec2(0,step_uv.y)).a)*26.0,-.24,.24);
+ float relief=clamp((textureGrad(atlas,uv-vec2(step_uv.x,0),ddx,ddy).a-textureGrad(atlas,uv+vec2(step_uv.x,0),ddx,ddy).a+textureGrad(atlas,uv-vec2(0,step_uv.y),ddx,ddy).a-textureGrad(atlas,uv+vec2(0,step_uv.y),ddx,ddy).a)*26.0,-.24,.24);
  relief*=smoothstep(.50,.57,tex.a);
  float daylight=max(dot(n,normalize(sun_direction)),0.0);
  float shade=.065+daylight*.83;
@@ -779,7 +784,17 @@ render_mode blend_mix,depth_draw_never;
 uniform sampler2D clouds:source_color,filter_linear_mipmap,repeat_enable;
 varying vec3 point;
 void vertex(){point=normalize(VERTEX);}
-void fragment(){vec3 p=normalize(point);vec2 uv=vec2(atan(p.x,p.z)/6.2831853+.5,.5-asin(p.y)/3.14159265);vec4 c=texture(clouds,uv);ALBEDO=c.rgb;ROUGHNESS=1.0;ALPHA=c.a;}
+void fragment(){
+ vec3 p=normalize(point);
+ vec2 uv=vec2(atan(p.x,p.z)/6.2831853+.5,.5-asin(p.y)/3.14159265);
+ vec2 wrapped=vec2(fract(uv.x+.5),uv.y);
+ vec2 ddx=vec2(abs(dFdx(uv.x))<abs(dFdx(wrapped.x))?dFdx(uv.x):dFdx(wrapped.x),dFdx(uv.y));
+ vec2 ddy=vec2(abs(dFdy(uv.x))<abs(dFdy(wrapped.x))?dFdy(uv.x):dFdy(wrapped.x),dFdy(uv.y));
+ vec4 c=textureGrad(clouds,uv,ddx,ddy);
+ ALBEDO=c.rgb;
+ ROUGHNESS=1.0;
+ ALPHA=c.a;
+}
 """
 	var sm:=ShaderMaterial.new()
 	sm.shader=s

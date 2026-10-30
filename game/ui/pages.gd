@@ -17,7 +17,7 @@ static func region(g,b):
 		else:g.map.focus_region(id)
 		g.refresh_sidebar())
 	b.add_child(chooser)
-	D.label(b,"耕作潜力  %d%%    水源  %d%%\n海拔  %d m    地区面积随星球尺寸变化"%[r.fertility*100,r.water*100,r.elevation],16,D.MUTED)
+	D.label(b,"耕作潜力  %d%%    水源  %d%%\n海拔  %d m"%[r.fertility*100,r.water*100,r.elevation],16,D.MUTED)
 	for key in ["ore","copper","crystal"]:
 		var row=D.row(b)
 		D.icon(row,key,24)
@@ -57,10 +57,8 @@ static func populate(g,b,page):
 		"contract":contract(g,b)
 		"build":build(g,b)
 		"economy":economy(g,b)
-		"research":research(g,b)
 		"transport":transport(g,b)
 		"enterprise":enterprise(g,b)
-		"events":events(g,b)
 		"save":settings(g,b)
 		"guide":guide(g,b)
 		"world":world_info(g,b)
@@ -157,7 +155,8 @@ static func economy(g,b):
 		D.label(c,pair[0],15,D.MUTED)
 		D.label(c,"¥ "+g.money(pair[1]),29,D.GOLD)
 	var net=float(state.get("operating_net",0))
-	D.label(b,"本期公共经营净额：%+.2f / 日   ·   预计现金可维持：%s"%[net,("%.1f 天"%(maxf(0,state.cash)/abs(net))) if net<0 else "经营净流入"],19,D.TEAL)
+	var runway:float=float(g.sim.summary().runway)
+	D.label(b,"本期公共经营净额：%+.2f / 日   ·   预计现金可维持：%s"%[net,("%.1f 天"%runway) if runway>=0 else "经营净流入"],19,D.TEAL)
 	D.label(b,"本日经营支出 ¥ %.2f · 到期欠款 ¥ %.2f · 连续欠款 %d 日"%[state.get("expense_daily",0),state.get("debt",0),state.get("grace_days",0)],17,D.GOLD)
 	var finance:float=0.0
 	for entry in state.ledger:
@@ -181,35 +180,6 @@ static func economy(g,b):
 		var e:Dictionary=ledger[i]
 		var accounts={"external":"外部","public":"公共","residents":"居民","enterprise":"企业"}
 		D.label(b,"D%d  %s  |  %s → %s  ¥ %.2f"%[e.get("day",0),e.get("category",""),accounts.get(e.get("from",""),e.get("from","")),accounts.get(e.get("to",""),e.get("to","")),e.get("amount",0)],16,D.MUTED)
-
-static func research(g,b):
-	var state:Dictionary=g.sim.state
-	var row=D.row(b)
-	D.portrait(row,"scientist",145,190)
-	var v=D.col(row)
-	v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	D.label(v,"许 知  /  科研负责人",24)
-	D.label(v,"“基础产业不会因为技术进步而失去价值。把每一吨矿石、每一滴水用得更好。”",18,D.MUTED)
-	var current=str(state.research.get("current",""))
-	D.label(v,"在研：%s  ·  累计进度 %.1f"%[g.sim.config.techs.get(current,{"name":"尚未选择"}).name,state.research.get("progress",0)],18,D.GOLD)
-	D.label(v,"需要运营中的教学研究所与研究员。选择项目后自动投入经费；完成当前项目后可切换下一项研究。",16,D.MUTED)
-	if not current.is_empty():
-		var funding=D.row(v)
-		for value in [0.5,1.0,2.0]:
-			var priority=value
-			D.button(funding,str(value)+"× 投入",func():g.act("research",{"tech":current,"priority":priority}))
-		D.label(v,"当前研究经费强度："+str(state.research.get("priority",1))+"×",16,D.TEAL)
-	for key in g.sim.config.techs:
-		var t:Dictionary=g.sim.config.techs[key]
-		var c=D.card(b)
-		var r=D.row(c)
-		var l=D.label(r,t.name+"  /  "+str(t.cost)+" 研究点",21)
-		l.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-		var id=key
-		var done=key in state.research.get("completed",[])
-		var bt=D.button(r,"已完成" if done else "设为优先",func():g.act("research",{"tech":id}))
-		bt.disabled=done
-		D.label(c,t.description+"  前置："+("无" if t.requires.is_empty() else ", ".join(t.requires)),17,D.MUTED)
 
 static func transport(g,b):
 	D.label(b,"矿物向港口汇集，食品向居民流动。",25,D.TEAL)
@@ -252,41 +222,31 @@ static func enterprise(g,b):
 		D.label(c,"本日利润 ¥ %.2f  |  累计销售 ¥ %.2f\n累计工资 ¥ %.2f  |  已缴本地税 ¥ %.2f\n企业独立账户 ¥ %.2f"%[e.get("profit",0),e.get("sales_total",0),e.get("wages_total",0),e.get("tax_total",0),g.sim.state.enterprise_cash],19,D.GOLD)
 		D.label(c,str(e.get("reason","")),17,D.MUTED)
 		D.button(c,"付费重组 / 迁入所选地区 · ¥ %.0f"%forecast.get("recovery_cost",0),func():g.act("enterprise_recover",{"region":g.selected}))
-	D.label(b,"本地企业利润税率",18,D.TEAL)
+	D.label(b,"本地企业利润税率（0—50%）",18,D.TEAL)
 	var row=D.row(b)
-	for rate in [0.05,0.10,0.20]:
-		var tax=rate
-		D.button(row,str(int(rate*100))+"%",func():g.act("policy",{"tax":tax}))
-	D.label(b,"基本供应政策：食品保留天数（各地最低自动贸易储备）",17,D.MUTED)
+	var tax_box=SpinBox.new()
+	tax_box.name="PolicyTax"
+	tax_box.min_value=0
+	tax_box.max_value=50
+	tax_box.step=1
+	tax_box.suffix="%"
+	tax_box.value=float(g.sim.state.policy.tax)*100.0
+	row.add_child(tax_box)
+	D.button(row,"应用税率",func():g.act("policy",{"tax":tax_box.value/100.0}))
+	D.label(b,"基本供应政策：食品保留天数（3—25 天，各地最低自动贸易储备）",17,D.MUTED)
 	var rr=D.row(b)
-	for reserve in [7,10,15]:
-		var val=reserve
-		D.button(rr,str(reserve)+" 天",func():g.act("policy",{"food_reserve":val}))
+	var reserve_box=SpinBox.new()
+	reserve_box.name="PolicyFoodReserve"
+	reserve_box.min_value=3
+	reserve_box.max_value=25
+	reserve_box.step=1
+	reserve_box.suffix="天"
+	reserve_box.value=float(g.sim.state.policy.food_reserve)
+	rr.add_child(reserve_box)
+	D.button(rr,"应用食品底线",func():g.act("policy",{"food_reserve":reserve_box.value}))
 	D.label(b,"当前税率 %.0f%% · 食品底线 %.0f 天"%[g.sim.state.policy.tax*100,g.sim.state.policy.food_reserve],17,D.GOLD)
 	var allowed=bool(g.sim.state.policy.private_allowed)
 	D.button(b,"暂停批准新经营许可" if allowed else "允许商业服务业",func():g.act("policy",{"private_allowed":not allowed}))
-
-static func events(g,b):
-	var row=D.row(b)
-	D.portrait(row,"engineer",200,290)
-	var v=D.col(row)
-	v.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	D.label(v,"林 砾  /  工程负责人",24,D.TEAL)
-	var e:Dictionary=g.sim.state.get("event",{})
-	if e.is_empty():
-		D.label(v,"目前没有待处理的通讯。",22)
-		D.label(v,"关注季节性供水、市场采购窗口与人才申请。预警和后果写入经营日志。",18,D.MUTED)
-	else:
-		D.label(v,str(e.get("title","待处理事件")),23,D.GOLD)
-		D.label(v,str(e.get("text","")),18)
-		for option in e.get("choices",[]):
-			var id=option.id
-			D.button(v,option.label,func():g.act("event",{"choice":id}))
-	D.label(b,"殖民日志",21,D.TEAL)
-	var logs:Array=g.sim.state.get("log",[])
-	for i in range(logs.size()-1,maxi(-1,logs.size()-20),-1):
-		var entry=logs[i]
-		D.label(b,"第 %d 日 · %s"%[entry.get("day",0),entry.get("text","")] if entry is Dictionary else str(entry),16,D.MUTED)
 
 static func settings(g,b):
 	D.label(b,"安全存档 / 独立保存世界与经营状态",23,D.TEAL)
@@ -296,14 +256,16 @@ static func settings(g,b):
 	D.button(r,"保存手动档",func():g.save_slot("user://manual.json"))
 	D.button(r,"读取手动档",func():g.load_path("user://manual.json"))
 	D.button(r,"读取自动档",func():g.load_path("user://autosave.json"))
-	for item in [["危机整改","acceptance_crisis"],["事件中段","acceptance_event_mid"],["总督移交前","acceptance_governor"],["第二星球分红后","acceptance_second_dividend"]]:
-		var path:String="res://data/v16/"+item[1]+".json"
-		var button=D.button(b,"读取1.6验收："+item[0],func():g.load_path(path))
-		button.disabled=not FileAccess.file_exists(path)
-	D.button(b,"读取1.5兼容性示例（中期）",func():g.load_path("res://data/acceptance_midgame.json"))
+	if g.dev_mode:
+		for item in [["危机整改","acceptance_crisis"],["事件中段","acceptance_event_mid"],["总督移交前","acceptance_governor"],["第二星球分红后","acceptance_second_dividend"]]:
+			var path:String="res://data/v16/"+item[1]+".json"
+			var button=D.button(b,"读取1.6验收："+item[0],func():g.load_path(path))
+			button.disabled=not FileAccess.file_exists(path)
+		D.button(b,"读取1.5兼容性示例（中期）",func():g.load_path("res://data/acceptance_midgame.json"))
 	D.button(b,"读取上一版手动档（原文件保留）",func():g.load_path(OS.get_environment("APPDATA")+"/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"))
 	D.label(b,"说明详细度与难度独立；所有核心规则和重要原因始终可见。",16,D.MUTED)
 	D.button(b,"当前详细记录（30条流水 / 20条事件）" if g.detailed_info else "当前精简记录（6条流水 / 6条事件）",g.toggle_information)
+	D.button(b,"打开面板时暂停：开（关闭后恢复原速度）" if g.panel_pause else "打开面板时暂停：关（面板打开时时间继续）",g.toggle_panel_pause)
 	D.label(b,"窗口分辨率",20)
 	var resolutions=D.row(b)
 	for size in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:

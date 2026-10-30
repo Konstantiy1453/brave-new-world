@@ -89,7 +89,7 @@ func run_tests()->void:
 		opening.act("build",{"region":0,"kind":"mine_copper"})
 		if advantage=="science":
 			check(opening.act("build",{"region":0,"kind":"lab"})=="","science opening builds academy")
-			check(opening.act("research",{"tech":"survey"})=="","science opening starts research")
+			check(opening.act("research_allocate",{"tech":"survey","staff":mini(10,int(opening.research_view().available))})=="","science opening starts research")
 		for d in range(90):
 			if not opening.state.event.is_empty(): opening.act("event",{"choice":opening.state.event.choices[0].id})
 			opening.tick()
@@ -125,7 +125,7 @@ func _scenario(advantage:String)->void:
 	check(s.act("build",{"region":0,"kind":"mine_copper"})=="","scenario copper "+advantage)
 	if advantage=="science":
 		check(s.act("build",{"region":0,"kind":"lab"})=="","scenario science academy")
-		s.act("research",{"tech":"survey","priority":2.0})
+		s.act("research_allocate",{"tech":"survey","staff":mini(10,int(s.research_view().available))})
 	var first_success:int=-1
 	var violations:int=0
 	var processing_built:bool=false
@@ -141,7 +141,7 @@ func _scenario(advantage:String)->void:
 				processing_built=s.act("build",{"region":0,"kind":"processor"})==""
 		if day==60 and advantage!="science":
 			check(s.act("build",{"region":0,"kind":"lab"})=="","scenario academy "+advantage)
-			s.act("research",{"tech":"survey"})
+			s.act("research_allocate",{"tech":"survey","staff":mini(10,int(s.research_view().available))})
 		if not s.state.event.is_empty():
 			var choice:String=s.state.event.choices[0].id
 			if s.act("event",{"choice":choice})!="": s.act("event",{"choice":s.state.event.choices[1].id})

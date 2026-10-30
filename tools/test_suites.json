@@ -3,6 +3,7 @@
   "default_failure": "(?m)^(FAIL[: ]|ERROR: FAIL)|failures=[1-9]",
   "script_errors": "SCRIPT ERROR|Parse Error|WATCHDOG_TIMEOUT|Failed to load script",
   "suites": [
+    {"name": "v17_bugs", "script": "res://tests/v17_bugs.gd", "success": "V17_BUGS_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},
     {"name": "ui_contract", "script": "res://tests/ui_contract.gd", "success": "PASS: UI boots"},
@@ -42,6 +43,7 @@
     {"name": "review_world", "script": "res://../tools/review_world.gd", "success": "WORLD_REVIEW_PROBE_DONE"},
     {"name": "v16_interaction_probe", "script": "res://tests/v16_interaction_probe.gd", "window": true},
     {"name": "v16_scroll_probe", "script": "res://tests/v16_scroll_probe.gd", "window": true},
-    {"name": "world_v16_visual", "script": "res://tests/world_v16_visual.gd", "window": true}
+    {"name": "world_v16_visual", "script": "res://tests/world_v16_visual.gd", "window": true},
+    {"name": "world_v17_seam", "script": "res://tests/world_v17_seam.gd", "window": true, "success": "WORLD_V17_SEAM_RESULT failures=0"}
   ]
 }

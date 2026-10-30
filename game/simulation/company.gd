@@ -33,7 +33,21 @@ static func social_environment(sim)->void:
 			sim.state.departed_total+=1
 			sim._reconcile_jobs(s)
 			sim._log(s.name+"：持续缺乏住房、工作或食品，1 名工人离开星球。")
-static func accept(sim,offer:String)->String:
+## The settlement that most lacks what this aid carries; ties go to the earliest settlement.
+static func aid_target(sim,d:Dictionary)->int:
+	var best:int=-1
+	var worst:float=-INF
+	for s in sim.state.settlements:
+		if int(s.arrival)>0: continue
+		var score:float=0.0
+		if float(d.food)>0: score+=maxf(0.0,10.0-float(s.food_days))/10.0+float(s.starvation)
+		if float(d.materials)>0: score+=maxf(0.0,35.0-float(s.stock.materials))/35.0
+		if float(d.parts)>0: score+=maxf(0.0,12.0-float(s.stock.parts))/12.0
+		if score>worst:
+			worst=score
+			best=int(s.region)
+	return best
+static func accept(sim,offer:String,region:int=-1)->String:
 	ensure(sim)
 	var c:Dictionary=sim.state.company
 	var cfg:Dictionary=sim.progression.company
@@ -50,7 +64,8 @@ static func accept(sim,offer:String)->String:
 	terms.status="in_transit"
 	terms.paid=0.0
 	terms.surcharge_paid=0.0
-	terms.region=int(sim.state.settlements[0].region)
+	terms.region=region if not sim.settlement(region).is_empty() else aid_target(sim,d)
+	if int(terms.region)<0: terms.region=int(sim.state.settlements[0].region)
 	c.aid.append(terms)
 	c.claimed.append(offer)
 	if int(c.deadline)>=0 and not c.extension_used:
@@ -60,7 +75,7 @@ static func accept(sim,offer:String)->String:
 	return ""
 static func act(sim,args:Dictionary)->String:
 	match str(args.get("operation","accept")):
-		"accept": return accept(sim,str(args.get("offer","")))
+		"accept": return accept(sim,str(args.get("offer","")),int(args.get("region",-1)))
 		"cleanup":
 			var s:Dictionary=sim.settlement(int(args.get("region",-1)))
 			if s.is_empty(): return "请选择据点"
@@ -169,6 +184,7 @@ static func view(sim)->Dictionary:
 		var row:Dictionary=sim.progression.company.offers[key].duplicate(true)
 		row.id=key
 		row.claimed=sim.state.company.claimed.has(key)
+		row.target_region=aid_target(sim,row)
 		c.offers.append(row)
 	c.next_condition="解决原因并稳定 10 日可阻止升级；后续不信任逐日恢复"
 	return c

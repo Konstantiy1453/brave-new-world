@@ -170,7 +170,7 @@ static func invest(sim,amount:float)->String:
 	sim._transfer("external","public",amount,"生涯资金注资（不计当地经营利润）",false)
 	return ""
 
-static func handover(sim,seed_value:Variant,advantage:String,difficulty:String,path:String)->String:
+static func handover(sim,seed_value:Variant,advantage:String,difficulty:String,path:String,size_id:int=-1)->String:
 	ensure(sim)
 	if sim.state.status!="success":return "先取得本星球总督资格，才可移交代管"
 	if path.is_empty():return "需要指定完整生涯存档位置"
@@ -188,7 +188,7 @@ static func handover(sim,seed_value:Variant,advantage:String,difficulty:String,p
 	c.last_local_day=0
 	c.checkpoint=""
 	var next=sim.get_script().new()
-	next.new_game(seed_value,advantage,1,difficulty)
+	next.new_game(seed_value,advantage,int(sim.state.world.size) if size_id<0 else size_id,difficulty)
 	next.state.career=c
 	capture_checkpoint(next)
 	var error:String=next._validate_save(next.state)
