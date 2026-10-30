@@ -5,7 +5,7 @@ const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Market = preload("res://simulation/market.gd")
 ## Port capacity goes to the most valuable tonne first.
-const EXPORT_ORDER: Array[String] = ["parts", "crystal", "copper", "materials", "ore"]
+const EXPORT_ORDER: Array[String] = ["components", "parts", "crystal", "copper", "materials", "ore"]
 const EventsV2 = preload("res://simulation/events_v2.gd")
 
 
@@ -161,7 +161,7 @@ static func dispatch(sim: RefCounted) -> void:
 	if WorldGen.road_blocked(r, int(sim.state.day)):
 		return
 	var cap: float = float(r.capacity) * (1.4 if sim._has("logistics") else 1.0)
-	for resource in ["food", "materials", "parts", "ore", "copper", "crystal"]:
+	for resource in ["food", "materials", "parts", "components", "ore", "copper", "crystal"]:
 		for pair in [[int(r.a), int(r.b)], [int(r.b), int(r.a)]]:
 			var src: Dictionary = sim.settlement(pair[0])
 			var dst: Dictionary = sim.settlement(pair[1])
@@ -275,6 +275,8 @@ static func road_daily(sim: RefCounted) -> void:
 	sim._public_expense(float(r.get("upkeep", 0.0)), "road.upkeep", "external")
 	var rules: Dictionary = road_variant(sim, bool(r.get("mountain", false)))
 	var chance: float = float(rules.closure_chance_per_day)
+	if bool(r.get("paved", false)):
+		chance *= float(sim.config.road_upgrade.closure)
 	if chance <= 0.0 or WorldGen.road_blocked(r, int(sim.state.day)):
 		return
 	if _roll(sim) < chance:
@@ -339,3 +341,28 @@ static func _import(
 	sim._produce(s, key, amount, "外部进口")
 	sim.state.imports_total += amount * price
 	return capacity - amount
+
+
+## Paved roads carry more, arrive sooner and close less often.
+static func upgrade_road(sim: RefCounted) -> String:
+	var r: Dictionary = sim.state.route
+	if r.is_empty():
+		return "还没有道路"
+	if bool(r.get("paved", false)):
+		return "道路已经铺装"
+	var rules: Dictionary = sim.config.road_upgrade
+	if not sim._has(str(rules.tech)):
+		return "需要技术：" + str(sim.config.techs[rules.tech].name)
+	var cost: float = float(r.cost) * float(rules.cost_factor)
+	if float(sim.state.cash) < cost:
+		return "道路升级需要 %.0f 资金" % cost
+	var s: Dictionary = sim.settlement(int(r.a))
+	if float(s.stock.materials) < float(rules.materials):
+		return "起点仓库需要 %.0f 建材" % float(rules.materials)
+	sim._transfer("public", "external", cost, "invest.road", false, "paved")
+	sim._consume(s, "materials", float(rules.materials))
+	r.paved = true
+	r.capacity = int(round(float(r.capacity) * float(rules.capacity)))
+	r.days = maxi(1, int(r.days) + int(rules.days))
+	sim._log("道路铺装完成：单程 %d 天，每天 %d 吨。" % [int(r.days), int(r.capacity)])
+	return ""

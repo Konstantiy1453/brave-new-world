@@ -119,10 +119,20 @@ static func ensure_systems(target: Dictionary) -> void:
 	Contract.ensure_state(target)
 	Population.ensure_state(target)
 	Market.ensure_state(target)
+	Production.ensure_state(target)
+	Research.ensure_state(target)
 
 
 func _stock() -> Dictionary:
-	return {"ore": 0.0, "copper": 0.0, "crystal": 0.0, "food": 0.0, "materials": 0.0, "parts": 0.0}
+	return {
+		"ore": 0.0,
+		"copper": 0.0,
+		"crystal": 0.0,
+		"food": 0.0,
+		"materials": 0.0,
+		"parts": 0.0,
+		"components": 0.0
+	}
 
 
 func settlement(region: int) -> Dictionary:
@@ -176,6 +186,12 @@ func act(action: String, args: Dictionary = {}) -> String:
 			return _resolve_event(str(args.get("choice", "")))
 		"toggle":
 			return Production.toggle(self, int(args.get("region", -1)), int(args.get("index", -1)))
+		"upgrade":
+			return Production.upgrade(self, int(args.get("region", -1)), int(args.get("index", -1)))
+		"upgrade_road":
+			return Logistics.upgrade_road(self)
+		"research_contract":
+			return Research.set_contract(self, int(args.get("staff", 0)))
 	return "未知操作"
 
 
@@ -546,6 +562,14 @@ func build_forecast(region: int, kind: String) -> Dictionary:
 
 func population_view(region: int) -> Dictionary:
 	return Population.view(self, region)
+
+
+func upgrade_preview(region: int, index: int) -> Dictionary:
+	return Production.upgrade_preview(self, region, index)
+
+
+func research_tree() -> Array:
+	return Research.tree(self)
 
 
 func contract_view() -> Dictionary:

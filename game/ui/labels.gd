@@ -10,6 +10,7 @@ const RESOURCE_NAMES: Dictionary = {
 	"food": "食品",
 	"materials": "建材",
 	"parts": "部件",
+	"components": "电子元件",
 }
 const ENTERPRISE_STATUS: Dictionary = {
 	Keys.E_FITTING: "装修中",
@@ -71,9 +72,18 @@ const LEDGER: Dictionary = {
 	"contract.reward": "合同阶段发展资金",
 	"road.upkeep": "道路养护",
 	"recruit": "招募移民",
+	"invest.upgrade": "设施升级",
+	"research.contract": "科研委托收入",
 	"legacy.event": "旧版事件",
 }
 
+const TECH_BRANCHES: Dictionary = {
+	"extraction": "采掘",
+	"agriculture": "农业",
+	"industry": "工业",
+	"logistics": "物流",
+	"society": "社会",
+}
 const STAGE_NAMES: Dictionary = {
 	"foothold": "第一阶段 · 立足",
 	"division": "第二阶段 · 分工",
@@ -190,6 +200,13 @@ static func building_name(config: Dictionary, kind: String) -> String:
 
 
 static func building_status(building: Dictionary) -> String:
+	var days: int = int(building.get("upgrade_days", 0))
+	if days > 0:
+		return "%s · 升级中 余 %d 天" % [_base_status(building), days]
+	return _base_status(building)
+
+
+static func _base_status(building: Dictionary) -> String:
 	match str(building.get("status", "")):
 		Keys.B_BUILDING:
 			return "建设中 · 余 %d 天" % int(building.get("remaining", 0))
@@ -258,8 +275,10 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 		return name
 	if key in ["export", "import.stock"]:
 		return "%s · %s" % [name, str(config.resources.get(detail, detail))]
-	if key == "invest.build":
+	if key in ["invest.build", "invest.upgrade", "wages.public", "upkeep.facility"]:
 		return "%s · %s" % [name, building_name(config, detail)]
+	if key == "invest.road":
+		return "%s · 铺装" % name
 	if key == "research.funding":
 		return "%s · %s" % [name, str(config.techs.get(detail, {}).get("name", detail))]
 	return "%s · %s" % [name, detail]

@@ -3,7 +3,13 @@ const D = preload("res://ui/design.gd")
 const WG = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const RES = {
-	"ore": "铁矿", "copper": "铜矿", "crystal": "工业晶体", "food": "食品", "materials": "建材", "parts": "部件"
+	"ore": "铁矿",
+	"copper": "铜矿",
+	"crystal": "工业晶体",
+	"food": "食品",
+	"materials": "建材",
+	"parts": "部件",
+	"components": "电子元件"
 }
 
 
@@ -94,9 +100,10 @@ static func region(g, b):
 		D.label(
 			b,
 			(
-				"%s · %s"
+				"%s%s · %s"
 				% [
 					Labels.building_name(g.sim.config, item.kind),
+					" %d 级" % int(item.level) if int(item.level) > 1 else "",
 					"运营" if active else Labels.building_status(item)
 				]
 			),
@@ -120,6 +127,17 @@ static func region(g, b):
 					str(preview.get("housing_shortfall", "—"))
 				]
 			)
+			var upgrade: Dictionary = g.sim.upgrade_preview(int(s.region), idx)
+			if not upgrade.is_empty() and g.sim.state.research.completed.has(upgrade.tech):
+				var raise_level = D.button(
+					b,
+					"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost)],
+					func(): g.act("upgrade", {"region": g.selected, "index": idx}),
+					str(upgrade.disabled_reason)
+				)
+				D.font_size(raise_level, 14)
+				raise_level.custom_minimum_size.y = 30
+				raise_level.disabled = str(upgrade.disabled_reason) != ""
 
 
 static func populate(g, b, page):
@@ -374,12 +392,17 @@ static func build(g, b):
 			D.GOLD
 		)
 		var kind = key
-		D.button(
+		var needed: String = str(spec.get("requires_tech", ""))
+		var locked: bool = needed != "" and not g.sim.state.research.completed.has(needed)
+		var order = D.button(
 			r,
-			"下达建设",
+			"需要：" + str(g.sim.config.techs[needed].name) if locked else "下达建设",
 			func(): g.act("build", {"region": g.selected, "kind": kind}),
 			str(spec.description)
 		)
+		order.disabled = locked
+		if bool(spec.get("megaproject", false)):
+			D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 16, D.TEAL)
 		D.label(card, spec.description + "  日维护 ¥ %.1f。" % spec.maintenance, 16, D.MUTED)
 
 
@@ -548,6 +571,17 @@ static func transport(g, b):
 			18,
 			D.TEAL
 		)
+		var paving: Dictionary = g.sim.config.road_upgrade
+		if state.research.completed.has(paving.tech) and not bool(state.route.get("paved", false)):
+			D.button(
+				b,
+				(
+					"铺装道路 · ¥ %.0f + 建材 %.0f t"
+					% [float(state.route.cost) * float(paving.cost_factor), float(paving.materials)]
+				),
+				func(): g.act("upgrade_road"),
+				"运力 +50%，单程 -1 天，封路风险 -70%"
+			)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
 		D.label(

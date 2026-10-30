@@ -46,15 +46,14 @@ static func social_environment(sim) -> void:
 				continue
 			if b.kind.begins_with("mine_"):
 				pollution += float(sim.progression.production.mine_pollution) * float(b.efficiency)
-			if b.kind == "processor":
+			if b.kind in ["processor", "component_plant"]:
 				pollution += (
 					float(sim.progression.production.processor_pollution) * float(b.efficiency)
 				)
-		s.pollution = clampf(
-			float(s.pollution) + pollution - float(sim.progression.production.pollution_decay),
-			0.0,
-			100.0
-		)
+		var decay: float = float(sim.progression.production.pollution_decay)
+		if sim._has("remediation"):
+			decay *= float(sim.progression.production.remediation_decay_factor)
+		s.pollution = clampf(float(s.pollution) + pollution - decay, 0.0, 100.0)
 		if s.pollution > float(cfg.pollution_threshold):
 			sim._public_expense(
 				(float(s.pollution) - float(cfg.pollution_threshold)) * 0.10,
@@ -75,7 +74,7 @@ static func social_environment(sim) -> void:
 		s.social_days = int(s.social_days) + 1 if distressed else maxi(0, int(s.social_days) - 1)
 		if (
 			int(s.social_days) >= int(cfg.departure_after)
-			and int(s.social_days) % _departure_period(sim, cfg) == 0
+			and int(s.social_days) % _departure_period(sim, cfg, s) == 0
 			and s.workers > 2
 		):
 			var leaving: int = mini(
@@ -91,8 +90,11 @@ static func social_environment(sim) -> void:
 
 ## The settlement that most lacks what this aid carries; ties go to the earliest settlement.
 ## Better wages keep people through hard times: departures come less often.
-static func _departure_period(sim: RefCounted, cfg: Dictionary) -> int:
-	return maxi(1, int(round(float(cfg.departure_period) * Population.wage_multiplier(sim))))
+static func _departure_period(sim: RefCounted, cfg: Dictionary, s: Dictionary) -> int:
+	var period: float = float(cfg.departure_period) * Population.wage_multiplier(sim)
+	if Population.has_clinic(s):
+		period *= float(sim.pop_rules.departure.clinic_factor)
+	return maxi(1, int(round(period)))
 
 
 ## Distress counts in proportion to the people it touches, so a small outpost in trouble cannot
@@ -181,6 +183,8 @@ static func act(sim, args: Dictionary) -> String:
 			if s.is_empty():
 				return "请选择据点"
 			var cost: float = float(sim.progression.production.cleanup_cost)
+			if sim._has("remediation"):
+				cost *= float(sim.progression.production.remediation_cost_factor)
 			if sim.state.cash < cost:
 				return "治理需要 %.0f 资金" % cost
 			sim._transfer("public", "external", cost, "company.cleanup", false)

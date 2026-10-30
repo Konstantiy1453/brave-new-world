@@ -63,3 +63,29 @@ Export price = base × clamp(1 − 0.4 · S / M, 0.6, 1), where S rises with eve
 Trade order each day: foodworks orders, food imports, construction imports, then exports by value (parts, crystal, copper, materials, ore).
 
 Tick additions: `road_daily` and `Market.daily` after dispatch; administration uses `_admin_cost()`.
+
+## Research (data/v17/economy.json `techs`, progression.json `research`)
+
+R(n) = R10 × (n / 10)^α with R10 = 2.0 points a day and α = ln 0.6 / ln 0.5, so R(5) = 0.6 R(10) and R(0) = 0. Funding per day = tier funding × R(n) / R10: 8, 14, 22 for tiers 1, 2, 3 at ten staff.
+
+| Tier | Cost | Technologies |
+|---|---|---|
+| 1 | 40-60 | survey 45, adaptation 40, irrigation 55, processing 60, logistics 55, medicine 50, education 60 |
+| 2 | 100-140 | deep_mining 120, prospecting 100, hydroponics 120, efficiency 110, electronics 130, paved_roads 100, shipping 120, research_network 110, remediation 100 |
+| 3 | 220-260 | automation 240, university 220, lift_port 260, climate 260 |
+
+Scientists go first to investigations, then to projects in the order staffed, then to contracts. Labs: L1 10 seats and 2 benches; L2 (research_network, ¥1,200) 20 seats and 3 benches. A contract takes a bench and pays R(n) × ¥40 a day as operating income, counted as non-mining income by the contract.
+
+## Buildings added and upgrades (data/v17/economy.json `buildings`, `upgrades`)
+
+| Building | Needs | Effect |
+|---|---|---|
+| Clinic | medicine | Attractiveness +0.3, births ×1.5, departures half as often |
+| Hydroponic farm | hydroponics | 26 t food a day regardless of soil, power 10 |
+| Component plant | electronics | 0.8 parts + 0.6 crystal → 1 t components (¥110, market scale 300) |
+| University | university, ¥9,000, 60 days | Research ×1.25, +20 points of scientist immigration share |
+| Lift port | lift_port, ¥16,000, 90 days | Local port capacity ×3, all export prices +10% |
+| Climate regulator | climate, ¥14,000, 75 days | +3 °C and +10% farm yield within 35° |
+
+Upgrades: mine L2 (deep_mining: +60%, +4 jobs) and L3 (automation: ×2.2, +6 jobs); habitat L2 (medicine: 70 beds); lab L2; processor L2 (electronics: ×1.5, +3 jobs); farm L2 (hydroponics: ×1.4, +3 power); port L2 (logistics: ×1.5). Automation also takes 30% of jobs from mines and processing plants. A building keeps working at its old level while it is upgraded. Paving a road (paved_roads): half the road's cost and 30 t of materials for +50% capacity, one day less, 70% less closure risk.
+

@@ -27,6 +27,7 @@ var overlay: Control
 var modal_box: VBoxContainer
 var modal_feedback: Label
 var selected: int = 0
+var selected_tech: String = ""
 var local_view: bool = false
 var paused: bool = true
 var speed: int = 1

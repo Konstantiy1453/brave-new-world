@@ -2,7 +2,9 @@ extends RefCounted
 ## English keys for simulation states. Display strings live in ui/labels.gd, and no logic
 ## compares them.
 
-const RESOURCES: Array[String] = ["ore", "copper", "crystal", "food", "materials", "parts"]
+const RESOURCES: Array[String] = [
+	"ore", "copper", "crystal", "food", "materials", "parts", "components"
+]
 
 const B_BUILDING: String = "building"
 const B_PENDING: String = "pending"

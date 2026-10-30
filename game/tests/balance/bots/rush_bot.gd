@@ -11,7 +11,7 @@ func _init() -> void:
 	science_target = 0.06
 	population_goal = 240
 	lab_day = 1
-	tech_order = ["adaptation", "survey", "irrigation", "logistics", "processing"]
+	tech_order = ["adaptation", "survey"]
 
 
 func finished() -> bool:

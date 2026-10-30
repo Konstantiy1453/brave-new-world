@@ -94,6 +94,8 @@ func _init() -> void:
 func research_path(split: bool) -> Dictionary:
 	var s = make()
 	s._transfer("external", "public", 20000.0, "test controlled research funding", false)
+	# The science opening's head start would finish a project this small on day one.
+	s.state.research.projects.erase("survey")
 	s.config.techs.survey.cost = 12.0
 	s.config.techs.irrigation.cost = 12.0
 	s.act("build", {"region": 0, "kind": "lab"})

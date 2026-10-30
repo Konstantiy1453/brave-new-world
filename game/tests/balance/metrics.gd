@@ -136,11 +136,15 @@ func _count_entry(entry: Dictionary, day: int) -> void:
 		_operating_surplus -= amount
 		if day >= RESEARCH_WINDOW_FIRST_DAY and day <= RESEARCH_WINDOW_LAST_DAY:
 			_window_expense += amount
-			if key.begins_with("research."):
+			if key.begins_with("research.") or _is_lab_cost(key, entry):
 				_research_spend += amount
 	if not operating and entry.from == "public" and entry.to == "external":
 		if key != "arrears" and not key.begins_with("aid."):
 			_reinvested += amount
+
+
+func _is_lab_cost(key: String, entry: Dictionary) -> bool:
+	return key in ["wages.public", "upkeep.facility"] and entry.detail == "lab"
 
 
 func _scan_events(sim: RefCounted) -> void:

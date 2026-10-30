@@ -4,6 +4,7 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
+const Megaprojects = preload("res://simulation/megaprojects.gd")
 const STAGE_COUNT: int = 3
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
 
@@ -293,10 +294,21 @@ static func _check_milestones(sim: RefCounted) -> void:
 				reached = population_total(sim) >= int(milestone.target)
 			"settlements":
 				reached = sim.state.settlements.size() >= int(milestone.target)
+			"megaprojects":
+				reached = Megaprojects.count(sim) >= int(milestone.target)
+			"tier2_techs":
+				reached = _all_tier_two(sim)
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)
 			sim._log("行星里程碑达成，生涯资金增加 %.0f。" % float(milestone.reward))
+
+
+static func _all_tier_two(sim: RefCounted) -> bool:
+	for tech: String in sim.config.techs:
+		if int(sim.config.techs[tech].tier) == 2 and not sim._has(tech):
+			return false
+	return true
 
 
 static func daily(sim: RefCounted) -> void:

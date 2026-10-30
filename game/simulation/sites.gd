@@ -91,6 +91,16 @@ static func settle(sim: RefCounted, region: int) -> String:
 			sim._produce(s, res, float(op[res]), "初始公司物资")
 		for kind in ["power", "water", "port"]:
 			s.buildings.append(sim._building(kind, 0))
+		for kind: String in op.get("prefab", []):
+			s.buildings.append(sim._building(kind, 0))
+		for tech: String in op.get("head_start", {}):
+			sim.state.research.projects[tech] = {
+				"staff": 0,
+				"work": float(op.head_start[tech]),
+				"effective": 0,
+				"rate": 0.0,
+				"reason": ""
+			}
 		# Initial child cohorts age after 8 simulated years, adults are aggregate groups.
 		s.cohorts.append({"count": children, "mature_day": 2880})
 	else:

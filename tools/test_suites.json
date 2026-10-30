@@ -6,6 +6,7 @@
     {"name": "v17_bugs", "script": "res://tests/v17_bugs.gd", "success": "V17_BUGS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_saves", "script": "res://tests/v17_saves.gd", "success": "V17_SAVES_RESULT checks=\\d+ failures=0"},
     {"name": "v17_contract_population", "script": "res://tests/v17_contract_population.gd", "success": "V17_CONTRACT_RESULT checks=\\d+ failures=0"},
+    {"name": "v17_research", "script": "res://tests/v17_research.gd", "success": "V17_RESEARCH_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},
     {"name": "ui_contract", "script": "res://tests/ui_contract.gd", "success": "PASS: UI boots"},

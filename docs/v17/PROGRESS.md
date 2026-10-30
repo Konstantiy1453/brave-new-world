@@ -8,8 +8,9 @@
 | 1 Bugs, QA export, formatting | Done (`v17-phase1`) |
 | 2 Foundations | Done (`v17-phase2`) |
 | 3 Contract, population, economy | Done (`v17-phase3`), day-720 rows await Phase 5 |
-| 4 Research | Next |
-| 5–8 | Not started |
+| 4 Research | Done (`v17-phase4`), climate visual on the globe and deep deposits await Phase 5 |
+| 5 CC-GEO-2.0, sites, roads, plots | Next |
+| 6–8 | Not started |
 
 ## Done
 
@@ -22,13 +23,15 @@
 
 - Phase 3: three-stage contract with licences and soft deadlines; attractiveness, immigration, wage policy, recruitment, births; market saturation; running costs; road upkeep and closure; costlier aid; needs-first imports; depleted mines idle; `build_forecast`; contract and population pages; bots rewritten on a shared `colony_bot.gd`.
 
+- Phase 4: Appendix D's 20 technologies with tiers and prerequisites; R10 = 2.0; lab L2; paid research contracts; building upgrades that keep the building working; clinic, hydroponic farm, component plant and the `components` good; road paving; three megaprojects with their effects and milestones; prefab lab and head start for the science opening; tech-tree page with staffing previews; `v17_research` suite.
+
 ## In progress
 
 Nothing.
 
 ## Next step
 
-Phase 4: tech tree from Appendix D in `economy.json`, tier costs, lab L2, research contracts, building upgrades, megaprojects, tech-tree UI, milestones for megaprojects and tier 2, research rows. Tuning aids: `game/tests/balance/trace_run.gd` prints one bot's timeline.
+Phase 5: CC-GEO-2.0 in `game/world/geo2/`, sites with archetypes and quotas, survey and prospecting, `routes.gd`, road network, sea routes, plots instead of `SITE_BUILDING_CAP`, region view rework, 1.6 save migration. The bots must then found settlements by forecast; their colonies currently run out of deposits around day 360. Tuning aids: `game/tests/balance/trace_run.gd` prints one bot's timeline.
 
 ## Blockers
 
@@ -36,4 +39,4 @@ None.
 
 ## Latest harness metrics
 
-Phase 3, `--full`: floor day 111; balanced award easy 137, standard 172, hard 201; passive review 57, failure 147; sloppy fails on hard; 0 audit errors. Misses: day-720 population and money (deposit exhaustion until Phase 5), research and event rows (Phases 4 and 6). See `BALANCE.md`.
+Phase 4, `--full`: floor day 105; balanced award easy 142, standard 162, hard 198; openings 163 / 158 / 166; passive review 57, failure 147; sloppy fails on hard; balanced research 5 techs, 14% scientists, 23% spend; research-first 7 techs at day 178; 0 audit errors in 950 runs. Misses: day-720 population 506 and income ×0.98 (deposit exhaustion until Phase 5), event rows (Phase 6). See `BALANCE.md`.

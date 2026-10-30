@@ -2,6 +2,8 @@ extends RefCounted
 ## Dynamic export prices. Each good has a saturation stock that rises with exports and decays
 ## daily: price = base * clamp(1 - depth * saturation / scale, floor, 1).
 
+const Megaprojects = preload("res://simulation/megaprojects.gd")
+
 
 static func ensure_state(state: Dictionary) -> void:
 	if not state.has("market"):
@@ -19,7 +21,7 @@ static func factor(sim: RefCounted, good: String) -> float:
 
 
 static func price(sim: RefCounted, good: String) -> float:
-	return float(sim.config.prices[good]) * factor(sim, good)
+	return float(sim.config.prices[good]) * factor(sim, good) * Megaprojects.export_factor(sim)
 
 
 static func record_export(sim: RefCounted, good: String, amount: float) -> void:

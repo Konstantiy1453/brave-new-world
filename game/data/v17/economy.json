@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "units": {
     "money": "account units",
     "goods": "tonnes",
@@ -12,7 +12,8 @@
     "crystal": "工业晶体",
     "food": "食品",
     "materials": "建材",
-    "parts": "机械部件"
+    "parts": "机械部件",
+    "components": "电子元件"
   },
   "prices": {
     "ore": 8.0,
@@ -20,7 +21,8 @@
     "crystal": 32.0,
     "food": 3.0,
     "materials": 12.0,
-    "parts": 38.0
+    "parts": 38.0,
+    "components": 110.0
   },
   "economy": {
     "wage": 1.5,
@@ -37,7 +39,8 @@
       "copper": 6.0,
       "crystal": 2.0,
       "materials": 90.0,
-      "parts": 20.0
+      "parts": 20.0,
+      "components": 0.0
     },
     "admin_per_resident": 0.04,
     "admin_per_settlement": 3.0,
@@ -67,7 +70,10 @@
       "materials": 175.0,
       "parts": 46.0,
       "food": 320.0,
-      "description": "更多劳动人口与预制物资，可迅速建设双矿和加工厂。"
+      "description": "更多劳动人口与预制物资，可迅速建设双矿和加工厂。",
+      "prefab": [
+        "habitat"
+      ]
     },
     "science": {
       "name": "科研合作",
@@ -78,7 +84,13 @@
       "materials": 155.0,
       "parts": 42.0,
       "food": 280.0,
-      "description": "保留采矿劳力，科研经费减半；勘探技术可快速提升矿山产量。"
+      "description": "保留采矿劳力，科研经费减半；勘探技术可快速提升矿山产量。",
+      "prefab": [
+        "lab"
+      ],
+      "head_start": {
+        "survey": 15.0
+      }
     }
   },
   "buildings": {
@@ -234,69 +246,331 @@
       "maintenance": 1.5,
       "food_input": 6.0,
       "daily_payment": 78.0,
-      "description": "作物适配解锁；消耗 6 食品及 6 吨港口吞吐，向轨道补给采购局交付加工食品；外部付款 78/日，受供给与岗位限制。"
+      "description": "作物适配解锁；消耗 6 食品及 6 吨港口吞吐，向轨道补给采购局交付加工食品；外部付款 78/日，受供给与岗位限制。",
+      "requires_tech": "adaptation"
+    },
+    "clinic": {
+      "name": "社区诊所",
+      "cost": 520.0,
+      "materials": 14.0,
+      "parts": 3.0,
+      "days": 5,
+      "jobs": 5,
+      "power": 2.0,
+      "water": 2.0,
+      "maintenance": 2.5,
+      "requires_tech": "medicine",
+      "description": "吸引力 +0.3，离开减半，出生 ×1.5。"
+    },
+    "hydroponic_farm": {
+      "name": "水培温室",
+      "cost": 900.0,
+      "materials": 26.0,
+      "parts": 8.0,
+      "days": 6,
+      "jobs": 8,
+      "power": 10.0,
+      "water": 3.0,
+      "maintenance": 3.0,
+      "rate": 26.0,
+      "requires_tech": "hydroponics",
+      "description": "产量不受土壤影响；耗电高。"
+    },
+    "component_plant": {
+      "name": "电子元件厂",
+      "cost": 1400.0,
+      "materials": 30.0,
+      "parts": 12.0,
+      "days": 8,
+      "jobs": 10,
+      "power": 9.0,
+      "water": 3.0,
+      "maintenance": 4.0,
+      "requires_tech": "electronics",
+      "inputs": {
+        "parts": 0.8,
+        "crystal": 0.6
+      },
+      "outputs": {
+        "components": 1.0
+      },
+      "description": "每日消耗 0.8 部件和 0.6 晶体，产出 1 吨高价值电子元件。"
+    },
+    "university": {
+      "name": "行星大学",
+      "cost": 9000.0,
+      "materials": 220.0,
+      "parts": 60.0,
+      "days": 60,
+      "jobs": 12,
+      "specialists": 8,
+      "power": 12.0,
+      "water": 6.0,
+      "maintenance": 14.0,
+      "requires_tech": "university",
+      "megaproject": true,
+      "description": "全部科研速度 ×1.25；更多研究员愿意迁入。"
+    },
+    "lift_port": {
+      "name": "轨道升降港",
+      "cost": 16000.0,
+      "materials": 320.0,
+      "parts": 110.0,
+      "days": 90,
+      "jobs": 20,
+      "power": 25.0,
+      "water": 4.0,
+      "maintenance": 30.0,
+      "requires_tech": "lift_port",
+      "megaproject": true,
+      "description": "本据点货运吞吐 ×3；全部出口价格 +10%。"
+    },
+    "climate_regulator": {
+      "name": "气候调节站",
+      "cost": 14000.0,
+      "materials": 260.0,
+      "parts": 90.0,
+      "days": 75,
+      "jobs": 15,
+      "power": 30.0,
+      "water": 10.0,
+      "maintenance": 25.0,
+      "requires_tech": "climate",
+      "megaproject": true,
+      "description": "周边地区气温 +3°C，降水 +10%；地球上可见。"
     }
   },
   "techs": {
     "survey": {
       "name": "精细勘探",
-      "cost": 55.0,
-      "funding": 1.0,
+      "branch": "extraction",
+      "tier": 1,
+      "cost": 45.0,
+      "funding": 8.0,
       "requires": [],
-      "description": "改进采掘效率，矿山日产 +20%；已探明储量不凭空增加。",
-      "minimum_staff": 3
+      "minimum_staff": 3,
+      "description": "矿山日产 +20%；揭示已勘察地点的真实矿量与品位。"
     },
-    "irrigation": {
-      "name": "闭环灌溉",
-      "cost": 70.0,
-      "funding": 1.0,
-      "requires": [],
-      "description": "农场用水 -30%，产量 +20%。",
-      "minimum_staff": 3
-    },
-    "logistics": {
-      "name": "货运调度",
-      "cost": 85.0,
-      "funding": 1.2,
-      "requires": [],
-      "description": "陆路吞吐 +40%，每批运费 -20%。",
-      "minimum_staff": 3
-    },
-    "processing": {
-      "name": "精密加工",
-      "cost": 100.0,
-      "funding": 1.4,
+    "deep_mining": {
+      "name": "深层采掘",
+      "branch": "extraction",
+      "tier": 2,
+      "cost": 120.0,
+      "funding": 14.0,
       "requires": [
         "survey"
       ],
-      "description": "加工厂建材和部件产量 +30%。",
-      "minimum_staff": 3
+      "minimum_staff": 3,
+      "description": "解锁矿场二级升级（产量 +60%，岗位 +4）和深层矿床。"
     },
-    "education": {
-      "name": "职业教育",
+    "prospecting": {
+      "name": "远程勘测",
+      "branch": "extraction",
+      "tier": 2,
       "cost": 100.0,
-      "funding": 1.2,
-      "requires": [],
-      "description": "研究所培训周期由 30 天缩短为 15 天。",
-      "minimum_staff": 3
-    },
-    "efficiency": {
-      "name": "能效工程",
-      "cost": 120.0,
-      "funding": 1.5,
+      "funding": 14.0,
       "requires": [
-        "processing"
+        "survey"
       ],
-      "description": "所有生产用电 -25%，公共设施维护费 -20%。",
-      "minimum_staff": 3
+      "minimum_staff": 3,
+      "description": "勘察费用减半；揭示一定范围内的隐藏矿床。"
     },
     "adaptation": {
       "name": "作物适配与食品加工",
-      "cost": 32.0,
-      "funding": 1.0,
+      "branch": "agriculture",
+      "tier": 1,
+      "cost": 40.0,
+      "funding": 8.0,
       "requires": [],
-      "description": "解锁食品出口加工坊与寒冷地区农场；可由可再生农产获得外部订单收入。",
-      "minimum_staff": 3
+      "minimum_staff": 3,
+      "description": "可在寒冷和干旱地点耕作；解锁食品出口加工坊。"
+    },
+    "irrigation": {
+      "name": "闭环灌溉",
+      "branch": "agriculture",
+      "tier": 1,
+      "cost": 55.0,
+      "funding": 8.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "农场用水 -30%，产量 +20%。"
+    },
+    "hydroponics": {
+      "name": "水培温室",
+      "branch": "agriculture",
+      "tier": 2,
+      "cost": 120.0,
+      "funding": 14.0,
+      "requires": [
+        "irrigation"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁水培温室：产量不受土壤影响，但耗电很高。"
+    },
+    "climate": {
+      "name": "气候调节",
+      "branch": "agriculture",
+      "tier": 3,
+      "cost": 260.0,
+      "funding": 22.0,
+      "requires": [
+        "hydroponics",
+        "efficiency"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程：气候调节站。"
+    },
+    "processing": {
+      "name": "精密加工",
+      "branch": "industry",
+      "tier": 1,
+      "cost": 60.0,
+      "funding": 8.0,
+      "requires": [
+        "survey"
+      ],
+      "minimum_staff": 3,
+      "description": "加工厂产量 +30%。"
+    },
+    "efficiency": {
+      "name": "能效工程",
+      "branch": "industry",
+      "tier": 2,
+      "cost": 110.0,
+      "funding": 14.0,
+      "requires": [
+        "processing"
+      ],
+      "minimum_staff": 3,
+      "description": "用电 -25%，维护费 -20%。"
+    },
+    "electronics": {
+      "name": "电子元件",
+      "branch": "industry",
+      "tier": 2,
+      "cost": 130.0,
+      "funding": 14.0,
+      "requires": [
+        "processing"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁电子元件厂：部件和晶体制成高价值出口品。"
+    },
+    "automation": {
+      "name": "自动化产线",
+      "branch": "industry",
+      "tier": 3,
+      "cost": 240.0,
+      "funding": 22.0,
+      "requires": [
+        "deep_mining",
+        "electronics"
+      ],
+      "minimum_staff": 3,
+      "description": "矿场和加工设施岗位 -30%；解锁矿场三级升级。"
+    },
+    "logistics": {
+      "name": "货运调度",
+      "branch": "logistics",
+      "tier": 1,
+      "cost": 55.0,
+      "funding": 8.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "道路运力 +40%，运费 -20%。"
+    },
+    "paved_roads": {
+      "name": "铺装道路",
+      "branch": "logistics",
+      "tier": 2,
+      "cost": 100.0,
+      "funding": 14.0,
+      "requires": [
+        "logistics"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁道路升级：运力 +50%，单程 -1 天，封路风险 -70%。"
+    },
+    "shipping": {
+      "name": "沿海航运",
+      "branch": "logistics",
+      "tier": 2,
+      "cost": 120.0,
+      "funding": 14.0,
+      "requires": [
+        "logistics"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁海运：有货运站的沿海地点之间可以通航。"
+    },
+    "lift_port": {
+      "name": "轨道升降港",
+      "branch": "logistics",
+      "tier": 3,
+      "cost": 260.0,
+      "funding": 22.0,
+      "requires": [
+        "shipping",
+        "electronics"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程：轨道升降港。"
+    },
+    "medicine": {
+      "name": "社区医疗",
+      "branch": "society",
+      "tier": 1,
+      "cost": 50.0,
+      "funding": 8.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "解锁诊所（吸引力 +0.3，离开减半，出生 ×1.5）和住区二级升级。"
+    },
+    "education": {
+      "name": "职业教育",
+      "branch": "society",
+      "tier": 1,
+      "cost": 60.0,
+      "funding": 8.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "培训速度 ×2；开放研究员招募。"
+    },
+    "research_network": {
+      "name": "学术网络",
+      "branch": "society",
+      "tier": 2,
+      "cost": 110.0,
+      "funding": 14.0,
+      "requires": [
+        "education"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁研究所二级（20 席、3 项目）和科研委托。"
+    },
+    "remediation": {
+      "name": "环境治理",
+      "branch": "society",
+      "tier": 2,
+      "cost": 100.0,
+      "funding": 14.0,
+      "requires": [
+        "medicine"
+      ],
+      "minimum_staff": 3,
+      "description": "污染消散 ×2，治理费用 -50%。"
+    },
+    "university": {
+      "name": "行星大学",
+      "branch": "society",
+      "tier": 3,
+      "cost": 220.0,
+      "funding": 22.0,
+      "requires": [
+        "research_network"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程：行星大学。"
     }
   },
   "contract": {
@@ -402,5 +676,154 @@
     "food": 100.0,
     "workers": 18,
     "min_source_workers": 22
+  },
+  "megaprojects": {
+    "university": {
+      "research": 1.25,
+      "scientist_share": 0.2
+    },
+    "lift_port": {
+      "port": 3.0,
+      "export_price": 1.1
+    },
+    "climate_regulator": {
+      "temperature": 3.0,
+      "rainfall": 1.1,
+      "radius_degrees": 35.0
+    }
+  },
+  "upgrades": {
+    "mine_ore": [
+      {
+        "level": 2,
+        "tech": "deep_mining",
+        "cost": 700.0,
+        "materials": 24.0,
+        "parts": 8.0,
+        "days": 5,
+        "output": 1.6,
+        "jobs": 4
+      },
+      {
+        "level": 3,
+        "tech": "automation",
+        "cost": 1400.0,
+        "materials": 35.0,
+        "parts": 12.0,
+        "days": 8,
+        "output": 2.2,
+        "jobs": 6
+      }
+    ],
+    "mine_copper": [
+      {
+        "level": 2,
+        "tech": "deep_mining",
+        "cost": 700.0,
+        "materials": 24.0,
+        "parts": 8.0,
+        "days": 5,
+        "output": 1.6,
+        "jobs": 4
+      },
+      {
+        "level": 3,
+        "tech": "automation",
+        "cost": 1400.0,
+        "materials": 40.0,
+        "parts": 16.0,
+        "days": 8,
+        "output": 2.2,
+        "jobs": 6
+      }
+    ],
+    "mine_crystal": [
+      {
+        "level": 2,
+        "tech": "deep_mining",
+        "cost": 700.0,
+        "materials": 24.0,
+        "parts": 8.0,
+        "days": 5,
+        "output": 1.6,
+        "jobs": 4
+      },
+      {
+        "level": 3,
+        "tech": "automation",
+        "cost": 1400.0,
+        "materials": 40.0,
+        "parts": 16.0,
+        "days": 8,
+        "output": 2.2,
+        "jobs": 6
+      }
+    ],
+    "habitat": [
+      {
+        "level": 2,
+        "tech": "medicine",
+        "cost": 500.0,
+        "materials": 18.0,
+        "parts": 3.0,
+        "days": 4,
+        "housing": 70
+      }
+    ],
+    "lab": [
+      {
+        "level": 2,
+        "tech": "research_network",
+        "cost": 1200.0,
+        "materials": 30.0,
+        "parts": 10.0,
+        "days": 6,
+        "seats": 20,
+        "projects": 3
+      }
+    ],
+    "processor": [
+      {
+        "level": 2,
+        "tech": "electronics",
+        "cost": 900.0,
+        "materials": 26.0,
+        "parts": 10.0,
+        "days": 6,
+        "output": 1.5,
+        "jobs": 3
+      }
+    ],
+    "farm": [
+      {
+        "level": 2,
+        "tech": "hydroponics",
+        "cost": 600.0,
+        "materials": 20.0,
+        "parts": 5.0,
+        "days": 5,
+        "output": 1.4,
+        "power": 3.0
+      }
+    ],
+    "port": [
+      {
+        "level": 2,
+        "tech": "logistics",
+        "cost": 900.0,
+        "materials": 24.0,
+        "parts": 8.0,
+        "days": 6,
+        "capacity": 1.5
+      }
+    ]
+  },
+  "road_upgrade": {
+    "tech": "paved_roads",
+    "cost_factor": 0.5,
+    "materials": 30.0,
+    "capacity": 1.5,
+    "days": -1,
+    "closure": 0.3
   }
 }

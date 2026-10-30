@@ -8,7 +8,17 @@ func _init() -> void:
 	science_target = 0.25
 	lab_day = 1
 	tech_order = [
-		"survey", "adaptation", "irrigation", "education", "processing", "logistics", "efficiency"
+		"education",
+		"survey",
+		"adaptation",
+		"irrigation",
+		"medicine",
+		"processing",
+		"logistics",
+		"research_network",
+		"deep_mining",
+		"electronics",
+		"efficiency"
 	]
 
 

@@ -5,7 +5,13 @@ extends "res://tests/balance/bots/bot.gd"
 
 const HOME: int = 0
 const OUTPOST: int = 1
-const INVEST_KINDS: Array[String] = ["mine_ore", "mine_copper", "mine_crystal", "processor"]
+const INVEST_KINDS: Array[String] = [
+	"mine_ore", "mine_copper", "mine_crystal", "processor", "component_plant"
+]
+const MEGAPROJECTS: Array[String] = ["university", "lift_port", "climate_regulator"]
+const PLANTS_PER_PEOPLE: int = 200
+const MEGAPROJECT_RESERVE_FACTOR: float = 1.5
+const SCIENCE_TECH: String = "education"
 const OUTPOST_CASH: float = 650.0
 const UTILITY_MARGIN: float = 5.0
 const PROCESSORS_PER_PEOPLE: int = 150
@@ -28,7 +34,26 @@ var population_goal: int = 100000
 var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
 var tech_order: Array[String] = [
-	"survey", "adaptation", "irrigation", "logistics", "processing", "education", "efficiency"
+	"survey",
+	"education",
+	"adaptation",
+	"processing",
+	"irrigation",
+	"medicine",
+	"logistics",
+	"research_network",
+	"deep_mining",
+	"electronics",
+	"efficiency",
+	"hydroponics",
+	"remediation",
+	"paved_roads",
+	"prospecting",
+	"shipping",
+	"automation",
+	"university",
+	"lift_port",
+	"climate"
 ]
 
 
@@ -47,7 +72,12 @@ func on_day() -> void:
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
-	_invest(reserve)
+	if not _saving_for_road():
+		_invest(reserve)
+		_clinic(reserve)
+		_upgrades(reserve)
+		_megaprojects(reserve)
+	_research_contract()
 	_wages()
 
 
@@ -134,9 +164,17 @@ func _building_underway(region: int, kind: String) -> bool:
 
 
 func _laboratory(reserve: float) -> void:
-	if today() < lab_day or has_building(HOME, "lab"):
+	if today() < lab_day or _building_underway(HOME, "lab"):
 		return
-	if _affordable(HOME, "lab", reserve * 0.5):
+	if not has_building(HOME, "lab"):
+		if _affordable(HOME, "lab", reserve * 0.5):
+			act("build", {"region": HOME, "kind": "lab"})
+		return
+	# More scientists than seats: another laboratory puts them to work.
+	var view: Dictionary = sim.research_view()
+	if _saving_for_road() or int(view.total) <= int(view.capacity) + 2:
+		return
+	if _affordable(HOME, "lab", reserve):
 		act("build", {"region": HOME, "kind": "lab"})
 
 
@@ -144,8 +182,8 @@ func _staff_research() -> void:
 	if not has_building(HOME, "lab"):
 		return
 	var view: Dictionary = sim.research_view()
-	var available: int = int(view.available)
-	if available < 3:
+	var available: int = mini(int(view.available), int(view.capacity) - int(view.allocated))
+	if available < 3 or _staffed_projects() >= int(view.benches):
 		return
 	for tech: String in tech_order:
 		if sim.state.research.completed.has(tech):
@@ -154,6 +192,19 @@ func _staff_research() -> void:
 			continue
 		if act("research_allocate", {"tech": tech, "staff": mini(10, available)}) == "":
 			return
+
+
+func _staffed_projects() -> int:
+	var count: int = 0
+	for project: Dictionary in sim.state.research.projects.values():
+		if int(project.staff) > 0:
+			count += 1
+	return count
+
+
+## The contract needs the two settlements connected: nothing else is worth delaying that for.
+func _saving_for_road() -> bool:
+	return not sim.settlement(OUTPOST).is_empty() and sim.state.route.is_empty()
 
 
 func _second_settlement(reserve: float) -> void:
@@ -232,6 +283,8 @@ func _options(reserve: float) -> Array:
 				var allowed: int = 1 + sim.Contract.population_total(sim) / PROCESSORS_PER_PEOPLE
 				if building_count(region, "processor") >= allowed or region != HOME:
 					continue
+			if kind == "component_plant" and not _plant_wanted(region):
+				continue
 			var forecast: Dictionary = sim.build_forecast(region, kind)
 			if forecast.is_empty() or forecast.disabled_reason != "":
 				continue
@@ -250,10 +303,14 @@ func _options(reserve: float) -> Array:
 	return options
 
 
+## People the contract still asks for; once it is met, only as many as there are open jobs.
 func _people_goal() -> int:
 	var stage: int = int(sim.state.contract.stage)
 	if stage > sim.Contract.STAGE_COUNT:
-		return population_goal
+		var total: int = sim.Contract.population_total(sim)
+		for place: Dictionary in sim.state.settlements:
+			total += maxi(0, int(place.jobs) - int(place.employed))
+		return total
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key == "population":
 			return mini(population_goal, int(goal.target))
@@ -267,7 +324,10 @@ func _recruit(region: int, wanted: int, reserve: float) -> bool:
 	var place: Dictionary = sim.settlement(region)
 	var counts: Dictionary = _adult_counts()
 	var kind: String = "worker"
-	if float(counts.scientists) / maxi(1, int(counts.adults)) < science_target:
+	if (
+		float(counts.scientists) / maxi(1, int(counts.adults)) < science_target
+		and sim._has(SCIENCE_TECH)
+	):
 		kind = "scientist"
 	var batch: int = mini(mini(recruit_batch, wanted), sim.Population.free_beds(sim, place))
 	if batch < 1:
@@ -368,3 +428,86 @@ func _wages() -> void:
 	elif lowest > 1.4 and lowest < 2.0 and wage > 1.0:
 		act("policy", {"wage": wage - WAGE_STEP})
 		last_wage_change = today()
+
+
+## Components need crystal and parts on hand: only where both are already produced.
+func _plant_wanted(region: int) -> bool:
+	if not has_building(region, "mine_crystal") or not has_building(region, "processor"):
+		return false
+	return (
+		building_count(region, "component_plant")
+		< 1 + sim.Contract.population_total(sim) / PLANTS_PER_PEOPLE
+	)
+
+
+## A clinic pays for itself in people staying and arriving.
+func _clinic(reserve: float) -> void:
+	for place: Dictionary in _places():
+		var region: int = int(place.region)
+		if has_building(region, "clinic") or int(place.population) < 40:
+			continue
+		if sim.free_workers(place) < int(sim.config.buildings.clinic.jobs):
+			continue
+		if _affordable(region, "clinic", reserve):
+			act("build", {"region": region, "kind": "clinic"})
+			return
+
+
+func _upgrades(reserve: float) -> void:
+	for place: Dictionary in _places():
+		var region: int = int(place.region)
+		for index: int in range(place.buildings.size()):
+			var rule: Dictionary = sim.upgrade_preview(region, index)
+			if rule.is_empty() or rule.disabled_reason != "":
+				continue
+			if float(sim.state.cash) < float(rule.cost) + reserve:
+				continue
+			if not _upgrade_worthwhile(place, place.buildings[index], rule):
+				continue
+			if act("upgrade", {"region": region, "index": index}) == "":
+				return
+
+
+func _upgrade_worthwhile(place: Dictionary, building: Dictionary, rule: Dictionary) -> bool:
+	var extra_jobs: int = int(rule.get("jobs", 0))
+	match str(building.kind):
+		"mine_ore", "mine_copper", "mine_crystal":
+			var good: String = sim.config.buildings[building.kind].output
+			var left: float = float(sim.state.world.regions[int(place.region)].deposits[good])
+			return left > float(sim.config.buildings[building.kind].rate) * MIN_RESERVE_DAYS * 2.0
+		"lab":
+			return true
+		"habitat":
+			return sim.Population.free_beds(sim, place) < 10
+		"port":
+			return float(place.port_used) / maxf(1.0, float(place.port_capacity)) > PORT_BUSY_SHARE
+	return sim.free_workers(place) >= extra_jobs
+
+
+## Once the contract is met, the great works are where surplus money goes.
+func _megaprojects(reserve: float) -> void:
+	if sim.state.status != "success":
+		return
+	for kind: String in MEGAPROJECTS:
+		var needed: String = str(sim.config.buildings[kind].requires_tech)
+		if not sim._has(needed) or has_building(HOME, kind):
+			continue
+		if sim.free_workers(sim.settlement(HOME)) < int(sim.config.buildings[kind].jobs):
+			_recruit(HOME, int(sim.config.buildings[kind].jobs), reserve)
+			return
+		if _affordable(HOME, kind, reserve * MEGAPROJECT_RESERVE_FACTOR):
+			act("build", {"region": HOME, "kind": kind})
+		return
+
+
+## Spare scientists earn money once there is nothing left they could research right now.
+func _research_contract() -> void:
+	if not sim._has(str(sim.progression.research.contract_tech)):
+		return
+	var view: Dictionary = sim.research_view()
+	var spare: int = mini(int(view.available), int(view.capacity) - int(view.allocated))
+	if (
+		spare >= int(sim.progression.research.minimum_staff)
+		and _staffed_projects() + 1 <= int(view.benches)
+	):
+		act("research_contract", {"staff": int(sim.state.research.contract.staff) + spare})

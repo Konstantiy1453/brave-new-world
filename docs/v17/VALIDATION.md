@@ -114,3 +114,25 @@ Cold load, which regenerates the world, is measured in Phase 5 against the new g
 | `v16_rules_tests.gd` | Longer company windows; ¥2,100 aid repayment | Appendix C aid terms and §5.2 failure timing |
 | `v16_ui_tests.gd` | Long-frame award forced through a one-goal stage | The old contract could complete in one tick |
 | `v16_economy_tests.gd`, `v16_f12_transport.gd`, `v16_flow.gd`, `v17_bugs.gd`, `tools/review_outpost_jobs.gd`, `tools/review_sim.gd` | Grant the expedition licence | Second settlement is now licensed |
+
+## Phase 4
+
+**Balance harness.** `--full`, 950 runs, 0 audit errors: all research rows pass (balanced 5 techs, 14% scientists, 23% spend; research-first 7 techs, award day 178). Floor, award bands, openings, failure, export mix and determinism also pass. See `BALANCE.md`.
+
+**Misses reported against §5.2 at this phase:**
+
+- Population at day 720 (506, target 600) and income growth (×0.98, target ×2.5): bots run out of deposits and jobs around day 360 on two settlements and six fixed regions. Re-measure in Phase 5.
+- Event rows belong to Phase 6.
+- The Climate Regulator's effect on farm yields is implemented and tested; its appearance on the globe is not. It belongs with the map overlays in Phase 5.
+- Survey's "reveal true deposits", prospecting's reveal and survey discount, deep deposits and sea routes need sites: Phase 5. Those technologies can be researched now but do less than their text says until then.
+
+**Automated test.** All 40 headless suites green, including the new `v17_research`, which also opens the tech-tree page in a headless UI.
+
+**Source-project window, screenshot viewed, exported EXE, human playtest:** NOT_RUN at this phase.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `v16_rules_tests.gd` | Clears the science opening's survey head start in the concentration test | The head start would finish its 12-point test project on day one |
+

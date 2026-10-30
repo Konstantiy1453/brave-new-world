@@ -3,12 +3,23 @@ extends RefCounted
 ## The original validation runs first, so a malformed old save is refused as it was in 1.6.
 
 const WorldGen = preload("res://world/world_gen.gd")
+const Rules = preload("res://simulation/rules.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
 const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
 const LEGACY_SCHEMAS: Array[int] = [1, 2]
+## Research points each technology cost in 1.6; a 1.6 save is judged against these.
+const OLD_TECH_COST: Dictionary = {
+	"survey": 55.0,
+	"irrigation": 70.0,
+	"logistics": 85.0,
+	"processing": 100.0,
+	"education": 100.0,
+	"efficiency": 120.0,
+	"adaptation": 32.0,
+}
 const WORLD_RECORD_FIELDS: Array[String] = [
 	"seed",
 	"seed_input",
@@ -189,8 +200,30 @@ static func convert_v2(old: Dictionary) -> Dictionary:
 		archive.erase("snapshot")
 	old.schema = 3
 	load("res://simulation/sim.gd").ensure_systems(old)
+	_settle_research(old)
 	old.rng_state = (absi(int(old.get("rng_state", 1))) % 2147483646) + 1
 	return {"state": old, "blobs": blobs}
+
+
+## Technologies got cheaper: work at or past a new cost counts as finished, nothing is lost.
+static func _settle_research(state: Dictionary) -> void:
+	var techs: Dictionary = Rules.economy().techs
+	var research: Dictionary = state.research
+	for key: String in research.get("projects", {}):
+		var project: Dictionary = research.projects[key]
+		var cost: float = float(techs[key].cost)
+		if float(project.work) >= cost:
+			project.work = cost
+			project.staff = 0
+			project.effective = 0
+			project.rate = 0.0
+			if not research.completed.has(key):
+				research.completed.append(key)
+
+
+## The six goods a 1.6 save knows about.
+static func _old_stock() -> Dictionary:
+	return {"ore": 0, "copper": 0, "crystal": 0, "food": 0, "materials": 0, "parts": 0}
 
 
 static func _building_status(b: Dictionary) -> String:
@@ -227,7 +260,7 @@ static func validate_old(sim: RefCounted, candidate: Variant, schema_one: bool) 
 	# Validate nested containers before any property access or audit. GDScript
 	# runtime errors do not throw to the caller; a validator error must never be
 	# mistaken for an empty success result and replace the current state.
-	var shape_error: String = sim._save_shape(candidate, _old_shape(sim), "state")
+	var shape_error: String = sim._save_shape(candidate, _old_shape(), "state")
 	if shape_error != "":
 		return shape_error
 	if (
@@ -350,10 +383,12 @@ static func validate_old(sim: RefCounted, candidate: Variant, schema_one: bool) 
 		or not sim.progression.difficulty.has(candidate.difficulty)
 	):
 		return "难度配置无效"
-	for validator: Variant in [Research, Company]:
-		shape_error = validator.validate(sim, candidate)
-		if shape_error != "":
-			return shape_error
+	shape_error = Research.validate(sim, candidate, OLD_TECH_COST)
+	if shape_error != "":
+		return shape_error
+	shape_error = Company.validate(sim, candidate)
+	if shape_error != "":
+		return shape_error
 	return Career.validate_old(candidate)
 
 
@@ -387,8 +422,8 @@ static func _validate_old_settlements(
 				"children": 0,
 				"workers": 0,
 				"scientists": 0,
-				"stock": sim._stock(),
-				"stock_delta": sim._stock(),
+				"stock": _old_stock(),
+				"stock_delta": _old_stock(),
 				"buildings": [_old_building_shape()],
 				"jobs": 0,
 				"housing": 0,
@@ -457,7 +492,7 @@ static func _validate_old_settlements(
 	return ""
 
 
-static func _old_shape(sim: RefCounted) -> Dictionary:
+static func _old_shape() -> Dictionary:
 	return {
 		"schema": 0,
 		"world":
@@ -551,8 +586,8 @@ static func _old_shape(sim: RefCounted) -> Dictionary:
 		"company_tax_total": 0,
 		"success_day": 0,
 		"failure_reason": "",
-		"resource_sources": sim._stock(),
-		"resource_sinks": sim._stock(),
+		"resource_sources": _old_stock(),
+		"resource_sinks": _old_stock(),
 		"rng_state": 0,
 		"births_total": 0,
 		"immigrants_total": 0

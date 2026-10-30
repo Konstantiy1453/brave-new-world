@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -41,7 +41,11 @@
     "half_staff_ratio": 0.6,
     "seats_per_lab": 10,
     "projects_per_lab": 2,
-    "minimum_staff": 3
+    "minimum_staff": 3,
+    "contract_point_price": 40.0,
+    "contract_tech": "research_network",
+    "science_opening_rate": 1.2,
+    "science_opening_funding": 0.5
   },
   "company": {
     "review_threshold": 40,
@@ -92,7 +96,9 @@
     "processor_pollution": 0.4,
     "cleanup_cost": 120.0,
     "cleanup_amount": 25.0,
-    "enterprise_recovery": 450.0
+    "enterprise_recovery": 450.0,
+    "remediation_decay_factor": 2.0,
+    "remediation_cost_factor": 0.5
   },
   "time": {
     "fast_multiplier": 4,

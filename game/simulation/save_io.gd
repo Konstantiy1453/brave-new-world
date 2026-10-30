@@ -288,7 +288,14 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 				"expedition": false
 			}
 		],
-		"research": {"current": "", "progress": 0, "completed": [""], "priority": 0},
+		"research":
+		{
+			"current": "",
+			"progress": 0,
+			"completed": [""],
+			"priority": 0,
+			"contract": {"staff": 0, "effective": 0, "earned": 0}
+		},
 		"route": {},
 		"enterprise": {},
 		"events": [""],

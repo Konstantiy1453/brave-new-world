@@ -267,6 +267,75 @@ func _build_facility(root: Node3D, kind: String, active: bool) -> void:
 				_box(root, Vector3(-1.9, .7, z * .7 + .48), Vector3(.52, .08, .025), accent)
 			_cylinder(root, Vector3(1.8, 1.2, -1), .16, 2.2, metal, 12)
 			_box(root, Vector3(1.8, 2.3, -1), Vector3(.55, .35, .55), glass)
+		"clinic":
+			# A low ward with a lit cross on the roof.
+			_box(root, Vector3(0, .62, 0), Vector3(2.6, 1.0, 2.0), shell)
+			_box(root, Vector3(0, 1.17, 0), Vector3(.9, .1, .28), accent)
+			_box(root, Vector3(0, 1.17, 0), Vector3(.28, .1, .9), accent)
+			for x in [-.85, 0, .85]:
+				_box(root, Vector3(x, .72, 1.02), Vector3(.5, .4, .04), glass)
+		"hydroponic_farm":
+			# Stacked sealed growing racks under strip lighting; no soil.
+			for level in range(3):
+				var y: float = .4 + level * .75
+				_box(root, Vector3(0, y, 0), Vector3(2.9, .1, 2.5), metal)
+				_box(
+					root,
+					Vector3(0, y + .13, 0),
+					Vector3(2.65, .15, 2.25),
+					_mat("crops", Color("719650"), 0, .85)
+				)
+				_box(root, Vector3(0, y + .55, 0), Vector3(2.5, .04, .16), accent)
+			for x in [-1.42, 1.42]:
+				for z in [-1.2, 1.2]:
+					_box(root, Vector3(x, 1.25, z), Vector3(.1, 2.3, .1), dark)
+		"component_plant":
+			# A clean-room block with a filter stack on the roof.
+			_box(root, Vector3(0, .85, 0), Vector3(3.0, 1.45, 2.3), shell)
+			_box(root, Vector3(0, 1.0, 1.17), Vector3(2.4, .32, .04), glass)
+			_box(root, Vector3(0, .62, 1.18), Vector3(2.4, .05, .03), accent)
+			for x in [-.9, 0, .9]:
+				_cylinder(root, Vector3(x, 1.85, -.4), .24, .55, metal, 12)
+				_torus(root, Vector3(x, 2.12, -.4), .24, .04, gold)
+		"university":
+			# A ring of teaching halls around a tall domed library.
+			_cylinder(root, Vector3(0, .5, 0), 2.0, .85, shell, 16)
+			_cylinder(root, Vector3(0, 1.45, 0), 1.15, 1.2, shell, 16)
+			_torus(root, Vector3(0, 2.08, 0), 1.15, .06, gold)
+			var dome := _sphere(root, Vector3(0, 2.1, 0), 1.0, glass, 28, 12)
+			dome.scale.y = .7
+			for a in range(8):
+				var turn: float = a * TAU / 8
+				_box(
+					root, Vector3(sin(turn) * 2.02, .6, cos(turn) * 2.02), Vector3(.2, .7, .2), dark
+				)
+			_cylinder(root, Vector3(0, 2.95, 0), .05, .55, accent, 8)
+		"lift_port":
+			# A tapered lift tower climbing out of a loading ring.
+			_cylinder(root, Vector3(0, .25, 0), 2.1, .3, dark, 16)
+			_torus(root, Vector3(0, .42, 0), 1.85, .06, accent)
+			for x in [-.55, .55]:
+				for z in [-.55, .55]:
+					_tube(
+						root,
+						Vector3(x * 2.0, .4, z * 2.0),
+						Vector3(x * .35, 8.0, z * .35),
+						.09,
+						gold
+					)
+			for y in [2.0, 4.0, 6.0]:
+				_torus(root, Vector3(0, y, 0), .95 - y * .09, .05, metal)
+			_box(root, Vector3(0, 3.0, 0), Vector3(.5, .7, .5), accent)
+			_box(root, Vector3(-1.8, .7, 1.1), Vector3(.8, .9, .9), gold)
+			_box(root, Vector3(1.8, .7, 1.1), Vector3(.8, .9, .9), gold)
+		"climate_regulator":
+			# Twin atmospheric stacks venting from a sealed turbine hall.
+			_box(root, Vector3(0, .6, 0), Vector3(3.2, 1.0, 2.2), shell)
+			for x in [-.9, .9]:
+				_cylinder(root, Vector3(x, 2.3, 0), .55, 3.0, metal, 20)
+				_torus(root, Vector3(x, 3.85, 0), .55, .07, accent)
+				_torus(root, Vector3(x, 1.6, 0), .56, .05, gold)
+			_box(root, Vector3(0, .75, 1.12), Vector3(2.4, .3, .04), glass)
 		"commerce", "service":
 			_cylinder(root, Vector3(0, .65, 0), 1.6, 1.0, shell, 6)
 			_cone(root, Vector3(0, 1.4, 0), 1.8, .65, gold)

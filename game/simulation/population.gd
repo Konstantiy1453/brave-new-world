@@ -3,6 +3,8 @@ extends RefCounted
 ## Numbers are in data/v17/population.json.
 
 const Keys = preload("res://simulation/keys.gd")
+const Megaprojects = preload("res://simulation/megaprojects.gd")
+const Research = preload("res://simulation/research.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -80,6 +82,8 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 		and enterprise.status == Keys.E_OPEN
 	):
 		parts.services = float(rules.service_enterprise)
+	if has_clinic(s):
+		parts.services = float(parts.get("services", 0.0)) + float(rules.service_clinic)
 	var pollution: float = float(s.get("pollution", 0.0))
 	if pollution > float(rules.pollution_threshold):
 		parts.pollution = (
@@ -98,6 +102,13 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 		"value": clampf(value, float(rules.min), float(rules.max)),
 		"parts": parts,
 	}
+
+
+static func has_clinic(s: Dictionary) -> bool:
+	for b: Dictionary in s.buildings:
+		if b.kind == "clinic" and int(b.remaining) <= 0 and bool(b.get("enabled", true)):
+			return true
+	return false
 
 
 static func labs_at(s: Dictionary) -> int:
@@ -150,8 +161,11 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 	var arrivals: int = mini(whole, maxi(0, beds))
 	if arrivals > 0:
 		s.arrival_accrual = float(s.arrival_accrual) - arrivals
-		var share: float = minf(
-			float(rules.scientist_share_max), float(rules.scientist_share_per_lab) * labs_at(s)
+		var share: float = (
+			minf(
+				float(rules.scientist_share_max), float(rules.scientist_share_per_lab) * labs_at(s)
+			)
+			+ Megaprojects.scientist_share_bonus(sim)
 		)
 		s.science_accrual = float(s.science_accrual) + share * arrivals
 		var scientists: int = mini(arrivals, int(floor(float(s.science_accrual))))
@@ -164,6 +178,8 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 static func _births(sim: RefCounted, s: Dictionary) -> void:
 	var adults: int = int(s.workers) + int(s.scientists)
 	var yearly: float = float(sim.pop_rules.births.per_adult_per_year)
+	if has_clinic(s):
+		yearly *= float(sim.pop_rules.births.clinic_factor)
 	s.birth_accrual = float(s.birth_accrual) + adults * yearly / 360.0
 	if float(s.birth_accrual) < 1.0:
 		return
@@ -195,7 +211,7 @@ static func _train(sim: RefCounted, s: Dictionary) -> void:
 	var training_capacity: int = 0
 	for facility: Dictionary in s.buildings:
 		if facility.kind == "lab" and facility.enabled and facility.remaining <= 0:
-			training_capacity += int(sim.progression.research.seats_per_lab)
+			training_capacity += Research.lab_seats(sim, facility)
 	if int(sim.state.day) % period == 0 and s.workers > 8 and s.scientists < training_capacity:
 		for b: Dictionary in s.buildings:
 			if b.kind == "lab" and b.active:
@@ -251,6 +267,8 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 	if not kind in ["worker", "scientist"]:
 		return "未知招募类型"
 	var rules: Dictionary = sim.pop_rules.recruitment
+	if kind == "scientist" and not sim._has(str(rules.scientist_tech)):
+		return "招募研究员需要技术：" + str(sim.config.techs[rules.scientist_tech].name)
 	if count < 1 or count > int(rules.max_per_campaign):
 		return "每次招募 1—%d 人" % int(rules.max_per_campaign)
 	if free_beds(sim, s) < count:
@@ -309,11 +327,18 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 	}
 
 
+static func habitat_beds(sim: RefCounted, b: Dictionary) -> int:
+	var rule: Dictionary = sim.config.upgrades.habitat[0]
+	if int(b.get("level", 1)) >= int(rule.level):
+		return int(rule.housing)
+	return int(sim.config.buildings.habitat.housing)
+
+
 static func refresh(sim: RefCounted, s: Dictionary) -> void:
 	s.housing = int(s.base_housing)
 	for b: Dictionary in s.buildings:
 		if b.kind == "habitat" and b.remaining <= 0 and b.get("enabled", true):
-			s.housing += int(sim.config.buildings.habitat.housing)
+			s.housing += habitat_beds(sim, b)
 	s.food_days = (
 		float(s.stock.food) / maxf(0.001, float(s.population) * sim.config.economy.food_per_person)
 	)
