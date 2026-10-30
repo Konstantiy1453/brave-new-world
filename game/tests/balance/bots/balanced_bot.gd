@@ -53,7 +53,7 @@ func _invest(reserve: float) -> void:
 			act("settle", {"region": OUTPOST})
 		return
 	if sim.state.route.is_empty():
-		var quote: Dictionary = sim.WorldGen.new().route(sim.state.world, HOME, OUTPOST, true)
+		var quote: Dictionary = sim.WorldGen.new().route(sim.geo, HOME, OUTPOST, true)
 		if cash >= float(quote.get("cost", 0.0)) + reserve:
 			act("connect", {"a": HOME, "b": OUTPOST, "mountain": true})
 		return

@@ -324,7 +324,7 @@ func industry_chain() -> void:
 			"imported inventories cannot satisfy local production order"
 		)
 		var amount: float = 2.0 if final_choice == "reduce" else 4.0
-		s._produce(s.settlement(0), "parts", amount, "加工配方")
+		s._produce(s.settlement(0), "parts", amount, "processing")
 		days(s, 1)
 		check(
 			i.order.dispatched == amount and i.order.delivered == 0 and float(s.state.cash) < cash,

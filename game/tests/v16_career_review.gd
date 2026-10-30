@@ -55,9 +55,9 @@ func run():
 	sim._transfer("external", "public", 100.0, "review recurring revenue", true)
 	sim._public_expense(20.0, "review normal operating cost", "external")
 	var base: float = sim.state.operating_net * float(sim.config.contract.company_tax_rate)
-	sim._public_expense(base, "公司总督分成", "external")
+	sim._public_expense(base, "governor.share", "external")
 	var surcharge: float = sim.state.operating_net * 0.1
-	sim._public_expense(surcharge, "援助追加经营分成 · review", "external")
+	sim._public_expense(surcharge, "aid.surcharge", "external")
 	sim.state.company.aid = [{"status": "active", "surcharge": 0.1, "end_day": 61}]
 	sim.state.operating_history = [
 		{
@@ -96,7 +96,7 @@ func run():
 		duplicate.career.archives.append(duplicate.career.archives[0].duplicate(true))
 		check(Career.validate(duplicate) != "", "complete world archive identity must be unique")
 		var corrupt: Dictionary = asset.state.duplicate(true)
-		corrupt.career.archives[0].snapshot = "not a valid complete snapshot"
+		corrupt.career.archives[0].erase("hash")
 		check(Career.validate(corrupt) != "", "archive must decode to complete saved world")
 	var output: String = "res://../evidence/v17/tests/career_review_red.json"
 	for arg in OS.get_cmdline_user_args():

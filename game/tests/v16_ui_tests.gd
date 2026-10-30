@@ -144,7 +144,7 @@ func run():
 	g.close_modal()
 	g.sim.new_game("4294967297", "capital", 1)
 	g.selected = 0
-	g.map.setup(g.sim.state.world)
+	g.map.setup(g.sim.geo)
 	g.map.focus_region(0)
 	check(g.map.selected_region == g.selected, "F09 new world selection agrees")
 	print("UI_V16_RESULT checks=%d failures=%d %s" % [count, failures.size(), str(failures)])

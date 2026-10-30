@@ -27,7 +27,10 @@ func run():
 	var error: String = sim.load_game(path)
 	check(error == "", "signed32 complete v1.5 save loads through actual simulation")
 	check(
-		var_to_bytes(sim.state.world) == var_to_bytes(original.world),
+		(
+			var_to_bytes(sim.geo.grid) == var_to_bytes(original.world.grid)
+			and var_to_bytes(sim.state.world.regions) == var_to_bytes(original.world.regions)
+		),
 		"legacy world is byte-preserved through migration"
 	)
 	var valid: PackedByteArray = var_to_bytes(sim.state)

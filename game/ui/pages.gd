@@ -1,6 +1,7 @@
 extends RefCounted
 const D = preload("res://ui/design.gd")
 const WG = preload("res://world/world_gen.gd")
+const Labels = preload("res://ui/labels.gd")
 const RES = {
 	"ore": "铁矿", "copper": "铜矿", "crystal": "工业晶体", "food": "食品", "materials": "建材", "parts": "部件"
 }
@@ -11,11 +12,14 @@ static func region(g, b):
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
 	D.label(b, r.name, 27)
 	D.label(b, "%s  ·  %.1f°C" % [r.terrain, r.temperature], 16, D.MUTED)
-	var chooser = OptionButton.new()
+	var site_names: Array = []
 	for reg in g.sim.state.world.regions:
-		chooser.add_item(reg.name, int(reg.id))
-	chooser.select(g.selected)
-	chooser.item_selected.connect(
+		site_names.append(reg.name)
+	D.option(
+		b,
+		"RegionChooser",
+		site_names,
+		g.selected,
 		func(id):
 			g.selected = id
 			if g.local_view:
@@ -24,7 +28,6 @@ static func region(g, b):
 				g.map.focus_region(id)
 			g.refresh_sidebar()
 	)
-	b.add_child(chooser)
 	D.label(
 		b,
 		"耕作潜力  %d%%    水源  %d%%\n海拔  %d m" % [r.fertility * 100, r.water * 100, r.elevation],
@@ -80,22 +83,21 @@ static func region(g, b):
 		D.MUTED
 	)
 	for shortage in s.get("shortages", []):
-		D.label(b, "!  " + str(shortage), 15, D.RED)
+		D.label(b, "!  " + Labels.shortage(g.sim.config, shortage), 15, D.RED)
 	D.button(b, "建设设施  +", func(): g.open_page("build"))
 	D.button(b, "批量生产 / 库存目标", func(): g.open_page("manage"))
 	D.button(b, "进入地区 / 查看设施", func(): g.navigate("region"))
 	D.label(b, "设施状态", 14, D.TEAL)
 	for index in range(s.buildings.size()):
 		var item = s.buildings[index]
-		var spec: Dictionary = g.sim.config.buildings.get(item.kind, {"name": "民营生活服务社"})
 		var active = bool(item.get("active", false))
 		D.label(
 			b,
 			(
 				"%s · %s"
 				% [
-					spec.get("name", item.kind),
-					"运营" if active else str(item.get("status", "建设 / 待工"))
+					Labels.building_name(g.sim.config, item.kind),
+					"运营" if active else Labels.building_status(item)
 				]
 			),
 			15,
@@ -108,7 +110,7 @@ static func region(g, b):
 				"暂停此设施" if item.get("enabled", true) else "恢复此设施",
 				func(): g.act("toggle", {"region": g.selected, "index": idx})
 			)
-			bt.add_theme_font_size_override("font_size", 14)
+			D.font_size(bt, 14)
 			bt.custom_minimum_size.y = 30
 			var preview: Dictionary = g.sim.toggle_preview(int(s.region), idx)
 			bt.tooltip_text = (
@@ -143,7 +145,7 @@ static func populate(g, b, page):
 
 
 static func world_info(g, b):
-	var world: Dictionary = g.sim.state.world
+	var world: Dictionary = g.sim.geo
 	D.label(b, "种子 %d  ·  %s" % [world.seed, world.version], 24, D.GOLD)
 	D.label(b, "球面与平铺使用同一世界。地区的气温、水源、土地和矿藏影响建设、农业与运输。", 18, D.MUTED)
 	var generation: Dictionary = world.get("generation", {})
@@ -334,10 +336,8 @@ static func contract(g, b):
 		"enterprise": "民营企业营业",
 		"solvent": "没有到期欠款"
 	}
-	var grid = GridContainer.new()
-	grid.columns = 2
+	var grid = D.grid(b, 2)
 	grid.add_theme_constant_override("h_separation", 35)
-	b.add_child(grid)
 	for key in names:
 		D.label(
 			grid,
@@ -449,7 +449,10 @@ static func economy(g, b):
 				RES[key] + "\n%.1f t\n%+.1f /日" % [s.stock.get(key, 0), s.stock_delta.get(key, 0)],
 				16
 			)
-		D.label(c, "\n".join(PackedStringArray(s.get("shortages", []))), 16, D.RED)
+		var lines: PackedStringArray = []
+		for shortage in s.get("shortages", []):
+			lines.append(Labels.shortage(g.sim.config, shortage))
+		D.label(c, "\n".join(lines), 16, D.RED)
 	D.label(b, "最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)
 	var ledger: Array = state.ledger
 	for i in range(ledger.size() - 1, maxi(-1, ledger.size() - (31 if g.detailed_info else 7)), -1):
@@ -461,7 +464,7 @@ static func economy(g, b):
 				"D%d  %s  |  %s → %s  ¥ %.2f"
 				% [
 					e.get("day", 0),
-					e.get("category", ""),
+					Labels.ledger(g.sim.config, e),
 					accounts.get(e.get("from", ""), e.get("from", "")),
 					accounts.get(e.get("to", ""), e.get("to", "")),
 					e.get("amount", 0)
@@ -482,7 +485,7 @@ static func transport(g, b):
 	var a: int = state.settlements[0].region
 	var z: int = state.settlements[1].region
 	for mode in [false, true]:
-		var route: Dictionary = WG.new().route(state.world, a, z, mode)
+		var route: Dictionary = WG.new().route(g.sim.geo, a, z, mode)
 		var c = D.card(b)
 		D.label(c, "跨山工程线路" if mode else "绕山经济线路", 21)
 		D.label(
@@ -564,7 +567,11 @@ static func enterprise(g, b):
 			c,
 			(
 				"%s  ·  %s  ·  雇员 %d"
-				% [g.sim.state.world.regions[int(e.region)].name, e.status, e.get("employees", 0)]
+				% [
+					g.sim.state.world.regions[int(e.region)].name,
+					Labels.enterprise_status(e.status),
+					e.get("employees", 0)
+				]
 			),
 			20,
 			D.TEAL
@@ -584,7 +591,7 @@ static func enterprise(g, b):
 			19,
 			D.GOLD
 		)
-		D.label(c, str(e.get("reason", "")), 17, D.MUTED)
+		D.label(c, Labels.enterprise_reason(str(e.get("reason", ""))), 17, D.MUTED)
 		D.button(
 			c,
 			"付费重组 / 迁入所选地区 · ¥ %.0f" % forecast.get("recovery_cost", 0),
@@ -592,25 +599,13 @@ static func enterprise(g, b):
 		)
 	D.label(b, "本地企业利润税率（0—50%）", 18, D.TEAL)
 	var row = D.row(b)
-	var tax_box = SpinBox.new()
-	tax_box.name = "PolicyTax"
-	tax_box.min_value = 0
-	tax_box.max_value = 50
-	tax_box.step = 1
-	tax_box.suffix = "%"
-	tax_box.value = float(g.sim.state.policy.tax) * 100.0
-	row.add_child(tax_box)
+	var tax_box = D.spin(row, "PolicyTax", 0, 50, 1, float(g.sim.state.policy.tax) * 100.0, "%")
 	D.button(row, "应用税率", func(): g.act("policy", {"tax": tax_box.value / 100.0}))
 	D.label(b, "基本供应政策：食品保留天数（3—25 天，各地最低自动贸易储备）", 17, D.MUTED)
 	var rr = D.row(b)
-	var reserve_box = SpinBox.new()
-	reserve_box.name = "PolicyFoodReserve"
-	reserve_box.min_value = 3
-	reserve_box.max_value = 25
-	reserve_box.step = 1
-	reserve_box.suffix = "天"
-	reserve_box.value = float(g.sim.state.policy.food_reserve)
-	rr.add_child(reserve_box)
+	var reserve_box = D.spin(
+		rr, "PolicyFoodReserve", 3, 25, 1, float(g.sim.state.policy.food_reserve), "天"
+	)
 	D.button(rr, "应用食品底线", func(): g.act("policy", {"food_reserve": reserve_box.value}))
 	D.label(
 		b,
@@ -635,7 +630,7 @@ static func settings(g, b):
 		b,
 		(
 			"手动存档已存在 · 可读取继续"
-			if FileAccess.file_exists("user://manual.json")
+			if FileAccess.file_exists(g.SAVE_MANUAL)
 			else "尚无手动存档 · 点击下方保存，或使用左上角存档 / Ctrl+S"
 		),
 		18,
@@ -643,9 +638,9 @@ static func settings(g, b):
 	)
 	D.label(b, "自动存档每 10 个模拟日写入。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。", 18, D.MUTED)
 	var r = D.row(b)
-	D.button(r, "保存手动档", func(): g.save_slot("user://manual.json"))
-	D.button(r, "读取手动档", func(): g.load_path("user://manual.json"))
-	D.button(r, "读取自动档", func(): g.load_path("user://autosave.json"))
+	D.button(r, "保存手动档", func(): g.save_slot(g.SAVE_MANUAL))
+	D.button(r, "读取手动档", func(): g.load_path(g.SAVE_MANUAL))
+	D.button(r, "读取自动档", func(): g.load_path(g.SAVE_AUTO))
 	if g.dev_mode:
 		for item in [
 			["危机整改", "acceptance_crisis"],

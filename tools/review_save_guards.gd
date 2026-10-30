@@ -1,24 +1,18 @@
 extends SceneTree
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
+const SaveFixture = preload("res://tests/support/save_fixture.gd")
 var out: Dictionary = {
 	"scope": "independent bounded malformed-save and exact-snapshot checks", "checks": []
 }
 var s
 var baseline: PackedByteArray
-var original: Dictionary
+var original: PackedByteArray
 
 
-func envelope(value: Variant) -> Dictionary:
-	var e: Dictionary = original.duplicate(true)
-	e.binary = Marshalls.raw_to_base64(var_to_bytes(value))
-	e.binary_checksum = e.binary.sha256_text()
-	return e
-
-
-func reject(label: String, e: Dictionary) -> void:
-	var path: String = "user://review_malformed_save.json"
-	FileAccess.open(path, FileAccess.WRITE).store_string(JSON.stringify(e))
+func reject(label: String, writer: Callable) -> void:
+	var path: String = "user://review_malformed_save.save"
+	writer.call(path)
 	var result: String = s.load_game(path)
 	out.checks.append(
 		{
@@ -30,6 +24,14 @@ func reject(label: String, e: Dictionary) -> void:
 	)
 
 
+func _write_state(path: String, value: Variant) -> void:
+	SaveFixture.write_state(path, value)
+
+
+func _write_bytes(path: String, bytes: PackedByteArray) -> void:
+	FileAccess.open(path, FileAccess.WRITE).store_buffer(bytes)
+
+
 func _initialize() -> void:
 	Watchdog.arm(self)
 	s = Sim.new()
@@ -39,11 +41,11 @@ func _initialize() -> void:
 	s.act("build", {"region": 0, "kind": "mine_copper"})
 	for d in range(17):
 		s.tick()
-	s.save_game("user://review_exact_snapshot.json")
-	original = JSON.parse_string(FileAccess.get_file_as_string("user://review_exact_snapshot.json"))
+	s.save_game("user://review_exact_snapshot.save")
+	original = FileAccess.get_file_as_bytes("user://review_exact_snapshot.save")
 	baseline = var_to_bytes(s.state)
 	var t = Sim.new()
-	var load_error: String = t.load_game("user://review_exact_snapshot.json")
+	var load_error: String = t.load_game("user://review_exact_snapshot.save")
 	out.checks.append(
 		{
 			"name": "valid_binary_roundtrip",
@@ -51,25 +53,30 @@ func _initialize() -> void:
 			"pass": load_error == "" and var_to_bytes(t.state) == baseline
 		}
 	)
-	var e: Dictionary = original.duplicate(true)
-	e.checksum = "broken"
-	reject("bad_payload_hash", e)
-	e = original.duplicate(true)
-	e.binary_checksum = "broken"
-	reject("bad_binary_hash", e)
-	reject("binary_primitive", envelope(42))
-	reject("binary_missing_fields", envelope({"schema": 1}))
+	var flipped: PackedByteArray = original.duplicate()
+	flipped[flipped.size() - 1] = flipped[flipped.size() - 1] ^ 0xff
+	reject("bad_payload_hash", _write_bytes.bind(flipped))
+	var bad_magic: PackedByteArray = original.duplicate()
+	bad_magic[0] = 0
+	reject("bad_magic", _write_bytes.bind(bad_magic))
+	reject("truncated", _write_bytes.bind(original.slice(0, original.size() / 2)))
+	reject("binary_primitive", _write_state.bind(42))
+	reject("binary_missing_fields", _write_state.bind({"schema": 1}))
 	var candidate: Dictionary = s.state.duplicate(true)
 	candidate.cash += 1.0
-	reject("cash_conservation_rejection", envelope(candidate))
+	reject("cash_conservation_rejection", _write_state.bind(candidate))
 	candidate = s.state.duplicate(true)
 	candidate.world = []
-	reject("wrong_world_type", envelope(candidate))
+	reject("wrong_world_type", _write_state.bind(candidate))
+	candidate = s.state.duplicate(true)
+	candidate.world.hash = "not the world this seed generates"
+	reject("world_hash_mismatch", _write_state.bind(candidate))
 	# A harmless native Resource is encoded only to check object-disabled decoding.
-	e = original.duplicate(true)
-	e.binary = Marshalls.raw_to_base64(var_to_bytes_with_objects(Resource.new()))
-	e.binary_checksum = e.binary.sha256_text()
-	reject("object_encoded_snapshot", e)
+	reject(
+		"object_encoded_snapshot",
+		func(path: String) -> void:
+			SaveFixture.write_raw(path, var_to_bytes_with_objects(Resource.new()))
+	)
 	var failures: int = 0
 	for check in out.checks:
 		if not bool(

@@ -1,6 +1,7 @@
 extends SceneTree
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
+const SaveFixture = preload("res://tests/support/save_fixture.gd")
 var checks: Array = []
 
 
@@ -13,9 +14,6 @@ func _initialize():
 		finish()
 		return
 	var baseline: PackedByteArray = var_to_bytes(s.state)
-	var original: Dictionary = JSON.parse_string(
-		FileAccess.get_file_as_string("res://data/acceptance_midgame.json")
-	)
 	var cases: Array = [
 		["stock_container", ["settlements", 0, "stock"], 5],
 		["stock_value", ["settlements", 0, "stock", "food"], []],
@@ -25,7 +23,7 @@ func _initialize():
 		["cohort_entry", ["settlements", 0, "cohorts", 0], 8],
 		["negative_workers", ["settlements", 0, "workers"], -1],
 		["world_regions", ["world", "regions"], 3],
-		["world_grid_entry", ["world", "grid", 0], false],
+		["world_hash", ["world", "hash"], false],
 		["mineral_container", ["world", "regions", 0, "deposits"], 7],
 		["shipment_resource", ["shipments", 0, "resource"], "invalid"],
 		["shipment_amount", ["shipments", 0, "amount"], {}],
@@ -42,13 +40,8 @@ func _initialize():
 		for i in range(c[1].size() - 1):
 			target = target[c[1][i]]
 		target[c[1][-1]] = c[2]
-		var e: Dictionary = original.duplicate(true)
-		e.binary = Marshalls.raw_to_base64(var_to_bytes(candidate))
-		e.binary_checksum = e.binary.sha256_text()
-		FileAccess.open("user://review_nested_matrix.json", FileAccess.WRITE).store_string(
-			JSON.stringify(e)
-		)
-		error = s.load_game("user://review_nested_matrix.json")
+		SaveFixture.write_state("user://review_nested_matrix.save", candidate)
+		error = s.load_game("user://review_nested_matrix.save")
 		checks.append(
 			{
 				"name": c[0],
@@ -63,9 +56,9 @@ func _initialize():
 	event_sim.load_game("res://data/acceptance_midgame.json")
 	while event_sim.state.day < 35:
 		event_sim.tick()
-	event_sim.save_game("user://review_event_save.json")
+	event_sim.save_game("user://review_event_save.save")
 	var event_load = Sim.new()
-	error = event_load.load_game("user://review_event_save.json")
+	error = event_load.load_game("user://review_event_save.save")
 	checks.append(
 		{
 			"name": "pending_event_exact_load",

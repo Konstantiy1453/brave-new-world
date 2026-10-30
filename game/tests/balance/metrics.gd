@@ -119,11 +119,11 @@ func _scan_ledger(state: Dictionary, day: int) -> void:
 
 
 func _count_entry(entry: Dictionary, day: int) -> void:
-	var category: String = str(entry.category)
+	var key: String = str(entry.key)
 	var amount: float = float(entry.amount)
 	var operating: bool = bool(entry.operating)
-	if category.begins_with("出口 · ") and day > EXPORT_MIX_FROM_DAY:
-		var good: String = category.trim_prefix("出口 · ")
+	if key == "export" and day > EXPORT_MIX_FROM_DAY:
+		var good: String = str(entry.detail)
 		record.export_revenue[good] = float(record.export_revenue.get(good, 0.0)) + amount
 	if operating and entry.to == "public":
 		_operating_surplus += amount
@@ -131,10 +131,10 @@ func _count_entry(entry: Dictionary, day: int) -> void:
 		_operating_surplus -= amount
 		if day >= RESEARCH_WINDOW_FIRST_DAY and day <= RESEARCH_WINDOW_LAST_DAY:
 			_window_expense += amount
-			if category.begins_with("科研"):
+			if key.begins_with("research."):
 				_research_spend += amount
 	if not operating and entry.from == "public" and entry.to == "external":
-		if not category.begins_with("清偿") and not category.begins_with("援助"):
+		if key != "arrears" and not key.begins_with("aid."):
 			_reinvested += amount
 
 

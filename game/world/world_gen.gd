@@ -6,6 +6,23 @@ const SeedGeo = preload("res://world/seed_geography.gd")
 const Hydrology = preload("res://world/hydrology.gd")
 const GW := 144
 const GH := 72
+const GEO_CACHE_LIMIT: int = 6
+const REGENERABLE_VERSIONS: Array[String] = ["CC-GEO-1.5", "CC-GEO-1.6"]
+const RECORD_FIELDS: Array[String] = [
+	"seed",
+	"seed_input",
+	"seed_protocol",
+	"version",
+	"size",
+	"radius_km",
+	"grid_width",
+	"grid_height",
+	"hash",
+	"regions",
+	"candidates",
+]
+
+static var _geo_cache: Dictionary = {}
 
 
 static func world_compatibility_error(world: Dictionary) -> String:
@@ -20,6 +37,93 @@ static func world_compatibility_error(world: Dictionary) -> String:
 static func road_blocked(route: Dictionary, day: int) -> bool:
 	# Until is inclusive, matching transport and contract connectivity.
 	return int(route.get("blocked_until", 0)) >= day
+
+
+## Derived geography for a seed. Grid data is shared read-only between games on the same seed;
+## `regions` is a private copy because deposits change during play.
+func build(seed_input: Variant, size_id: int = 1) -> Dictionary:
+	var key: String = "%d|%d" % [SeedGeo.normalize_seed(seed_input), clampi(size_id, 0, 2)]
+	if not _geo_cache.has(key):
+		var world: Dictionary = generate(seed_input, size_id)
+		world.hash = geo_hash(world)
+		if _geo_cache.size() >= GEO_CACHE_LIMIT:
+			_geo_cache.erase(_geo_cache.keys()[0])
+		_geo_cache[key] = world
+	var copy: Dictionary = _geo_cache[key].duplicate(false)
+	copy.regions = _geo_cache[key].regions.duplicate(true)
+	copy.seed_input = str(seed_input)
+	return copy
+
+
+## The part of a world that belongs in the saved state.
+static func world_record(world: Dictionary) -> Dictionary:
+	var record: Dictionary = {}
+	for field: String in RECORD_FIELDS:
+		if world.has(field):
+			record[field] = world[field]
+	return record
+
+
+## Geography for a saved record. Regenerated from the seed and checked against the stored hash;
+## a legacy world that the generator cannot reproduce carries its own compressed copy.
+## Returns {"error": message} instead of changing anything when the world cannot be restored.
+func bind(record: Dictionary) -> Dictionary:
+	var geo: Dictionary = {}
+	if record.has("stored_geo"):
+		var stored: Dictionary = record.stored_geo
+		var bytes: PackedByteArray = stored.bytes
+		var raw: PackedByteArray = bytes.decompress(
+			int(stored.raw_size), FileAccess.COMPRESSION_ZSTD
+		)
+		var unpacked: Variant = bytes_to_var(raw)
+		if not unpacked is Dictionary:
+			return {"error": "存档中的旧版世界数据已损坏"}
+		geo = unpacked
+	else:
+		geo = build(int(record.seed), int(record.size))
+		if str(geo.hash) != str(record.hash):
+			return {"error": "此存档的世界与当前生成器的结果不一致，无法恢复原有地理。原存档未改动；请使用生成它的版本继续。"}
+	geo.regions = record.regions
+	geo.version = record.version
+	geo.seed = record.seed
+	geo.size = record.size
+	geo.radius_km = record.radius_km
+	geo.candidates = record.candidates
+	return geo
+
+
+## Fingerprint of everything derived from the seed.
+static func geo_hash(world: Dictionary) -> String:
+	var context := HashingContext.new()
+	context.start(HashingContext.HASH_SHA256)
+	context.update(var_to_bytes(world.get("grid", [])))
+	context.update(var_to_bytes(world.get("rivers", [])))
+	context.update(var_to_bytes(world.get("river_metadata", [])))
+	context.update(var_to_bytes(world.get("lakes", [])))
+	return context.finish().hex_encode()
+
+
+## Whether the current generator reproduces this legacy world exactly.
+func regenerates_world(world: Dictionary, world_hash: String) -> bool:
+	if not str(world.get("version", "")) in REGENERABLE_VERSIONS:
+		return false
+	if not world_compatibility_error(world).is_empty():
+		return false
+	return str(build(int(world.seed), int(world.size)).hash) == world_hash
+
+
+static func regenerates(world: Dictionary, world_hash: String) -> bool:
+	return new().regenerates_world(world, world_hash)
+
+
+## A compressed copy of a legacy world's derived data, for worlds that cannot be regenerated.
+static func pack_geo(world: Dictionary) -> Dictionary:
+	var derived: Dictionary = {}
+	for field: Variant in world:
+		if not field in RECORD_FIELDS:
+			derived[field] = world[field]
+	var raw: PackedByteArray = var_to_bytes(derived)
+	return {"bytes": raw.compress(FileAccess.COMPRESSION_ZSTD), "raw_size": raw.size()}
 
 
 func generate(seed_input: Variant, size_id: int = 1) -> Dictionary:

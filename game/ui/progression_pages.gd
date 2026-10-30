@@ -84,11 +84,14 @@ static func research(g, b):
 		)
 		D.label(c, str(current.get("reason", "需要启用的研究所、人员和经费。")), 16, D.MUTED)
 		var row = D.row(c)
-		var count = SpinBox.new()
-		count.min_value = 0
-		count.max_value = maxi(10, int(v.get("total", 0)))
-		count.value = current.get("staff", 0)
-		row.add_child(count)
+		var count = D.spin(
+			row,
+			"Staff_" + str(key),
+			0,
+			maxi(10, int(v.get("total", 0))),
+			1,
+			current.get("staff", 0)
+		)
 		var tech = key
 		D.button(
 			row,
@@ -324,10 +327,7 @@ static func career(g, b):
 	)
 	D.label(b, "30日为一个月，360日为一年。暂停时旧星也暂停。分红先进入生涯资金；注资不计入新星球经营利润。", 17, D.MUTED)
 	var row = D.row(b)
-	var amount = SpinBox.new()
-	amount.max_value = float(c.balance)
-	amount.value = minf(float(c.balance), 500)
-	row.add_child(amount)
+	var amount = D.spin(row, "InvestAmount", 0, float(c.balance), 1, minf(float(c.balance), 500))
 	D.button(row, "注入当前星球", func(): g.career_action("invest", {"amount": amount.value}))
 	for old in c.managed:
 		var card = D.card(b)
@@ -374,31 +374,25 @@ static func career(g, b):
 		D.label(b, p.warning + " 代管方取得剩余分成，不另收管理费。旧星的救助附加义务保留。", 17, D.MUTED)
 		D.label(b, "下一颗星球", 20, D.TEAL)
 		var next_row = D.row(b)
-		var next_seed = LineEdit.new()
-		next_seed.name = "NextSeed"
-		next_seed.text = str(int(g.sim.state.world.seed) + 1)
+		var next_seed = D.line_edit(next_row, "NextSeed", str(int(g.sim.state.world.seed) + 1))
 		next_seed.custom_minimum_size.x = 170
-		next_row.add_child(next_seed)
-		var next_size = OptionButton.new()
-		next_size.name = "NextSize"
-		for label in ["小型 · 短途", "中型 · 标准", "大型 · 长途"]:
-			next_size.add_item(label)
-		next_size.select(int(g.sim.state.world.size))
-		next_row.add_child(next_size)
-		var next_opening = OptionButton.new()
-		next_opening.name = "NextOpening"
+		var next_size = D.option(
+			next_row, "NextSize", ["小型 · 短途", "中型 · 标准", "大型 · 长途"], int(g.sim.state.world.size)
+		)
 		var opening_keys: Array = ["capital", "workers", "science"]
-		for label in ["资本支持", "工人招募", "研究合作"]:
-			next_opening.add_item(label)
-		next_opening.select(opening_keys.find(g.sim.state.advantage))
-		next_row.add_child(next_opening)
-		var next_level = OptionButton.new()
-		next_level.name = "NextDifficulty"
+		var next_opening = D.option(
+			next_row,
+			"NextOpening",
+			["资本支持", "工人招募", "研究合作"],
+			opening_keys.find(g.sim.state.advantage)
+		)
 		var level_keys: Array = ["easy", "normal", "hard"]
-		for label in ["简单", "标准", "困难"]:
-			next_level.add_item(label)
-		next_level.select(level_keys.find(g.sim.state.get("difficulty", "normal")))
-		next_row.add_child(next_level)
+		var next_level = D.option(
+			next_row,
+			"NextDifficulty",
+			["简单", "标准", "困难"],
+			level_keys.find(g.sim.state.get("difficulty", "normal"))
+		)
 		D.button(
 			b,
 			"确认交接并前往下一颗星球",
@@ -423,11 +417,12 @@ static func career(g, b):
 		)
 	else:
 		D.label(b, "取得当前星球总督资格后可移交；现在仍可查看已取得的代管资产。", 18, D.MUTED)
-	var level = OptionButton.new()
-	for label in ["简单", "标准", "困难"]:
-		level.add_item(label)
-	level.select(["easy", "normal", "hard"].find(g.sim.state.get("difficulty", "normal")))
-	b.add_child(level)
+	var level = D.option(
+		b,
+		"RestartDifficulty",
+		["简单", "标准", "困难"],
+		["easy", "normal", "hard"].find(g.sim.state.get("difficulty", "normal"))
+	)
 	D.button(
 		b,
 		"恢复本次登陆检查点 / 按选定难度重开",
@@ -476,12 +471,15 @@ static func manage(g, b):
 		)
 		caption.custom_minimum_size.x = 180
 		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var amount = SpinBox.new()
-		amount.max_value = maxf(10000, g.sim._target(s, key))
-		amount.step = 0.000001
+		var amount = D.spin(
+			row,
+			"Target_" + key,
+			0,
+			maxf(10000, g.sim._target(s, key)),
+			0.000001,
+			g.sim._target(s, key)
+		)
 		amount.custom_arrow_step = 0.1
-		amount.value = g.sim._target(s, key)
-		row.add_child(amount)
 		var resource = key
 		D.button(
 			row,

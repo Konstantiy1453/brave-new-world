@@ -229,7 +229,7 @@ func postmining() -> void:
 	step(s, 50)
 	var revenue: float = 0.0
 	for item in s.state.ledger:
-		if item.category == "轨道补给局可再生食品订单":
+		if item.key == "food_order.income":
 			revenue += float(item.amount)
 	results.postmining = {
 		"revenue": revenue,

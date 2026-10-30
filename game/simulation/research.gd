@@ -159,7 +159,7 @@ static func rebalance(sim, advance: bool) -> void:
 		research_used += n
 		project_count += 1
 		if advance:
-			sim._public_expense(funding, "科研经费 · " + sim.config.techs[key].name, "external")
+			sim._public_expense(funding, "research.funding", "external", key)
 			p.work = minf(float(sim.config.techs[key].cost), float(p.work) + float(p.rate))
 			if p.work >= float(sim.config.techs[key].cost):
 				r.completed.append(key)
@@ -177,7 +177,7 @@ static func rebalance(sim, advance: bool) -> void:
 			s.jobs += n
 			employ -= researchers_here
 			sim._public_expense(
-				n * float(sim.config.economy.scientist_wage), "科研及调查人员工资", "residents"
+				n * float(sim.config.economy.scientist_wage), "research.wages", "residents"
 			)
 	r.current = ""
 	r.progress = 0.0

@@ -67,3 +67,29 @@ control columns; `evidence/v17/tests/world_v17_seam.png` viewed, no dashed seam 
 `tools/compare_balance.py`; 3 of 3 replays byte-identical.
 
 Export filter exclusions are checked against `export_presets.cfg` here. PCK contents are verified at the release step (Phase 8).
+
+## Phase 2
+
+**Balance harness.** Behaviour unchanged: 950 of 950 run records identical to Phase 1 through `tools/compare_balance.py`, 3 of 3 replays byte-identical, 0 audit errors.
+
+**Automated test.** All headless suites green, including `v17_saves` (93 checks): exact round trip and continuation, sibling checkpoint and archives, refusal of a mismatched world with no change to the running game, a worker-thread write, header read without the payload, and migration of all 8 shipped 1.6 and 1.5 fixtures.
+
+| Measure | 1.6 | Schema 3 |
+|---|---|---|
+| Day 60 save | about 8 MB | 7.8 KB (headless, this machine) |
+| Second-world fixture | 11.15 MB | 11.1 KB |
+| Save | 209 ms | 23 ms |
+| Load, world already in memory | 242 ms | 7 ms |
+
+Cold load, which regenerates the world, is measured in Phase 5 against the new generator.
+
+**Source-project window.** `v16_interaction_probe`, `v16_scroll_probe`, `world_v16_visual`, `world_v17_seam` pass.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `tools/review_save_guards.gd`, `review_save_nested_regressions.gd`, `review_save_nested_type.gd` | Build malformed schema 3 saves through `tests/support/save_fixture.gd`; added bad magic, truncation and world-hash cases; the grid case became a hash case | Schema 3 replaces the JSON envelope and the grid left the state |
+| `world_v16_legacy_load.gd` | Compares `geo.grid` and regions against the old save | World split |
+| `v16_career_review.gd` | Archive corruption removes the hash; ledger fixture uses `key` | Archives are sibling files |
+| `v16_events_tests.gd`, `v16_economy_tests.gd`, `v16_rules_tests.gd`, `v16_ui_tests.gd` | English keys, `sim.geo` | Display strings left the logic |

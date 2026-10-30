@@ -7,14 +7,23 @@ import sys
 from pathlib import Path
 
 
+GOODS = {"铁矿": "ore", "铜矿": "copper", "工业晶体": "crystal", "食品": "food", "建材": "materials", "机械部件": "parts"}
+
+
 def key(run):
     return (run["bot"], run["difficulty"], run["opening"], run["seed"])
 
 
+def normalized(run):
+    """Export revenue was keyed by display name before Phase 2."""
+    run["export_revenue"] = {GOODS.get(k, k): v for k, v in run.get("export_revenue", {}).items()}
+    return run
+
+
 def main():
     first, second = (json.loads(Path(p).read_text(encoding="utf-8")) for p in sys.argv[1:3])
-    runs_a = {key(r): r for r in first["runs"]}
-    runs_b = {key(r): r for r in second["runs"]}
+    runs_a = {key(r): normalized(r) for r in first["runs"]}
+    runs_b = {key(r): normalized(r) for r in second["runs"]}
     if set(runs_a) != set(runs_b):
         print(f"DIFFERENT case sets: {len(runs_a)} vs {len(runs_b)}")
         return 1

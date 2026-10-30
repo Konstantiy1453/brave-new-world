@@ -32,7 +32,7 @@ func _init() -> void:
 	home.port_capacity = 0
 	home.shortages = []
 	sim._trade(home)
-	check(not home.shortages.has("港口今日吞吐已满"), "F08 no port not congestion")
+	check(home.shortages.all(func(x): return x.key != "port_full"), "F08 no port not congestion")
 	sim.act("settle", {"region": 1})
 	sim.act("connect", {"a": 0, "b": 1})
 	var dst: Dictionary = sim.settlement(1)
@@ -54,7 +54,7 @@ func _init() -> void:
 		"name": "test",
 		"region": 0,
 		"industry": "service",
-		"status": "停业",
+		"status": "closed",
 		"remaining": 0,
 		"employees": 0,
 		"profit": 0.0,
@@ -67,7 +67,7 @@ func _init() -> void:
 	}
 	home.buildings.append(sim._building("service", 0))
 	check(sim.act("enterprise_recover", {"region": 0}) == "", "F02 paid recovery action exists")
-	check(sim.state.enterprise.status != "停业", "F02 halted enterprise resumes")
+	check(sim.state.enterprise.status != "closed", "F02 halted enterprise resumes")
 	check(sim.has_method("research_view"), "personnel research API")
 	check(sim.has_method("company_view"), "conditional intervention API")
 	check(

@@ -5,7 +5,7 @@ static var _definitions: Dictionary = {}
 
 static func definitions() -> Dictionary:
 	if _definitions.is_empty():
-		_definitions = JSON.parse_string(FileAccess.get_file_as_string("res://data/events_v2.json"))
+		_definitions = load("res://simulation/rules.gd").read("events")
 	return _definitions
 
 
@@ -250,13 +250,13 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 		inst.variables.building_index = s.buildings.size() - 1
 		inst.variables.building_kind = str(option.build)
 	sim._transfer(
-		"public", "external", float(option.get("pay", 0)), "事件支出 · " + inst.instance_id, false
+		"public", "external", float(option.get("pay", 0)), "event.pay", false, str(inst.instance_id)
 	)
 	for key in option.get("goods_cost", {}):
 		sim._consume(s, str(key), float(option.goods_cost[key]))
 	if option.has("reward"):
 		sim._transfer(
-			"external", "public", float(option.reward), "事件一次性收入 · " + inst.instance_id, false
+			"external", "public", float(option.reward), "event.reward", false, str(inst.instance_id)
 		)
 	for key in option.get("goods_reward", {}):
 		sim._produce(s, str(key), float(option.goods_reward[key]), "事件外部交付 · " + inst.instance_id)
@@ -355,8 +355,9 @@ static func _advance_order(sim, inst: Dictionary) -> void:
 				"external",
 				"public",
 				float(cargo.amount) * float(order.price),
-				"加工订单到货 · " + inst.instance_id,
-				true
+				"event.order_income",
+				true,
+				str(inst.instance_id)
 			)
 			order.paid += paid
 		else:
@@ -392,8 +393,9 @@ static func _advance_order(sim, inst: Dictionary) -> void:
 	# _consume records irrevocably exported goods; this separate receipt models the voyage.
 	sim._public_expense(
 		amount * float(order.price) * float(sim.config.economy.port_fee),
-		"订单装船港务 · " + inst.instance_id,
-		"external"
+		"event.order_fee",
+		"external",
+		str(inst.instance_id)
 	)
 
 
@@ -411,7 +413,7 @@ static func tick(sim) -> void:
 			and not sim.settlement(int(effect.region)).is_empty()
 		):
 			sim._public_expense(
-				float(effect.maintenance), "事件设施维护 · " + str(effect.source), "external"
+				float(effect.maintenance), "event.upkeep", "external", str(effect.source)
 			)
 	for inst in e.instances:
 		if inst.status in ["resolved", "cancelled"]:
@@ -596,6 +598,14 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	if option.get("sell_rights", false):
 		parts.append("独家后续调查权转让，放弃该现场后续研究成果")
 	return "；".join(parts)
+
+
+## Cheap per-frame query: builds no view and allocates nothing.
+static func pause_required(sim) -> bool:
+	for inst: Dictionary in sim.state.get("events_v2", {}).get("instances", []):
+		if inst.status == "pending" and inst.pause_required:
+			return true
+	return false
 
 
 static func view(sim) -> Dictionary:

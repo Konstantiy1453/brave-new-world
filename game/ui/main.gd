@@ -5,6 +5,15 @@ const Sim = preload("res://simulation/sim.gd")
 const Map = preload("res://world/map_view.gd")
 const Career = preload("res://simulation/career.gd")
 const ProgressionPages = preload("res://ui/progression_pages.gd")
+const Events = preload("res://simulation/events_v2.gd")
+const SaveIo = preload("res://simulation/save_io.gd")
+const SAVE_MANUAL: String = "user://manual.save"
+const SAVE_AUTO: String = "user://autosave.save"
+const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
+const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
+const AUTOSAVE_DAYS: int = 10
+const MODAL_HEIGHT: int = 690
+const PAGE_HEIGHT: int = 535
 var sim = Sim.new()
 var map: Node3D
 var ui: Control
@@ -40,6 +49,15 @@ var detailed_info: bool = true
 var panel_pause: bool = true
 var resume_on_close: bool = false
 var dev_mode: bool = false
+var modal_root: Control
+var modal_panel: PanelContainer
+var modal_title: Label
+var modal_close: Button
+var modal_pages: VBoxContainer
+var modal_footer: Label
+var page_boxes: Dictionary = {}
+var autosave_task: int = -1
+var autosave_snapshot: Dictionary = {}
 
 
 func _ready():
@@ -48,7 +66,7 @@ func _ready():
 	sim.new_game(260129, "capital", 1)
 	map = Map.new()
 	add_child(map)
-	map.setup(sim.state.world)
+	map.setup(sim.geo)
 	map.region_selected.connect(select_region)
 	var layer = CanvasLayer.new()
 	add_child(layer)
@@ -105,7 +123,7 @@ func build_shell():
 			entry[0],
 			func():
 				if saving:
-					save_slot("user://manual.json")
+					save_slot(SAVE_MANUAL)
 				else:
 					open_page("save"),
 			"Ctrl+S 快速存档；读档页面可选择手动、自动和验收档"
@@ -212,6 +230,7 @@ func build_shell():
 
 func _process(delta):
 	session_seconds += delta
+	_finish_autosave(true)
 	if sample_frames.size() < 36000:
 		sample_frames.append(delta)
 	advance_time(delta)
@@ -242,8 +261,8 @@ func advance_time(delta: float):
 		sim.tick()
 		map.sync_state(sim.state)
 		refresh()
-		if sim.state.day - autosave_day >= 10:
-			sim.save_game("user://autosave.json")
+		if sim.state.day - autosave_day >= AUTOSAVE_DAYS:
+			_begin_autosave()
 			autosave_day = sim.state.day
 		if sim.state.status != last_status and sim.state.status in ["success", "failed"]:
 			forced_pause(false)
@@ -265,8 +284,31 @@ func advance_time(delta: float):
 			break
 
 
+## Serialization happens here on the main thread; compression and disk work run on a worker.
+func _begin_autosave():
+	_finish_autosave(false)
+	autosave_snapshot = SaveIo.snapshot(sim, SAVE_AUTO)
+	autosave_task = WorkerThreadPool.add_task(_write_autosave.bind(autosave_snapshot))
+
+
+static func _write_autosave(snap: Dictionary):
+	snap.result = SaveIo.write_snapshot(snap)
+
+
+func _finish_autosave(only_if_done: bool):
+	if autosave_task < 0:
+		return
+	if only_if_done and not WorkerThreadPool.is_task_completed(autosave_task):
+		return
+	WorkerThreadPool.wait_for_task_completion(autosave_task)
+	autosave_task = -1
+	if str(autosave_snapshot.get("result", "")) != "":
+		toast(str(autosave_snapshot.result))
+	autosave_snapshot = {}
+
+
 func event_pause_required() -> bool:
-	return bool(preload("res://simulation/events_v2.gd").view(sim).get("pause_required", false))
+	return Events.pause_required(sim)
 
 
 ## Whether an open panel holds the clock under the current setting.
@@ -319,7 +361,7 @@ func _input(event):
 func _unhandled_input(event):
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_S and event.ctrl_pressed:
-			save_slot("user://manual.json")
+			save_slot(SAVE_MANUAL)
 			get_viewport().set_input_as_handled()
 			return
 		if event.keycode == KEY_ESCAPE:
@@ -422,10 +464,9 @@ func refresh():
 func refresh_sidebar():
 	if not is_instance_valid(sidebar):
 		return
-	for n in sidebar.get_children():
-		sidebar.remove_child(n)
-		n.queue_free()
+	D.begin(sidebar)
 	Pages.region(self, sidebar)
+	D.finish(sidebar)
 
 
 func act(action: String, args: Dictionary = {}):
@@ -433,19 +474,9 @@ func act(action: String, args: Dictionary = {}):
 	if err.is_empty():
 		map.sync_state(sim.state)
 	refresh()
-	if is_instance_valid(overlay) and not current_page.is_empty():
-		var scroll: ScrollContainer = modal_box.get_parent()
-		var position_y = scroll.scroll_vertical
-		open_page(current_page)
-		_restore_scroll.call_deferred(position_y)
+	populate_current_page()
 	toast(err if not err.is_empty() else "指令已执行。")
 	return err
-
-
-func _restore_scroll(value: int):
-	await get_tree().process_frame
-	if is_instance_valid(modal_box):
-		modal_box.get_parent().scroll_vertical = value
 
 
 func toast(text: String):
@@ -455,9 +486,9 @@ func toast(text: String):
 		modal_feedback.text = text
 
 
-func _free_overlay():
-	if is_instance_valid(overlay):
-		overlay.queue_free()
+func _hide_overlay():
+	if is_instance_valid(modal_root):
+		modal_root.visible = false
 	overlay = null
 	modal_box = null
 	modal_feedback = null
@@ -466,7 +497,7 @@ func _free_overlay():
 
 
 func close_modal():
-	_free_overlay()
+	_hide_overlay()
 	if (
 		resume_on_close
 		and not event_pause_required()
@@ -477,42 +508,66 @@ func close_modal():
 	refresh()
 
 
-func modal(title: String, width: int = 960, closable: bool = true):
-	_free_overlay()
-	overlay = Control.new()
-	ui.add_child(overlay)
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+## One panel host stays in the tree for the whole session; each page keeps its own controls,
+## so opening a page again only updates what changed.
+func _build_modal_host():
+	modal_root = Control.new()
+	modal_root.name = "ModalHost"
+	ui.add_child(modal_root)
+	modal_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	modal_root.visible = false
 	var shade = ColorRect.new()
 	shade.color = Color(0.015, 0.035, 0.06, .88)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(shade)
+	modal_root.add_child(shade)
 	var center = CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(width, 690)
-	center.add_child(panel)
-	var outer = D.col(panel)
+	modal_root.add_child(center)
+	modal_panel = PanelContainer.new()
+	center.add_child(modal_panel)
+	var outer = D.col(modal_panel)
 	var head = D.row(outer)
-	var title_label = D.label(head, title, 27, D.INK, false)
-	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if closable:
-		D.button(head, "关闭  ×", close_modal)
-	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 535)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	outer.add_child(scroll)
-	modal_box = D.col(scroll)
-	modal_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var f = D.label(
-		outer,
-		"" if not closable else ("已暂停，可从容决策；关闭后恢复原速度。" if panel_pause else "面板打开时时间继续流逝。"),
-		15,
-		D.GOLD
+	modal_title = D.label(head, "", 27, D.INK, false)
+	modal_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	modal_close = D.button(head, "关闭  ×", close_modal, "", "ModalClose")
+	modal_pages = VBoxContainer.new()
+	modal_pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(modal_pages)
+	modal_footer = D.label(outer, "", 15, D.GOLD)
+	modal_footer.name = "Footer"
+
+
+func _page_box(key: String) -> VBoxContainer:
+	if not page_boxes.has(key):
+		var scroll = ScrollContainer.new()
+		scroll.name = "Page_" + key
+		scroll.custom_minimum_size = Vector2(0, PAGE_HEIGHT)
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		modal_pages.add_child(scroll)
+		var box = D.col(scroll)
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		page_boxes[key] = box
+	for other: String in page_boxes:
+		page_boxes[other].get_parent().visible = other == key
+	return page_boxes[key]
+
+
+func modal(title: String, width: int = 960, closable: bool = true, key: String = "page"):
+	_hide_overlay()
+	if not is_instance_valid(modal_root):
+		_build_modal_host()
+	overlay = modal_root
+	modal_root.visible = true
+	modal_root.move_to_front()
+	modal_panel.custom_minimum_size = Vector2(width, MODAL_HEIGHT)
+	modal_title.text = title
+	modal_close.visible = closable
+	modal_footer.text = (
+		"" if not closable else ("已暂停，可从容决策；关闭后恢复原速度。" if panel_pause else "面板打开时时间继续流逝。")
 	)
-	f.name = "Footer"
-	modal_feedback = f
+	modal_feedback = modal_footer
+	modal_box = _page_box(key)
 	if panel_pause:
 		if not paused:
 			resume_on_close = true
@@ -520,6 +575,17 @@ func modal(title: String, width: int = 960, closable: bool = true):
 		accumulator = 0
 	refresh()
 	return modal_box
+
+
+func populate_current_page():
+	if not is_instance_valid(overlay) or current_page.is_empty():
+		return
+	D.begin(modal_box)
+	if current_page in ["research", "company", "events", "career", "manage"]:
+		ProgressionPages.populate(self, modal_box, current_page)
+	else:
+		Pages.populate(self, modal_box, current_page)
+	D.finish(modal_box)
 
 
 func open_page(page: String):
@@ -536,19 +602,17 @@ func open_page(page: String):
 		"guide": "专员行动指南"
 	}
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
-	var box = modal(titles.get(page, page))
+	modal(titles.get(page, page), 960, true, page)
 	current_page = page
-	if page in ["research", "company", "events", "career", "manage"]:
-		ProgressionPages.populate(self, box, page)
-	else:
-		Pages.populate(self, box, page)
+	populate_current_page()
 
 
 func show_menu():
-	var box = modal("殖 民 契 约     /     COLONY CHARTER", 1030, false)
+	var box = modal("殖 民 契 约     /     COLONY CHARTER", 1030, false, "menu")
 	menu_open = true
 	paused = true
 	resume_on_close = false
+	D.begin(box)
 	var h = D.row(box)
 	D.portrait(h, "liaison", 260, 430)
 	var v = D.col(h)
@@ -558,24 +622,14 @@ func show_menu():
 	D.label(v, "你是公司的殖民外包专员。让两座据点各尽其能，建立可自负盈亏的社会，赢得总督资格。", 18, D.MUTED)
 	var r = D.row(v)
 	D.label(r, "星球种子", 17, D.MUTED, false)
-	seed_edit = LineEdit.new()
-	seed_edit.text = "260129"
+	seed_edit = D.line_edit(r, "SeedEdit", "260129")
 	seed_edit.custom_minimum_size.x = 180
-	r.add_child(seed_edit)
-	size_option = OptionButton.new()
-	for s in ["小型 · 短途", "中型 · 标准", "大型 · 长途"]:
-		size_option.add_item(s)
-	size_option.select(1)
-	r.add_child(size_option)
-	difficulty_option = OptionButton.new()
-	for label in ["简单", "标准", "困难"]:
-		difficulty_option.add_item(label)
-	difficulty_option.select(1)
-	r.add_child(difficulty_option)
+	size_option = D.option(r, "SizeOption", ["小型 · 短途", "中型 · 标准", "大型 · 长途"], 1)
+	difficulty_option = D.option(r, "DifficultyOption", ["简单", "标准", "困难"], 1)
 	var reroll = D.button(
 		r, "换个种子", func(): seed_edit.text = str(randi_range(1, 2147483646)), "只更换输入框中的种子；新建后生成对应星球"
 	)
-	reroll.add_theme_font_size_override("font_size", 15)
+	D.font_size(reroll, 15)
 	D.label(v, "开局合作方案", 15, D.TEAL)
 	var opts = [
 		["capital", "资本支持", "更多初始公共资金，容错更高。"],
@@ -589,16 +643,17 @@ func show_menu():
 		b.toggle_mode = true
 		b.button_group = group
 		b.button_pressed = id == advantage
-		b.add_theme_font_size_override("font_size", 16)
+		D.font_size(b, 16)
 		b.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 10))
 		b.add_theme_stylebox_override("pressed", D.box(Color("31565e"), D.TEAL, 10))
 		b.add_theme_stylebox_override("hover", D.box(Color("264553"), D.TEAL, 10))
 	var launch = D.button(v, "新建殖民远征  →", start_game)
 	launch.add_theme_stylebox_override("normal", D.box(Color("1a3042"), D.TEAL, 10))
 	var resume = D.row(v)
-	D.button(resume, "继续上次存档", func(): load_path("user://manual.json"))
+	D.button(resume, "继续上次存档", func(): load_path(SAVE_MANUAL))
 	if dev_mode:
 		D.button(resume, "读取1.6事件中段", func(): load_path("res://data/v16/acceptance_event_mid.json"))
+	D.finish(box)
 
 
 func start_game():
@@ -610,7 +665,7 @@ func start_game():
 	Career.capture_checkpoint(sim)
 	selected = 0
 	local_view = false
-	map.setup(sim.state.world)
+	map.setup(sim.geo)
 	map.focus_region(selected)
 	map_hint.text = "球面总览  ·  右键旋转  ·  滚轮缩放"
 	map.sync_state(sim.state)
@@ -618,7 +673,7 @@ func start_game():
 	autosave_day = 0
 	last_status = "planning"
 	resume_on_close = false
-	_free_overlay()
+	_hide_overlay()
 	open_page("contract")
 
 
@@ -628,7 +683,7 @@ func load_path(path: String):
 		toast(err)
 		return
 	selected = int(sim.state.settlements[0].region) if not sim.state.settlements.is_empty() else 0
-	map.setup(sim.state.world)
+	map.setup(sim.geo)
 	map.focus_region(selected)
 	map.sync_state(sim.state)
 	local_view = false
@@ -658,11 +713,11 @@ func career_action(action: String, args: Dictionary = {}):
 			args.get("seed", 260130),
 			str(args.get("opening", sim.state.advantage)),
 			str(args.get("difficulty", sim.state.get("difficulty", "normal"))),
-			"user://manual.json",
+			SAVE_MANUAL,
 			int(args.get("size", sim.state.world.size))
 		)
 	elif action == "restart":
-		error = Career.restart(sim, str(args.get("difficulty", "normal")), "user://manual.json")
+		error = Career.restart(sim, str(args.get("difficulty", "normal")), SAVE_MANUAL)
 	if error != "":
 		toast(error)
 		return
@@ -673,7 +728,7 @@ func career_action(action: String, args: Dictionary = {}):
 		accumulator = 0
 		autosave_day = 0
 		last_status = sim.state.status
-		map.setup(sim.state.world)
+		map.setup(sim.geo)
 		map.focus_region(0)
 		map.sync_state(sim.state)
 		open_page("contract")
@@ -698,6 +753,7 @@ func money(value) -> String:
 
 func _notification(what):
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_finish_autosave(false)
 		var sorted = sample_frames.duplicate()
 		sorted.sort()
 		var sum = 0.0

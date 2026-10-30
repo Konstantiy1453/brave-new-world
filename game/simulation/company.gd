@@ -1,4 +1,5 @@
 extends RefCounted
+const Keys = preload("res://simulation/keys.gd")
 
 
 ## One causal source per economic/social/environmental chain, retained stage letters.
@@ -55,10 +56,10 @@ static func social_environment(sim) -> void:
 		if s.pollution > float(cfg.pollution_threshold):
 			sim._public_expense(
 				(float(s.pollution) - float(cfg.pollution_threshold)) * 0.10,
-				"污染地区公共健康支出",
+				"company.health",
 				"external"
 			)
-			sim._short(s, "污染影响健康与生产；可治理或停用高污染设施")
+			sim._short(s, Keys.SH_POLLUTION)
 		var adult: int = int(s.workers) + int(s.scientists)
 		var underemployment: bool = (
 			int(sim.state.day) > 20 and float(s.employed) < float(adult) * 0.35
@@ -156,7 +157,7 @@ static func act(sim, args: Dictionary) -> String:
 			var cost: float = float(sim.progression.production.cleanup_cost)
 			if sim.state.cash < cost:
 				return "治理需要 %.0f 资金" % cost
-			sim._transfer("public", "external", cost, "地区污染治理", false)
+			sim._transfer("public", "external", cost, "company.cleanup", false)
 			s.pollution = maxf(
 				0.0, float(s.pollution) - float(sim.progression.production.cleanup_amount)
 			)
@@ -172,7 +173,7 @@ static func aid_tick(sim) -> void:
 				a.status = "cancelled"
 				continue
 			if float(a.cash) > 0:
-				sim._transfer("external", "public", float(a.cash), "公司援助融资 · " + a.name, false)
+				sim._transfer("external", "public", float(a.cash), "aid.cash", false, str(a.id))
 			for key in ["food", "materials", "parts"]:
 				sim._produce(dst, key, float(a[key]), "公司援助物资")
 			a.status = "active"
@@ -184,14 +185,16 @@ static func aid_tick(sim) -> void:
 				else 0.0
 			)
 			if fee > 0:
-				sim._public_expense(fee, "援助追加经营分成 · " + a.id, "external")
+				sim._public_expense(fee, "aid.surcharge", "external", str(a.id))
 				a.surcharge_paid += fee
 			var remaining: float = maxf(0, float(a.repayment) - float(a.paid))
 			var installment: float = minf(remaining, float(a.repayment) / float(a.duration))
 			if a.status == "breached":
 				installment = remaining
 			installment = minf(installment, maxf(0, float(sim.state.cash) - float(a.cash_floor)))
-			a.paid += sim._transfer("public", "external", installment, "援助本金偿还 · " + a.id, false)
+			a.paid += sim._transfer(
+				"public", "external", installment, "aid.repay", false, str(a.id)
+			)
 			if int(sim.state.day) >= int(a.end_day):
 				if float(a.paid) + 0.00001 >= float(a.repayment):
 					a.status = "fulfilled"

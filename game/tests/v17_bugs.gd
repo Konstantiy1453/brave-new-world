@@ -152,7 +152,7 @@ func _start_colony(game: Node) -> void:
 	game.sim.act("build", {"region": 0, "kind": "mine_ore"})
 	game.sim.state.events_v2.next_draw = 99999
 	game.last_status = game.sim.state.status
-	game.map.setup(game.sim.geo if "geo" in game.sim else game.sim.state.world)
+	game.map.setup(game.sim.geo)
 	game.close_modal()
 	game.paused = true
 	game.resume_on_close = false
@@ -168,6 +168,7 @@ func _bug4_menu_cannot_close(game: Node) -> void:
 	for button: Button in _buttons(game):
 		if (
 			button.text.contains("关闭")
+			and button.is_visible_in_tree()
 			and is_instance_valid(game.overlay)
 			and game.overlay.is_ancestor_of(button)
 		):

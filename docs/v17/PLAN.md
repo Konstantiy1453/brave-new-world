@@ -69,7 +69,7 @@ The header holds `version`, `sha256` and `raw_size` of the payload, plus `planet
 | `geo2/world_gen2.gd` | Sea-level quantile, per-cell attributes, D8 hydrology, retries, hash | 5 |
 | `geo2/site_gen.gd` | Poisson-disk sites, archetypes, quotas, plots, names, playability validator | 5 |
 | `routes.gd` | A* on packed cells: land variants and sea routes | 5 |
-| `planet_view.gd`, `flat_view.gd`, `region_view.gd`, `building_models.gd`, `map_view.gd` | `map_view.gd` becomes a thin coordinator | 2, 5 |
+| `map_base.gd`, `building_models.gd`, `region_view.gd`, `flat_view.gd`, `planet_view.gd`, `map_view.gd` | Layers, each extending the previous; `map_view.gd` is the coordinator | 2, 5 |
 
 ### UI (`game/ui/`)
 

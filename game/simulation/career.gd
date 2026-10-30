@@ -1,12 +1,14 @@
 extends RefCounted
 ## One active world. Local money remains audited by Sim; career funds are an
 ## explicit outside investor when transferred into that local ledger.
+const WorldGen = preload("res://world/world_gen.gd")
+
 static var configuration: Dictionary = {}
 
 
 static func cfg() -> Dictionary:
 	if configuration.is_empty():
-		configuration = JSON.parse_string(FileAccess.get_file_as_string("res://data/career.json"))
+		configuration = load("res://simulation/rules.gd").read("career")
 	return configuration
 
 
@@ -33,12 +35,38 @@ static func capture_checkpoint(sim) -> void:
 	ensure(sim)
 	var copy: Dictionary = sim.state.duplicate(true)
 	copy.career.checkpoint = ""
-	sim.state.career.checkpoint = Marshalls.raw_to_base64(
-		var_to_bytes(copy).compress(FileAccess.COMPRESSION_GZIP)
+	sim.blobs.checkpoint = encode_blob(copy)
+	sim.state.career.checkpoint = blob_hash(sim.blobs.checkpoint)
+
+
+## Checkpoints and archives are stored as sibling files of a save, in this form.
+static func encode_blob(value: Dictionary) -> PackedByteArray:
+	var raw: PackedByteArray = var_to_bytes(value)
+	var size_prefix := PackedByteArray()
+	size_prefix.resize(8)
+	size_prefix.encode_u64(0, raw.size())
+	return size_prefix + raw.compress(FileAccess.COMPRESSION_ZSTD)
+
+
+static func decode_blob(bytes: PackedByteArray) -> Variant:
+	if bytes.size() < 9:
+		return null
+	var raw: PackedByteArray = bytes.slice(8).decompress(
+		bytes.decode_u64(0), FileAccess.COMPRESSION_ZSTD
 	)
+	if raw.size() < 4:
+		return null
+	return bytes_to_var(raw)
 
 
-static func _decode(encoded: String) -> Variant:
+static func blob_hash(bytes: PackedByteArray) -> String:
+	var context := HashingContext.new()
+	context.start(HashingContext.HASH_SHA256)
+	context.update(bytes)
+	return context.finish().hex_encode()
+
+
+static func decode_legacy(encoded: String) -> Variant:
 	if encoded.length() % 4 != 0:
 		return null
 	var format = RegEx.new()
@@ -135,10 +163,7 @@ static func preview(sim) -> Dictionary:
 			int(entry.day) >= first_day
 			and bool(entry.operating)
 			and entry.from == "public"
-			and (
-				str(entry.category).begins_with("公司总督分成")
-				or str(entry.category).begins_with("援助追加经营分成")
-			)
+			and (str(entry.key) in ["governor.share", "aid.surcharge"])
 		):
 			tax_in_sample += float(entry.amount)
 	var operating_cost: float = maxf(cost_floor, expense - tax_in_sample / maxi(1, count))
@@ -286,7 +311,7 @@ static func invest(sim, amount: float) -> String:
 		return ""
 	sim.state.career.balance -= amount
 	sim.state.career.invested += amount
-	sim._transfer("external", "public", amount, "生涯资金注资（不计当地经营利润）", false)
+	sim._transfer("external", "public", amount, "career.invest", false)
 	return ""
 
 
@@ -306,13 +331,13 @@ static func handover(
 			return "这颗星球已经移交"
 	var frozen: Dictionary = sim.state.duplicate(true)
 	frozen.erase("career")
+	var archive_blob: PackedByteArray = encode_blob(frozen)
 	c.archives.append(
 		{
 			"id": old_id,
 			"seed": sim.state.world.seed,
 			"version": sim.state.world.version,
-			"snapshot":
-			Marshalls.raw_to_base64(var_to_bytes(frozen).compress(FileAccess.COMPRESSION_GZIP))
+			"hash": blob_hash(archive_blob)
 		}
 	)
 	c.managed.append(
@@ -359,6 +384,8 @@ static func handover(
 		seed_value, advantage, int(sim.state.world.size) if size_id < 0 else size_id, difficulty
 	)
 	next.state.career = c
+	next.blobs.archives = sim.blobs.archives.duplicate()
+	next.blobs.archives[old_id] = archive_blob
 	capture_checkpoint(next)
 	var error: String = next._validate_save(next.state)
 	if error != "":
@@ -367,15 +394,17 @@ static func handover(
 	if error != "":
 		return "移交未提交，原星球仍可经营：" + error
 	sim.state = next.state
+	sim.geo = next.geo
+	sim.blobs = next.blobs
 	sim.config = next.config
 	return ""
 
 
 static func restart(sim, difficulty: String, path: String) -> String:
 	ensure(sim)
-	if sim.state.career.checkpoint == "":
+	if sim.state.career.checkpoint == "" or sim.blobs.checkpoint.is_empty():
 		return "此旧档没有登陆检查点；可继续经营或从主菜单新建独立生涯"
-	var candidate: Variant = _decode(sim.state.career.checkpoint)
+	var candidate: Variant = decode_blob(sim.blobs.checkpoint)
 	if not candidate is Dictionary:
 		return "登陆检查点损坏"
 	var next = sim.get_script().new()
@@ -388,6 +417,11 @@ static func restart(sim, difficulty: String, path: String) -> String:
 		next.state.career = kept
 	else:
 		next.state = candidate
+		var bound: Dictionary = WorldGen.new().bind(candidate.world)
+		if bound.has("error"):
+			return str(bound.error)
+		next.geo = bound
+	next.blobs = sim.blobs
 	next.state.career.checkpoint = sim.state.career.checkpoint
 	var error: String = next._validate_save(next.state)
 	if error != "":
@@ -396,11 +430,48 @@ static func restart(sim, difficulty: String, path: String) -> String:
 	if error != "":
 		return "重开未提交：" + error
 	sim.state = next.state
+	sim.geo = next.geo
+	sim.blobs = next.blobs
 	sim.config = next.config
 	return ""
 
 
+## Current schema: archives and the checkpoint live in sibling files, named by hash.
 static func validate(s: Dictionary) -> String:
+	var error: String = _validate_common(s)
+	if error != "" or not s.has("career"):
+		return error
+	var seen: Array = []
+	for old: Dictionary in s.career.managed:
+		seen.append(old.id)
+	var archive_ids: Array = []
+	for a: Variant in s.career.archives:
+		if (
+			not a is Dictionary
+			or not a.get("hash") is String
+			or not a.get("id") in seen
+			or a.id in archive_ids
+		):
+			return "旧星球完整快照无效"
+		archive_ids.append(a.id)
+	if archive_ids.size() != seen.size():
+		return "缺少旧星球完整交接快照"
+	return ""
+
+
+## Schema 1 and 2: archives and the checkpoint are embedded as base64 gzip.
+static func validate_old(s: Dictionary) -> String:
+	var error: String = _validate_common(s)
+	if error != "" or not s.has("career"):
+		return error
+	var c: Dictionary = s.career
+	var seen: Array = []
+	for old: Dictionary in c.managed:
+		seen.append(old.id)
+	return _validate_old_blobs(c, seen)
+
+
+static func _validate_common(s: Dictionary) -> String:
 	if not s.has("career"):
 		return ""
 	var c: Variant = s.career
@@ -507,6 +578,13 @@ static func validate(s: Dictionary) -> String:
 			return "代管账户不守恒"
 	if absf(paid_total - float(c.balance) - float(c.invested)) > 0.001:
 		return "生涯分红转账不守恒"
+	for row in c.history:
+		if not row is Dictionary or not row.get("id") is String:
+			return "分红记录无效"
+	return ""
+
+
+static func _validate_old_blobs(c: Dictionary, seen: Array) -> String:
 	var archive_ids: Array = []
 	for a in c.archives:
 		if (
@@ -516,7 +594,7 @@ static func validate(s: Dictionary) -> String:
 			or a.id in archive_ids
 		):
 			return "旧星球完整快照无效"
-		var archived: Variant = _decode(a.snapshot)
+		var archived: Variant = decode_legacy(a.snapshot)
 		if (
 			not archived is Dictionary
 			or not archived.get("world") is Dictionary
@@ -528,14 +606,11 @@ static func validate(s: Dictionary) -> String:
 	if archive_ids.size() != seen.size():
 		return "缺少旧星球完整交接快照"
 	if c.checkpoint != "":
-		var checkpoint: Variant = _decode(c.checkpoint)
+		var checkpoint: Variant = decode_legacy(c.checkpoint)
 		if (
 			not checkpoint is Dictionary
 			or not checkpoint.get("career") is Dictionary
 			or checkpoint.career.get("checkpoint") != ""
 		):
 			return "登陆检查点无效"
-	for row in c.history:
-		if not row is Dictionary or not row.get("id") is String:
-			return "分红记录无效"
 	return ""
