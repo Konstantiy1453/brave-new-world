@@ -1,7 +1,9 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 var failures:Array=[]
 func _initialize()->void:
+	Watchdog.arm(self)
 	call_deferred("run")
 func check(value:bool,message:String)->void:
 	if not value: failures.append(message)
@@ -35,7 +37,7 @@ func run()->void:
 	var large:Dictionary=gen.route(gen.generate(20261029,2),0,1)
 	check(large.distance>small.distance,"size changes real route distance")
 	var output:Dictionary={"generator_version":Geo.VERSION,"engine":Engine.get_version_info(),"failures":failures,"cases":reports,"small_distance":small.distance,"large_distance":large.distance,"evidence_scope":"headless generation, determinism and routes; no rendered visual claim"}
-	FileAccess.open("res://../docs/world_self_test.json",FileAccess.WRITE).store_string(JSON.stringify(output,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/world_self_test.json",FileAccess.WRITE).store_string(JSON.stringify(output,"\t"))
 	print("WORLD_SELF_TEST: ","PASS" if failures.is_empty() else "FAIL", " ",JSON.stringify(failures))
 	print("Recommended route normal: ",reports[0].normal.distance," km / ",reports[0].normal.days," d / ",reports[0].normal.cost)
 	print("Recommended route mountain: ",reports[0].mountain.distance," km / ",reports[0].mountain.days," d / ",reports[0].mountain.cost)

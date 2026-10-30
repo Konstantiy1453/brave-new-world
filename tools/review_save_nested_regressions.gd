@@ -1,7 +1,9 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 var checks:Array=[]
 func _initialize():
+	Watchdog.arm(self)
 	var s=Sim.new()
 	var error:String=s.load_game("res://data/acceptance_midgame.json")
 	checks.append({"name":"current_midgame_load","pass":error=="","error":error})
@@ -55,6 +57,6 @@ func finish():
 	for c in checks:
 		if not c.pass:failures+=1
 	var report={"scope":"bounded malformed nested-state rejection; hashes are recomputed intentionally; not an exhaustive hostile-file audit","checks":checks,"failures":failures}
-	FileAccess.open("res://../evidence/v16/save_nested_final.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/save_nested_final.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print(JSON.stringify(report))
 	quit(1 if failures else 0)

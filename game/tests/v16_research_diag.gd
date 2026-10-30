@@ -1,7 +1,9 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const Flow=preload("res://tests/v16_flow.gd")
 func _init():
+	Watchdog.arm(self)
 	var runner=Flow.new()
 	for advantage in ["capital","science"]:
 		var s=Sim.new();s.new_game(260129,advantage,1,"normal");runner.opening(s)

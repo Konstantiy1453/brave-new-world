@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 var checks:int=0
 var failures:Array=[]
@@ -8,6 +9,7 @@ func check(ok:bool,label:String)->void:
 	if not ok: failures.append(label)
 	print("PASS " if ok else "FAIL ",label)
 func _init()->void:
+	Watchdog.arm(self)
 	var base=Sim.new()
 	base.new_game(260129,"capital",1)
 	check(base.act("settle",{"region":0})=="","land first colony")
@@ -51,6 +53,6 @@ func _init()->void:
 		check(dispatch.audit().is_empty(),"dispatch conservation day %d" % day)
 		rows.append({"day":day,"blocked_until":5,"arrival_delta":arrival_delta,"outbound_materials":sent,"connected":s.contract_progress().connected})
 	var report:Dictionary={"scope":"actual shipment advance, dispatch and contract functions at controlled local days 4/5/6; separate graphical label/material test is world_v16_region","checks":checks,"failures":failures,"rows":rows}
-	FileAccess.open("res://../evidence/v16/f12_transport.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/f12_transport.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("F12_TRANSPORT_RESULT checks=",checks," failures=",failures.size()," rows=",JSON.stringify(rows))
 	quit(0 if failures.is_empty() else 1)

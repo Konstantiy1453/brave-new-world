@@ -1,6 +1,8 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 func _initialize()->void:
+	Watchdog.arm(self)
 	var s=Sim.new()
 	s.new_game(20261029,"capital",1)
 	s.act("settle",{"region":0})
@@ -11,6 +13,6 @@ func _initialize()->void:
 	result.save=s.save_game("user://outpost_review.json")
 	var t=Sim.new()
 	result.load=t.load_game("user://outpost_review.json")
-	FileAccess.open("D:/勇敢新世界/docs/evidence/outpost_jobs_review.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
+	FileAccess.open("D:/勇敢新世界/evidence/v17/tests/outpost_jobs_review.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	print(JSON.stringify(result))
 	quit(0)

@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const R=preload("res://simulation/research.gd")
 const C=preload("res://simulation/company.gd")
@@ -6,7 +7,9 @@ var report:Dictionary={"scope":"independent integrated staffing and save mutatio
 func check(ok:bool,label:String,details:Dictionary={}):
 	report.checks.append({"label":label,"passed":ok,"details":details})
 	if not ok:report.failures.append(label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var sim=Sim.new()
 	var err:String=sim.load_game("res://data/acceptance_success.json")
@@ -53,7 +56,7 @@ func run():
 	var allocated:int=R.investigating(sim)
 	for project in sim.state.research.projects.values():allocated+=int(project.staff)
 	check(allocated<=R.total(sim) and sim.state.research.projects.survey.work==before_work,"investigation priority shrinks allocation without losing work",{"registered":allocated,"population":R.total(sim)})
-	var output:String="res://../evidence/v16/research_company_review_red.json"
+	var output:String="res://../evidence/v17/tests/research_company_review_red.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--report="):output=arg.trim_prefix("--report=")
 	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

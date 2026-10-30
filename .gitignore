@@ -13,6 +13,9 @@ tools/*.zip
 tools/*.tpz
 tools/godot-4.5.1/
 
+# Separate 3ds Max modelling task; its brief keeps it apart from the game project
+art_reserve/
+
 # Transient files
 *.bak
 *.tmp

@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 
 var report:Dictionary={"scope":"synchronous handler wall time in headless engine; excludes display/input latency","samples":[]}
 func measure(label:String, action:Callable):
@@ -9,6 +10,7 @@ func measure(label:String, action:Callable):
 	print("PERF ",label," ",elapsed," ms")
 
 func _initialize():
+	Watchdog.arm(self)
 	call_deferred("run")
 
 func run():
@@ -35,7 +37,7 @@ func run():
 	await process_frame
 	measure("flat",func():scene.navigate("flat"))
 	measure("tick_map_refresh",func():scene.sim.tick();scene.map.sync_state(scene.sim.state);scene.refresh())
-	var out="res://../evidence/runtime_fix_20261029/perf_probe.json"
+	var out="res://../evidence/v17/tests/perf_probe.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--report="):out=arg.trim_prefix("--report=")
 	FileAccess.open(out,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

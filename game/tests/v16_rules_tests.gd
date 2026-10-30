@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const R=preload("res://simulation/research.gd")
 const C=preload("res://simulation/company.gd")
@@ -19,6 +20,7 @@ func make():
 func step(sim,n:int)->void:
 	for i in range(n): sim.tick()
 func _init()->void:
+	Watchdog.arm(self)
 	check(absf(R.rate(5)/R.rate(10)-0.6)<0.0000001,"R5/R10=0.6")
 	check(R.rate(0)==0 and R.rate(20)>R.rate(10) and R.rate(20)<2*R.rate(10),"zero and diminishing monotonic research")
 	var concentrated:Dictionary=research_path(false)
@@ -44,16 +46,16 @@ func _init()->void:
 		if b.kind=="lab": b.enabled=false
 	step(s,1)
 	check(s.state.research.projects.survey.work==work,"disabled lab blocks research")
-	check(s.save_game("res://../evidence/v16/research_resume.json")=="","research save writes")
+	check(s.save_game("res://../evidence/v17/tests/research_resume.json")=="","research save writes")
 	var loaded=Sim.new()
-	check(loaded.load_game("res://../evidence/v16/research_resume.json")=="","research load validates")
+	check(loaded.load_game("res://../evidence/v17/tests/research_resume.json")=="","research load validates")
 	check(var_to_bytes(s.state)==var_to_bytes(loaded.state),"research exact state persists")
 	step(s,1);step(loaded,1)
 	check(var_to_bytes(s.state)==var_to_bytes(loaded.state),"research exact continuation")
 	company_paths()
 	postmining()
 	results.checks=checks;results.failures=failures
-	FileAccess.open("res://../evidence/v16/rules_results.json",FileAccess.WRITE).store_string(JSON.stringify(results,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/rules_results.json",FileAccess.WRITE).store_string(JSON.stringify(results,"\t"))
 	print("V16_RULES ",JSON.stringify(results))
 	quit(1 if failures else 0)
 func research_path(split:bool)->Dictionary:

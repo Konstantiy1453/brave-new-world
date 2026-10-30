@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 var failures:int=0
 var checks:int=0
 var E:Script
@@ -8,6 +9,7 @@ func check(ok:bool,label:String)->void:
 	if not ok: failures+=1
 	print("PASS " if ok else "FAIL ",label)
 func _init()->void:
+	Watchdog.arm(self)
 	check(FileAccess.file_exists("res://simulation/events_v2.gd"),"versioned conditional event module exists")
 	if failures:
 		print("EVENTS_V16_RESULT checks=%d failures=%d" % [checks,failures])

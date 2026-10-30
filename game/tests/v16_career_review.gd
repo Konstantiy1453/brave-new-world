@@ -1,11 +1,14 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const Career=preload("res://simulation/career.gd")
 var report:Dictionary={"scope":"controlled financial ledger and mutation regressions; appointment status is an explicit test fixture, not a gameplay qualification run","checks":[],"failures":[]}
 func check(ok:bool,label:String,details:Dictionary={}):
 	report.checks.append({"label":label,"passed":ok,"details":details})
 	if not ok:report.failures.append(label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var sim=Sim.new()
 	sim.new_game(260129,"capital")
@@ -33,7 +36,7 @@ func run():
 	var asset=Sim.new();asset.new_game(42,"capital")
 	asset.state.status="success";asset.state.success_day=0
 	Career.capture_checkpoint(asset)
-	var path:String="res://../evidence/v16/career_review_fixture.json"
+	var path:String="res://../evidence/v17/tests/career_review_fixture.json"
 	var err:String=Career.handover(asset,43,"capital","normal",path)
 	check(err=="","construct valid managed fixture",{"error":err})
 	if err=="":
@@ -44,7 +47,7 @@ func run():
 		check(Career.validate(duplicate)!="","complete world archive identity must be unique")
 		var corrupt:Dictionary=asset.state.duplicate(true);corrupt.career.archives[0].snapshot="not a valid complete snapshot"
 		check(Career.validate(corrupt)!="","archive must decode to complete saved world")
-	var output:String="res://../evidence/v16/career_review_red.json"
+	var output:String="res://../evidence/v17/tests/career_review_red.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--report="):output=arg.trim_prefix("--report=")
 	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

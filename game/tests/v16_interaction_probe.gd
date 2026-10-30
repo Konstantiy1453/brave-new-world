@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 ## Automated native main-scene performance probe. Never invoked by normal UI.
 const Career=preload("res://simulation/career.gd")
 var g:Node
@@ -6,7 +7,9 @@ var report:Dictionary={"scope":"actual main scene in graphical engine; existing 
 func check(ok:bool,label:String):
 	report.checks.append({"label":label,"passed":ok})
 	if not ok:report.failures.append(label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func button(text:String)->Button:
 	for node in g.ui.find_children("*","Button",true,false):
 		if node.text==text and not node.is_queued_for_deletion():return node
@@ -57,7 +60,7 @@ func run():
 	root.add_child(g)
 	report.startup_handler_ms=(Time.get_ticks_usec()-started)/1000.0
 	report.user_data=OS.get_user_data_dir()
-	check(OS.get_user_data_dir().contains("userdata_perf"),"private performance userdata active")
+	check(OS.get_user_data_dir().contains("userdata_"),"private performance userdata active")
 	g.paused=true
 	await await_atlas("startup")
 	await idle()
@@ -126,7 +129,7 @@ func run():
 	report.engine=Engine.get_version_info()
 	report.resolution=str(DisplayServer.window_get_size())
 	report.ui_scale=root.content_scale_factor
-	var report_path:String="res://../evidence/v16/ui_perf.json"
+	var report_path:String="res://../evidence/v17/tests/ui_perf.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--report="):report_path=arg.trim_prefix("--report=")
 	FileAccess.open(report_path,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

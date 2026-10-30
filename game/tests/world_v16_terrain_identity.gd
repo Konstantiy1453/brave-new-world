@@ -1,7 +1,10 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var w:Dictionary=Geo.new().generate(260129)
 	var old_script=load("res://../versions/v1_5_before_v1_6_20261030_125059/game/world/map_view.gd")
@@ -30,7 +33,7 @@ func run():
 		hashes[str(index)]={"before":a,"after":b}
 		if a!=b:failed.append("mesh array changed: "+str(index))
 	var result:Dictionary={"scope":"original frozen v1.5 map terrain routine compared with v1.6 at signed32 seed260129; actual packed vertex,normal,color arrays","old_terrain_ms":old_ms,"new_region_ms":map.last_region_ms,"array_hashes":hashes,"failures":failed}
-	FileAccess.open("res://../evidence/v16/world_terrain_identity.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/world_terrain_identity.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	print("WORLD_TERRAIN_IDENTITY ",JSON.stringify(result))
 	old.queue_free();map.queue_free();await process_frame
 	quit(0 if failed.is_empty() else 1)

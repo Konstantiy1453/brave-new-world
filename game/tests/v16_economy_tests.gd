@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 var failures:int=0
 var checks:int=0
 const Sim=preload("res://simulation/sim.gd")
@@ -13,6 +14,7 @@ func make():
 	sim.act("settle",{"region":0})
 	return sim
 func _init()->void:
+	Watchdog.arm(self)
 	var sim=make()
 	var home:Dictionary=sim.settlement(0)
 	home.buildings.append(sim._building("habitat",0))

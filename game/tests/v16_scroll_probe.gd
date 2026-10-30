@@ -1,11 +1,14 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 ## Supplemental source-render QA: every primary page button can be scrolled into view.
 var g:Node
 var report:Dictionary={"scope":"actual source main, 1280x720 at 20/18 scale; programmatic ScrollContainer navigation, no OS mouse claim","checks":[],"failures":[],"captures":[]}
 func check(ok:bool,label:String,details:Dictionary={}):
 	report.checks.append({"passed":ok,"label":label,"details":details})
 	if not ok:report.failures.append(label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func frame():
 	await process_frame
 	await RenderingServer.frame_post_draw
@@ -19,9 +22,9 @@ func run():
 	g.paused=true
 	root.content_scale_factor=20.0/18.0
 	await atlas()
-	check(OS.get_user_data_dir().contains("userdata_scroll"),"private userdata")
+	check(OS.get_user_data_dir().contains("userdata_"),"private userdata")
 	var fixtures:Dictionary={"research":"acceptance_governor","company":"acceptance_crisis","events":"acceptance_event_mid","career":"acceptance_second_dividend","save":"acceptance_governor"}
-	var folder:String="res://../evidence/v16/scroll_source"
+	var folder:String="res://../evidence/v17/tests/scroll_source"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	for page in fixtures:
 		g.load_path("res://data/v16/"+fixtures[page]+".json")

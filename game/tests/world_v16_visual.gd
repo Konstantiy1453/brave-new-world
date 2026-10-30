@@ -1,14 +1,17 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 class IsolatedMap extends Map:
 	func _trim_disk_atlases(_current:String)->void:pass
 var report:Dictionary={"scope":"source map rendered window; handler through frame_post_draw, programmatic navigation rather than OS input","samples":[],"failures":[]}
 var status:Label
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func shot(name:String):
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://../evidence/v16/"+name+".png")
+	root.get_texture().get_image().save_png("res://../evidence/v17/tests/"+name+".png")
 func enter(map,id:int,label:String):
 	var start:int=Time.get_ticks_usec()
 	map.show_region(id)
@@ -35,7 +38,7 @@ func run():
 	var w:Dictionary=Geo.new().generate("2147483648")
 	report.generation_ms=(Time.get_ticks_usec()-start)/1000.0
 	map.setup(w)
-	map.pending_atlas.path=ProjectSettings.globalize_path("res://../evidence/v16/world_visual_atlas.png")
+	map.pending_atlas.path=ProjectSettings.globalize_path("res://../evidence/v17/tests/world_visual_atlas.png")
 	map.sync_state({"world":w,"day":5,"settlements":[{"region":0,"base_housing":20,"buildings":[{"kind":"solar","active":true,"remaining":0},{"kind":"farm","active":false,"remaining":0}]}],"route":{}})
 	report.setup_ms=map.last_setup_ms
 	await enter(map,0,"region_0_cold_with_atlas_refining")
@@ -56,7 +59,7 @@ func run():
 	report.renderer=RenderingServer.get_video_adapter_name()
 	report.cpu=OS.get_processor_name()
 	report.engine=Engine.get_version_info()
-	FileAccess.open("res://../evidence/v16/world_visual.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/world_visual.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("WORLD_VISUAL ",JSON.stringify(report))
 	map.queue_free();await process_frame
 	quit(0 if report.failures.is_empty() else 1)

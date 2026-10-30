@@ -1,7 +1,10 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 var failures:Array=[]
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func check(ok:bool,label:String):
 	if not ok:failures.append(label)
 func run():
@@ -17,12 +20,12 @@ func run():
 	var bad=Sim.new();bad.state=sim.state.duplicate(true)
 	bad.state.world.seed=4294967297
 	var before:PackedByteArray=var_to_bytes(bad.state.world)
-	var out:String="res://../evidence/v16/legacy_seed_invalid.json"
+	var out:String="res://../evidence/v17/tests/legacy_seed_invalid.json"
 	check(bad.save_game(out)=="","invalid-seed mutation fixture written through envelope writer")
 	error=sim.load_game(out)
 	check(error!="" and error.contains("32"),"actual load rejects ambiguous legacy seed with explanation")
 	check(var_to_bytes(sim.state)==valid,"bad legacy load leaves whole current state unchanged")
 	check(var_to_bytes(bad.state.world)==before and FileAccess.file_exists(out),"rejected legacy fixture and original geography retained")
-	FileAccess.open("res://../evidence/v16/world_legacy_load.json",FileAccess.WRITE).store_string(JSON.stringify({"scope":"actual simulation load and migration, full binary legacy world identity, checksummed overflow mutation, in-memory rollback and preserved file","error":error,"failures":failures},"\t"))
+	FileAccess.open("res://../evidence/v17/tests/world_legacy_load.json",FileAccess.WRITE).store_string(JSON.stringify({"scope":"actual simulation load and migration, full binary legacy world identity, checksummed overflow mutation, in-memory rollback and preserved file","error":error,"failures":failures},"\t"))
 	print("WORLD_LEGACY_LOAD ",JSON.stringify(failures))
 	quit(0 if failures.is_empty() else 1)

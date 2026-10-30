@@ -1,5 +1,7 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 func _initialize():
+	Watchdog.arm(self)
 	if not FileAccess.file_exists("res://ui/main.gd"):
 		print("FAIL: runnable main UI absent")
 		quit(1)

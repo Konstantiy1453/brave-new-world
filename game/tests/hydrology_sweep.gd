@@ -1,7 +1,10 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 var failures:Array=[]
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var cases:Array=[]
 	var seeds:Array=[1,2,3,4,5,6,7,8,9,10,99,314159,271828,123456,987654,2147483647,-2147483647]
@@ -18,6 +21,6 @@ func run():
 		if world.rivers.size()<4:failures.append("too few generated rivers "+str(seed_value))
 		cases.append({"seed":seed_value,"rivers":world.rivers.size(),"lakes":world.lakes.size(),"mouths":world.hydrology.ocean_mouth_count,"tributaries":tributaries,"farm_route_reachable":route.reachable,"farm_route_km":route.distance})
 	var report:Dictionary={"scope":"additional 17 fixed seeds; grid hydrology and normal mining-to-farm road only; no full economy replay","cases":cases,"failures":failures}
-	FileAccess.open("res://../docs/evidence/hydrology_sweep.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/hydrology_sweep.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("HYDROLOGY_SWEEP ","PASS" if failures.is_empty() else "FAIL", " ",JSON.stringify(failures))
 	quit(0 if failures.is_empty() else 1)

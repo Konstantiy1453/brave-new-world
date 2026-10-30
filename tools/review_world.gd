@@ -1,6 +1,8 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 func _initialize()->void:
+	Watchdog.arm(self)
 	var out:Dictionary={"seeds":[],"limitations":"headless data probes, not visual acceptance"}
 	var gen=Geo.new()
 	for seed_value in [20261029,0,1,42,777,2147483647]:
@@ -26,7 +28,7 @@ func _initialize()->void:
 		row.island_reachable=island.reachable
 		row.river_final_land=Geo.sample_geo(w.rivers[0][-1][0],w.rivers[0][-1][1],n).land
 		out.seeds.append(row)
-	var file:=FileAccess.open("D:/勇敢新世界/docs/evidence/world_review_probe_"+Geo.VERSION+".json",FileAccess.WRITE)
+	var file:=FileAccess.open("D:/勇敢新世界/evidence/v17/tests/world_review_probe_"+Geo.VERSION+".json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(out,"\t"))
 	print("WORLD_REVIEW_PROBE_DONE ",out.seeds.size())
 	quit(0)

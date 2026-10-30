@@ -1,10 +1,13 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const C=preload("res://simulation/career.gd")
 const E=preload("res://simulation/events_v2.gd")
 var report:Dictionary={"scope":"automatic production act/tick paths; no injected resources, population, awards or dates", "protocol":"fixed seeds 260129/20261029/42; 3 openings x 3 difficulties; baseline scheduled strategy through180days", "cases":[],"failures":[],"career":{},"actions":[]}
 var recording:bool=false
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func act(s,action:String,args:Dictionary):
 	var error:String=s.act(action,args)
 	if recording:report.actions.append({"world":s.state.career.active_id,"day":s.state.day,"action":action,"args":args,"error":error})
@@ -50,7 +53,7 @@ func has_building(s,region:int,kind:String)->bool:
 	return false
 func run():
 	var fixture_mode:bool=OS.get_cmdline_user_args().has("--fixtures")
-	var destination:String="res://../evidence/v16/flow_initial.json"
+	var destination:String="res://../evidence/v17/tests/flow_initial.json"
 	for seed_value in ([260129] if fixture_mode else [260129,20261029,42]):
 		for advantage in (["capital"] if fixture_mode else ["capital","workers","science"]):
 			for difficulty in (["normal"] if fixture_mode else ["normal","easy","hard"]):
@@ -92,7 +95,7 @@ func run():
 						for i in range(3):resolve(s);resolve(loaded);s.tick();loaded.tick()
 						report.career.continuation=var_to_bytes(s.state)==var_to_bytes(loaded.state)
 	if fixture_mode:
-		destination="res://../evidence/v16/acceptance_flow.json"
+		destination="res://../evidence/v17/tests/acceptance_flow.json"
 		var crisis=Sim.new();crisis.new_game(260129,"capital",1,"normal");C.capture_checkpoint(crisis)
 		act(crisis,"settle",{"region":0})
 		for i in range(240):

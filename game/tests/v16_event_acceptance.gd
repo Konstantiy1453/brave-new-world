@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 const E=preload("res://simulation/events_v2.gd")
 var actions:Array=[]
@@ -7,6 +8,7 @@ func apply(s,action:String,args:Dictionary)->String:
 	actions.append({"day":s.state.day,"action":action,"args":args.duplicate(true),"error":error})
 	return error
 func _init()->void:
+	Watchdog.arm(self)
 	var s=Sim.new()
 	s.new_game(20261029,"science",1,"normal")
 	actions.append({"action":"new_game","seed":20261029,"advantage":"science","difficulty":"normal"})
@@ -30,13 +32,14 @@ func _init()->void:
 		s.tick()
 		actions.append({"action":"tick","day":s.state.day,"status":s.state.status,"audit":s.audit()})
 		if captured or s.state.status=="failed": break
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://data/v16"))
+	# Shipped fixtures change only under an explicit --fixtures flag.
+	var fixture_path:String="res://data/v16/acceptance_event_mid.json" if OS.get_cmdline_user_args().has("--fixtures") else "user://acceptance_event_mid.json"
 	var result:String="未自然进入考古调查"
-	if captured: result=s.save_game("res://data/v16/acceptance_event_mid.json")
+	if captured: result=s.save_game(fixture_path)
 	var saved_day:int=int(s.state.day)
 	var record:Dictionary={"kind":"automated formal-action scenario; no event or result injection","captured":captured,"day":saved_day,"save_error":result,"events":E.view(s),"actions":actions}
 	var restored=Sim.new()
-	var load_error:String=restored.load_game("res://data/v16/acceptance_event_mid.json") if result=="" else "未保存"
+	var load_error:String=restored.load_game(fixture_path) if result=="" else "未保存"
 	var continued:bool=false
 	if load_error=="":
 		s.tick()
@@ -44,6 +47,6 @@ func _init()->void:
 		continued=JSON.stringify(s.state)==JSON.stringify(restored.state)
 	record.load_error=load_error
 	record.next_day_identical=continued
-	FileAccess.open("res://../evidence/v16/event_acceptance_actions.json",FileAccess.WRITE).store_string(JSON.stringify(record,"  "))
+	FileAccess.open("res://../evidence/v17/tests/event_acceptance_actions.json",FileAccess.WRITE).store_string(JSON.stringify(record,"  "))
 	print("EVENT_ACCEPTANCE captured=",captured," saved_day=",saved_day," save_error=",result," load_error=",load_error," next_day_identical=",continued," audit=",s.audit())
 	quit(0 if captured and result=="" and load_error=="" and continued and s.audit().is_empty() else 1)

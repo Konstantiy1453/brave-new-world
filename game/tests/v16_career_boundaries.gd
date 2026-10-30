@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 ## Explicit boundary fixtures; end-to-end accepted saves are built separately.
 const Sim=preload("res://simulation/sim.gd")
 const C=preload("res://simulation/career.gd")
@@ -8,7 +9,9 @@ func check(ok:bool,label:String):
 	checks+=1
 	if not ok:failures.append(label)
 	print(("PASS " if ok else "FAIL ")+label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var s=Sim.new()
 	check(s.load_game("res://data/acceptance_success.json")=="","load legacy governor fixture")

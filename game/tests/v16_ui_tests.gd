@@ -1,11 +1,14 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 var failures:Array=[]
 var count:int=0
 func check(ok:bool,label:String):
 	count+=1
 	if not ok:failures.append(label)
 	print(("PASS " if ok else "FAIL ")+label)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var g=load("res://main.tscn").instantiate()
 	root.add_child(g)

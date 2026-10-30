@@ -1,17 +1,20 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 var failures:Array=[]
 var probe_seed:int=260129
 var suffix:String=""
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func check(ok:bool,label:String):
 	print("PASS " if ok else "FAIL ",label)
 	if not ok:failures.append(label)
 func shot(name:String):
 	for i in range(12):await process_frame
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://../docs/evidence/"+name+suffix+".png")
+	root.get_texture().get_image().save_png("res://../evidence/v17/tests/evidence_"+name+suffix+".png")
 func run():
 	root.size=Vector2i(1600,900)
 	for arg in OS.get_cmdline_user_args():
@@ -67,5 +70,5 @@ func run():
 	map.setup(world)
 	check(map.last_atlas_cached,"same-world atlas cache reused")
 	check(Map.atlas_cache.size()<=2,"atlas cache bounded to two worlds")
-	FileAccess.open("res://../docs/evidence/flat_render_test"+suffix+".json",FileAccess.WRITE).store_string(JSON.stringify({"world_version":world.version,"seed":world.seed,"synthetic_state":true,"failures":failures,"initial_setup_ms":initial_setup_ms,"initial_atlas_ms":initial_atlas_ms,"initial_atlas_source":initial_atlas_source,"cached_setup_ms":map.last_setup_ms,"refinement_ms":map.last_refinement_ms,"responsive_frames":responsive_frames,"atlas_key":map.current_atlas_key,"atlas_file":"world_atlas_"+map.current_atlas_key.sha256_text()+".png","user_data_dir":OS.get_user_data_dir(),"river_segments":map.local_river_segments.size(),"scope":"native render and projection/control probe, not manual gameplay"},"\t"))
+	FileAccess.open("res://../evidence/v17/tests/flat_render_test"+suffix+".json",FileAccess.WRITE).store_string(JSON.stringify({"world_version":world.version,"seed":world.seed,"synthetic_state":true,"failures":failures,"initial_setup_ms":initial_setup_ms,"initial_atlas_ms":initial_atlas_ms,"initial_atlas_source":initial_atlas_source,"cached_setup_ms":map.last_setup_ms,"refinement_ms":map.last_refinement_ms,"responsive_frames":responsive_frames,"atlas_key":map.current_atlas_key,"atlas_file":"world_atlas_"+map.current_atlas_key.sha256_text()+".png","user_data_dir":OS.get_user_data_dir(),"river_segments":map.local_river_segments.size(),"scope":"native render and projection/control probe, not manual gameplay"},"\t"))
 	quit(0 if failures.is_empty() else 1)

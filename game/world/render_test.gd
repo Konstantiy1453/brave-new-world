@@ -1,13 +1,15 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 func _initialize()->void:
+	Watchdog.arm(self)
 	call_deferred("run")
 func shot(name:String)->void:
 	for i in range(10): await process_frame
 	await RenderingServer.frame_post_draw
 	var image:Image=root.get_texture().get_image()
-	var error:int=image.save_png("res://../docs/evidence/"+name+".png")
+	var error:int=image.save_png("res://../evidence/v17/tests/evidence_"+name+".png")
 	print("RENDER_FIXTURE ",name," ",error," ",image.get_size())
 func run()->void:
 	root.size=Vector2i(1600,900)

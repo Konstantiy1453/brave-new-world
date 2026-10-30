@@ -1,8 +1,11 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 var failures:Array=[]
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func check(ok:bool,label:String):
 	if not ok:failures.append(label)
 func run():
@@ -24,7 +27,7 @@ func run():
 	for mesh in map.buildings_root.find_children("*","MeshInstance3D",true,false):
 		if mesh.material_override is StandardMaterial3D and mesh.material_override.albedo_color==Color("d18061"):inactive=true
 	check(inactive,"disabled facility renders inactive accent before next simulation tick")
-	var output:String="res://../evidence/v16/world_ui_sync_red.json"
+	var output:String="res://../evidence/v17/tests/world_ui_sync_red.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--report="):output=arg.trim_prefix("--report=")
 	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify({"failures":failures,"scope":"actual map marker material and cached building material/state assertions; includes in-flight cancellation"},"\t"))

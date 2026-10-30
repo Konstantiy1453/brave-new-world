@@ -1,5 +1,7 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 func _init()->void:
+	Watchdog.arm(self)
 	var sim=load("res://simulation/sim.gd").new()
 	var events=load("res://simulation/events_v2.gd")
 	sim.new_game(20261029,"science",1)

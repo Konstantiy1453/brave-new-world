@@ -1,8 +1,11 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 var failures:Array=[]
-func _initialize()->void: call_deferred("run")
+func _initialize()->void:
+	Watchdog.arm(self)
+	call_deferred("run")
 func verify(value:bool,message:String)->void:
 	if not value: failures.append(message)
 func run()->void:

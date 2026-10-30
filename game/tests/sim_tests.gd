@@ -1,8 +1,10 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 var failures:int=0
 var checks:int=0
 var Sim:Script
 func _init()->void:
+	Watchdog.arm(self)
 	if not FileAccess.file_exists("res://simulation/sim.gd"):
 		check(false,"simulation API exists")
 		quit(1)
@@ -66,12 +68,12 @@ func run_tests()->void:
 	check(a.state.enterprise.wages_total>0,"enterprise pays real wages")
 	check(a.state.enterprise.tax_total>0,"enterprise pays local profit tax")
 	check(a.audit().is_empty(),"full loop accounting and population conservation")
-	check(a.save_game("res://../evidence/v16/sim_test_save.json")=="","atomic save")
+	check(a.save_game("res://../evidence/v17/tests/sim_test_save.json")=="","atomic save")
 	var b=make()
-	check(b.load_game("res://../evidence/v16/sim_test_save.json")=="","load whole simulation")
+	check(b.load_game("res://../evidence/v17/tests/sim_test_save.json")=="","load whole simulation")
 	check(equivalent(a.state,b.state),"save restore exact JSON state")
-	FileAccess.open("res://../evidence/v16/before_debug.json",FileAccess.WRITE).store_string(JSON.stringify(a.state,"  ",true,true))
-	FileAccess.open("res://../evidence/v16/after_debug.json",FileAccess.WRITE).store_string(JSON.stringify(b.state,"  ",true,true))
+	FileAccess.open("res://../evidence/v17/tests/before_debug.json",FileAccess.WRITE).store_string(JSON.stringify(a.state,"  ",true,true))
+	FileAccess.open("res://../evidence/v17/tests/after_debug.json",FileAccess.WRITE).store_string(JSON.stringify(b.state,"  ",true,true))
 	for i in range(15):
 		if not a.state.event.is_empty():
 			var choice:String=a.state.event.choices[0].id
@@ -106,11 +108,11 @@ func run_tests()->void:
 	check(dry.state.status!="failed" and dry.state.company.stage in ["warning","review"],"sustained supply collapse enters company process before takeover")
 	for i in range(120): dry.tick()
 	check(dry.state.status=="failed","unresolved collapse eventually reaches takeover")
-	var bad=FileAccess.open("res://../evidence/v16/invalid_save.json",FileAccess.WRITE)
+	var bad=FileAccess.open("res://../evidence/v17/tests/invalid_save.json",FileAccess.WRITE)
 	bad.store_string('{"version":1,"state":{}}')
 	bad.close()
 	var keep:String=JSON.stringify(b.state)
-	check(b.load_game("res://../evidence/v16/invalid_save.json")!="","reject malformed save")
+	check(b.load_game("res://../evidence/v17/tests/invalid_save.json")!="","reject malformed save")
 	check(JSON.stringify(b.state)==keep,"failed load never replaces active state")
 	for advantage in ["capital","workers","science"]: _scenario(advantage)
 
@@ -147,10 +149,10 @@ func _scenario(advantage:String)->void:
 		if not s.audit().is_empty():
 			violations+=1
 			if violations<3: print("AUDIT ",advantage," ",day," ",s.audit())
-		if day==29 and advantage=="capital": check(s.save_game("res://../evidence/v16/acceptance_midgame.json")=="","write real action midgame save")
+		if day==29 and advantage=="capital": check(s.save_game("res://../evidence/v17/tests/acceptance_midgame.json")=="","write real action midgame save")
 		if s.state.status=="success" and first_success<0:
 			first_success=day
-			if advantage=="capital": check(s.save_game("res://../evidence/v16/acceptance_success.json")=="","write real action success save")
+			if advantage=="capital": check(s.save_game("res://../evidence/v17/tests/acceptance_success.json")=="","write real action success save")
 		if s.state.status=="failed": break
 	print("SCENARIO ",advantage," day=",s.state.day," status=",s.state.status," success_day=",first_success," cash=",snappedf(s.state.cash,0.01)," total_tax=",snappedf(s.state.company_tax_total,0.01)," progress=",s.contract_progress())
 	check(processing_built,"scenario processing built by day120 with 300 liquidity reserve "+advantage)

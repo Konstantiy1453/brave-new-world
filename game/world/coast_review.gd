@@ -1,8 +1,10 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Sim=preload("res://simulation/sim.gd")
 var failures:Array=[]
 func _initialize():
+	Watchdog.arm(self)
 	var legacy=Sim.new()
 	var err:String=legacy.load_game("res://../evidence/v1_4/acceptance_midgame.json")
 	if err!="":failures.append("legacy load: "+err)
@@ -42,9 +44,9 @@ func _initialize():
 				if mask[i]!=mask[y*720+(x+1)%720]:edges+=1
 				if mask[i]!=mask[i+720]:edges+=1
 		metrics.append({"version":version,"land_pixels":land_count,"coastal_edges_at_half_degree":edges})
-	canvas.save_png("res://../evidence/coast_v14_left_v15_right.png")
+	canvas.save_png("res://../evidence/v17/tests/coast_v14_left_v15_right.png")
 	if metrics[1].coastal_edges_at_half_degree<metrics[0].coastal_edges_at_half_degree*1.15:failures.append("new coast lacks measurable outline complexity")
 	var report={"scope":"geography data/silhouette probe, not game UI","legacy_load_error":err,"legacy_max_sample_error":max_error,"metrics":metrics,"failures":failures}
-	FileAccess.open("res://../docs/evidence/coast_v15_review.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/coast_v15_review.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print(JSON.stringify(report))
 	quit(1 if not failures.is_empty() else 0)

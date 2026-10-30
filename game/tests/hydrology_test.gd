@@ -1,8 +1,11 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Hydro=preload("res://world/hydrology.gd")
 var failures:Array=[]
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func check(value:bool,message:String):
 	if not value:failures.append(message)
 func run():
@@ -41,7 +44,7 @@ func run():
 		cases.append({"seed":seed_value,"river_count":world.rivers.size(),"lake_count":world.lakes.size(),"mouths":world.hydrology.ocean_mouth_count,"longest_cells":longest,"tributaries":tributaries,"farm_cell":farm.grid_index,"river_sha256":fingerprint})
 	check(signatures.size()==7,"all fixed seeds produce different river networks")
 	var report={"method":Hydro.METHOD,"failures":failures,"cases":cases,"scope":"actual Godot deterministic grid drainage; no fluid or visual quality claim"}
-	FileAccess.open("res://../docs/evidence/hydrology_tests.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/hydrology_tests.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("HYDROLOGY_TEST: ","PASS" if failures.is_empty() else "FAIL"," ",JSON.stringify(failures))
 	print(JSON.stringify(cases))
 	quit(0 if failures.is_empty() else 1)

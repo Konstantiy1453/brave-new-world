@@ -1,5 +1,8 @@
 extends SceneTree
-func _initialize():call_deferred("run")
+const Watchdog=preload("res://tests/support/watchdog.gd")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var amount=SpinBox.new()
 	amount.max_value=10000

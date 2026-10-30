@@ -1,8 +1,11 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 ## Managed-account projection only: local economy intentionally not simulated.
 const Sim=preload("res://simulation/sim.gd")
 const C=preload("res://simulation/career.gd")
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func run():
 	var result:Dictionary={"scope":"controlled 3600-day managed-model projection from fresh v1.6 governor; active local economy excluded; not a playthrough", "rows":[],"failures":[]}
 	for share in [0.4,0.6,0.8]:
@@ -25,5 +28,5 @@ func run():
 		if C.validate(s.state)!="":result.failures.append(C.validate(s.state))
 		result.rows.append(row)
 		print("MANAGED_BALANCE ",JSON.stringify(row))
-	FileAccess.open("res://../evidence/v16/managed_balance.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/managed_balance.json",FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	quit(0 if result.failures.is_empty() else 1)

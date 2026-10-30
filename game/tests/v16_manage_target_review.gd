@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 ## Real simulation and production manage page; minimal page context, no main-scene claim.
 const Sim=preload("res://simulation/sim.gd")
 const Pages=preload("res://ui/progression_pages.gd")
@@ -8,7 +9,9 @@ class PageContext extends RefCounted:
 	func settlement()->Dictionary:return sim.settlement(selected)
 	func act(action:String,args:Dictionary={})->String:return sim.act(action,args)
 var result:Dictionary={"scope":"headless production manage page and real simulation; read and reapply values, no rendering or OS input claim","checks":[],"failures":[]}
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func check(ok:bool,label:String,details:Dictionary={}):
 	result.checks.append({"passed":ok,"label":label,"details":details})
 	if not ok:result.failures.append(label)
@@ -45,7 +48,7 @@ func run():
 		await process_frame
 	var page_script:Script=load("res://ui/progression_pages.gd")
 	result.runtime_page_source_hash=page_script.source_code.sha256_text()
-	var output:String="res://../evidence/v16/manage_target_review_red.json"
+	var output:String="res://../evidence/v17/tests/manage_target_review_red.json"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--qa-output="):output=arg.trim_prefix("--qa-output=")
 	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))

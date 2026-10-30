@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 var failures:Array=[]
 var checks:int=0
@@ -7,6 +8,7 @@ func check(ok:bool,label:String):
 	if not ok: failures.append(label)
 	print(("PASS " if ok else "FAIL ")+label)
 func _initialize():
+	Watchdog.arm(self)
 	call_deferred("run")
 func run():
 	if not FileAccess.file_exists("res://simulation/career.gd"):

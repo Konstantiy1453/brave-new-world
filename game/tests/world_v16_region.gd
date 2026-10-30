@@ -1,11 +1,14 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Geo=preload("res://world/world_gen.gd")
 const Map=preload("res://world/map_view.gd")
 var failures:Array=[]
 var report:Dictionary={"scope":"headless handler and frame-yield timings, not OS click latency","samples":[]}
 func check(value:bool,message:String):
 	if not value:failures.append(message)
-func _initialize():call_deferred("run")
+func _initialize():
+	Watchdog.arm(self)
+	call_deferred("run")
 func enter(map,id:int,label:String):
 	var start:int=Time.get_ticks_usec()
 	var old_builds:int=map.region_build_count
@@ -73,7 +76,7 @@ func run():
 	report.failures=failures
 	report.engine=Engine.get_version_info()
 	report.cpu=OS.get_processor_name()
-	FileAccess.open("res://../evidence/v16/world_region.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://../evidence/v17/tests/world_region.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("WORLD_V16_REGION ",JSON.stringify(report))
 	map.queue_free()
 	await process_frame

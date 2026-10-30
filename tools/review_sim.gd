@@ -1,6 +1,8 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 func _initialize()->void:
+	Watchdog.arm(self)
 	var out:Dictionary={"source":"independent reviewer edge probes","results":[]}
 	var s=Sim.new()
 	s.new_game(20261029,"capital",1)
@@ -29,7 +31,7 @@ func _initialize()->void:
 	var before:String=JSON.stringify(a.state,"",true,true)
 	var error:String=a.act("settle",{"region":1})
 	out.results.append({"rejected_outpost_error":error,"rejected_outpost_unchanged":before==JSON.stringify(a.state,"",true,true)})
-	var file:=FileAccess.open("D:/勇敢新世界/docs/evidence/simulation_review_probe.json",FileAccess.WRITE)
+	var file:=FileAccess.open("D:/勇敢新世界/evidence/v17/tests/simulation_review_probe.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(out,"\t"))
 	print(JSON.stringify(out))
 	quit(0)

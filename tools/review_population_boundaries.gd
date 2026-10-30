@@ -1,6 +1,8 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 func _initialize()->void:
+	Watchdog.arm(self)
 	var s=Sim.new()
 	s.new_game(20261029,"capital",1)
 	s.act("settle",{"region":0})
@@ -34,6 +36,6 @@ func _initialize()->void:
 	for check in out.checks:
 		if not check.pass: failures+=1
 	out.failures=failures
-	FileAccess.open("D:/勇敢新世界/docs/evidence/population_boundary_review.json",FileAccess.WRITE).store_string(JSON.stringify(out,"\t"))
+	FileAccess.open("D:/勇敢新世界/evidence/v17/tests/population_boundary_review.json",FileAccess.WRITE).store_string(JSON.stringify(out,"\t"))
 	print(JSON.stringify(out))
 	quit(1 if failures else 0)

@@ -1,4 +1,5 @@
 extends SceneTree
+const Watchdog=preload("res://tests/support/watchdog.gd")
 const Sim=preload("res://simulation/sim.gd")
 var out:Dictionary={"scope":"independent bounded malformed-save and exact-snapshot checks","checks":[]}
 var s
@@ -15,6 +16,7 @@ func reject(label:String,e:Dictionary)->void:
 	var result:String=s.load_game(path)
 	out.checks.append({"name":label,"error":result,"rejected":result!="","state_unchanged":var_to_bytes(s.state)==baseline})
 func _initialize()->void:
+	Watchdog.arm(self)
 	s=Sim.new()
 	s.new_game(20261029,"capital",1)
 	s.act("settle",{"region":0})
@@ -50,6 +52,6 @@ func _initialize()->void:
 	for check in out.checks:
 		if not bool(check.get("pass",check.get("rejected",false) and check.get("state_unchanged",false))): failures+=1
 	out.failures=failures
-	FileAccess.open("D:/勇敢新世界/docs/evidence/save_guard_review.json",FileAccess.WRITE).store_string(JSON.stringify(out,"\t"))
+	FileAccess.open("D:/勇敢新世界/evidence/v17/tests/save_guard_review.json",FileAccess.WRITE).store_string(JSON.stringify(out,"\t"))
 	print(JSON.stringify(out))
 	quit(1 if failures else 0)
