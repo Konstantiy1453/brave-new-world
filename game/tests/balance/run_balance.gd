@@ -68,7 +68,7 @@ func run() -> void:
 	var started: int = Time.get_ticks_msec()
 	var runs: Array = []
 	if int(options.get("jobs", 1)) > 1:
-		runs = await _run_parallel(cases)
+		runs = await _run_parallel()
 	else:
 		for index: int in range(cases.size()):
 			runs.append(_run_case(cases[index], false))
@@ -180,7 +180,7 @@ func _run_shard(cases: Array) -> void:
 	quit(0)
 
 
-func _run_parallel(cases: Array) -> Array:
+func _run_parallel() -> Array:
 	var jobs: int = int(options.jobs)
 	_ensure_dir(OUT_DIR + "/tmp")
 	var children: Array = []
