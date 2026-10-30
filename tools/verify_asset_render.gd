@@ -1,10 +1,26 @@
 extends SceneTree
-const Watchdog=preload("res://tests/support/watchdog.gd")
+const Watchdog = preload("res://tests/support/watchdog.gd")
+
 
 func _initialize() -> void:
 	Watchdog.arm(self)
 	var root := "D:/勇敢新世界/"
-	var names := ["ore", "copper", "crystal", "food", "materials", "parts", "habitat", "power", "water", "farm", "processor", "lab", "port", "warning"]
+	var names := [
+		"ore",
+		"copper",
+		"crystal",
+		"food",
+		"materials",
+		"parts",
+		"habitat",
+		"power",
+		"water",
+		"farm",
+		"processor",
+		"lab",
+		"port",
+		"warning"
+	]
 	var atlas := Image.create(7 * 96, 2 * 96, false, Image.FORMAT_RGBA8)
 	atlas.fill(Color("132333"))
 	for i in range(names.size()):

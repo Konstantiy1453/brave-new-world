@@ -52,18 +52,26 @@ func _bug1_event_build_checks_labour() -> void:
 	place.stock.materials = 500.0
 	place.stock.parts = 100.0
 	sim.state.cash = 50000.0
-	check(Events._reason(sim, instance, build_option) == "", "build option open while workers are free")
+	check(
+		Events._reason(sim, instance, build_option) == "",
+		"build option open while workers are free"
+	)
 	var jobs: int = int(sim.build_preview(0, str(build_option.build)).jobs)
 	var spare: int = sim.free_workers(place)
 	place.workers = int(place.workers) - spare + jobs - 1
 	place.population = int(place.children) + int(place.workers) + int(place.scientists)
 	var reason: String = Events._reason(sim, instance, build_option)
 	check(reason.contains("工人"), "build option refused when one worker short: " + reason)
-	check(reason.contains(str(jobs)) and reason.contains(str(jobs - 1)), "refusal states needed and free workers")
+	check(
+		reason.contains(str(jobs)) and reason.contains(str(jobs - 1)),
+		"refusal states needed and free workers"
+	)
 	var cash: float = float(sim.state.cash)
 	var count: int = place.buildings.size()
 	instance.status = "pending"
-	var error: String = Events.act(sim, {"instance_id": instance.instance_id, "choice": build_option.id})
+	var error: String = Events.act(
+		sim, {"instance_id": instance.instance_id, "choice": build_option.id}
+	)
 	check(error != "" and float(sim.state.cash) == cash, "refused option spends nothing")
 	check(place.buildings.size() == count, "refused option builds nothing")
 	var text: String = Events._description(sim, instance, build_option)
@@ -77,9 +85,15 @@ func _bug3_handover_size() -> void:
 	Career.ensure(sim)
 	Career.capture_checkpoint(sim)
 	var path: String = "user://bug3_career.json"
-	check(Career.handover(sim, 42, "workers", "hard", path, 2) == "", "handover to a chosen planet commits")
+	check(
+		Career.handover(sim, 42, "workers", "hard", path, 2) == "",
+		"handover to a chosen planet commits"
+	)
 	check(int(sim.state.world.size) == 2, "next planet uses the chosen size")
-	check(sim.state.advantage == "workers" and sim.state.difficulty == "hard", "next planet uses chosen opening and difficulty")
+	check(
+		sim.state.advantage == "workers" and sim.state.difficulty == "hard",
+		"next planet uses chosen opening and difficulty"
+	)
 	var kept: RefCounted = Sim.new()
 	kept.new_game(260129, "capital", 0, "normal")
 	var quick_world: Dictionary = kept.state.world
@@ -104,7 +118,10 @@ func _bug6_aid_goes_to_shortage() -> void:
 	sim._refresh(outpost)
 	sim.state.company.stage = "warning"
 	var before: float = float(outpost.stock.food)
-	check(sim.act("company", {"operation": "accept", "offer": "supplies"}) == "", "supplies aid accepted")
+	check(
+		sim.act("company", {"operation": "accept", "offer": "supplies"}) == "",
+		"supplies aid accepted"
+	)
 	var terms: Dictionary = sim.state.company.aid[0]
 	check(int(terms.region) == 1, "aid is addressed to the settlement that lacks food")
 	for _i: int in range(3):
@@ -149,7 +166,11 @@ func _bug4_menu_cannot_close(game: Node) -> void:
 	check(game.menu_open, "game starts on the main menu")
 	var has_close: bool = false
 	for button: Button in _buttons(game):
-		if button.text.contains("关闭") and is_instance_valid(game.overlay) and game.overlay.is_ancestor_of(button):
+		if (
+			button.text.contains("关闭")
+			and is_instance_valid(game.overlay)
+			and game.overlay.is_ancestor_of(button)
+		):
 			has_close = true
 	check(not has_close, "main menu has no close button")
 	var key := InputEventKey.new()
@@ -165,7 +186,10 @@ func _bug7_policy_controls(game: Node) -> void:
 	var reserve: SpinBox = game.modal_box.find_child("PolicyFoodReserve", true, false)
 	check(tax != null and reserve != null, "tax and food reserve have direct controls")
 	check(tax.max_value == 50.0 and tax.min_value == 0.0, "tax control spans 0-50%")
-	check(reserve.min_value == 3.0 and reserve.max_value == 25.0, "food reserve control spans 3-25 days")
+	check(
+		reserve.min_value == 3.0 and reserve.max_value == 25.0,
+		"food reserve control spans 3-25 days"
+	)
 	check(is_equal_approx(tax.value, 18.0), "tax control shows the 18% default")
 	check(is_equal_approx(reserve.value, 12.0), "reserve control shows the 12-day default")
 	game.close_modal()
@@ -177,7 +201,9 @@ func _bug8_runway(game: Node) -> void:
 		sim.tick()
 	sim.state.operating_history = []
 	for day: int in range(7):
-		sim.state.operating_history.append({"day": day, "net": -10.0, "income": 0.0, "expense": 10.0})
+		sim.state.operating_history.append(
+			{"day": day, "net": -10.0, "income": 0.0, "expense": 10.0}
+		)
 	sim.state.operating_net = -500.0
 	sim.state.cash = 1000.0
 	game.open_page("economy")
@@ -226,7 +252,10 @@ func _bug11_panel_pause(game: Node) -> void:
 	Events._open(sim, "seed_crate", 0)
 	game.panel_pause = false
 	game.advance_time(30.0)
-	check(game.paused and game.current_page == "events", "event decisions still pause with the setting off")
+	check(
+		game.paused and game.current_page == "events",
+		"event decisions still pause with the setting off"
+	)
 	game.close_modal()
 	check(game.paused, "closing with the decision unanswered stays paused")
 	game.panel_pause = true
@@ -260,5 +289,11 @@ func _bug12_export_filters() -> void:
 	var include: String = str(preset.get_value("preset.0", "include_filter", ""))
 	var exclude: String = str(preset.get_value("preset.0", "exclude_filter", ""))
 	check(not include.contains("data/v16"), "export no longer includes the 1.6 fixtures")
-	for pattern: String in ["data/acceptance_*", "data/v16/*", "data/v17/acceptance_*", "ui/capture_suite*.gd", "tests/*"]:
+	for pattern: String in [
+		"data/acceptance_*",
+		"data/v16/*",
+		"data/v17/acceptance_*",
+		"ui/capture_suite*.gd",
+		"tests/*"
+	]:
 		check(exclude.contains(pattern), "export excludes " + pattern)

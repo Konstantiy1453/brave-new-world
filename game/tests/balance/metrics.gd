@@ -19,32 +19,35 @@ var _reinvested: float = 0.0
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
 	record = case_info.duplicate()
-	record.merge(
-		{
-			"award_day": -1,
-			"stage_days": {},
-			"failure_day": -1,
-			"failure_reason": "",
-			"min_cash": float(sim.state.cash),
-			"population": {},
-			"techs_by_award": -1,
-			"scientist_share_at_award": -1.0,
-			"research_share": -1.0,
-			"export_revenue": {},
-			"pausing_decisions": 0,
-			"notices": 0,
-			"company_stages": [],
-			"company_stage_days": {},
-			"audit_errors": [],
-			"audit_error_count": 0,
-			"immigrants_180": -1,
-			"operating_income_180": -1.0,
-			"operating_income_720": -1.0,
-			"reinvested_share_720": -1.0,
-			"distinct_events": 0,
-			"final_day": 0,
-			"final_status": "",
-		}
+	(
+		record
+		. merge(
+			{
+				"award_day": -1,
+				"stage_days": {},
+				"failure_day": -1,
+				"failure_reason": "",
+				"min_cash": float(sim.state.cash),
+				"population": {},
+				"techs_by_award": -1,
+				"scientist_share_at_award": -1.0,
+				"research_share": -1.0,
+				"export_revenue": {},
+				"pausing_decisions": 0,
+				"notices": 0,
+				"company_stages": [],
+				"company_stage_days": {},
+				"audit_errors": [],
+				"audit_error_count": 0,
+				"immigrants_180": -1,
+				"operating_income_180": -1.0,
+				"operating_income_720": -1.0,
+				"reinvested_share_720": -1.0,
+				"distinct_events": 0,
+				"final_day": 0,
+				"final_status": "",
+			}
+		)
 	)
 
 

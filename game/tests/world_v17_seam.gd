@@ -27,7 +27,9 @@ func _outliers(image: Image, x: int, top: int, bottom: int) -> int:
 	var count: int = 0
 	for y: int in range(top, bottom):
 		var centre: float = _luminance(image.get_pixel(x, y))
-		var side: float = (_luminance(image.get_pixel(x - 3, y)) + _luminance(image.get_pixel(x + 3, y))) / 2.0
+		var side: float = (
+			(_luminance(image.get_pixel(x - 3, y)) + _luminance(image.get_pixel(x + 3, y))) / 2.0
+		)
 		if absf(centre - side) > THRESHOLD:
 			count += 1
 	return count
@@ -62,7 +64,12 @@ func run() -> void:
 	var control_rows: int = 0
 	for column: int in [x - CONTROL_OFFSET_PX, x + CONTROL_OFFSET_PX]:
 		control_rows = maxi(control_rows, _outliers(image, column, top, bottom))
-	print("WORLD_V17_SEAM seam_x=%d seam_outliers=%d control_outliers=%d" % [x, seam_rows, control_rows])
+	print(
+		(
+			"WORLD_V17_SEAM seam_x=%d seam_outliers=%d control_outliers=%d"
+			% [x, seam_rows, control_rows]
+		)
+	)
 	if seam_rows > control_rows + 8:
 		failures.append("seam column stands out from control columns")
 	map.queue_free()

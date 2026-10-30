@@ -31,9 +31,15 @@ func _fix_shortages(reserve: float) -> void:
 		var region: int = int(place.region)
 		if int(place.arrival) > 0:
 			continue
-		if float(place.power_demand) > float(place.power_supply) and _can_spend("power", region, 0.0):
+		if (
+			float(place.power_demand) > float(place.power_supply)
+			and _can_spend("power", region, 0.0)
+		):
 			act("build", {"region": region, "kind": "power"})
-		if float(place.water_demand) > float(place.water_supply) and _can_spend("water", region, 0.0):
+		if (
+			float(place.water_demand) > float(place.water_supply)
+			and _can_spend("water", region, 0.0)
+		):
 			act("build", {"region": region, "kind": "water"})
 		if free_beds(region) < maxi(2, int(place.population) / 20):
 			if _can_spend("habitat", region, reserve):

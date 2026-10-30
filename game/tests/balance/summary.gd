@@ -82,23 +82,26 @@ static func group_table(runs: Array) -> Array:
 		var group: Array = select(runs, parts[0], parts[1], parts[2])
 		var awards: Array = field(group, "award_day")
 		var failures: Array = field(group, "failure_day")
-		rows.append(
-			{
-				"bot": parts[0],
-				"difficulty": parts[1],
-				"opening": parts[2],
-				"runs": group.size(),
-				"award_rate": float(awards.size()) / group.size(),
-				"award_median": median(awards),
-				"failure_rate": float(failures.size()) / group.size(),
-				"failure_median": median(failures),
-				"min_cash_median": median(field(group, "min_cash", -1e12)),
-				"population_180": median(population_at(group, 180)),
-				"population_360": median(population_at(group, 360)),
-				"population_720": median(population_at(group, 720)),
-				"techs_by_award": median(field(group, "techs_by_award")),
-				"audit_errors": _sum_field(group, "audit_error_count"),
-			}
+		(
+			rows
+			. append(
+				{
+					"bot": parts[0],
+					"difficulty": parts[1],
+					"opening": parts[2],
+					"runs": group.size(),
+					"award_rate": float(awards.size()) / group.size(),
+					"award_median": median(awards),
+					"failure_rate": float(failures.size()) / group.size(),
+					"failure_median": median(failures),
+					"min_cash_median": median(field(group, "min_cash", -1e12)),
+					"population_180": median(population_at(group, 180)),
+					"population_360": median(population_at(group, 360)),
+					"population_720": median(population_at(group, 720)),
+					"techs_by_award": median(field(group, "techs_by_award")),
+					"audit_errors": _sum_field(group, "audit_error_count"),
+				}
+			)
 		)
 	return rows
 
@@ -117,7 +120,9 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	return rows
 
 
-static func _row(rows: Array, area: String, target: String, measured: String, status: String) -> void:
+static func _row(
+	rows: Array, area: String, target: String, measured: String, status: String
+) -> void:
 	rows.append({"area": area, "target": target, "measured": measured, "status": status})
 
 
@@ -132,7 +137,13 @@ static func _floor_row(rows: Array, runs: Array) -> void:
 	var earliest: float = -1.0 if awards.is_empty() else float(awards.min())
 	var text: String = "no rush award" if awards.is_empty() else "earliest day %d" % earliest
 	var ok: bool = awards.is_empty() or earliest >= FLOOR_DAY
-	_row(rows, "Floor", "rush bot day >= %d" % FLOOR_DAY, text, _verdict(ok, not select(runs, "rush").is_empty()))
+	_row(
+		rows,
+		"Floor",
+		"rush bot day >= %d" % FLOOR_DAY,
+		text,
+		_verdict(ok, not select(runs, "rush").is_empty())
+	)
 
 
 static func _award_rows(rows: Array, runs: Array) -> void:
@@ -143,7 +154,13 @@ static func _award_rows(rows: Array, runs: Array) -> void:
 		var value: float = median(awards)
 		var ok: bool = not awards.is_empty() and value >= band[0] and value <= band[1]
 		var text: String = "median %.0f (%d/%d awarded)" % [value, awards.size(), group.size()]
-		_row(rows, "Balanced award, " + difficulty, "%d-%d" % band, text, _verdict(ok, not group.is_empty()))
+		_row(
+			rows,
+			"Balanced award, " + difficulty,
+			"%d-%d" % band,
+			text,
+			_verdict(ok, not group.is_empty())
+		)
 
 
 static func _opening_row(rows: Array, runs: Array) -> void:
@@ -175,9 +192,7 @@ static func _failure_rows(rows: Array, runs: Array) -> void:
 	var ok_review: bool = (
 		review_day >= PASSIVE_REVIEW_DAY[0] and review_day <= PASSIVE_REVIEW_DAY[1]
 	)
-	var ok_failure: bool = (
-		failure >= PASSIVE_FAILURE_DAY[0] and failure <= PASSIVE_FAILURE_DAY[1]
-	)
+	var ok_failure: bool = failure >= PASSIVE_FAILURE_DAY[0] and failure <= PASSIVE_FAILURE_DAY[1]
 	var text: String = "review %.0f, failure %.0f" % [review_day, failure]
 	_row(
 		rows,
@@ -307,13 +322,22 @@ static func _event_rows(rows: Array, runs: Array) -> void:
 		"Events",
 		"<= 1 pause per 20 days; >= 15 distinct by 720",
 		"1 per %.0f days; %.0f distinct" % [interval, distinct],
-		_verdict(interval >= PAUSE_INTERVAL_DAYS and distinct >= DISTINCT_EVENTS, not intervals.is_empty())
+		_verdict(
+			interval >= PAUSE_INTERVAL_DAYS and distinct >= DISTINCT_EVENTS,
+			not intervals.is_empty()
+		)
 	)
 
 
 static func _audit_row(rows: Array, runs: Array, extras: Dictionary) -> void:
 	var total: int = _sum_field(runs, "audit_error_count")
-	_row(rows, "Audits", "0 errors in every run", "%d errors in %d runs" % [total, runs.size()], _verdict(total == 0, not runs.is_empty()))
+	_row(
+		rows,
+		"Audits",
+		"0 errors in every run",
+		"%d errors in %d runs" % [total, runs.size()],
+		_verdict(total == 0, not runs.is_empty())
+	)
 	if extras.has("determinism"):
 		var replay: Dictionary = extras.determinism
 		_row(
@@ -332,36 +356,48 @@ static func _sum_field(runs: Array, key: String) -> int:
 	return total
 
 
-static func markdown(label: String, stamp: String, rows: Array, groups: Array, seconds: float) -> String:
+static func markdown(
+	label: String, stamp: String, rows: Array, groups: Array, seconds: float
+) -> String:
 	var lines: PackedStringArray = []
-	lines.append("Run: **%s** · %s · %.0f s wall clock. Source: balance harness." % [label, stamp, seconds])
+	lines.append(
+		"Run: **%s** · %s · %.0f s wall clock. Source: balance harness." % [label, stamp, seconds]
+	)
 	lines.append("")
 	lines.append("| Area | Target | Measured | Status |")
 	lines.append("|---|---|---|---|")
 	for row: Dictionary in rows:
 		lines.append("| %s | %s | %s | %s |" % [row.area, row.target, row.measured, row.status])
 	lines.append("")
-	lines.append("| Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop 180 / 360 / 720 | Techs at award |")
+	(
+		lines
+		. append(
+			"| Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop 180 / 360 / 720 | Techs at award |"
+		)
+	)
 	lines.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|")
 	for group: Dictionary in groups:
-		lines.append(
-			(
-				"| %s | %s | %s | %d | %.0f%% | %.0f | %.0f%% | %.0f | %.0f | %.0f / %.0f / %.0f | %.0f |"
-				% [
-					group.bot,
-					group.difficulty,
-					group.opening,
-					group.runs,
-					group.award_rate * 100.0,
-					group.award_median,
-					group.failure_rate * 100.0,
-					group.failure_median,
-					group.min_cash_median,
-					group.population_180,
-					group.population_360,
-					group.population_720,
-					group.techs_by_award,
-				]
+		(
+			lines
+			. append(
+				(
+					"| %s | %s | %s | %d | %.0f%% | %.0f | %.0f%% | %.0f | %.0f | %.0f / %.0f / %.0f | %.0f |"
+					% [
+						group.bot,
+						group.difficulty,
+						group.opening,
+						group.runs,
+						group.award_rate * 100.0,
+						group.award_median,
+						group.failure_rate * 100.0,
+						group.failure_median,
+						group.min_cash_median,
+						group.population_180,
+						group.population_360,
+						group.population_720,
+						group.techs_by_award,
+					]
+				)
 			)
 		)
 	return "\n".join(lines)

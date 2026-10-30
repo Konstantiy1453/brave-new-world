@@ -28,7 +28,9 @@ func run() -> void:
 	report.save_size = _save_size()
 	report.definitions = _definitions()
 	var path: String = "res://../evidence/v17/tests/findings_16.json"
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://../evidence/v17/tests"))
+	DirAccess.make_dir_recursive_absolute(
+		ProjectSettings.globalize_path("res://../evidence/v17/tests")
+	)
 	FileAccess.open(path, FileAccess.WRITE).store_string(JSON.stringify(report, "\t"))
 	print("FINDINGS_16 ", JSON.stringify(report))
 	quit(0)
@@ -58,7 +60,9 @@ func _roads_and_regions() -> Dictionary:
 		var delta: float = (float(mountain.cost) / float(valley.cost) - 1.0) * 100.0
 		result.cost_delta_percent = _extend(result.cost_delta_percent, delta)
 		result.capacities[str(valley.capacity) + "/" + str(mountain.capacity)] = true
-		result.valley_fertility = _extend(result.valley_fertility, float(world.regions[1].fertility))
+		result.valley_fertility = _extend(
+			result.valley_fertility, float(world.regions[1].fertility)
+		)
 		result.basin_iron = _extend(result.basin_iron, float(world.regions[0].deposits.ore))
 		if generator.route(world, 0, 4, true).reachable:
 			result.islands_reachable += 1
@@ -71,7 +75,11 @@ func _extend(pair: Array, value: float) -> Array:
 
 func _input_value(sim: RefCounted, spec: Dictionary) -> float:
 	var prices: Dictionary = sim.config.prices
-	return float(spec.cost) + float(spec.materials) * float(prices.materials) + float(spec.parts) * float(prices.parts)
+	return (
+		float(spec.cost)
+		+ float(spec.materials) * float(prices.materials)
+		+ float(spec.parts) * float(prices.parts)
+	)
 
 
 func _mines() -> Dictionary:

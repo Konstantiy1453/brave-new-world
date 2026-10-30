@@ -44,9 +44,15 @@ func _random_action() -> void:
 			act("enterprise", {"region": region})
 		8:
 			if not place.buildings.is_empty():
-				act("toggle", {"region": region, "index": rng.randi_range(0, place.buildings.size() - 1)})
+				act(
+					"toggle",
+					{"region": region, "index": rng.randi_range(0, place.buildings.size() - 1)}
+				)
 		9:
-			act("policy", {"tax": rng.randf_range(0.0, 0.5), "food_reserve": rng.randf_range(3.0, 25.0)})
+			act(
+				"policy",
+				{"tax": rng.randf_range(0.0, 0.5), "food_reserve": rng.randf_range(3.0, 25.0)}
+			)
 
 
 func _random_event_answer() -> void:

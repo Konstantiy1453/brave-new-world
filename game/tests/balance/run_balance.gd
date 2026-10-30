@@ -107,33 +107,41 @@ func _build_cases() -> Array:
 			seed_pool.append(int(text))
 	var difficulties: Array = _list_option("difficulties", ["normal"] if quick else DIFFICULTIES)
 	var openings: Array = _list_option("openings", OPENINGS)
-	var bots: Array = _list_option("bots", ["rush", "balanced", "research_first", "passive", "sloppy"])
+	var bots: Array = _list_option(
+		"bots", ["rush", "balanced", "research_first", "passive", "sloppy"]
+	)
 	var days: int = int(options.get("days", DEFAULT_DAYS))
 	var cases: Array = []
 	for bot: String in bots:
 		for difficulty: String in difficulties:
 			for opening: String in openings:
 				for seed_value: int in seed_pool:
-					cases.append(
-						{
-							"bot": bot,
-							"seed": seed_value,
-							"opening": opening,
-							"difficulty": difficulty,
-							"days": days,
-						}
+					(
+						cases
+						. append(
+							{
+								"bot": bot,
+								"seed": seed_value,
+								"opening": opening,
+								"difficulty": difficulty,
+								"days": days,
+							}
+						)
 					)
 	if not options.has("bots"):
 		var fuzz_runs: int = QUICK_FUZZ_RUNS if quick else FULL_FUZZ_RUNS
 		for index: int in range(fuzz_runs):
-			cases.append(
-				{
-					"bot": "random_legal",
-					"seed": SEEDS[index % SEEDS.size()] + index,
-					"opening": OPENINGS[index % OPENINGS.size()],
-					"difficulty": DIFFICULTIES[index % DIFFICULTIES.size()],
-					"days": days,
-				}
+			(
+				cases
+				. append(
+					{
+						"bot": "random_legal",
+						"seed": SEEDS[index % SEEDS.size()] + index,
+						"opening": OPENINGS[index % OPENINGS.size()],
+						"difficulty": DIFFICULTIES[index % DIFFICULTIES.size()],
+						"days": days,
+					}
+				)
 			)
 	return cases
 
@@ -229,7 +237,9 @@ func _determinism_check() -> Dictionary:
 			"days": int(options.get("days", DEFAULT_DAYS)),
 		}
 		var original: Dictionary = _run_case(case_info, true)
-		var replayed: PackedByteArray = _replay(case_info, original._actions, int(original.final_day))
+		var replayed: PackedByteArray = _replay(
+			case_info, original._actions, int(original.final_day)
+		)
 		result.cases += 1
 		if replayed == original._state_bytes:
 			result.identical += 1
@@ -274,7 +284,9 @@ func _publish(runs: Array, extras: Dictionary, seconds: float) -> void:
 	if bool(options.doc):
 		_update_doc(table, stamp, rows)
 	print(table)
-	print("BALANCE_RESULT runs=%d audit_errors=%d report=%s" % [runs.size(), _audit_total(runs), path])
+	print(
+		"BALANCE_RESULT runs=%d audit_errors=%d report=%s" % [runs.size(), _audit_total(runs), path]
+	)
 	quit(0 if _audit_total(runs) == 0 else 1)
 
 
@@ -286,9 +298,14 @@ func _audit_total(runs: Array) -> int:
 
 
 func _update_doc(table: String, stamp: String, rows: Array) -> void:
-	var text: String = "# Balance\n\n%s\n%s\n\n## History\n\n%s\n" % [
-		RESULTS_BEGIN, RESULTS_END, HISTORY_BEGIN,
-	]
+	var text: String = (
+		"# Balance\n\n%s\n%s\n\n## History\n\n%s\n"
+		% [
+			RESULTS_BEGIN,
+			RESULTS_END,
+			HISTORY_BEGIN,
+		]
+	)
 	if FileAccess.file_exists(DOC_PATH):
 		text = FileAccess.get_file_as_string(DOC_PATH)
 	var head: int = text.find(RESULTS_BEGIN)
@@ -304,9 +321,16 @@ func _update_doc(table: String, stamp: String, rows: Array) -> void:
 			met += 1
 		elif row.status == Summary.STATUS_MISS:
 			missed += 1
-	var line: String = "- %s · %s (%s): %d targets met, %d missed." % [
-		stamp, options.label, options.mode, met, missed,
-	]
+	var line: String = (
+		"- %s · %s (%s): %d targets met, %d missed."
+		% [
+			stamp,
+			options.label,
+			options.mode,
+			met,
+			missed,
+		]
+	)
 	var marker: int = text.find(HISTORY_BEGIN)
 	if marker >= 0:
 		var insert_at: int = marker + HISTORY_BEGIN.length()
