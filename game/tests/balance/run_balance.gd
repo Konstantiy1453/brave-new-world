@@ -229,6 +229,8 @@ func _run_parallel() -> Array:
 		if FileAccess.file_exists(child.out):
 			parsed = JSON.parse_string(FileAccess.get_file_as_string(child.out))
 			DirAccess.remove_absolute(child.out)
+		if not parsed is Array:
+			parsed = _retry_shard(child, base)
 		if parsed is Array:
 			runs.append_array(parsed)
 		else:
@@ -236,6 +238,22 @@ func _run_parallel() -> Array:
 			print("BALANCE_ERROR shard %d produced no results" % int(child.shard))
 			shards_lost += 1
 	return runs
+
+
+## Shards are deterministic: a second run gives what the first should have. The log keeps the why.
+func _retry_shard(child: Dictionary, base: PackedStringArray) -> Variant:
+	print("BALANCE_WARNING shard %d died, running it again" % int(child.shard))
+	var arguments: PackedStringArray = base.duplicate()
+	arguments.append("--shard=%d/%d" % [int(child.shard), int(options.jobs)])
+	arguments.append("--out=" + str(child.out))
+	var output: Array = []
+	OS.execute(OS.get_executable_path(), arguments, output, true)
+	print("\n".join(PackedStringArray(output)).right(2000))
+	if not FileAccess.file_exists(child.out):
+		return null
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(child.out))
+	DirAccess.remove_absolute(child.out)
+	return parsed
 
 
 ## Geography over 200 seeds, from its own process: worlds there are built without any cache.

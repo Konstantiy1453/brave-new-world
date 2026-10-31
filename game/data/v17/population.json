@@ -12,7 +12,7 @@
     "frontier": 30
   },
   "immigration": {
-    "base_per_month": 7.5,
+    "base_per_month": 9.0,
     "savings_per_person": 60.0,
     "scientist_share_per_lab": 0.12,
     "scientist_share_max": 0.3,

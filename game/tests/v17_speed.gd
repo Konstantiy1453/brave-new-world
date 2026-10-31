@@ -1,5 +1,5 @@
 extends SceneTree
-## Game speed must not change the game: the same bot through the real clock at 1×, 4× and the
+## Game speed must not change the game: the same bot through the real clock at 1×, 3× and the
 ## fastest speed, and with no interface at all, ends in byte-identical state.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")

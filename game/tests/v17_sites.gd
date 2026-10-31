@@ -467,6 +467,7 @@ func _roads_take_time() -> void:
 	check(int(sim.state.day) - started >= months - 2, "the road is finished when the date says so")
 	check(Logistics.largest_connected(sim) == 2, "then it connects the towns")
 	sim._consume(sim.settlement(1), "food", float(sim.settlement(1).stock.food))
+	supply(sim, s, "food", 800.0)
 	sim.tick()
 	check(float(road.sent_today) > 0.0, "and carries goods")
 	check(sim.audit().is_empty(), "road building passes the audit")

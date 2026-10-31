@@ -238,11 +238,12 @@ static func _place_refusal(s: Dictionary, reg: Dictionary, d: Dictionary) -> Str
 
 
 static func _no_plot_reason(kind: String) -> String:
-	if kind.begins_with("mine_"):
+	var ground: String = Sites.plot_kind(kind)
+	if ground == "deposit":
 		return "本地区没有可用的矿床地块"
-	if kind == "farm":
+	if ground == "farm":
 		return "本地区没有可用的农田地块"
-	return "本地区没有空闲的建设用地"
+	return "本地区没有空闲的建设用地；拆掉用不着的设施或废矿能腾出地块"
 
 
 static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) -> String:

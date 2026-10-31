@@ -43,6 +43,8 @@ const WAGE_LIMIT: float = 1.3
 const WAGE_REVIEW_FROM_DAY: int = 60
 const WAGE_REVIEW_PERIOD: int = 60
 const LARGE_SCIENCE_SHARE: float = 0.15
+const LARGE_CAMPAIGN: int = 20
+const HOUSING_TECHS: Array[String] = ["apartments", "frontier_lodges", "arcology_design"]
 const LAB_SEATS: int = 10
 const TEAM_SMALLEST: int = 5
 const TEAM_SMALL: int = 10
@@ -130,7 +132,8 @@ func on_day() -> void:
 	_megaprojects(reserve)
 	_ports(reserve)
 	_goal_projects(reserve)
-	if not _saving_for_road() and not _saving_for_port() and not _saving_for_settlement():
+	var saving: bool = _saving_for_road() or _saving_for_port() or _saving_for_settlement()
+	if not saving and not _saving_for_hall():
 		_create_jobs(reserve)
 		_invest(reserve)
 		_services(reserve)
@@ -355,6 +358,8 @@ func _card_value(row: Dictionary) -> float:
 	if _out_of_farm_land() and id in ["adaptation", "irrigation", "hydroponics", "aquaculture"]:
 		value += 30.0
 	if _mines_running_out() and id in ["survey", "deep_mining", "prospecting", "tailings_recovery"]:
+		value += 30.0
+	if id in HOUSING_TECHS and _short_of_ground():
 		value += 30.0
 	return value
 
@@ -717,6 +722,14 @@ func _greenhouse(reserve: float) -> void:
 				return
 
 
+## A settlement out of building ground needs taller housing before it needs anything else.
+func _short_of_ground() -> bool:
+	for place: Dictionary in sim.state.settlements:
+		if int(sim.Sites.free_counts(sim, int(place.region)).general) <= 2:
+			return true
+	return false
+
+
 ## A depleted mine anywhere is the moment to learn to dig deeper.
 func _mines_running_out() -> bool:
 	for place: Dictionary in sim.state.settlements:
@@ -815,6 +828,11 @@ func _make_room(place: Dictionary, reserve: float) -> void:
 			act("demolish", {"region": region, "index": oldest})
 			act("build", {"region": region, "kind": kind})
 			return
+
+
+## Once its technology is known, the money goes to the hall before anything that can wait.
+func _saving_for_hall() -> bool:
+	return sim._has(HALL_TECH) and not _anywhere("capital_hall")
 
 
 func _pressed_for_time(stage: int) -> bool:
@@ -963,6 +981,8 @@ func _people_goal() -> int:
 func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) -> bool:
 	if recruit_batch <= 0 or (not for_goal and _jobless_share() > RECRUIT_JOBLESS_LIMIT):
 		return false
+	if _saving_for_hall():
+		return false
 	var counts: Dictionary = _adult_counts()
 	var kind: String = "worker"
 	if (
@@ -973,7 +993,9 @@ func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) 
 		kind = "scientist"
 		region = home
 	var place: Dictionary = sim.settlement(region)
-	var batch: int = mini(mini(recruit_batch, wanted), sim.Population.free_beds(sim, place))
+	# The price goes up with every campaign: a goal is met with fewer, larger ones.
+	var limit: int = LARGE_CAMPAIGN if for_goal else recruit_batch
+	var batch: int = mini(mini(limit, wanted), sim.Population.free_beds(sim, place))
 	if batch < 1:
 		return false
 	var cost: float = sim.Population.campaign_price(sim, kind) * batch

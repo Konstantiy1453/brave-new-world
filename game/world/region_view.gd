@@ -5,10 +5,14 @@ extends "res://world/building_models.gd"
 
 const Rules = preload("res://simulation/rules.gd")
 ## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
-const OLD_FIELD: Dictionary = {"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0}
-const WIDE_FIELD: Dictionary = {
-	"res": 112, "width": 96.0, "depth": 72.0, "trees": 360, "gate": 44.0
+const OLD_FIELD: Dictionary = {
+	"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0, "rows": 2
 }
+const WIDE_FIELD: Dictionary = {
+	"res": 112, "width": 96.0, "depth": 72.0, "trees": 360, "gate": 44.0, "rows": 3
+}
+## Rows of triangles between frames: one long block here is what a cold region's worst frame was.
+const TRIANGLE_ROWS: int = 24
 const EDGE_MARGIN: float = 1.5
 const RIVER_STEP: float = 0.5
 const PLOT_COLORS: Dictionary = {
@@ -45,6 +49,7 @@ var half_depth: float = field_depth / 2.0
 var river_steps: int = int(field_depth / RIVER_STEP)
 var tree_count: int = int(OLD_FIELD.trees)
 var gate_reach: float = float(OLD_FIELD.gate)
+var rows_per_frame: int = int(OLD_FIELD.rows)
 var height_field := PackedFloat32Array()
 var forest_field := PackedFloat32Array()
 var field_has_sea: bool = false
@@ -161,6 +166,7 @@ func _fit_field() -> void:
 	river_steps = int(field_depth / RIVER_STEP)
 	tree_count = int(field.trees)
 	gate_reach = float(field.gate)
+	rows_per_frame = int(field.rows)
 
 
 func _point_to_local(lat: float, lon: float) -> Vector2:
@@ -304,7 +310,7 @@ func _build_terrain(token: int) -> bool:
 			heights[index] = height
 			forests[index] = _forest_chance(g)
 			vertices[index] = Vector3(x, height, z)
-		if iz % 2 == 0:
+		if iz % rows_per_frame == 0:
 			region_progress.emit(true, float(iz) / resolution * .9)
 			await get_tree().process_frame
 			if token != region_load_token:
@@ -325,6 +331,10 @@ func _build_terrain(token: int) -> bool:
 				var index: int = (iz + corner.y) * (resolution + 1) + ix + corner.x
 				st.set_color(colors[index])
 				st.add_vertex(vertices[index])
+		if iz % TRIANGLE_ROWS == TRIANGLE_ROWS - 1:
+			await get_tree().process_frame
+			if token != region_load_token:
+				return false
 
 	st.generate_normals()
 	var terrain := MeshInstance3D.new()
