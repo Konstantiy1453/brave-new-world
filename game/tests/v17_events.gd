@@ -210,7 +210,9 @@ func _deck() -> void:
 	for other: Array in lists.slice(1):
 		differ = differ or other != lists[0]
 	check(differ, "different seeds leave out different events")
-	check(_off_list(4242) == _off_list(4242), "the same seed deals the same deck")
+	var deck_one: Array = _off_list(4242)
+	var deck_two: Array = _off_list(4242)
+	check(deck_one == deck_two, "the same seed deals the same deck")
 	var sim: RefCounted = Sim.new()
 	sim.new_game(260129, "capital")
 	sim.act("settle", {"site": 0})

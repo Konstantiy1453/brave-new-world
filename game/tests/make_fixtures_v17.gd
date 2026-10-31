@@ -10,18 +10,18 @@ const BalancedBot = preload("res://tests/balance/bots/balanced_bot.gd")
 const SloppyBot = preload("res://tests/balance/bots/sloppy_bot.gd")
 const FOLDER: String = "res://data/v17/"
 const SEED_VALUE: int = 260129
-const MAX_DAYS: int = 900
+const MAX_DAYS: int = 3300
 
 
 func _initialize() -> void:
 	Watchdog.arm(self)
 	var errors: int = 0
-	errors += _write("early", BalancedBot, _reached_day.bind(25))
-	errors += _write("midgame", BalancedBot, _reached_day.bind(130))
+	errors += _write("early", BalancedBot, _reached_day.bind(40))
+	errors += _write("midgame", BalancedBot, _reached_day.bind(900))
 	errors += _write("event", BalancedBot, _pending_decision)
 	errors += _write("crisis", SloppyBot, _under_review)
 	errors += _write("governor", BalancedBot, _governor_for.bind(120))
-	errors += _write("late", BalancedBot, _reached_day.bind(720))
+	errors += _write("late", BalancedBot, _reached_day.bind(2200))
 	print("V17_FIXTURES_RESULT errors=%d" % errors)
 	quit(0 if errors == 0 else 1)
 
@@ -48,7 +48,7 @@ func _reached_day(sim: RefCounted, day: int) -> bool:
 
 
 func _pending_decision(sim: RefCounted) -> bool:
-	return int(sim.state.day) >= 40 and not EventsV2.view(sim).pending.is_empty()
+	return int(sim.state.day) >= 120 and not EventsV2.view(sim).pending.is_empty()
 
 
 func _under_review(sim: RefCounted) -> bool:

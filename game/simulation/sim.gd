@@ -202,7 +202,9 @@ func act(action: String, args: Dictionary = {}) -> String:
 		"research_reshuffle":
 			refusal = Research.reshuffle(self, str(args.get("category", "")))
 		"demolish":
-			refusal = Production.demolish(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.demolish(
+				self, int(args.get("region", -1)), int(args.get("index", -1))
+			)
 		"company":
 			refusal = Company.act(self, args)
 		"batch_toggle":
@@ -216,9 +218,13 @@ func act(action: String, args: Dictionary = {}) -> String:
 		"event":
 			refusal = _resolve_event(str(args.get("choice", "")))
 		"toggle":
-			refusal = Production.toggle(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.toggle(
+				self, int(args.get("region", -1)), int(args.get("index", -1))
+			)
 		"upgrade":
-			refusal = Production.upgrade(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.upgrade(
+				self, int(args.get("region", -1)), int(args.get("index", -1))
+			)
 		"upgrade_road":
 			refusal = Logistics.upgrade_road(self, int(args.get("road", 0)))
 		"research_contract":

@@ -438,12 +438,7 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 	var points: Array[Vector3] = []
 	for ll in coordinates:
 		points.append(Geo.unit_point(float(ll[0]), float(ll[1])) * 3.048)
-	_line(
-		transport_root,
-		points,
-		_road_color(r),
-		1.5
-	)
+	_line(transport_root, points, _road_color(r), 1.5)
 	for shipment in state.get("shipments", []):
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue

@@ -345,10 +345,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 	if research_requested:
 		# A staffed project reserves its lab technicians after essential utilities.
 		# This moves actual workers out of extraction, never duplicates personnel.
-		work_order.sort_custom(
-			func(a, b):
-				return _work_rank(sim, a) < _work_rank(sim, b)
-		)
+		work_order.sort_custom(func(a, b): return _work_rank(sim, a) < _work_rank(sim, b))
 	for b in work_order:
 		b.active = false
 		b.employed = 0
@@ -531,7 +528,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				var climate: float = farm_climate(sim, int(s.region))
 				var field: Dictionary = Sites.plot_of(sim, s, b)
 				var soil: float = maxf(
-					float(field.get("fertility", reg.fertility)), float(d.get("fertility_floor", 0.0))
+					float(field.get("fertility", reg.fertility)),
+					float(d.get("fertility_floor", 0.0))
 				)
 				var amount: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
@@ -556,7 +554,12 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				)
 			"income":
 				sim._transfer(
-					"external", "public", float(d.daily_income) * eff, "service.income", true, b.kind
+					"external",
+					"public",
+					float(d.daily_income) * eff,
+					"service.income",
+					true,
+					b.kind
 				)
 			"factory":
 				var boost: float = _factory_boost(sim, b) * output_factor(sim, b)
@@ -603,9 +606,7 @@ static func _field_bonus(sim: RefCounted, s: Dictionary) -> float:
 	if str(s.get("kind", Keys.SITE_RESIDENTIAL)) != Keys.SITE_FRONTIER:
 		return 1.0
 	return (
-		1.0
-		+ float(sim.config.site_rules.frontier_output)
-		+ Research.bonus(sim, "frontier_output")
+		1.0 + float(sim.config.site_rules.frontier_output) + Research.bonus(sim, "frontier_output")
 	)
 
 
@@ -840,7 +841,9 @@ static func build_forecast(
 		outputs.food = rate
 		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
 	elif role == "indoor_farm":
-		var rate: float = float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
+		var rate: float = (
+			float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
+		)
 		outputs.food = rate
 		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
 	elif role == "factory":

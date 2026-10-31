@@ -5,7 +5,10 @@ const R = preload("res://simulation/research.gd")
 const C = preload("res://simulation/company.gd")
 var report: Dictionary = {
 	"scope":
-	"independent integrated staffing and save mutation regressions; four scientist immigrants and lab funding are explicitly injected fixture inputs",
+	(
+		"independent integrated staffing and save mutation regressions; four scientist immigrants "
+		+ "and lab funding are explicitly injected fixture inputs"
+	),
 	"checks": [],
 	"failures": []
 }
@@ -31,6 +34,8 @@ func run():
 		return
 	var first: Dictionary = sim.settlement(0)
 	var second: Dictionary = sim.settlement(1)
+	# Laboratories need a residential settlement; a 1.6 save's farm town is read as a frontier post.
+	second.kind = "residential"
 	second.scientists += 4
 	second.population += 4
 	sim.state.immigrants_total += 4

@@ -2,6 +2,8 @@ extends SceneTree
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const E = preload("res://simulation/events_v2.gd")
+const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
+const LONGEST_WAIT: int = 2400
 var actions: Array = []
 
 
@@ -20,30 +22,26 @@ func _init() -> void:
 	actions.append(
 		{"action": "new_game", "seed": 20261029, "advantage": "science", "difficulty": "normal"}
 	)
-	apply(s, "settle", {"region": 0})
-	for kind in ["mine_ore", "mine_copper", "lab"]:
-		apply(s, "build", {"region": 0, "kind": kind})
+	# A governor plays on; the first chain that comes up by itself is answered and saved mid-story.
+	var bot: RefCounted = Bot.new()
+	bot.begin(s, 20261029)
+	var rules: Dictionary = E.definitions().definitions
 	var captured: bool = false
-	for index in range(150):
+	for index in range(LONGEST_WAIT):
 		var v: Dictionary = E.view(s)
 		for p in v.pending:
-			if p.id == "archaeology" and p.node == "start":
-				if apply(s, "event_v2", {"instance_id": p.instance_id, "choice": "survey"}) == "":
-					captured = true
-			else:
-				var choice: String = (
-					"conserve" if p.id == "water" and p.node == "start" else "decline"
-				)
-				var valid: bool = false
-				for o in p.choices:
-					if o.id == choice and o.enabled:
-						valid = true
-				if not valid:
-					for o in p.choices:
-						if o.enabled and o.id != "defer":
-							choice = o.id
-							break
-				apply(s, "event_v2", {"instance_id": p.instance_id, "choice": choice})
+			if str(rules[p.id].type) != "chain" or p.node != "start":
+				continue
+			for option: Dictionary in rules[p.id].nodes.start.choices:
+				var open: bool = false
+				for row in p.choices:
+					open = open or (row.id == option.id and row.enabled)
+				if open and option.has("next") and not captured:
+					var picked: Dictionary = {"instance_id": p.instance_id, "choice": option.id}
+					captured = apply(s, "event_v2", picked) == ""
+		if captured:
+			break
+		bot.on_day()
 		s.tick()
 		actions.append(
 			{"action": "tick", "day": s.state.day, "status": s.state.status, "audit": s.audit()}
@@ -56,7 +54,7 @@ func _init() -> void:
 		if OS.get_cmdline_user_args().has("--fixtures")
 		else "user://acceptance_event_mid.json"
 	)
-	var result: String = "未自然进入考古调查"
+	var result: String = "没有事件链自然出现"
 	if captured:
 		result = s.save_game(fixture_path)
 	var saved_day: int = int(s.state.day)

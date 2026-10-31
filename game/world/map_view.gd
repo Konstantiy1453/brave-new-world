@@ -160,6 +160,7 @@ func show_region(id: int) -> void:
 	if region_busy and selected_region == id:
 		return
 	cancel_region_load()
+	_fit_field()
 	var started: int = Time.get_ticks_msec()
 	var token: int = region_load_token
 	selected_region = id
@@ -251,7 +252,7 @@ func zoom(amount: float) -> void:
 	elif mode == "planet":
 		planet_distance = clampf(planet_distance + amount * .65, 7.0, 15.8)
 	else:
-		local_distance = clampf(local_distance + amount * 3.5, 31.0, 94.0)
+		local_distance = clampf(local_distance + amount * 3.5, 31.0, 140.0)
 
 
 func pan(dx: float, dy: float) -> void:
@@ -267,8 +268,8 @@ func pan(dx: float, dy: float) -> void:
 	right.y = 0
 	up.y = 0
 	camera_pivot += (-right.normalized() * dx + up.normalized() * dy) * local_distance * .0012
-	camera_pivot.x = clampf(camera_pivot.x, -18.0, 18.0)
-	camera_pivot.z = clampf(camera_pivot.z, -15.0, 15.0)
+	camera_pivot.x = clampf(camera_pivot.x, -36.0, 36.0)
+	camera_pivot.z = clampf(camera_pivot.z, -26.0, 26.0)
 
 
 ## The site marker under a screen position, among those the filter shows.

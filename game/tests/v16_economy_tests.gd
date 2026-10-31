@@ -1,8 +1,8 @@
 extends SceneTree
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const Sim = preload("res://simulation/sim.gd")
 var failures: int = 0
 var checks: int = 0
-const Sim = preload("res://simulation/sim.gd")
 
 
 func check(ok: bool, label: String) -> void:
@@ -36,6 +36,8 @@ func _init() -> void:
 	check(home.shortages.all(func(x): return x.key != "port_full"), "F08 no port not congestion")
 	sim.act("settle", {"region": 1})
 	sim.act("connect", {"a": 0, "b": 1})
+	sim.state.roads[0].ready_day = -1
+	sim.state.roads[0].blocked_until = -1
 	var dst: Dictionary = sim.settlement(1)
 	dst.arrival = 0
 	sim.state.day = 5

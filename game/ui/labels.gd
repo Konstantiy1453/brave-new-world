@@ -211,7 +211,9 @@ static func goal(row: Dictionary) -> Dictionary:
 				"page": "population"
 			}
 		"technologies":
-			return {"text": "完成技术 %d / %d" % [value, target], "hint": "分配更多研究团队", "page": "research"}
+			return {
+				"text": "完成技术 %d / %d" % [value, target], "hint": "分配更多研究团队", "page": "research"
+			}
 		"employment":
 			return {
 				"text": "就业率 %.0f%% / %.0f%%" % [value * 100.0, target * 100.0],
@@ -243,11 +245,7 @@ static func goal(row: Dictionary) -> Dictionary:
 				"page": "company"
 			}
 		"frontiers":
-			return {
-				"text": "边疆据点 %d / %d" % [value, target],
-				"hint": "派远征队时选择边疆据点",
-				"page": ""
-			}
+			return {"text": "边疆据点 %d / %d" % [value, target], "hint": "派远征队时选择边疆据点", "page": ""}
 		"capital_population":
 			return {
 				"text": "首府人口 %d / %d" % [value, target],

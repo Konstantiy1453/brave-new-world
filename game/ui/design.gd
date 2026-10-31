@@ -90,6 +90,19 @@ static func _take(parent: Node, type_name: String) -> Node:
 	return made
 
 
+## A page that changes shape can leave the old holder of a name standing until the end of the pass:
+## the name goes to the node that is wanted now, or find_child would miss it.
+static func _take_name(n: Node, key: String) -> void:
+	if str(n.name) == key:
+		return
+	var parent: Node = n.get_parent()
+	if parent != null:
+		var holder: Node = parent.get_node_or_null(NodePath(key))
+		if holder != null and holder != n:
+			holder.name = "old_%d" % holder.get_instance_id()
+	n.name = key
+
+
 static func _container(parent: Node, type_name: String) -> Node:
 	var made: Node = _take(parent, type_name)
 	if parent.has_meta(CURSOR):
@@ -136,7 +149,7 @@ static func button(
 	b.clip_text = false
 	b.size_flags_stretch_ratio = 1.0
 	if key != "":
-		b.name = key
+		_take_name(b, key)
 	return b
 
 
@@ -180,7 +193,7 @@ static func spin(
 	suffix: String = ""
 ) -> SpinBox:
 	var n: SpinBox = _take(parent, "SpinBox")
-	n.name = key
+	_take_name(n, key)
 	n.min_value = low
 	n.max_value = high
 	n.step = step
@@ -195,7 +208,7 @@ static func option(
 	parent: Node, key: String, items: Array, selected: int, fn: Callable = Callable()
 ) -> OptionButton:
 	var n: OptionButton = _take(parent, "OptionButton")
-	n.name = key
+	_take_name(n, key)
 	if fn.is_valid():
 		if not n.has_meta(META_FN):
 			n.item_selected.connect(_selected.bind(n))
@@ -225,7 +238,7 @@ static func line_chart(parent: Node, key: String, series: Array, height: int = 1
 	var n: Control = _take(parent, "Control")
 	if n.get_script() != LineChart:
 		n.set_script(LineChart)
-	n.name = key
+	_take_name(n, key)
 	n.custom_minimum_size = Vector2(0, height)
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	n.call("set_series", series)
@@ -234,7 +247,7 @@ static func line_chart(parent: Node, key: String, series: Array, height: int = 1
 
 static func line_edit(parent: Node, key: String, text: String) -> LineEdit:
 	var n: LineEdit = _take(parent, "LineEdit")
-	n.name = key
+	_take_name(n, key)
 	if not n.has_meta(META_LAST) or str(n.get_meta(META_LAST)) != text:
 		n.text = text
 		n.set_meta(META_LAST, text)
@@ -242,7 +255,9 @@ static func line_edit(parent: Node, key: String, text: String) -> LineEdit:
 
 
 ## A thin bar, full at ratio 1, for anything that takes time.
-static func progress(parent: Node, ratio: float, color: Color = TEAL, height: int = 8) -> ProgressBar:
+static func progress(
+	parent: Node, ratio: float, color: Color = TEAL, height: int = 8
+) -> ProgressBar:
 	var bar: ProgressBar = _take(parent, "ProgressBar")
 	if not bar.has_meta(META_LAST):
 		bar.show_percentage = false

@@ -319,7 +319,9 @@ func _judge(result: Dictionary, rows: Array) -> int:
 		failed += 1
 		print("FAIL fewer than three common best-start archetypes")
 	checks += 1
-	if float(result.road_trade) < 30.0 or float(result.road_trade) > 70.0:
+	# On real planets the cheap road is nearly always the slow one; what must not happen is the
+	# opposite, one road winning on every count.
+	if float(result.road_trade) < 30.0:
 		failed += 1
 		print("FAIL road trade-off %.0f%%" % float(result.road_trade))
 	checks += 1

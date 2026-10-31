@@ -19,7 +19,23 @@ const MIN_POOL: int = 100
 const MIN_NEW_BUILDINGS: int = 30
 const MIN_CATEGORY_POOL: int = 20
 const V171_BUILDINGS: Array[String] = [
-	"climate_regulator", "clinic", "component_plant", "farm", "foodworks", "habitat", "hydroponic_farm", "lab", "lift_port", "mine_copper", "mine_crystal", "mine_ore", "port", "power", "processor", "university", "water"
+	"climate_regulator",
+	"clinic",
+	"component_plant",
+	"farm",
+	"foodworks",
+	"habitat",
+	"hydroponic_farm",
+	"lab",
+	"lift_port",
+	"mine_copper",
+	"mine_crystal",
+	"mine_ore",
+	"port",
+	"power",
+	"processor",
+	"university",
+	"water"
 ]
 
 var checks: int = 0
@@ -185,6 +201,27 @@ func _cards() -> void:
 		for key: String in rules.first_offers.get(category, []):
 			good = good and hand.has(key)
 	check(good, "each category deals its starter card and only what is open")
+	var always: Array = rules.get("always_dealt", [])
+	check(always.has("capital_planning"), "the hall's technology is never left to luck")
+	var walk: RefCounted = make()
+	walk.settlement(0).buildings.append(walk._building("lab", 0))
+	for key: String in always:
+		var category: String = str(rules.techs[key].category)
+		check(
+			walk.state.research.offers[category].has(key),
+			key + " is on the table when it can start"
+		)
+		walk._transfer("external", "public", 2000.0, "capital.initial", false)
+		check(walk.act("research_reshuffle", {"category": category}) == "", "a redraw is allowed")
+		check(walk.state.research.offers[category].has(key), "and does not throw it back")
+		walk.state.research.projects[key] = {
+			"staff": 0,
+			"work": float(rules.techs[key].cost),
+			"effective": 0,
+			"rate": 0.0,
+			"reason": ""
+		}
+		walk.Research._finish(walk, key)
 	var other: RefCounted = Sim.new()
 	other.new_game(42, "capital")
 	check(_hands(other) != _hands(sim), "another seed deals other cards")
@@ -202,10 +239,16 @@ func _cards() -> void:
 			if rules.techs[key].requires.is_empty():
 				locked = key
 	if locked != "":
-		check(sim.act("research_allocate", {"tech": locked, "staff": 4}) != "", "a card not dealt waits")
+		check(
+			sim.act("research_allocate", {"tech": locked, "staff": 4}) != "",
+			"a card not dealt waits"
+		)
 	var first: String = str(r.offers.industry[0])
 	var second: String = str(r.offers.industry[1])
-	check(sim.act("research_allocate", {"tech": first, "staff": 4}) == "", "a dealt card can be staffed")
+	check(
+		sim.act("research_allocate", {"tech": first, "staff": 4}) == "",
+		"a dealt card can be staffed"
+	)
 	r.projects[first].work = 7.0
 	check(sim.act("research_allocate", {"tech": second, "staff": 4}) == "", "and another taken up")
 	check(int(r.projects[first].staff) == 0, "one project per category: the first stands down")
@@ -252,8 +295,7 @@ func _cards() -> void:
 	check(loaded.load_game(path) == "", "and loaded")
 	check(_hands(loaded) == _hands(sim), "with the same hands")
 	check(
-		int(loaded.state.research.rng_state) == int(r.rng_state),
-		"and the same draw still to come"
+		int(loaded.state.research.rng_state) == int(r.rng_state), "and the same draw still to come"
 	)
 
 
@@ -588,7 +630,9 @@ func _card_page() -> void:
 		dealt += hand.size()
 	check(cards.size() == dealt, "the research page shows every dealt card")
 	for category: String in Rules.read("techs").categories:
-		check(scene.ui.find_child("Staff_" + category, true, false) != null, category + " has a team")
+		check(
+			scene.ui.find_child("Staff_" + category, true, false) != null, category + " has a team"
+		)
 		check(
 			scene.ui.find_child("Reshuffle_" + category, true, false) != null,
 			category + " can redraw"
@@ -603,7 +647,10 @@ func _card_page() -> void:
 		int(scene.sim.state.research.projects.survey.staff) == 4,
 		"pressing a card sends the chosen team"
 	)
-	check(scene.ui.find_child("Card_survey", true, false) == null, "and it no longer asks to be picked")
+	check(
+		scene.ui.find_child("Card_survey", true, false) == null,
+		"and it no longer asks to be picked"
+	)
 	scene.close_modal()
 	root.remove_child(scene)
 	scene.free()

@@ -132,7 +132,7 @@ static func _first_part(g) -> void:
 	await _press(g, "Build_mine_copper")
 	g.close_modal()
 	await _wait(g, "two mines ordered", func() -> bool: return _step(g) == "clock")
-	await _press(g, "Speed_10")
+	await _press(g, "Speed_6")
 	await _wait(g, "the clock runs", func() -> bool: return _step(g) == "export")
 	await _wait(g, "the first export arrives", func() -> bool: return _step(g) == "ledger")
 	await _press(g, "Nav_economy")
@@ -143,7 +143,7 @@ static func _first_part(g) -> void:
 	await _press(g, "Build_habitat")
 	g.close_modal()
 	await _wait(g, "housing ordered", func() -> bool: return _step(g) == "problem")
-	await _press(g, "Speed_10")
+	await _press(g, "Speed_6")
 	var seen: bool = await _wait(
 		g,
 		"the red line appears",
@@ -155,7 +155,7 @@ static func _first_part(g) -> void:
 		await _shot(g, "07_fix_opens_build")
 		await _press(g, "Build_water")
 		g.close_modal()
-	await _press(g, "Speed_10")
+	await _press(g, "Speed_6")
 	await _wait(g, "the shortage clears", func() -> bool: return _step(g) == "research")
 	await _press(g, "OpenBuild")
 	await _press(g, "Build_lab")

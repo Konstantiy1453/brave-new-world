@@ -76,7 +76,9 @@ func _stages() -> void:
 	Contract.daily(sim)
 	check(int(sim.state.contract.stage) == 2, "meeting every goal completes the stage")
 	check(
-		is_equal_approx(float(sim.state.cash), cash + float(sim.contract_rules.stages[0].reward_cash)),
+		is_equal_approx(
+			float(sim.state.cash), cash + float(sim.contract_rules.stages[0].reward_cash)
+		),
 		"stage reward paid"
 	)
 	check(
@@ -110,7 +112,9 @@ func _stages() -> void:
 		check(final_keys.has(key), "the final stage asks for " + key)
 	for stage: int in range(1, Contract.STAGE_COUNT + 1):
 		for goal: Dictionary in Contract.stage_goals(plain, stage):
-			check(goal.has("ok") and goal.has("value"), "stage %d can measure %s" % [stage, goal.key])
+			check(
+				goal.has("ok") and goal.has("value"), "stage %d can measure %s" % [stage, goal.key]
+			)
 	var rise: int = 0
 	for stage: int in range(1, Contract.STAGE_COUNT + 1):
 		var day: int = Contract.deadline(plain, stage)

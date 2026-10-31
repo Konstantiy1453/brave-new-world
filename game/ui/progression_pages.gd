@@ -36,7 +36,12 @@ static func research(g, b):
 		20,
 		D.GOLD
 	)
-	D.label(b, "每个方向同时做一个课题，候选是随机出现的。挑一张，再派研究团队：5 支的速度是 10 支的 60%。换课题不丢进度；课题完成后，这个方向会出现新的候选。", 17, D.MUTED)
+	D.label(
+		b,
+		"每个方向同时做一个课题，候选是随机出现的。挑一张，再派研究团队：5 支的速度是 10 支的 60%。换课题不丢进度；课题完成后，这个方向会出现新的候选。",
+		17,
+		D.MUTED
+	)
 	var columns: Array = g.sim.research_cards()
 	var grid = D.grid(b, columns.size())
 	for column: Dictionary in columns:
@@ -109,6 +114,8 @@ static func _tech_card(g, parent, row: Dictionary, count):
 	var running: bool = int(row.staff) > 0
 	D.label(c, str(row.name), 16, D.GOLD if running else D.INK)
 	D.label(c, "第 %d 级 · %.0f 点" % [int(row.tier), float(row.cost)], 13, D.MUTED)
+	if bool(row.charter):
+		D.label(c, "总督资格必需：这张课题不会被洗掉", 13, D.GOLD)
 	D.label(c, str(row.description), 13, D.MUTED)
 	var work: float = float(row.work)
 	if work > 0.0:
@@ -118,8 +125,10 @@ static func _tech_card(g, parent, row: Dictionary, count):
 			var left: int = ceili((float(row.cost) - work) / float(row.rate))
 			D.label(
 				c,
-				"%d 支团队 · 还要 %d 天（%s）"
-				% [int(row.effective), left, Labels.short_date(int(g.sim.state.day) + left)],
+				(
+					"%d 支团队 · 还要 %d 天（%s）"
+					% [int(row.effective), left, Labels.short_date(int(g.sim.state.day) + left)]
+				),
 				13,
 				D.TEAL
 			)
@@ -201,7 +210,7 @@ static func company(g, b):
 		(
 			"整改期限：%s · 本日变化 %+.2f"
 			% [
-				str(v.deadline) if int(v.get("deadline", -1)) >= 0 else "暂无",
+				Labels.short_date(int(v.deadline)) if int(v.get("deadline", -1)) >= 0 else "暂无",
 				float(v.get("delta", 0))
 			]
 		),
@@ -254,7 +263,12 @@ static func company(g, b):
 		air,
 		(
 			"累积负荷 %.0f · 每日排放 %.1f / 星球吸收 %.1f · 产出损失 %.1f%%"
-			% [float(dirt.load), float(dirt.emitted), float(dirt.absorbed), float(dirt.penalty) * 100.0]
+			% [
+				float(dirt.load),
+				float(dirt.emitted),
+				float(dirt.absorbed),
+				float(dirt.penalty) * 100.0
+			]
 		),
 		17
 	)
@@ -321,7 +335,10 @@ static func events(g, b):
 			c,
 			(
 				"%s 截止 · 还有 %s 天"
-				% [Labels.short_date(int(node.get("deadline", 0))), str(node.get("remaining_days", "—"))]
+				% [
+					Labels.short_date(int(node.get("deadline", 0))),
+					str(node.get("remaining_days", "—"))
+				]
 			),
 			16,
 			D.TEAL

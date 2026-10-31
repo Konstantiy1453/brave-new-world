@@ -206,9 +206,7 @@ static func building_column(g, b):
 	)
 	var day: int = int(g.sim.state.day)
 	if int(s.arrival) > 0:
-		D.label(
-			b, "远征队在途，预计 %s 抵达" % Labels.short_date(day + int(s.arrival)), 15, D.GOLD
-		)
+		D.label(b, "远征队在途，预计 %s 抵达" % Labels.short_date(day + int(s.arrival)), 15, D.GOLD)
 	var underway: int = 0
 	for index: int in range(s.buildings.size()):
 		var item: Dictionary = s.buildings[index]
@@ -865,16 +863,14 @@ static func build(g, b):
 	D.label(
 		b,
 		(
-			(
-				"%s。工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。空闲工程队 %d · 公共资金 ¥ %s · 建材 %.0f t · 部件 %.0f t"
-				% [
-					str(Labels.SITE_KIND_NAMES.get(s.kind, "")),
-					g.sim.free_workers(s),
-					g.money(g.sim.state.cash),
-					s.stock.materials,
-					s.stock.parts
-				]
-			)
+			"%s。工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。空闲工程队 %d · 公共资金 ¥ %s · 建材 %.0f t · 部件 %.0f t"
+			% [
+				str(Labels.SITE_KIND_NAMES.get(s.kind, "")),
+				g.sim.free_workers(s),
+				g.money(g.sim.state.cash),
+				s.stock.materials,
+				s.stock.parts
+			]
 		),
 		17,
 		D.MUTED
@@ -892,7 +888,10 @@ static func build(g, b):
 			if str(spec.get("category", "")) != category:
 				continue
 			# What the colony has not discovered, or this kind of settlement cannot hold, stays off the list.
-			if spec.has("requires_tech") and not g.sim.state.research.completed.has(spec.requires_tech):
+			if (
+				spec.has("requires_tech")
+				and not g.sim.state.research.completed.has(spec.requires_tech)
+			):
 				continue
 			if spec.has("site_kinds") and not spec.site_kinds.has(str(s.kind)):
 				continue
@@ -1188,7 +1187,12 @@ static func _goods_table(b, goods: Dictionary):
 
 static func transport(g, b):
 	D.label(b, "矿物向港口汇集，食品向居民流动。", 25, D.TEAL)
-	D.label(b, "星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。两端都有货运站就能开航线。", 18, D.MUTED)
+	D.label(
+		b,
+		"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。两端都有货运站就能开航线。",
+		18,
+		D.MUTED
+	)
 	var state: Dictionary = g.sim.state
 	if state.settlements.size() < 2:
 		D.label(b, "尚需建立第二据点。请在行星总览选择可达地点，并派出远征队。", 21, D.GOLD)
@@ -1315,7 +1319,9 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		var total: int = maxi(1, int(road.get("build_days", 1)))
 		var left: int = int(road.ready_day) - int(state.day)
 		D.progress(c, 1.0 - float(left) / total, D.GOLD)
-		D.label(c, "在建 · %s 通车 · 还要 %d 天" % [Labels.short_date(int(road.ready_day)), left], 16, D.GOLD)
+		D.label(
+			c, "在建 · %s 通车 · 还要 %d 天" % [Labels.short_date(int(road.ready_day)), left], 16, D.GOLD
+		)
 	if int(road.get("paving_until", 0)) > int(state.day):
 		D.label(c, "铺装中 · %s 完工" % Labels.short_date(int(road.paving_until)), 16, D.GOLD)
 	var moving: Dictionary = {}

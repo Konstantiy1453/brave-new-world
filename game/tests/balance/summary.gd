@@ -302,9 +302,7 @@ static func _research_rows(rows: Array, runs: Array) -> void:
 	var first_techs: float = median(field(first, "techs_by_award"))
 	var first_award: float = median(field(first, "award_day"))
 	var band: Array = AWARD_BANDS["normal"]
-	var first_ok: bool = (
-		first_techs > techs and first_award >= band[0] and first_award <= band[1]
-	)
+	var first_ok: bool = first_techs > techs and first_award >= band[0] and first_award <= band[1]
 	_row(
 		rows,
 		"Research-first",
@@ -378,7 +376,13 @@ static func _event_rows(rows: Array, runs: Array) -> void:
 		"Events",
 		(
 			"<= 1 pause per %d days; >= %d distinct; %d short, %d chains; >= %d%% off each run"
-			% [PAUSE_INTERVAL_DAYS, DISTINCT_EVENTS, MIN_SHORT_EVENTS, MIN_CHAINS, MIN_OFF_SHARE * 100.0]
+			% [
+				PAUSE_INTERVAL_DAYS,
+				DISTINCT_EVENTS,
+				MIN_SHORT_EVENTS,
+				MIN_CHAINS,
+				MIN_OFF_SHARE * 100.0
+			]
 		),
 		(
 			"1 per %.0f days; %.0f distinct; %d repeats; %d short, %d chains; %.0f%% off; seeds share %.0f%%"

@@ -341,17 +341,26 @@ func _real_distances() -> void:
 			)
 			* radius
 		)
-		check(float(found.distance) >= straight * 0.97, "a road is no shorter than the great circle")
+		check(
+			float(found.distance) >= straight * 0.97, "a road is no shorter than the great circle"
+		)
 		var spec: Dictionary = roads.valley
 		check(
-			int(found.days) >= maxi(
-				int(spec.min_days), ceili(float(found.distance) / float(spec.speed_km_per_day))
+			(
+				int(found.days)
+				>= maxi(
+					int(spec.min_days), ceili(float(found.distance) / float(spec.speed_km_per_day))
+				)
 			),
 			"travel time comes from the distance, and hills only add to it"
 		)
 		check(
-			int(found.build_days) == maxi(
-				int(spec.build_days), ceili(float(found.distance) / float(spec.build_km_per_day))
+			(
+				int(found.build_days)
+				== maxi(
+					int(spec.build_days),
+					ceili(float(found.distance) / float(spec.build_km_per_day))
+				)
 			),
 			"building time comes from the distance"
 		)
@@ -360,7 +369,9 @@ func _real_distances() -> void:
 	var flat: Dictionary = WorldGen2.generate(SEED, 1)
 	var near: Dictionary = Routes.find(flat, 0, 1, "valley", roads)
 	if bool(near.reachable):
-		check(float(near.distance) > 500.0, "sites on a real planet are hundreds of kilometres apart")
+		check(
+			float(near.distance) > 500.0, "sites on a real planet are hundreds of kilometres apart"
+		)
 
 
 func _settlement_kinds() -> void:
@@ -375,12 +386,16 @@ func _settlement_kinds() -> void:
 	var camp_fare: float = sim.Sites.expedition_cash(sim, Keys.SITE_FRONTIER)
 	check(camp_fare < town_fare, "a frontier post costs less to found")
 	check(
-		sim.Sites.expedition_workers(sim, Keys.SITE_FRONTIER)
-		< sim.Sites.expedition_workers(sim, Keys.SITE_RESIDENTIAL),
+		(
+			sim.Sites.expedition_workers(sim, Keys.SITE_FRONTIER)
+			< sim.Sites.expedition_workers(sim, Keys.SITE_RESIDENTIAL)
+		),
 		"and takes fewer crews"
 	)
 	check(sim.act("settle", {"site": 1, "kind": "nonsense"}) != "", "only the two kinds exist")
-	check(sim.act("settle", {"site": 1, "kind": Keys.SITE_FRONTIER}) == "", "a frontier post is sent")
+	check(
+		sim.act("settle", {"site": 1, "kind": Keys.SITE_FRONTIER}) == "", "a frontier post is sent"
+	)
 	wait_for_arrival(sim, 1)
 	var camp: Dictionary = sim.settlement(1)
 	check(str(camp.kind) == Keys.SITE_FRONTIER, "and stays one")
@@ -395,7 +410,9 @@ func _settlement_kinds() -> void:
 		check(refused != "", "%s belongs to the other kind of settlement" % kind)
 	var lab_refused: String = sim.act("build", {"region": 1, "kind": "lab"})
 	check(lab_refused != "", "no laboratory in a frontier post: " + lab_refused)
-	check(sim.act("build", {"region": 1, "kind": "crew_quarters"}) == "", "a frontier camp is allowed")
+	check(
+		sim.act("build", {"region": 1, "kind": "crew_quarters"}) == "", "a frontier camp is allowed"
+	)
 	check(sim.act("build", {"region": 0, "kind": "crew_quarters"}) != "", "but not in the town")
 	check(sim.act("build", {"region": 1, "kind": "habitat"}) != "", "town housing stays in towns")
 	camp.workers = int(camp.workers) + 40
@@ -447,9 +464,7 @@ func _roads_take_time() -> void:
 	var started: int = int(sim.state.day)
 	while WorldGen.road_building(road, int(sim.state.day)):
 		sim.tick()
-	check(
-		int(sim.state.day) - started >= months - 2, "the road is finished when the date says so"
-	)
+	check(int(sim.state.day) - started >= months - 2, "the road is finished when the date says so")
 	check(Logistics.largest_connected(sim) == 2, "then it connects the towns")
 	sim._consume(sim.settlement(1), "food", float(sim.settlement(1).stock.food))
 	sim.tick()
@@ -645,7 +660,10 @@ func _islands() -> void:
 	check(Logistics.largest_connected(sim) == 2, "sea routes connect settlements")
 	sim._consume(sim.settlement(island), "food", float(sim.settlement(island).stock.food))
 	sim.tick()
-	check(float(lane.sent_today) > 0.0 or sim.settlement(island).stock.food > 0.0, "goods cross the water")
+	check(
+		float(lane.sent_today) > 0.0 or sim.settlement(island).stock.food > 0.0,
+		"goods cross the water"
+	)
 	check(sim.audit().is_empty(), "sea routes pass the audit")
 
 

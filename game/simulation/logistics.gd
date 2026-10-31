@@ -269,9 +269,7 @@ static func _waiting_on_closure(sim: RefCounted, cargo: Dictionary) -> bool:
 
 
 ## What is on its way here; with `within`, only what arrives in that many days.
-static func incoming(
-	sim: RefCounted, region: int, resource: String, within: int = -1
-) -> float:
+static func incoming(sim: RefCounted, region: int, resource: String, within: int = -1) -> float:
 	var amount: float = 0.0
 	for cargo in sim.state.shipments:
 		if int(cargo.to) != region or str(cargo.resource) != resource:
@@ -287,7 +285,9 @@ static func dispatch(sim: RefCounted) -> void:
 
 
 static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
-	var key: String = "sea_capacity" if str(r.get("variant", "valley")) == "sea" else "road_capacity"
+	var key: String = (
+		"sea_capacity" if str(r.get("variant", "valley")) == "sea" else "road_capacity"
+	)
 	return (
 		float(r.capacity)
 		* (1.0 + Research.bonus(sim, key) + _depot_bonus(sim, r))

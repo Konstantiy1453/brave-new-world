@@ -102,7 +102,10 @@ func _migrate_old_fixtures() -> void:
 		check(error == "", "old fixture migrates: %s %s" % [fixture.get_file(), error])
 		if error != "":
 			continue
-		check(int(sim.state.schema) == SaveIo.SCHEMA, "migrated to the new schema: " + fixture.get_file())
+		check(
+			int(sim.state.schema) == SaveIo.SCHEMA,
+			"migrated to the new schema: " + fixture.get_file()
+		)
 		check(sim.audit().is_empty(), "migrated state passes audit: " + fixture.get_file())
 		var path: String = "user://v17_migrated.save"
 		check(sim.save_game(path) == "", "migrated state saves: " + fixture.get_file())

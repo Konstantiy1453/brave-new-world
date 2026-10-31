@@ -43,7 +43,7 @@
   },
   "research": {
     "reference_staff": 10,
-    "reference_rate": 2.4,
+    "reference_rate": 1.8,
     "half_staff_ratio": 0.6,
     "seats_per_lab": 10,
     "projects_per_lab": 2,

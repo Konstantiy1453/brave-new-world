@@ -14,7 +14,7 @@ const Sites = preload("res://simulation/sites.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 
 const SETTINGS: String = "user://settings.cfg"
-const MAX_DAYS: int = 400
+const MAX_DAYS: int = 900
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -216,13 +216,14 @@ func _run_tutorial() -> void:
 	game.sim._produce(game.sim.settlement(0), "parts", 10.0, "test")
 	game.act("build", {"site": 0, "kind": "water"})
 	game.close_modal()
-	tick_until(func() -> bool: return not _has_shortage("water"), 12)
+	var pump_days: int = int(game.sim.config.buildings.water.days)
+	tick_until(func() -> bool: return not _has_shortage("water"), pump_days + 6)
 	await settle_coach()
 	check(step_id() == "research", "step: start research")
 	game.act("build", {"site": 0, "kind": "lab"})
-	# An event investigation may hold the scientists for a while; the refusal says so.
+	# An event investigation may hold the research teams for a while; the refusal says so.
 	tick_until(func() -> bool: return _assign_scientists() == "", 40)
-	check(_assign_scientists() == "", "scientists assigned")
+	check(_assign_scientists() == "", "research teams assigned")
 	await settle_coach()
 	check(step_id() == "stage", "step: finish stage one")
 	tick_until(func() -> bool: return int(game.sim.state.contract.stage) >= 2)
@@ -233,13 +234,13 @@ func _run_tutorial() -> void:
 	await settle_coach()
 	check(step_id() == "road", "step: compare roads")
 	check(not game.sim.settlement(1).is_empty(), "the expedition has left")
-	tick_until(func() -> bool: return int(game.sim.settlement(1).get("arrival", 0)) <= 0, 30)
+	tick_until(func() -> bool: return int(game.sim.settlement(1).get("arrival", 0)) <= 0, 120)
 	var road: String = game.act("connect", {"a": 0, "b": 1, "variant": "valley"})
 	check(road == "", "a road is built: " + road)
 	await settle_coach()
 	check(step_id() == "farm", "step: feed the colony")
 	tick_until(func() -> bool: return game.act("build", {"site": 1, "kind": "farm"}) == "", 60)
-	tick_until(func() -> bool: return Tutorial._running(game.sim.state, "farm"), 30)
+	tick_until(func() -> bool: return Tutorial._running(game.sim.state, "farm"), 90)
 	await settle_coach()
 	check(not game.coach.active(), "the tutorial ends with a running farm")
 	check(not game.coach.visible, "and the panel goes away")
@@ -339,11 +340,17 @@ func _pages() -> void:
 	game.refresh_sidebar()
 	game.open_page("build")
 	await process_frame
+	var town: Dictionary = game.sim.settlement(0)
 	for kind: String in game.sim.config.buildings:
-		check(game.ui.find_child("Build_" + kind, true, false) != null, "the catalogue has " + kind)
+		var spec: Dictionary = game.sim.config.buildings[kind]
+		var open: bool = not spec.has("requires_tech") or game.sim._has(str(spec.requires_tech))
+		if spec.has("site_kinds") and not spec.site_kinds.has(str(town.kind)):
+			open = false
+		var shown: bool = game.ui.find_child("Build_" + kind, true, false) != null
+		check(shown == open, "the catalogue shows only what can be built here: " + kind)
 	names = _labels(game.modal_box)
 	check(_contains(names, "回本"), "the dialog shows payback")
-	check(_contains(names, "空闲工人"), "and free workers")
+	check(_contains(names, "空闲工程队"), "and free crews")
 	var plots: OptionButton = game.modal_box.find_child("Plot_mine_ore", true, false)
 	check(plots != null and plots.item_count > 1, "a mine offers a choice of plots")
 	var before: int = int(game.sim.plot_choices(0, "mine_ore")[1].index)
@@ -360,16 +367,19 @@ func _pages() -> void:
 	game.build_category = "all"
 	game.close_modal()
 	game.refresh_sidebar()
-	check(
-		game.sidebar.find_child("Group_power", true, false) != null, "buildings are grouped by kind"
-	)
+	var column: Control = game.column_box
+	check(column.find_child("Group_power", true, false) != null, "buildings are grouped by kind")
+	check(_contains(_labels(column), "在建"), "and what is being built comes first")
+	check(_contains(_labels(column), "完工"), "with the day it finishes")
+	var bars: Array[Node] = column.find_children("*", "ProgressBar", true, false)
+	check(not bars.is_empty(), "and a progress bar")
 	for _i: int in range(40):
 		game.sim.tick()
 	game.refresh_sidebar()
-	var toggle: Button = game.sidebar.find_child("Group_mine_ore", true, false)
+	var toggle: Button = column.find_child("Group_mine_ore", true, false)
 	toggle.pressed.emit()
 	await process_frame
-	check(_contains(_labels(game.sidebar), "轻型铁矿场"), "a group opens to its buildings")
+	check(_contains(_labels(game.column_box), "轻型铁矿场"), "a group opens to its buildings")
 	game.open_page("economy")
 	await process_frame
 	names = _labels(game.modal_box)
@@ -391,7 +401,9 @@ func _pages() -> void:
 	await process_frame
 	check(not _contains(_labels(game.modal_box), "铁岬"), "the guide names no fixed places")
 	game.close_modal()
-	check(game.ui.find_child("Speed_10", true, false) != null, "a very fast speed button exists")
+	check(game.ui.find_child("Speed_3", true, false) != null, "a middle speed button exists")
+	check(game.ui.find_child("Speed_6", true, false) != null, "and a top speed of six times")
+	check(game.ui.find_child("Speed_10", true, false) == null, "and nothing faster")
 
 
 func _menu() -> void:
@@ -436,7 +448,7 @@ func _upgrade_from_old_version() -> void:
 	button.pressed.emit()
 	await process_frame
 	check(not game.menu_open, "and continuing leaves the menu")
-	check(int(game.sim.state.schema) == 3, "the old save is migrated")
+	check(int(game.sim.state.schema) == SaveIo.SCHEMA, "the old save is migrated")
 	var after: FileAccess = FileAccess.open(old_path, FileAccess.READ)
 	check(after.get_as_text() == text, "and its file stays as it was")
 	after.close()
@@ -548,7 +560,7 @@ func _building_list() -> void:
 	check(
 		game.selected == home and not is_instance_valid(game.overlay), "it can jump to a settlement"
 	)
-	check(int(sim.config.buildings.mine_ore.days) >= 6, "building takes about a week now")
+	check(int(sim.config.buildings.mine_ore.days) >= 14, "building takes weeks now")
 
 
 ## New games: the seed field means what it says, and the tutorial no longer overrides it unseen.
@@ -590,7 +602,7 @@ func _new_game_choices() -> void:
 		_contains(_labels(game.modal_box), actual), "the world page says what kind of planet it is"
 	)
 	game.close_modal()
-	check(str(game.sim.geo.version) == "CC-GEO-2.1", "new games use the current generator")
+	check(str(game.sim.geo.version) == WorldGen.VERSION, "new games use the current generator")
 	game.tutorial_on = true
 	game.coach.stop(true)
 	check(not game.tutorial_on, "finishing or ending the tutorial turns its toggle off")

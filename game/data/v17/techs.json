@@ -4,7 +4,8 @@
     "cost": "research points",
     "funding": "money per day at ten research teams",
     "effects": "fractions added to the matching bonus; negative lowers it",
-    "weight": "relative chance of being drawn as a card"
+    "weight": "relative chance of being drawn as a card",
+    "always_dealt": "what the charter cannot be finished without: on the table as soon as it can be started"
   },
   "categories": {
     "industry": {
@@ -1814,8 +1815,7 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "community_admin",
-        "civic_culture"
+        "community_admin"
       ],
       "minimum_staff": 3,
       "description": "解锁市政中心。",
@@ -2024,5 +2024,10 @@
         "research_speed": 0.3
       }
     }
-  }
+  },
+  "always_dealt": [
+    "community_admin",
+    "civic_planning",
+    "capital_planning"
+  ]
 }

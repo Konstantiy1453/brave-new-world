@@ -14,7 +14,7 @@ static func found(sim: RefCounted, region: int) -> String:
 	if ground < 0:
 		return "本地区没有空闲的建设用地"
 	if not sim.state.enterprise.is_empty():
-		return "本 Demo 已有一家民营企业"
+		return "这颗星球已有一家民营企业"
 	if not sim.state.policy.private_allowed:
 		return "当前政策未允许商业服务业"
 	var forecast: Dictionary = preview(sim, region)

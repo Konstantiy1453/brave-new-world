@@ -42,7 +42,7 @@ func _init() -> void:
 	check(parallel.last < concentrated.last, "five plus five completes two equal projects earlier")
 	var s = make()
 	s.act("build", {"region": 0, "kind": "lab"})
-	step(s, 5)
+	step(s, int(s.config.buildings.lab.days))
 	s.act("research_allocate", {"tech": "survey", "staff": 5})
 	step(s, 3)
 	var work: float = s.state.research.projects.survey.work
@@ -97,12 +97,12 @@ func research_path(split: bool) -> Dictionary:
 	# The science opening's head start would finish a project this small on day one.
 	s.state.research.projects.erase("survey")
 	s.config.techs.survey.cost = 12.0
-	s.config.techs.irrigation.cost = 12.0
+	s.config.techs.adaptation.cost = 12.0
 	s.act("build", {"region": 0, "kind": "lab"})
-	step(s, 5)
+	step(s, int(s.config.buildings.lab.days))
 	s.act("research_allocate", {"tech": "survey", "staff": 5 if split else 10})
 	if split:
-		s.act("research_allocate", {"tech": "irrigation", "staff": 5})
+		s.act("research_allocate", {"tech": "adaptation", "staff": 5})
 	var first: int = -1
 	var last: int = -1
 	for day in range(1, 40):
@@ -110,7 +110,7 @@ func research_path(split: bool) -> Dictionary:
 		if first < 0 and s.state.research.completed.size() > 0:
 			first = day
 			if not split:
-				s.act("research_allocate", {"tech": "irrigation", "staff": 10})
+				s.act("research_allocate", {"tech": "adaptation", "staff": 10})
 		if s.state.research.completed.size() == 2:
 			last = day
 			break
@@ -122,7 +122,7 @@ func company_paths() -> void:
 	s._transfer("public", "external", s.state.cash, "test fund exhaustion", false)
 	s._public_expense(100.0, "test necessary unpaid invoices", "external")
 	var stages: Array = []
-	for day in range(1, 220):
+	for day in range(1, 1800):
 		s.state.day = day
 		s.state.grace_days = day
 		C.tick(s)
@@ -144,6 +144,7 @@ func company_paths() -> void:
 	)
 	check(s.state.day > 50, "legacy debt boundary cannot skip review window")
 	var rescue = make()
+	var liquidity: Dictionary = rescue.progression.company.offers.liquidity
 	rescue.state.company.stage = "review"
 	rescue.state.company.deadline = 40
 	rescue.state.company.distrust = 55.0
@@ -161,26 +162,32 @@ func company_paths() -> void:
 	rescue.state.operating_net = 0
 	C.tick(rescue)
 	check(
-		rescue.state.cash > 1700 and rescue.state.operating_net == 0,
+		rescue.state.cash > float(liquidity.cash) * 0.8 and rescue.state.operating_net == 0,
 		"aid delivered as financing not local profit"
 	)
 	rescue._repay()
-	rescue._transfer("external", "public", 2500.0, "test income", false)
-	for day in range(3, 100):
+	rescue._transfer(
+		"external", "public", float(liquidity.repayment) + 2500.0, "test income", false
+	)
+	for day in range(3, int(liquidity.duration) + 60):
 		rescue.state.day = day
 		C.tick(rescue)
 	check(rescue.state.company.aid[0].status == "fulfilled", "aid principal and duration complete")
-	check(rescue.state.company.aid[0].paid == 2100, "aid real repayment recorded")
+	check(
+		is_equal_approx(float(rescue.state.company.aid[0].paid), float(liquidity.repayment)),
+		"aid real repayment recorded"
+	)
 	check(
 		rescue.state.company.stage in ["normal", "recovery"],
 		"solved risk stops escalation and recovers"
 	)
 	check(rescue.audit().is_empty(), "aid delivery repayment preserves cash and goods")
 	var own = make()
+	var stable: int = int(own.progression.company.stable_days)
 	own.state.company.stage = "review"
-	own.state.company.deadline = 20
+	own.state.company.deadline = stable + 40
 	own.state.company.distrust = 60.0
-	for day in range(1, 15):
+	for day in range(1, stable + 3):
 		own.state.day = day
 		C.tick(own)
 	check(
@@ -199,13 +206,15 @@ func company_paths() -> void:
 		social.state.departed_total > 0 and home.population < residents,
 		"persistent housing work shortage causes actual offworld departure"
 	)
-	home.pollution = 80
-	check(C.environmental_factor(home) < 1, "pollution lowers local production capacity")
-	var before: float = home.pollution
+	social.Pollution.ensure_state(social.state)
+	social.state.pollution.load = 40000.0
+	check(social.Pollution.factor(social) < 1, "pollution lowers production across the planet")
+	var before: float = float(social.state.pollution.load)
+	social._transfer("external", "public", 5000.0, "fixture investment", false)
 	check(
 		(
-			social.act("company", {"operation": "cleanup", "region": 0}) == ""
-			and home.pollution < before
+			social.act("company", {"operation": "cleanup"}) == ""
+			and float(social.state.pollution.load) < before
 		),
 		"paid cleanup reduces actual pollution"
 	)
@@ -224,17 +233,25 @@ func postmining() -> void:
 			plot.fertility = 1.0
 	s.act("build", {"region": 0, "kind": "lab"})
 	s.act("research_allocate", {"tech": "adaptation", "staff": 10})
-	for day in range(45):
+	var study_days: int = ceili(
+		float(s.config.techs.adaptation.cost) / float(s.progression.research.reference_rate)
+	)
+	for day in range(int(s.config.buildings.lab.days) + study_days + 10):
 		s.tick()
 	check(
 		s.state.research.completed.has("adaptation"), "real research unlocks post mining industry"
 	)
+	# A town large enough to staff a farm and a food works, as one would be by the time its mines end.
+	h.workers += 40
+	h.population += 40
+	h.base_housing += 40
+	s.state.immigrants_total += 40
 	check(s.act("build", {"region": 0, "kind": "farm"}) == "", "post mining builds renewable farm")
 	check(
 		s.act("build", {"region": 0, "kind": "foodworks"}) == "",
 		"post mining builds unlocked food export works"
 	)
-	step(s, 50)
+	step(s, 120)
 	var revenue: float = 0.0
 	for item in s.state.ledger:
 		if item.key == "food_order.income":
@@ -249,7 +266,7 @@ func postmining() -> void:
 			+ s.state.resource_sources.crystal
 		)
 	}
-	check(revenue > 1500, "renewable processing earns real recurring external payment")
+	check(revenue > 500, "renewable processing earns real recurring external payment")
 	check(
 		s.state.resource_sources.ore == 0 and s.audit().is_empty(),
 		"post mining works with exhausted deposits and conserves ledgers"

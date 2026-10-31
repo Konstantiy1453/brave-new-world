@@ -16,7 +16,9 @@ const MIN_TOWN_PLOTS: int = 6
 const MIN_IDLE_WORKERS: int = 8
 const IDLE_SHARE: float = 0.15
 const MIN_JOB_NET: float = -20.0
-const JOB_ROLES: Array[String] = ["mine", "harvest", "factory", "commerce", "foodworks", "farm", "indoor_farm"]
+const JOB_ROLES: Array[String] = [
+	"mine", "harvest", "factory", "commerce", "foodworks", "farm", "indoor_farm"
+]
 const UTILITY_MARGIN: float = 5.0
 const POWER_KINDS: Array[String] = ["fusion", "fission", "geothermal", "wind_farm", "power"]
 const WATER_KINDS: Array[String] = ["desalination", "atmospheric_water", "deep_well", "water"]
@@ -40,6 +42,7 @@ const PORT_BUSY_SHARE: float = 0.9
 const WAGE_LIMIT: float = 1.3
 const WAGE_REVIEW_FROM_DAY: int = 60
 const WAGE_REVIEW_PERIOD: int = 60
+const TEAM_SMALLEST: int = 5
 const TEAM_SMALL: int = 10
 const TEAM_LARGE: int = 20
 const SERVICE_PEOPLE: Dictionary = {
@@ -273,13 +276,26 @@ func _staff_research(reserve: float) -> void:
 			staffed += 1
 	var free: int = mini(int(view.available), int(view.capacity) - int(view.allocated))
 	var benches: int = mini(int(view.benches), columns.size())
-	var wanted: int = clampi(int(view.total) / maxi(1, benches), TEAM_SMALL, TEAM_LARGE)
+	var seats: int = mini(int(view.capacity), int(view.total))
+	var wanted: int = clampi(seats / maxi(1, benches), TEAM_SMALLEST, TEAM_LARGE)
 	# Science is paid for out of what the mines earn: a small colony runs a small programme.
 	var income: float = float(sim.state.income_daily)
 	if income < research_full_income:
 		benches = mini(benches, 1 if income < research_full_income * 0.4 else 2)
 		wanted = mini(wanted, 6 if income < research_full_income * 0.4 else TEAM_SMALL)
+	# A team bigger than its share keeps a whole direction of research waiting for a seat.
 	for column: Dictionary in columns:
+		var large: Dictionary = column.running
+		if not large.is_empty() and int(large.staff) > wanted and staffed < benches:
+			if act("research_allocate", {"tech": large.id, "staff": wanted}) == "":
+				free += int(large.staff) - wanted
+	# What the final stage cannot do without gets the first seat.
+	var chain: Dictionary = _hall_chain()
+	var ordered: Array = columns.filter(func(c: Dictionary) -> bool: return _offers_any(c, chain))
+	for column: Dictionary in columns:
+		if not ordered.has(column):
+			ordered.append(column)
+	for column: Dictionary in ordered:
 		var running: Dictionary = column.running
 		if running.is_empty():
 			if staffed >= benches or free < int(sim.progression.research.minimum_staff):
@@ -293,9 +309,19 @@ func _staff_research(reserve: float) -> void:
 				free -= team
 		elif int(running.staff) < wanted and free > 0:
 			var more: int = mini(wanted - int(running.staff), free)
-			if act("research_allocate", {"tech": running.id, "staff": int(running.staff) + more}) == "":
+			if (
+				act("research_allocate", {"tech": running.id, "staff": int(running.staff) + more})
+				== ""
+			):
 				free -= more
 	_seek_hall_technology(reserve)
+
+
+func _offers_any(column: Dictionary, techs: Dictionary) -> bool:
+	for row: Dictionary in column.offers:
+		if techs.has(str(row.id)):
+			return true
+	return false
 
 
 func _best_card(column: Dictionary) -> String:
@@ -486,7 +512,10 @@ func _create_jobs(reserve: float) -> void:
 				continue
 			if float(forecast.net_per_day) < MIN_JOB_NET:
 				continue
-			if float(forecast.reserve_days) >= 0.0 and float(forecast.reserve_days) < MIN_RESERVE_DAYS:
+			if (
+				float(forecast.reserve_days) >= 0.0
+				and float(forecast.reserve_days) < MIN_RESERVE_DAYS
+			):
 				continue
 			if float(sim.state.cash) >= float(forecast.cost) + reserve * 0.25:
 				act("build", {"region": region, "kind": kind})
@@ -532,7 +561,9 @@ func _farm_capacity() -> float:
 	for place: Dictionary in sim.state.settlements:
 		var region: int = int(place.region)
 		capacity += building_count(region, "farm") * _farm_output(region)
-		for kind: String in ["field_station", "ranch", "hydroponic_farm", "aquafarm", "vertical_farm"]:
+		for kind: String in [
+			"field_station", "ranch", "hydroponic_farm", "aquafarm", "vertical_farm"
+		]:
 			var count: int = building_count(region, kind)
 			if count > 0:
 				capacity += count * float(sim.build_forecast(region, kind).outputs.get("food", 0.0))
@@ -743,7 +774,11 @@ func _housing(reserve: float) -> void:
 			var forecast: Dictionary = sim.build_forecast(region, kind)
 			if forecast.is_empty() or forecast.disabled_reason != "":
 				continue
-			if float(forecast.cost) > float(sim.state.cash) * BIG_BUILDING_CASH_SHARE and kind != "habitat" and kind != "crew_quarters":
+			if (
+				float(forecast.cost) > float(sim.state.cash) * BIG_BUILDING_CASH_SHARE
+				and kind != "habitat"
+				and kind != "crew_quarters"
+			):
 				continue
 			if _affordable(region, kind, spare):
 				act("build", {"region": region, "kind": kind})
@@ -787,7 +822,9 @@ func _saving_for_settlement() -> bool:
 		return false
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key in ["connected", "frontiers"] and not goal.ok:
-			return float(sim.state.settlements.size()) < float(goal.target) or goal.key == "frontiers"
+			return (
+				float(sim.state.settlements.size()) < float(goal.target) or goal.key == "frontiers"
+			)
 	return false
 
 
@@ -879,7 +916,10 @@ func _factory_wanted(region: int, kind: String) -> bool:
 func _made_within_reach(region: int, good: String) -> bool:
 	for place: Dictionary in sim.state.settlements:
 		var here: bool = int(place.region) == region
-		if not here and sim.road_quote(int(place.region), region, "valley").get("refusal", "") == "":
+		if (
+			not here
+			and sim.road_quote(int(place.region), region, "valley").get("refusal", "") == ""
+		):
 			continue
 		for building: Dictionary in place.buildings:
 			if str(building.status) == sim.Keys.B_DEPLETED:
@@ -891,10 +931,7 @@ func _made_within_reach(region: int, good: String) -> bool:
 
 
 func _commerce_wanted(place: Dictionary) -> bool:
-	return (
-		building_count(int(place.region), "commerce")
-		< int(place.population) / COMMERCE_PEOPLE
-	)
+	return building_count(int(place.region), "commerce") < int(place.population) / COMMERCE_PEOPLE
 
 
 ## People the contract still asks for; once it is met, only as many as there are open jobs.
@@ -913,8 +950,8 @@ func _people_goal() -> int:
 
 
 ## Recruiting pays back within weeks once there is work waiting or a people goal to meet.
-func _recruit(region: int, wanted: int, reserve: float) -> bool:
-	if recruit_batch <= 0 or _jobless_share() > RECRUIT_JOBLESS_LIMIT:
+func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) -> bool:
+	if recruit_batch <= 0 or (not for_goal and _jobless_share() > RECRUIT_JOBLESS_LIMIT):
 		return false
 	var counts: Dictionary = _adult_counts()
 	var kind: String = "worker"
@@ -967,7 +1004,7 @@ func _goal_projects(reserve: float) -> void:
 			_recruit(home, int(sim.config.buildings.processor.jobs), reserve * 0.5)
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key == "capital_population" and not goal.ok:
-			_recruit(home, int(goal.target) - int(goal.value), reserve)
+			_recruit(home, int(goal.target) - int(goal.value), reserve, true)
 
 
 ## Workers without a job in other towns on the network: a vacancy here will draw them.
@@ -1017,8 +1054,9 @@ func _ports(reserve: float) -> void:
 func _food_to_spare() -> bool:
 	var used: float = _food_need()
 	for place: Dictionary in sim.state.settlements:
-		used += building_count(int(place.region), "foodworks") * float(
-			sim.config.buildings.foodworks.food_input
+		used += (
+			building_count(int(place.region), "foodworks")
+			* float(sim.config.buildings.foodworks.food_input)
 		)
 	return _farm_capacity() > used + float(sim.config.buildings.foodworks.food_input) * 1.5
 

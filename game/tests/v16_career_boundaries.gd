@@ -40,7 +40,13 @@ func run():
 	)
 	if s.state.has("events_v2"):
 		check(
-			s.state.events_v2.next_draw == 6 and s.state.events_v2.instances.is_empty(),
+			(
+				(
+					int(s.state.events_v2.next_draw)
+					== int(s.EventsV2.definitions().sampling.first_draw_day)
+				)
+				and s.state.events_v2.instances.is_empty()
+			),
 			"second world events schedule by local age"
 		)
 	s.act("settle", {"region": 0})

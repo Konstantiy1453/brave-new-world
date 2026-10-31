@@ -37,9 +37,11 @@ const TOP_CELLS: Array = [
 	["crystal", "crystal", "工业晶体"],
 	["materials", "materials", "建材"],
 	["parts", "parts", "部件"],
-	["components", "元", "电子元件"],
+	["components", "components", "电子元件"],
 ]
-const TOP_GOODS: Array[String] = ["food", "ore", "copper", "crystal", "materials", "parts", "components"]
+const TOP_GOODS: Array[String] = [
+	"food", "ore", "copper", "crystal", "materials", "parts", "components"
+]
 const MONTH_DAYS: float = 30.0
 const COLUMN_LEFT: int = 170
 const COLUMN_WIDTH: int = 300
@@ -636,8 +638,7 @@ func refresh():
 	_refresh_top()
 	var state: Dictionary = sim.state
 	date_label.text = (
-		"%s · %s"
-		% [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
+		"%s · %s" % [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
 	)
 	date_label.tooltip_text = "登陆第 %d 日 · 生涯第 %d 日" % [state.day, state.career.global_day]
 	var company: Dictionary = state.get("company", {})
@@ -682,8 +683,10 @@ func _refresh_top() -> void:
 		"money",
 		float(state.cash),
 		(income - expense) * scale,
-		"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
-		% [float(state.cash), income, expense]
+		(
+			"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
+			% [float(state.cash), income, expense]
+		)
 	)
 	var people: int = 0
 	var power: float = 0.0
@@ -749,7 +752,9 @@ func _set_cell_flow(key: String, supply: float, surplus: float, hint: String) ->
 	_set_cell_text(key, Labels.compact(supply), sign_text + Labels.compact(surplus), surplus, hint)
 
 
-func _set_cell_text(key: String, value: String, change: String, amount: float, hint: String) -> void:
+func _set_cell_text(
+	key: String, value: String, change: String, amount: float, hint: String
+) -> void:
 	var cell: Dictionary = top_cells[key]
 	if cell.value.text != value:
 		cell.value.text = value

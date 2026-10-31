@@ -98,6 +98,10 @@ static func _draw(r: Dictionary, category: String, avoid: Array) -> void:
 		for key: String in rules.first_offers.get(category, []):
 			if not r.completed.has(key) and not hand.has(key):
 				hand.append(key)
+	# What the charter cannot be finished without is never left to the luck of the draw.
+	for key: String in _eligible(r, category, hand):
+		if rules.get("always_dealt", []).has(key):
+			hand.append(key)
 	var size: int = _offer_size(r)
 	while hand.size() < size:
 		var pool: Array = _eligible(r, category, hand + avoid)
@@ -511,6 +515,7 @@ static func _row(sim: RefCounted, key: String) -> Dictionary:
 		"category": t.category,
 		"branch": t.branch,
 		"tier": int(t.tier),
+		"charter": Rules.read("techs").get("always_dealt", []).has(key),
 		"cost": float(t.cost),
 		"funding": float(t.funding),
 		"description": t.description,

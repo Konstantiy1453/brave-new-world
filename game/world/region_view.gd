@@ -4,10 +4,13 @@ extends "res://world/building_models.gd"
 ## free plots are instanced; each building kind is one baked mesh.
 
 const Rules = preload("res://simulation/rules.gd")
-const FIELD_RES: int = 86
-const FIELD_WIDTH: float = 57.0
-const FIELD_DEPTH: float = 47.0
-const TREE_COUNT: int = 160
+## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
+const OLD_FIELD: Dictionary = {"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0}
+const WIDE_FIELD: Dictionary = {
+	"res": 112, "width": 96.0, "depth": 72.0, "trees": 360, "gate": 44.0
+}
+const EDGE_MARGIN: float = 1.5
+const RIVER_STEP: float = 0.5
 const PLOT_COLORS: Dictionary = {
 	"general": Color("8c9a94"),
 	"farm": Color("7f9a5c"),
@@ -34,6 +37,14 @@ const LEGACY_SLOTS: Array[Vector2] = [
 	Vector2(9, 9),
 ]
 
+var field_res: int = int(OLD_FIELD.res)
+var field_width: float = float(OLD_FIELD.width)
+var field_depth: float = float(OLD_FIELD.depth)
+var half_width: float = field_width / 2.0
+var half_depth: float = field_depth / 2.0
+var river_steps: int = int(field_depth / RIVER_STEP)
+var tree_count: int = int(OLD_FIELD.trees)
+var gate_reach: float = float(OLD_FIELD.gate)
 var height_field := PackedFloat32Array()
 var forest_field := PackedFloat32Array()
 var field_has_sea: bool = false
@@ -56,16 +67,16 @@ func _sample_ground(x: float, z: float) -> float:
 
 
 func _ground(x: float, z: float) -> float:
-	if height_field.size() != (FIELD_RES + 1) * (FIELD_RES + 1):
+	if height_field.size() != (field_res + 1) * (field_res + 1):
 		return _sample_ground(x, z)
-	var fx: float = clampf((x / FIELD_WIDTH + 0.5) * FIELD_RES, 0.0, FIELD_RES - 0.001)
-	var fz: float = clampf((z / FIELD_DEPTH + 0.5) * FIELD_RES, 0.0, FIELD_RES - 0.001)
+	var fx: float = clampf((x / field_width + 0.5) * field_res, 0.0, field_res - 0.001)
+	var fz: float = clampf((z / field_depth + 0.5) * field_res, 0.0, field_res - 0.001)
 	var ix: int = int(fx)
 	var iz: int = int(fz)
 	var tx: float = fx - ix
 	var tz: float = fz - iz
-	var row: int = iz * (FIELD_RES + 1) + ix
-	var next: int = row + FIELD_RES + 1
+	var row: int = iz * (field_res + 1) + ix
+	var next: int = row + field_res + 1
 	return lerpf(
 		lerpf(height_field[row], height_field[row + 1], tx),
 		lerpf(height_field[next], height_field[next + 1], tx),
@@ -137,6 +148,21 @@ func _local_coordinate(x: float, z: float) -> Vector2:
 	return Geo.project_coordinate(lat, lon, world)
 
 
+## Worlds whose generator spreads plots further out get the larger field.
+func _fit_field() -> void:
+	var overrides: Dictionary = Rules.read("geography").get("overrides", {})
+	var rules: Dictionary = overrides.get(str(world.get("version", "")), {})
+	var field: Dictionary = WIDE_FIELD if rules.get("plots", {}).has("slot_x") else OLD_FIELD
+	field_res = int(field.res)
+	field_width = float(field.width)
+	field_depth = float(field.depth)
+	half_width = field_width / 2.0
+	half_depth = field_depth / 2.0
+	river_steps = int(field_depth / RIVER_STEP)
+	tree_count = int(field.trees)
+	gate_reach = float(field.gate)
+
+
 func _point_to_local(lat: float, lon: float) -> Vector2:
 	var reg: Dictionary = world.regions[selected_region]
 	var ll: Vector2 = Geo.unproject_coordinate(lat, lon, world)
@@ -152,7 +178,7 @@ func _clip_segment(a: Vector2, b: Vector2) -> Vector2:
 	var low: float = 0
 	var high: float = 1
 	var p: Array = [-d.x, d.x, -d.y, d.y]
-	var q: Array = [a.x + 28.5, 28.5 - a.x, a.y + 23.5, 23.5 - a.y]
+	var q: Array = [a.x + half_width, half_width - a.x, a.y + half_depth, half_depth - a.y]
 	for i in range(4):
 		if absf(float(p[i])) < .000001:
 			if float(q[i]) < 0:
@@ -219,7 +245,7 @@ func _prepare_local_rivers() -> void:
 	for lake in world.get("lakes", []):
 		var center := _point_to_local(float(lake.lat), float(lake.lon))
 		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
-		if absf(center.x) > 28.5 - radius or absf(center.y) > 23.5 - radius:
+		if absf(center.x) > half_width - radius or absf(center.y) > half_depth - radius:
 			continue
 		var h: float = float(lake.get("height", float(lake.get("elevation", 0)) / 4300.0))
 		local_lakes.append(
@@ -245,7 +271,7 @@ func _build_terrain(token: int) -> bool:
 	var reg: Dictionary = world.regions[selected_region]
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var resolution: int = FIELD_RES
+	var resolution: int = field_res
 	var vertices: PackedVector3Array = []
 	var colors: PackedColorArray = []
 	vertices.resize((resolution + 1) * (resolution + 1))
@@ -258,8 +284,8 @@ func _build_terrain(token: int) -> bool:
 	field_has_sea = false
 	for iz in range(resolution + 1):
 		for ix in range(resolution + 1):
-			var x: float = (float(ix) / resolution - .5) * FIELD_WIDTH
-			var z: float = (float(iz) / resolution - .5) * FIELD_DEPTH
+			var x: float = (float(ix) / resolution - .5) * field_width
+			var z: float = (float(iz) / resolution - .5) * field_depth
 			var ll := _local_coordinate(x, z)
 			var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
 			terrain_unique_samples += 1
@@ -311,7 +337,10 @@ func _build_terrain(token: int) -> bool:
 	var border := SurfaceTool.new()
 	border.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var edges: Array = [
-		Vector2(-28.5, -23.5), Vector2(28.5, -23.5), Vector2(28.5, 23.5), Vector2(-28.5, 23.5)
+		Vector2(-half_width, -half_depth),
+		Vector2(half_width, -half_depth),
+		Vector2(half_width, half_depth),
+		Vector2(-half_width, half_depth)
 	]
 	for e in range(4):
 		for k in range(80):
@@ -399,9 +428,9 @@ func _build_legacy_river() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var reg: Dictionary = world.regions[selected_region]
-	for i in range(94):
-		var z: float = -23.5 + i * .5
-		var nz: float = z + .5
+	for i in range(river_steps):
+		var z: float = -half_depth + i * RIVER_STEP
+		var nz: float = z + RIVER_STEP
 		var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0
 		var nx: float = (Geo.river_lon(float(reg.lat) - nz / 4.0) - float(reg.lon)) * 4.0
 		for v in [
@@ -420,8 +449,8 @@ func _build_legacy_river() -> void:
 	surface.add_child(river)
 	for lane in [-.7, .25, .85]:
 		var points: Array[Vector3] = []
-		for i in range(94):
-			var z: float = -23.5 + i * .5
+		for i in range(river_steps):
+			var z: float = -half_depth + i * RIVER_STEP
 			var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0 + lane
 			points.append(Vector3(x, -.225, z))
 		_line(surface, points, Color(.4, .7, .72, .4), .2)
@@ -435,7 +464,7 @@ func _build_sea() -> void:
 		-.72 if str(world.version) == "CC-GEO-1.4" else -region_ground * 30.0 + .04
 	)
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(FIELD_WIDTH, FIELD_DEPTH)
+	plane.size = Vector2(field_width, field_depth)
 	var sea := _mesh(
 		surface, plane, Vector3(0, sea_height, 0), _mat("sea", Color("285e76"), .4, .2)
 	)
@@ -482,9 +511,9 @@ func _natural_material(key: String, roughness: float) -> StandardMaterial3D:
 
 
 func _forest_at(x: float, z: float) -> float:
-	var fx: int = clampi(roundi((x / FIELD_WIDTH + 0.5) * FIELD_RES), 0, FIELD_RES)
-	var fz: int = clampi(roundi((z / FIELD_DEPTH + 0.5) * FIELD_RES), 0, FIELD_RES)
-	return forest_field[fz * (FIELD_RES + 1) + fx]
+	var fx: int = clampi(roundi((x / field_width + 0.5) * field_res), 0, field_res)
+	var fz: int = clampi(roundi((z / field_depth + 0.5) * field_res), 0, field_res)
+	return forest_field[fz * (field_res + 1) + fx]
 
 
 func _near_plot(x: float, z: float) -> bool:
@@ -501,9 +530,9 @@ func _build_nature() -> void:
 	var center := Vector2(_town_offset(), 0)
 	var trees: Array = []
 	var rocks: Array = []
-	for i in range(TREE_COUNT):
-		var x: float = rng.randf_range(-27, 27)
-		var z: float = rng.randf_range(-22, 22)
+	for i in range(tree_count):
+		var x: float = rng.randf_range(-half_width + EDGE_MARGIN, half_width - EDGE_MARGIN)
+		var z: float = rng.randf_range(-half_depth + EDGE_MARGIN, half_depth - EDGE_MARGIN)
 		if (
 			Vector2(x, z).distance_to(center) < 13.0
 			or _ground(x, z) < -.4
@@ -786,9 +815,9 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 		else Vector2(0, signf(direction.y))
 	)
 	var start := Vector2(offset, 0)
-	var finish := start + direction * 24.0
-	finish.x = clampf(finish.x, -26.5, 26.5)
-	finish.y = clampf(finish.y, -21.5, 21.5)
+	var finish := start + direction * gate_reach
+	finish.x = clampf(finish.x, -half_width + 2.0, half_width - 2.0)
+	finish.y = clampf(finish.y, -half_depth + 2.0, half_depth - 2.0)
 	_road(Vector3(start.x, 0, start.y), Vector3(finish.x, 0, finish.y))
 	var gate := Vector3(finish.x, _ground(finish.x, finish.y), finish.y)
 	var steel := _mat("routegate", Color("bcb28d"), .55, .5)

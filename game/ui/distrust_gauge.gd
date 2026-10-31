@@ -47,11 +47,7 @@ func setup(owner_game: Node) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if (
-		event is InputEventMouseButton
-		and event.pressed
-		and event.button_index == MOUSE_BUTTON_LEFT
-	):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		game.open_page("company")
 
 
@@ -117,9 +113,7 @@ func _draw_bar() -> void:
 		bar.draw_rect(zone, _zone_color(low).darkened(0.45))
 		var filled_top: float = maxf(top, height * (1.0 - distrust / 100.0))
 		if filled_top < bottom:
-			bar.draw_rect(
-				Rect2(left, filled_top, BAR_WIDTH, bottom - filled_top), _zone_color(low)
-			)
+			bar.draw_rect(Rect2(left, filled_top, BAR_WIDTH, bottom - filled_top), _zone_color(low))
 	bar.draw_rect(Rect2(left, 0.0, BAR_WIDTH, height), Color("304756"), false, 1.0)
 	var font: Font = bar.get_theme_default_font()
 	var names: Array = ["关注", "审查", "介入"]

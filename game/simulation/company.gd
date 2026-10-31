@@ -272,8 +272,10 @@ static func tick(sim) -> void:
 	# One small town's troubles are the governor's business, not the company's.
 	if risk <= float(cfg.tolerated_risk):
 		risk = 0.0
-	c.delta = risk if risk > 0 else -float(cfg.recovery_per_day)
-	c.distrust = clampf(float(c.distrust) + float(c.delta), 0.0, 100.0)
+	var level: float = float(c.distrust)
+	var moved: float = risk if risk > 0 else -float(cfg.recovery_per_day)
+	c.distrust = clampf(level + moved, 0.0, 100.0)
+	c.delta = float(c.distrust) - level
 	c.stable = int(c.stable) + 1 if risk <= 0 else 0
 	var days_in_stage: int = int(sim.state.day) - int(c.stage_day)
 	if int(c.stable) >= int(cfg.stable_days) and c.stage in ["review", "intervention"]:
@@ -290,9 +292,7 @@ static func tick(sim) -> void:
 				c.distrust >= float(cfg.review_threshold)
 				and days_in_stage >= int(cfg.minimum_stage_days)
 			):
-				transition(
-					sim, "review", int(diff.review_days), "正式整改：解决当前经济与社会原因。现有合同到期不会绕过此窗口。"
-				)
+				transition(sim, "review", int(diff.review_days), "正式整改：解决当前经济与社会原因。现有合同到期不会绕过此窗口。")
 			elif c.stable >= int(cfg.stable_days):
 				transition(sim, "recovery", 0, "问题已解决，持续稳定将恢复评价。")
 		"review":
@@ -324,9 +324,7 @@ static func view(sim) -> Dictionary:
 		row.claimed = sim.state.company.claimed.has(key)
 		row.target_region = aid_target(sim, row)
 		c.offers.append(row)
-	c.next_condition = (
-		"解决原因并稳定 %d 日可阻止升级；后续不信任逐日恢复" % int(sim.progression.company.stable_days)
-	)
+	c.next_condition = ("解决原因并稳定 %d 日可阻止升级；后续不信任逐日恢复" % int(sim.progression.company.stable_days))
 	return c
 
 

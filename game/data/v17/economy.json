@@ -1377,9 +1377,9 @@
   },
   "outpost": {
     "cash": 6000.0,
-    "materials": 50.0,
-    "parts": 12.0,
-    "food": 180.0,
+    "materials": 130.0,
+    "parts": 30.0,
+    "food": 420.0,
     "workers": 18,
     "min_source_workers": 22,
     "frontier_cash": 0.6,

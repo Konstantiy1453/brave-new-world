@@ -412,11 +412,12 @@ static func links(sim: RefCounted, site: int) -> Dictionary:
 		return {}
 	var variants: Dictionary = {}
 	for variant: String in ["valley", "engineered", "sea"]:
-		var road: Dictionary = Logistics.route_between(sim, from, site, variant)
+		var road: Dictionary = Logistics.quote(sim, from, site, variant)
 		variants[variant] = {
 			"reachable": bool(road.reachable),
 			"days": int(road.days),
 			"cost": float(road.cost),
+			"build_days": int(road.build_days),
 		}
 	return {"from": from, "name": sim.state.world.regions[from].name, "variants": variants}
 
@@ -467,8 +468,7 @@ static func start_score(sim: RefCounted, site: int) -> float:
 ## The capital opening pays less for its first expedition; a frontier camp costs less than a town.
 static func expedition_cash(sim: RefCounted, kind: String = Keys.SITE_RESIDENTIAL) -> float:
 	var cash: float = (
-		float(sim.config.outpost.cash)
-		* maxf(0.2, 1.0 + sim.Research.bonus(sim, "expedition_cost"))
+		float(sim.config.outpost.cash) * maxf(0.2, 1.0 + sim.Research.bonus(sim, "expedition_cost"))
 	)
 	if kind == Keys.SITE_FRONTIER:
 		cash *= float(sim.config.outpost.frontier_cash)
@@ -642,7 +642,9 @@ static func settle(
 		src = _expedition_source(sim, region, from)
 		road = _expedition_route(sim, int(src.region), region)
 		_buy_kit(sim, src)
-		sim._transfer("public", "external", expedition_cash(sim, site_kind), "invest.outpost", false)
+		sim._transfer(
+			"public", "external", expedition_cash(sim, site_kind), "invest.outpost", false
+		)
 		sim._consume(src, "materials", float(rules.materials))
 		sim._consume(src, "parts", float(rules.parts))
 		# Expedition population migrates; food stays physically in its convoy until arrival.
