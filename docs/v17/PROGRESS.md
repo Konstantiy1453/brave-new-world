@@ -1,3 +1,16 @@
+# Colony Charter 1.8 — Progress
+
+## State
+
+**1.8.0 in progress on branch `v17`, after a playtest of 1.7.1.** The request is in `V18_BRIEF.md`, its design in `V18_PLAN.md` and `DESIGN.md`, judgment calls in `DECISIONS.md`. All 15 points of the request are in the code. What is left: the last balance run, then build, EXE checks, package.
+
+- Rules, interface, events, tests: done; every suite passed at the last full test run, and later rule changes are rechecked before release.
+- Balance: the third full run had every award band inside its target. See `BALANCE.md`.
+- Not done yet: export, scripted EXE check, performance on the EXE, package, tag `v1.8.0`.
+- Human playtest: NOT_RUN.
+
+---
+
 # Colony Charter 1.7 — Progress
 
 ## Final summary

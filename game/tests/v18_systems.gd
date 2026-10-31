@@ -26,9 +26,10 @@ const NAME_SCAN_ROOTS: Array[String] = [
 	"res://data/v17",
 ]
 const TABLE_KEYS: Array[String] = ["ore", "copper", "crystal", "food", "power", "money", "water"]
-const EARLY_LOAD: float = 2000.0
-const MIDDLE_LOAD: float = 12000.0
-const LATE_LOAD: float = 24000.0
+## Loads as multiples of the rule file's scale: the shape is what is being tested.
+const EARLY_LOAD: float = 0.3
+const MIDDLE_LOAD: float = 1.5
+const LATE_LOAD: float = 3.0
 const MAX_DISTRUST_RISE: float = 0.8
 
 var checks: int = 0
@@ -90,25 +91,26 @@ func run() -> void:
 func _pollution_curve() -> void:
 	var sim: RefCounted = make()
 	var state: Dictionary = sim.state.pollution
+	var scale: float = float(sim.progression.pollution.scale)
 	check(sim.Pollution.penalty(sim) == 0.0, "a clean planet costs nothing")
-	state.load = EARLY_LOAD
+	state.load = EARLY_LOAD * scale
 	var early: float = sim.Pollution.penalty(sim)
 	check(early > 0.0 and early < 0.02, "the first years' pollution barely shows: %.4f" % early)
-	state.load = MIDDLE_LOAD
+	state.load = MIDDLE_LOAD * scale
 	var middle: float = sim.Pollution.penalty(sim)
-	state.load = LATE_LOAD
+	state.load = LATE_LOAD * scale
 	var late: float = sim.Pollution.penalty(sim)
 	check(late > 0.2, "a late run's pollution hurts badly: %.3f" % late)
 	check(late - middle > 2.0 * (middle - early), "the curve bends upwards")
-	state.load = LATE_LOAD * 100.0
+	state.load = LATE_LOAD * scale * 100.0
 	check(
 		is_equal_approx(sim.Pollution.penalty(sim), float(sim.progression.pollution.cap)),
 		"and stops at its cap"
 	)
 	var small: RefCounted = make(0)
 	var large: RefCounted = make(2)
-	small.state.pollution.load = MIDDLE_LOAD
-	large.state.pollution.load = MIDDLE_LOAD
+	small.state.pollution.load = MIDDLE_LOAD * scale
+	large.state.pollution.load = MIDDLE_LOAD * scale
 	check(
 		large.Pollution.penalty(large) < small.Pollution.penalty(small),
 		"the same pile does less on a larger planet"
@@ -117,11 +119,12 @@ func _pollution_curve() -> void:
 		large.Pollution.absorption(large) > small.Pollution.absorption(small),
 		"which also absorbs more each day"
 	)
-	sim.state.pollution.load = 3000.0
+	var before: float = MIDDLE_LOAD * scale
+	sim.state.pollution.load = before
 	sim._transfer("external", "public", 20000.0, "capital.initial", false)
 	var cash: float = float(sim.state.cash)
 	check(sim.act("company", {"operation": "cleanup"}) == "", "cleanup is an action")
-	check(float(sim.state.pollution.load) < 3000.0, "it takes the load down")
+	check(float(sim.state.pollution.load) < before, "it takes the load down")
 	check(float(sim.state.cash) < cash, "and costs money")
 	check(sim.audit().is_empty(), "pollution passes the audit")
 
@@ -130,7 +133,7 @@ func _pollution_curve() -> void:
 func _pollution_is_not_distrust() -> void:
 	var clean: RefCounted = make()
 	var dirty: RefCounted = make()
-	dirty.state.pollution.load = LATE_LOAD
+	dirty.state.pollution.load = LATE_LOAD * float(dirty.progression.pollution.scale)
 	for _day: int in range(30):
 		clean.tick()
 		dirty.tick()
