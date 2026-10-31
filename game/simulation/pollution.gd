@@ -60,7 +60,8 @@ static func emission(sim: RefCounted) -> float:
 ## Share of output lost: a(e^x - 1), tiny for a long time, then all at once.
 static func penalty(sim: RefCounted) -> float:
 	var rules: Dictionary = _rules(sim)
-	var x: float = float(sim.state.pollution.load) / (float(rules.scale) * area(sim))
+	# A larger planet dilutes the same pile, though less than it out-absorbs it.
+	var x: float = float(sim.state.pollution.load) / (float(rules.scale) * sqrt(area(sim)))
 	return clampf(float(rules.strength) * (exp(x) - 1.0), 0.0, float(rules.cap))
 
 
