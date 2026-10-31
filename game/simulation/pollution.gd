@@ -95,9 +95,7 @@ static func daily(sim: RefCounted) -> void:
 	var now: int = stage(sim)
 	if now > int(p.stage):
 		p.stage = now
-		sim._log(
-			"污染开始显出后果：产出损失约 %.0f%%。净化塔、清洁技术和治理都能把它压下去。" % (loss * 100.0)
-		)
+		sim._log("污染开始显出后果：产出损失约 %.0f%%。净化塔、清洁技术和治理都能把它压下去。" % (loss * 100.0))
 		_outbreak(sim, now)
 	elif now < int(p.stage):
 		p.stage = now

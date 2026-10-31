@@ -159,7 +159,10 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 		return error
 	if int(candidate.schema) != SCHEMA:
 		return "存档版本或阶段无效"
-	if int(candidate.contract.stage) < 1 or int(candidate.contract.stage) > sim.Contract.STAGE_COUNT + 1:
+	if (
+		int(candidate.contract.stage) < 1
+		or int(candidate.contract.stage) > sim.Contract.STAGE_COUNT + 1
+	):
 		return "合同阶段无效"
 	if float(candidate.policy.get("wage", 0.0)) <= 0.0:
 		return "工资政策无效"

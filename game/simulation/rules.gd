@@ -16,16 +16,7 @@ const FILES: Dictionary = {
 }
 const REQUIRED: Dictionary = {
 	"economy":
-	[
-		"version",
-		"units",
-		"resources",
-		"prices",
-		"economy",
-		"openings",
-		"buildings",
-		"contract"
-	],
+	["version", "units", "resources", "prices", "economy", "openings", "buildings", "contract"],
 	"techs": ["version", "units", "categories", "offers", "first_offers", "techs"],
 	"progression":
 	["version", "units", "difficulty", "research", "company", "production", "pollution", "time"],

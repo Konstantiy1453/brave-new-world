@@ -591,7 +591,9 @@ static func _partner_for(
 	for row: Array in near.slice(0, PARTNER_TRIES):
 		var partner: Dictionary = row[1]
 		if int(partner.landmass) != int(start.landmass):
-			var voyage: Dictionary = Routes.find(world, int(start.id), int(partner.id), "sea", roads)
+			var voyage: Dictionary = Routes.find(
+				world, int(start.id), int(partner.id), "sea", roads
+			)
 			if fallback.is_empty() and bool(voyage.reachable) and int(voyage.days) <= limit:
 				fallback = {"id": int(partner.id), "valley": false}
 			continue
@@ -614,7 +616,10 @@ static func _viable_start(world: Dictionary, site: Dictionary, spec: Dictionary)
 		return false
 	if (
 		not bool(spec.get("islands_can_start", false))
-		and int(world.landmass_sizes[int(site.landmass)]) < int(Rules.read("geography").continent_cells)
+		and (
+			int(world.landmass_sizes[int(site.landmass)])
+			< int(Rules.read("geography").continent_cells)
+		)
 	):
 		return false
 	var tonnes: float = float(site.deposits.ore) + float(site.deposits.copper)
