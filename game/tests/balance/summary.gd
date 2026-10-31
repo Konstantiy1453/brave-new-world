@@ -13,6 +13,7 @@ const AWARD_BANDS: Dictionary = {
 }
 const FLOOR_DAY: int = 1440
 const OPENING_SPREAD: float = 0.15
+const POLLUTION_LATE_LEAST: float = 0.15
 const PASSIVE_REVIEW_DAY: Array[int] = [150, 400]
 const PASSIVE_FAILURE_DAY: Array[int] = [400, 900]
 const POPULATION_AT_720: int = 300
@@ -122,6 +123,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_research_rows(rows, runs)
 	_money_rows(rows, runs)
 	_event_rows(rows, runs)
+	_no_control_row(rows, extras)
 	_audit_row(rows, runs, extras)
 	return rows
 
@@ -455,6 +457,18 @@ static func _pressure_rows(rows: Array, runs: Array) -> void:
 		"first road takes %d-%d days" % ROAD_DAYS,
 		"median %.0f days" % road_median,
 		_verdict(road_median >= ROAD_DAYS[0] and road_median <= ROAD_DAYS[1], not roads.is_empty())
+	)
+
+
+static func _no_control_row(rows: Array, extras: Dictionary) -> void:
+	var measured: Dictionary = extras.get("no_control", {})
+	var loss: float = float(measured.get("penalty", -1.0))
+	_row(
+		rows,
+		"Pollution, no control",
+		"output penalty >= %.0f%% by year 8" % (POLLUTION_LATE_LEAST * 100.0),
+		"%.1f%%" % (loss * 100.0),
+		_verdict(loss >= POLLUTION_LATE_LEAST, not measured.is_empty())
 	)
 
 

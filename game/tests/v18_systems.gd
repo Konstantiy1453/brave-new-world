@@ -27,7 +27,8 @@ const NAME_SCAN_ROOTS: Array[String] = [
 ]
 const TABLE_KEYS: Array[String] = ["ore", "copper", "crystal", "food", "power", "money", "water"]
 const EARLY_LOAD: float = 2000.0
-const LATE_LOAD: float = 60000.0
+const MIDDLE_LOAD: float = 12000.0
+const LATE_LOAD: float = 24000.0
 const MAX_DISTRUST_RISE: float = 0.8
 
 var checks: int = 0
@@ -93,7 +94,7 @@ func _pollution_curve() -> void:
 	state.load = EARLY_LOAD
 	var early: float = sim.Pollution.penalty(sim)
 	check(early > 0.0 and early < 0.02, "the first years' pollution barely shows: %.4f" % early)
-	state.load = LATE_LOAD / 2.0
+	state.load = MIDDLE_LOAD
 	var middle: float = sim.Pollution.penalty(sim)
 	state.load = LATE_LOAD
 	var late: float = sim.Pollution.penalty(sim)
@@ -106,8 +107,8 @@ func _pollution_curve() -> void:
 	)
 	var small: RefCounted = make(0)
 	var large: RefCounted = make(2)
-	small.state.pollution.load = LATE_LOAD / 2.0
-	large.state.pollution.load = LATE_LOAD / 2.0
+	small.state.pollution.load = MIDDLE_LOAD
+	large.state.pollution.load = MIDDLE_LOAD
 	check(
 		large.Pollution.penalty(large) < small.Pollution.penalty(small),
 		"the same pile does less on a larger planet"
@@ -155,7 +156,7 @@ func _pollution_outbreaks() -> void:
 		check(float(defs[id].get("chance", 0.0)) >= 1.0, id + " is in every run's deck")
 		check(bool(defs[id].conditions.get("trigger_only", false)), id + " never comes by chance")
 	var sim: RefCounted = make()
-	sim.state.pollution.load = 15000.0
+	sim.state.pollution.load = float(sim.progression.pollution.scale)
 	sim.Pollution.daily(sim)
 	var opened: Array = []
 	for inst: Dictionary in sim.state.events_v2.instances:

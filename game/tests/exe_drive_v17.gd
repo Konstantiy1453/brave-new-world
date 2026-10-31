@@ -5,6 +5,8 @@ extends RefCounted
 ## Run with APPDATA isolated: part two writes a sample 1.6 save into its ColonyCharter\v16 folder.
 
 const WAIT_LIMIT_SECONDS: float = 120.0
+const STAGE_LIMIT_SECONDS: float = 480.0
+const TOP_SPEED: int = 6
 const SECONDS_BETWEEN_CHECKS: float = 0.1
 
 static var report: Dictionary = {}
@@ -132,6 +134,14 @@ static func _first_part(g) -> void:
 	await _press(g, "Build_mine_copper")
 	g.close_modal()
 	await _wait(g, "two mines ordered", func() -> bool: return _step(g) == "clock")
+	var column: Node = g.ui.find_child("BuildingColumn", true, false)
+	_note("the settlement's column stands open", column != null and column.visible)
+	var bars: Array[Node] = column.find_children("*", "ProgressBar", true, false)
+	_note("with a progress bar for what is being built", not bars.is_empty())
+	_note("the resource table is there", g.ui.find_child("Top_ore", true, false) != null)
+	var gauge: Node = g.ui.find_child("DistrustGauge", true, false)
+	_note("and the distrust gauge", gauge != null and gauge.visible)
+	await _shot(g, "04b_column")
 	await _press(g, "Speed_6")
 	await _wait(g, "the clock runs", func() -> bool: return _step(g) == "export")
 	await _wait(g, "the first export arrives", func() -> bool: return _step(g) == "ledger")
@@ -160,8 +170,11 @@ static func _first_part(g) -> void:
 	await _press(g, "OpenBuild")
 	await _press(g, "Build_lab")
 	g.close_modal()
-	g.act("research_allocate", {"tech": "survey", "staff": 4})
-	await _wait(g, "scientists on a project", func() -> bool: return _step(g) == "stage")
+	await _press(g, "Nav_research")
+	await _shot(g, "07b_research_cards")
+	await _press(g, "Card_survey")
+	g.close_modal()
+	await _wait(g, "research teams on a card", func() -> bool: return _step(g) == "stage")
 	_note("still in stage 1 at the save", int(g.sim.state.contract.stage) == 1)
 	await _frame(g)
 	g.save_slot(g.SAVE_MANUAL)
@@ -186,13 +199,13 @@ static func _second_part(g, sample: String) -> void:
 	await _shot(g, "12_continued")
 	g.close_modal()
 	g.paused = false
-	g.set_speed(10)
-	var deadline: int = Time.get_ticks_msec() + int(WAIT_LIMIT_SECONDS * 1000.0)
+	g.set_speed(TOP_SPEED)
+	var deadline: int = Time.get_ticks_msec() + int(STAGE_LIMIT_SECONDS * 1000.0)
 	while int(g.sim.state.contract.stage) < 2 and Time.get_ticks_msec() < deadline:
 		_keep_running(g)
 		if g.paused:
 			g.paused = false
-			g.set_speed(10)
+			g.set_speed(TOP_SPEED)
 		await g.get_tree().create_timer(SECONDS_BETWEEN_CHECKS).timeout
 	_note("stage 2 reached on day %d" % int(g.sim.state.day), int(g.sim.state.contract.stage) >= 2)
 	await _shot(g, "13_stage_two")
@@ -232,7 +245,7 @@ static func _load_old_save(g, sample: String) -> void:
 			"the 1.6 save migrates, schema %d, day %d"
 			% [int(g.sim.state.schema), int(g.sim.state.day)]
 		),
-		int(g.sim.state.schema) == 3
+		int(g.sim.state.schema) == int(load("res://simulation/save_io.gd").SCHEMA)
 	)
 	_note("its world keeps its version: " + str(g.sim.geo.version), str(g.sim.geo.version) != "")
 	await _shot(g, "15_migrated")

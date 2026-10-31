@@ -40,7 +40,7 @@ const SEEDS: Array[int] = [
 const OPENINGS: Array[String] = ["capital", "workers", "science"]
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SIZE_MEDIUM: int = 1
-const DEFAULT_DAYS: int = 3240
+const DEFAULT_DAYS: int = 3600
 const FUZZ_DAYS: int = 720
 const QUICK_SEEDS: int = 3
 const FULL_SEEDS: int = 10
@@ -58,6 +58,7 @@ const DETERMINISM_DAYS: int = 2880
 const GEOGRAPHY_SEEDS: int = 200
 
 var options: Dictionary = {}
+var shards_lost: int = 0
 
 
 func _initialize() -> void:
@@ -78,7 +79,11 @@ func run() -> void:
 	else:
 		for index: int in range(cases.size()):
 			runs.append(_run_case(cases[index], false))
-	var extras: Dictionary = {"determinism": _determinism_check(), "labour_lever": _labour_lever()}
+	var extras: Dictionary = {
+		"determinism": _determinism_check(),
+		"labour_lever": _labour_lever(),
+		"no_control": _no_pollution_control(),
+	}
 	if options.mode == "full":
 		extras.geography = _geography()
 	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
@@ -227,9 +232,9 @@ func _run_parallel() -> Array:
 		if parsed is Array:
 			runs.append_array(parsed)
 		else:
+			# What the other shards measured is still worth having; the exit code says it is partial.
 			print("BALANCE_ERROR shard %d produced no results" % int(child.shard))
-			quit(1)
-			return []
+			shards_lost += 1
 	return runs
 
 
@@ -281,6 +286,24 @@ func _labour_lever() -> Dictionary:
 		"base": Summary.median(arrivals["1.0"]),
 		"raised": Summary.median(arrivals["1.3"]),
 	}
+
+
+## What the air does to a colony that never builds a scrubber or pays for a cleanup.
+func _no_pollution_control() -> Dictionary:
+	var losses: Array = []
+	for seed_value: int in SEEDS.slice(0, LEVER_SEEDS):
+		var sim: RefCounted = Sim.new()
+		sim.new_game(seed_value, "capital", SIZE_MEDIUM, "normal")
+		var bot: RefCounted = BOTS.balanced.new()
+		bot.clean_air = false
+		bot.begin(sim, seed_value)
+		for _day: int in range(DETERMINISM_DAYS):
+			bot.on_day()
+			sim.tick()
+			if sim.state.status == "failed":
+				break
+		losses.append(float(sim.Pollution.penalty(sim)))
+	return {"days": DETERMINISM_DAYS, "penalty": Summary.median(losses)}
 
 
 ## Replays a recorded action log on a fresh simulation and compares final states byte for byte.
@@ -343,9 +366,12 @@ func _publish(runs: Array, extras: Dictionary, seconds: float) -> void:
 		_update_doc(table, stamp, rows)
 	print(table)
 	print(
-		"BALANCE_RESULT runs=%d audit_errors=%d report=%s" % [runs.size(), _audit_total(runs), path]
+		(
+			"BALANCE_RESULT runs=%d audit_errors=%d shards_lost=%d report=%s"
+			% [runs.size(), _audit_total(runs), shards_lost, path]
+		)
 	)
-	quit(0 if _audit_total(runs) == 0 else 1)
+	quit(0 if _audit_total(runs) == 0 and shards_lost == 0 else 1)
 
 
 func _audit_total(runs: Array) -> int:

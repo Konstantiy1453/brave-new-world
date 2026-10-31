@@ -104,8 +104,8 @@
   "production": {
     "target_days": 30,
     "food_min_target": 320.0,
-    "cleanup_cost": 2000.0,
-    "cleanup_amount": 500.0,
+    "cleanup_cost": 5000.0,
+    "cleanup_amount": 300.0,
     "enterprise_recovery": 450.0,
     "default_targets": {
       "materials": 320.0,
@@ -120,7 +120,7 @@
   "pollution": {
     "absorption_per_day": 6.0,
     "reference_radius_km": 6371.0,
-    "scale": 15000.0,
+    "scale": 9000.0,
     "strength": 0.02,
     "cap": 0.6,
     "appeal_weight": 1.0,

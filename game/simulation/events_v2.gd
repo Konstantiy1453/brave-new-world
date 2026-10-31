@@ -204,6 +204,10 @@ static func _has_hidden(site: Dictionary) -> bool:
 	return false
 
 
+static func _date(day: int) -> String:
+	return "%d年%d月%d日" % [day / 360 + 1, (day % 360) / 30 + 1, day % 30 + 1]
+
+
 ## Whether this definition makes the game stop and wait, under the player's setting.
 static func _pauses(sim, definition: Dictionary) -> bool:
 	if str(definition.get("kind", "decision")) == "notice":
@@ -1038,9 +1042,9 @@ static func view(sim) -> Dictionary:
 					"id": "defer",
 					"label":
 					(
-						"稍后处理 · 第 %d 日到期执行「%s」"
+						"稍后处理 · %s 到期执行「%s」"
 						% [
-							int(inst.deadline),
+							_date(int(inst.deadline)),
 							str(_choice(inst, str(n.default)).get("label", "默认处理"))
 						]
 					),
@@ -1077,7 +1081,7 @@ static func view(sim) -> Dictionary:
 				. get("title", "事件")
 			)
 		)
-		row.text = "第 %d 日 · %s" % [int(row.day), str(row.ending)]
+		row.text = "%s · %s" % [_date(int(row.day)), str(row.ending)]
 		result.history.append(row)
 	for effect in sim.state.events_v2.effects:
 		if int(effect.until) < 0 or int(effect.until) > int(sim.state.day):

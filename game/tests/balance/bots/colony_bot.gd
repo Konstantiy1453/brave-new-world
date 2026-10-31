@@ -42,6 +42,8 @@ const PORT_BUSY_SHARE: float = 0.9
 const WAGE_LIMIT: float = 1.3
 const WAGE_REVIEW_FROM_DAY: int = 60
 const WAGE_REVIEW_PERIOD: int = 60
+const LARGE_SCIENCE_SHARE: float = 0.15
+const LAB_SEATS: int = 10
 const TEAM_SMALLEST: int = 5
 const TEAM_SMALL: int = 10
 const TEAM_LARGE: int = 20
@@ -78,6 +80,7 @@ var last_reshuffle: int = -1000
 var research_full_income: float = 1000.0
 var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
+var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
 	"education",
@@ -248,6 +251,9 @@ func _laboratory(reserve: float) -> void:
 	# Four categories want four benches: that is two laboratories, and a third late on.
 	var labs: int = building_count(home, "lab")
 	var wanted: int = 2 if int(sim.state.contract.stage) < 4 else 3
+	# A colony that trains more teams than it has seats wants the seats to go with them.
+	if science_target >= LARGE_SCIENCE_SHARE:
+		wanted = maxi(wanted, int(sim.research_view().total) / LAB_SEATS + 1)
 	if _saving_for_road() or labs >= wanted or int(sim.state.contract.stage) < 2:
 		return
 	if float(sim.state.income_daily) < SECOND_LAB_INCOME:
@@ -811,6 +817,10 @@ func _make_room(place: Dictionary, reserve: float) -> void:
 			return
 
 
+func _pressed_for_time(stage: int) -> bool:
+	return int(sim.state.day) > sim.Contract.deadline(sim, stage) * DEADLINE_PRESSED
+
+
 ## The contract asks for another connected town and the licence is there: that comes first.
 func _saving_for_settlement() -> bool:
 	if sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
@@ -1005,6 +1015,11 @@ func _goal_projects(reserve: float) -> void:
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key == "capital_population" and not goal.ok:
 			_recruit(home, int(goal.target) - int(goal.value), reserve, true)
+		# With the deadline close, people count whether or not there is work for all of them yet.
+		if goal.key == "population" and not goal.ok and _pressed_for_time(stage):
+			for place: Dictionary in _places():
+				if _recruit(int(place.region), int(goal.target) - int(goal.value), reserve, true):
+					break
 
 
 ## Workers without a job in other towns on the network: a vacancy here will draw them.
@@ -1018,6 +1033,8 @@ func _idle_elsewhere(region: int) -> int:
 
 ## Cleaner air once it starts to cost something; a scrubber as soon as there is anything to scrub.
 func _environment(reserve: float) -> void:
+	if not clean_air:
+		return
 	var loss: float = sim.Pollution.penalty(sim)
 	if loss >= SCRUBBER_AT and sim._has("scrubbing") and not _anywhere_underway("scrubber"):
 		for place: Dictionary in _places():
@@ -1211,7 +1228,12 @@ func _megaprojects(reserve: float) -> void:
 	if sim._has(HALL_TECH) and not _anywhere("capital_hall"):
 		var site: int = _hall_site()
 		if site < 0:
-			_clear_ground(home)
+			# Only when the money and the crews are there: the plot goes straight to the hall.
+			var hall: Dictionary = sim.build_preview(home, "capital_hall")
+			var ready: bool = float(sim.state.cash) >= float(hall.cost) + reserve
+			if ready and sim.free_workers(sim.settlement(home)) >= int(hall.jobs):
+				_clear_ground(home)
+				act("build", {"region": home, "kind": "capital_hall"})
 			return
 		if sim.free_workers(sim.settlement(site)) < int(sim.config.buildings.capital_hall.jobs):
 			_recruit(site, int(sim.config.buildings.capital_hall.jobs), reserve)

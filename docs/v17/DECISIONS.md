@@ -148,3 +148,36 @@ One line each: decision · reason · alternative rejected.
 - Stopped tuning with three small misses after five full and three quick runs · each further change moved the numbers beside it by more than it gained, and the fix is the user's call · more rules bent to fit.
 - The menu words the planet type as a forecast (多半是), since 84% of seeds keep their draw · building the world on every keystroke takes up to 3.6 s, and a flat statement that is wrong one time in six is worse than a hedge · generating in the background while the menu is open.
 - The bot's blind spot on easy (2 of 60 runs never found a second town) stays · the game refuses nothing and a person simply settles; it only counts against the harness row, which misses anyway · another bot change and full run for a number that does not change the game.
+
+## 1.8
+
+- Version 1.8.0, with folders staying `v17` (build, docs, evidence, delivery, data) · `CLAUDE.md` allows writes only there · a `v18` set of folders.
+- 1.8 saves live in `%APPDATA%\ColonyCharter\v18` and 1.7 saves are read from `v17`, never written · a player may want to go back · overwriting.
+- Five contract stages instead of three, and an old save in progress continues into them · the run had to grow to 6-8 years and every stage needs something to ask for · stretching three stages.
+- Road, expedition and travel times come from kilometres on a sphere of the planet's true radius · the request says real, calculated · a scale factor per size.
+- A town on a CC-GEO-2.2 planet has about 54 building plots and spent mines give their ground back · the capital goal needs room, and a player should see land as a real constraint · unlimited plots.
+- The terrain field of a region grows from 57×47 to 96×72 on CC-GEO-2.2 only · plots stood off the edge of the old field, and older worlds must stay identical to the vertex, which a test holds them to · one size for all.
+- Roads under construction count as closed, with their own colour and date · no separate network state to keep · a road that opens partly.
+- A shipping lane takes 60 days to open and is not counted in the road row · the terminals are the work, not the sea · the same months as a road.
+- The expedition kit grows to 130 materials, 30 parts and 420 food · with roads taking months a new outpost starved before anything could reach it, and could not afford a farm or a port on arrival · shorter roads.
+- Food on the way only counts against a port's order if it arrives within the reserve window · a town on a long road starved beside a working port because a month of food was in transit.
+- Starvation weighs by the town's share of the colony · one hamlet going hungry should not cost a charter · the old flat rate.
+- Pollution is planet-wide, exponential, and out of `company.gd` entirely · the request · a capped linear penalty.
+- Crossing a pollution stage opens a scene, and these three events are in every run's deck · a run-ending problem should be told, not only shown in a figure.
+- The gauge shows the day's real change, so 0 at zero distrust · "-0.20 a day" at zero reads as a bug.
+- Research reference rate 1.8 points a day at ten teams · 40-50 technologies by a day-2,400 award; 2.4 gave 62-86, 2.0 not measured.
+- What the charter needs (community_admin, civic_planning, capital_planning) is always on the table, marked, and cannot be redrawn away · a required technology among 120 cards could stay out of reach for a whole run · a separate charter tree page.
+- The hall can stand in any residential settlement · the capital is usually full by then, and the goal is the building, not its address.
+- Offers are drawn from the save's own generator state and never from the simulation's · the deal must not change what later dice do, and redraws must replay.
+- A redraw costs ¥600 + ¥300 per highest tier reached · cheap early, a real decision late.
+- Every category runs one project at a time; a new card stands the old one down with its work kept · matches the request's "pick one".
+- Building cards the colony cannot build yet stay off the build page · 56 buildings would bury the choice · greyed entries.
+- Power and water show supply and surplus in the top table, because neither is stored · the request asks for a total and a monthly change, and for these two that would be empty figures. Reported in the closing message.
+- Materials, parts, components, people and settlements join the seven requested cells · the player needs them just as often, and the table has room.
+- About a third of the event pool is off in each run, and 45% of draw days open nothing · this is what "some can be skipped" asks for · a fixed order with skips.
+- Old events keep their ids, node ids and choice ids · saves mid-chain must still load.
+- Labour lever measured from year 2, on a colony past its first lean year · on day 0 the wage bill itself holds arrivals back, so the row measured poverty and not attractiveness.
+- `wage_per_multiplier` 1.5 · at 1.0 the lever moved arrivals 15% and the bar asks for 20%.
+- The road trade-off row's upper bound (70%) is no longer enforced by `v17_world_stats`; on real planets the cheap road is the slow one on about 89% of pairs · that is the trade-off working, not failing · reported as a miss against the bar as written.
+- `tests/v16_rules_tests.gd` and others that hard-coded 1.7 figures now read them from the rule files · numbers live in `game/data/v17/`.
+- Bots give any town past 100 people a port · one road carries 28 t a day and feeds fewer than 190 people, and a person would see the red line; a bot has to be told.

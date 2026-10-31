@@ -1,4 +1,4 @@
-# Colony Charter 1.7 — Design
+# Colony Charter 1.7 and 1.8 — Design
 
 Systems, formulas, tick order and data files. Grows phase by phase; final numbers and the reason for each change from 1.6
 are recorded here.
@@ -228,3 +228,56 @@ Days remain the time unit: every deadline, rate and balance figure is in days. 1
 | Building upgrades | 5, 8 | 10, 16 |
 
 The building list (`设施清单`) shows what is under construction across the colony, soonest first with days left, and every settlement's buildings by kind with running, staff and problems.
+
+# 1.8
+
+Everything above describes 1.7. Where this part differs, this part holds. Figures are in the rule files; only the shape is here.
+
+## Pace
+
+- Contract: five stages (foothold, division, network, self-reliance, capital). Deadlines on standard 360, 900, 1,500, 2,100 and 2,880 days. The final stage asks for a capital of 600, 1,800 people, 35 technologies, the Planetary Council Hall, and a 180-day streak with no review.
+- Building days: 12-35 basic, 45-120 advanced, 200-300 great works. Road building days come from distance. Speeds 1×, 3×, 6× at 5 seconds a day.
+
+## Planets (CC-GEO-2.2)
+
+Radii 3,823, 6,371 and 8,282 km. Every route is measured on that sphere. A road's trip days, its fee per trip and its building days all follow the kilometres; `Routes._build_days` is `max(base, km / km_per_day)`. Up to 8 deposit plots for each resource, 30-54 general plots with at least 24 in a town, up to 14 farm plots. Coastal sites can be linked by sea with a port at both ends, with no technology; a landing by sea brings its own port. The validator no longer asks a start to have a land partner.
+
+A region's terrain field is 96×72 on CC-GEO-2.2 and stays 57×47 on older generators, whose meshes are held identical to 1.5 by `world_v16_terrain_identity`.
+
+## Settlements
+
+`s.kind` is `residential` or `frontier`. The first settlement is always residential. Frontier posts cost 60% of the fare and take 12 crews instead of 18, have no births, draw 30% of the arrivals and take the frontier appeal penalty, and work a 15% richer field. A building's `site_kinds` says where it can stand; `needs_coast` and `needs_rugged` limit it further. Saves from before 1.8 read their outposts as frontier if they hold mines or farms and nothing that belongs in a town.
+
+The expedition kit is 130 materials, 30 parts and 420 food, enough to reach the day a road could be finished, and to build a farm or a port on arrival.
+
+## Buildings
+
+Behaviour comes from `role`: mine, harvest, farm, indoor_farm, factory, port, power, water, housing, lab, service, commerce, income, scrubber, depot, foodworks, great. A role is enough for a new building to work in production, forecasts, population and the career model. `model` says which 3D model and icon it borrows. 39 new kinds on top of the 17 of 1.7.
+
+## Research
+
+`techs.json`: 122 technologies in four categories, tiers 1-5, costs 160/340/620/1,000/1,600 points. R(10) = 1.8 points a day, R(5)/R(10) = 0.6. Each category holds a hand of three cards (four with `lab_automation`) drawn by weight from what its prerequisites allow, from `research.rng_state`, not from the simulation's own generator. A category runs one project; choosing another stands the first down with its work kept. A finished project redraws its category. A redraw of the unstarted cards costs ¥600 + ¥300 per highest tier reached. `always_dealt` names what the charter cannot be finished without: it is on the table as soon as it can be started, and it is marked. Effects are additive fractions read through `Research.bonus(sim, key)`, cached until the finished list grows.
+
+## Pollution
+
+`state.pollution.load` is one number for the planet. Daily change is emission (building `pollution` × efficiency × technology) minus absorption (6 a day × surface area against Earth, technology, parks and scrubbers). The share of output lost is `strength × (e^(load / (scale × area)) − 1)`, capped; it also lowers appeal and adds a health bill. Crossing a stage opens one of three trigger-only events. `company.gd` does not read any of this.
+
+## Company
+
+Rates per day: debt 0.12 + 0.02 per day of arrears up to 0.6; starvation 0.15 + 0.03 per day up to 0.7, weighted by the town's share of the colony; missed deadline 0.3; social up to 0.28, weighted the same way. Risk at or below 0.05 is tolerated. Recovery 0.2 a day. `company.delta` is the day's real change, which the gauge shows.
+
+## Interface
+
+- Top bar: `TopStats`, a grid of cells `Top_<key>`, total then monthly change from `stats_window(30)`. Power and water show supply and surplus.
+- `ui/distrust_gauge.gd`: level, the three thresholds of this difficulty, the day's change, stage and days left; tooltip lists the causes; click opens the company page.
+- `BuildingColumn`: `Pages.building_column` for the selected settlement. What is under way first, with date and bar, then the groups. `ColumnTab` brings it back.
+- Research page: four columns of `Card_<id>`, `Staff_<category>`, `Reshuffle_<category>`.
+- Names: 工程队 and 研究团队 in every string; identifiers and save keys stay `workers` and `scientists`.
+
+## Events
+
+`events.json` version 4. 71 short events and 12 chains. At the start of a run `_deal_deck` rolls each definition's `chance` (default 0.65), and what misses is listed in `events_v2.off` and never drawn. Definitions with `chance` 1 are what other systems or endings call on. A draw day comes every 20 days; `fire_chance` 0.55 of them open anything. Cooldowns start at 360 days, and chains run once. Conditions added: frontier, residential, coast, pollution_stage. Option added: `research_lead`, which puts a technology on the table.
+
+## Saves
+
+Schema 4, still written by `SaveIo`. Schema 3 saves get what is missing through each module's `ensure_state`: offers and their generator, the deck, pollution at zero, settlement kinds. 1.8 writes to `%APPDATA%\ColonyCharter\v18` and reads 1.7 saves from `v17` without writing there.
