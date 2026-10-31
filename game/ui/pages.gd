@@ -288,10 +288,11 @@ static func _site_facts(g, b, known: Dictionary):
 	D.label(
 		b,
 		(
-			"耕作潜力  %s    水源  %s\n海拔  %d m    建设费 ×%.2f"
+			"耕作潜力  %s    水源  %s\n一座农场约产 %.0f t/日\n海拔  %d m    建设费 ×%.2f"
 			% [
 				_share_text(known.fertility, band * 0.5),
 				_share_text(known.water, band * 0.5),
+				float(known.farm_yield),
 				known.elevation,
 				float(known.development)
 			]
@@ -976,6 +977,12 @@ static func _road_options(g, b, a: int, z: int):
 		order.disabled = str(quote.refusal) != ""
 
 
+static func _closure_text(chance: float) -> String:
+	if chance <= 0.0:
+		return "不会封路"
+	return "封路 约每 %d 日一次" % roundi(1.0 / chance)
+
+
 static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	var state: Dictionary = g.sim.state
 	var c = D.card(b)
@@ -998,12 +1005,13 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	D.label(
 		c,
 		(
-			"单程 %d 天 · 运力 %d t/日 · 今日已发 %.1f t · 养护 ¥ %.1f/日%s"
+			"单程 %d 天 · 运力 %d t/日 · 今日已发 %.1f t · 养护 ¥ %.1f/日 · %s%s"
 			% [
 				int(road.days),
 				int(road.capacity),
 				float(road.sent_today),
 				float(road.get("upkeep", 0.0)),
+				_closure_text(g.sim.Logistics.closure_chance(g.sim, road)),
 				" · 封路至第 %d 日" % int(road.blocked_until) if blocked else ""
 			]
 		),
@@ -1151,17 +1159,15 @@ static func settings(g, b):
 			var button = D.button(b, "读取1.6验收：" + item[0], func(): g.load_path(path))
 			button.disabled = not FileAccess.file_exists(path)
 		D.button(b, "读取1.5兼容性示例（中期）", func(): g.load_path("res://data/acceptance_midgame.json"))
-	D.button(
-		b,
-		"读取上一版手动档（原文件保留）",
-		func():
-			g.load_path(
-				(
-					OS.get_environment("APPDATA")
-					+ "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
-				)
-			)
-	)
+		D.button(b, "导出可读 JSON（开发用）", func(): g.export_state_json())
+	for item: Array in [
+		["读取 1.6 手动档（原文件保留）", g.old_save_path(g.OLD_SAVE_MANUAL)],
+		["读取 1.6 自动档（原文件保留）", g.old_save_path(g.OLD_SAVE_AUTO)],
+		["读取 1.5 手动档（原文件保留）", g.old_save_path(g.OLDER_SAVE_MANUAL)],
+	]:
+		var old_path: String = str(item[1])
+		var old_button = D.button(b, str(item[0]), func(): g.load_path(old_path))
+		old_button.disabled = not FileAccess.file_exists(old_path)
 	D.label(b, "说明详细度与难度独立；所有核心规则和重要原因始终可见。", 16, D.MUTED)
 	D.button(
 		b,

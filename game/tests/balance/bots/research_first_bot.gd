@@ -5,17 +5,17 @@ extends "res://tests/balance/bots/colony_bot.gd"
 func _init() -> void:
 	reserve_days = 15.0
 	payback_limit = 150.0
-	science_target = 0.25
+	science_target = 0.2
 	lab_day = 1
 	tech_order = [
 		"education",
+		"research_network",
 		"survey",
 		"adaptation",
 		"irrigation",
 		"medicine",
 		"processing",
 		"logistics",
-		"research_network",
 		"deep_mining",
 		"electronics",
 		"efficiency"

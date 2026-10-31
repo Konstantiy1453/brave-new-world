@@ -63,6 +63,16 @@ static func write_snapshot(snap: Dictionary) -> String:
 	return ""
 
 
+## A readable copy of the state for a developer. Never read back: saves stay binary.
+static func export_json(sim: RefCounted, path: String) -> String:
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return "无法写入 " + path
+	file.store_string(JSON.stringify(sim.state, "\t"))
+	file.close()
+	return ""
+
+
 static func read_header(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}

@@ -17,9 +17,9 @@ static func factor(sim: RefCounted, good: String) -> float:
 	if not rules.scale.has(good):
 		return 1.0
 	var saturation: float = float(sim.state.market.saturation.get(good, 0.0))
-	return clampf(
-		1.0 - float(rules.depth) * saturation / float(rules.scale[good]), float(rules.floor), 1.0
-	)
+	var level: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
+	var depth: float = float(rules.depth) * float(level.market_depth_factor)
+	return clampf(1.0 - depth * saturation / float(rules.scale[good]), float(rules.floor), 1.0)
 
 
 static func price(sim: RefCounted, good: String) -> float:

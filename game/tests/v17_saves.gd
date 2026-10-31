@@ -48,6 +48,7 @@ func run() -> void:
 	FileAccess.open("res://../evidence/v17/tests/v17_saves.json", FileAccess.WRITE).store_string(
 		JSON.stringify(report, "\t")
 	)
+	_json_export()
 	print("V17_SAVES_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -196,3 +197,13 @@ func _header_only() -> void:
 	check(int(header.get("day", -1)) == 7, "header gives the day without the payload")
 	check(int(header.get("seed", -1)) == 260129, "header gives the seed")
 	check(header.get("sha256", "") != "", "header carries the checksum")
+
+
+func _json_export() -> void:
+	var sim: RefCounted = Sim.new()
+	sim.new_game(260129, "capital")
+	sim.act("settle", {"site": 0})
+	var path: String = "user://state_export_test.json"
+	check(SaveIo.export_json(sim, path) == "", "a developer can export the state as JSON")
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	check(parsed is Dictionary and int(parsed.schema) == 3, "and read it")

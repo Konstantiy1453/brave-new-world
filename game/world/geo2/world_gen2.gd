@@ -11,7 +11,7 @@ const Rules = preload("res://simulation/rules.gd")
 
 const VERSION: String = "CC-GEO-2.0"
 ## Bump when the same seed would generate a different world: disk caches are keyed on it.
-const REVISION: int = 1
+const REVISION: int = 3
 const GW: int = 144
 const GH: int = 72
 const RADIUS_KM: Array[float] = [730.0, 1000.0, 1430.0]

@@ -21,6 +21,7 @@ func _initialize() -> void:
 	errors += _write("event", BalancedBot, _pending_decision)
 	errors += _write("crisis", SloppyBot, _under_review)
 	errors += _write("governor", BalancedBot, _governor_for.bind(120))
+	errors += _write("late", BalancedBot, _reached_day.bind(720))
 	print("V17_FIXTURES_RESULT errors=%d" % errors)
 	quit(0 if errors == 0 else 1)
 

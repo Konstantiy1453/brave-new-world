@@ -192,10 +192,11 @@ func company_paths() -> void:
 	var home: Dictionary = social.settlement(0)
 	home.housing = 1
 	home.employed = 0
+	var residents: int = int(home.population)
 	for i in range(18):
 		C.social_environment(social)
 	check(
-		social.state.departed_total > 0 and home.population < 60,
+		social.state.departed_total > 0 and home.population < residents,
 		"persistent housing work shortage causes actual offworld departure"
 	)
 	home.pollution = 80

@@ -297,6 +297,9 @@ static func tick(sim) -> void:
 		next_sources[item[0]] = {"rate": float(item[1]), "days": days, "reason": item[2]}
 	c.sources = next_sources
 	var risk: float = (economic + social + environment) * float(diff.risk)
+	# One small town's troubles are the governor's business, not the company's.
+	if risk <= float(cfg.tolerated_risk):
+		risk = 0.0
 	c.delta = risk if risk > 0 else -float(cfg.recovery_per_day)
 	c.distrust = clampf(float(c.distrust) + float(c.delta), 0.0, 100.0)
 	c.stable = int(c.stable) + 1 if risk <= 0 else 0

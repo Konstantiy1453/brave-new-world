@@ -376,6 +376,34 @@ func _openings() -> void:
 		float(science.state.research.projects.survey.work) > 0.0,
 		"the science opening starts with survey work done"
 	)
+	var other: int = int(science.state.settlements[0].region) + 1
+	var plain: RefCounted = make("capital")
+	check(
+		float(science.site_view(other).band) < float(plain.site_view(other).band),
+		"the science opening's survey estimates are narrower"
+	)
+	var fare: float = float(plain.config.outpost.cash)
+	check(
+		plain.Sites.expedition_cash(plain) < fare,
+		"the capital opening's first expedition is cheaper"
+	)
+	check(
+		is_equal_approx(science.Sites.expedition_cash(science), fare),
+		"the other openings pay the full fare"
+	)
+	var hard: RefCounted = Sim.new()
+	hard.new_game(260129, "capital", 1, "hard")
+	var easy: RefCounted = Sim.new()
+	easy.new_game(260129, "capital", 1, "easy")
+	for sim: RefCounted in [hard, easy]:
+		sim.state.market.saturation = {"ore": 100.0}
+	check(
+		hard.Market.factor(hard, "ore") < easy.Market.factor(easy, "ore"), "hard prices fall faster"
+	)
+	check(
+		hard.EventsV2._draw_interval(hard) < easy.EventsV2._draw_interval(easy),
+		"hard draws events more often"
+	)
 
 
 func _old_progress() -> void:

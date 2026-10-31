@@ -283,17 +283,23 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			if resource == "food":
 				var eaten: float = float(src.population) * sim.config.economy.food_per_person
 				reserve = eaten * (sim.state.policy.food_reserve + 1.0)
-				# For a town going hungry, food on its way in counts towards the reserve:
-				# that is how a hub passes food along a chain of roads.
+				# For a town going hungry, food on its way in counts towards the reserve, and a
+				# hub keeps little more than its neighbour will have by the time this arrives:
+				# that is how food passes along a chain of roads.
 				if float(dst.food_days) < HUNGRY_DAYS:
+					var fair_share: float = eaten * (float(dst.food_days) + float(r.days) + 1.0)
 					reserve = maxf(
-						eaten * HUB_FOOD_DAYS, reserve - incoming(sim, int(src.region), "food")
+						eaten * HUB_FOOD_DAYS,
+						minf(reserve - incoming(sim, int(src.region), "food"), fair_share)
 					)
 				target = (
 					float(dst.population)
 					* sim.config.economy.food_per_person
 					* (sim.state.policy.food_reserve + float(r.days) + 2.0)
 				)
+				# A town with a port can buy its own: towns beyond this one that cannot come first.
+				if float(dst.port_capacity) > 0.0:
+					reserve += _road_demand(sim, src, resource, int(r.id))
 			elif resource in ["materials", "parts"]:
 				reserve = _construction_stock(sim, resource)
 				target = reserve
@@ -409,12 +415,19 @@ static func road_daily(sim: RefCounted) -> void:
 		_road_day(sim, r)
 
 
+static func closure_chance(sim: RefCounted, r: Dictionary) -> float:
+	var chance: float = float(
+		sim.config.roads[str(r.get("variant", "valley"))].closure_chance_per_day
+	)
+	if bool(r.get("paved", false)):
+		chance *= float(sim.config.road_upgrade.closure)
+	return chance
+
+
 static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 	sim._public_expense(float(r.get("upkeep", 0.0)), "road.upkeep", "external")
 	var rules: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
-	var chance: float = float(rules.closure_chance_per_day)
-	if bool(r.get("paved", false)):
-		chance *= float(sim.config.road_upgrade.closure)
+	var chance: float = closure_chance(sim, r)
 	if chance <= 0.0 or WorldGen.road_blocked(r, int(sim.state.day)):
 		return
 	if _roll(sim) < chance:
@@ -474,10 +487,12 @@ static func _road_demand(
 static func _import(
 	sim: RefCounted, s: Dictionary, key: String, target: float, capacity: float
 ) -> float:
-	# Incoming consignments count against the target but cannot be consumed early.
-	var need: float = maxf(
-		0.0,
-		target + _road_demand(sim, s, key) - float(s.stock[key]) - incoming(sim, int(s.region), key)
+	# Incoming consignments count against the local target but cannot be consumed early, and
+	# what is still on the road here feeds nobody further along it. Only the warehouse can.
+	var stock: float = float(s.stock[key])
+	var need: float = (
+		maxf(0.0, target - stock - incoming(sim, int(s.region), key))
+		+ maxf(0.0, _road_demand(sim, s, key) - maxf(0.0, stock - target))
 	)
 	var price: float = float(sim.config.prices[key]) * (1.0 + float(sim.config.economy.port_fee))
 	var amount: float = minf(minf(capacity, need), maxf(0.0, float(sim.state.cash)) / price)

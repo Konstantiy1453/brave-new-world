@@ -156,3 +156,36 @@ button (`Labels.fix` maps shortage keys to a page and category), then buildings 
 
 The build dialog takes a category and, for buildings that need one, a plot; `build_forecast` at that plot supplies output, revenue,
 net, payback and reserve days at current prices. Very fast speed is `time.very_fast_multiplier`.
+
+## Difficulty and openings
+
+The same rules at every level. Per level in `progression.json` `difficulty`: `capital` (starting cash), `risk`, `review_days`,
+`intervention_days`, `warning` (company tolerance), `event_interval_factor` (days between event draws), `market_depth_factor`
+(how far prices fall with exports); in `contract.json`: `difficulty_scale` (goal sizes) and `deadlines`.
+
+| Opening | Start | Also |
+|---|---|---|
+| capital | ¥6,200, 44 workers, 4 scientists | first expedition costs 60% (`first_expedition_factor`) |
+| workers | ¥4,600, 52 workers, 4 scientists, more stores | prefab habitat |
+| science | ¥4,800, 40 workers, 12 scientists | prefab lab, head start on survey, survey bands 60% as wide (`survey_band_factor`), research 1.2×, funding 0.5× |
+
+## Food along the road network
+
+Each road, each day, for food from A to B: A keeps `food_reserve + 1` days of its own consumption and sends what is above that,
+up to what B lacks (B's reserve plus travel, plus what the portless towns beyond B still need). Three adjustments keep chains fed:
+
+1. If B is going hungry (under 7 days), food on its way to A counts towards A's reserve, and A keeps at most B's days plus travel
+   plus one, with a floor of 3 days. A hub never watches its neighbour starve from a full warehouse.
+2. If B has a port it can buy its own, so A first reserves what the portless towns beyond A still need.
+3. A port buys for the towns beyond it even when food is on its way to the port: stock above its local target counts against
+   their demand, but cargo still on the road does not.
+
+## Company tolerance
+
+Daily risk at or below `tolerated_risk` (0.15) counts as none: it does not raise distrust and does not block recovery. One small
+town's lasting joblessness comes to about 0.11. Sources stay visible on the company page.
+
+## Stage streak
+
+The streak goal counts consecutive days whose last 7 days sum to no loss, with no debt. The status line's streak still counts single
+days, because that is what the running colony reports each day.

@@ -473,12 +473,12 @@ static func career(g, b):
 		var next_size = D.option(
 			next_row, "NextSize", ["小型 · 短途", "中型 · 标准", "大型 · 长途"], int(g.sim.state.world.size)
 		)
-		var opening_keys: Array = ["capital", "workers", "science"]
+		var opening_keys: Array = g.sim.config.openings.keys()
+		var opening_names: Array = []
+		for key: String in opening_keys:
+			opening_names.append(str(g.sim.config.openings[key].name))
 		var next_opening = D.option(
-			next_row,
-			"NextOpening",
-			["资本支持", "工人招募", "研究合作"],
-			opening_keys.find(g.sim.state.advantage)
+			next_row, "NextOpening", opening_names, opening_keys.find(g.sim.state.advantage)
 		)
 		var level_keys: Array = ["easy", "normal", "hard"]
 		var next_level = D.option(

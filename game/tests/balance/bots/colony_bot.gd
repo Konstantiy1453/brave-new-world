@@ -36,6 +36,10 @@ const MIN_FARM_OUTPUT: float = 15.0
 const MIN_LOCAL_FARM_OUTPUT: float = 6.0
 const WAGE_STEP: float = 0.1
 const MIN_RESERVE_DAYS: float = 150.0
+const MIN_MARKET_FACTOR: float = 0.8
+const DIVERSIFY_CUSHION: float = 0.4
+const DOMINANT_SHARE: float = 0.5
+const EXPORT_WINDOW_DAYS: int = 30
 const POLLUTION_LIMIT: float = 32.0
 const PORT_BUSY_SHARE: float = 0.9
 const WAGE_LIMIT: float = 1.3
@@ -218,6 +222,12 @@ func _staff_research() -> void:
 	if _land_sites_left() < sim.Contract.settlement_cap(sim) - sim.state.settlements.size() + 1:
 		order = ["logistics", "shipping"]
 		order.append_array(tech_order)
+	if _out_of_farm_land():
+		order = ["adaptation", "irrigation", "hydroponics"]
+		order.append_array(tech_order)
+	elif _mines_running_out():
+		order = ["survey", "deep_mining", "prospecting"]
+		order.append_array(tech_order)
 	for tech: String in order:
 		if sim.state.research.completed.has(tech):
 			continue
@@ -382,6 +392,7 @@ func _farm_capacity() -> float:
 func _next_site(reserve: float) -> Dictionary:
 	var hungry: bool = _farm_capacity() < _food_need() * 1.2
 	var scored: Array = []
+	var farm_land_in_reach: bool = false
 	for reg: Dictionary in sim.state.world.regions:
 		var id: int = int(reg.id)
 		if not sim.settlement(id).is_empty():
@@ -394,11 +405,15 @@ func _next_site(reserve: float) -> Dictionary:
 		var known: Dictionary = sim.site_view(id)
 		if int(known.plots.general) < MIN_TOWN_PLOTS:
 			continue
-		# Yield falls with the soil and the road gets longer with distance: soil counts twice.
-		var score: float = pow(float(known.fertility.mid), 3.0) * 1000.0
+		# Yield falls with the soil and the climate, and the road gets longer with distance.
+		var soil: float = float(known.farm_yield) / float(sim.config.buildings.farm.rate)
+		var score: float = pow(soil, 3.0) * 1000.0
 		if not hungry:
 			score = sim.Sites.start_score(sim, id) * 0.01
-		scored.append([score / (0.4 + _angle_between(id, _nearest_settled(id))), id])
+		scored.append(
+			[score / (0.4 + _angle_between(id, _nearest_settled(id))), id, float(known.farm_yield)]
+		)
+		farm_land_in_reach = farm_land_in_reach or float(known.farm_yield) >= MIN_LOCAL_FARM_OUTPUT
 	scored.sort_custom(
 		func(a: Array, b: Array) -> bool:
 			return (
@@ -407,6 +422,9 @@ func _next_site(reserve: float) -> Dictionary:
 	)
 	# A settlement is only worth it with the money for the road that keeps it alive.
 	for row: Array in scored.slice(0, SITE_TRIES):
+		# Better to wait for the money than to settle barren ground because it is cheap to reach.
+		if hungry and farm_land_in_reach and float(row[2]) < MIN_LOCAL_FARM_OUTPUT:
+			continue
 		var link: Dictionary = _best_link(int(row[1]))
 		if link.is_empty() or int(link.days) > EXPEDITION_DAYS:
 			continue
@@ -463,12 +481,50 @@ func _food(reserve: float) -> void:
 		if output > best_output and sim.free_workers(place) >= int(sim.config.buildings.farm.jobs):
 			best_output = output
 			best_region = int(place.region)
+	# Under glass one greenhouse does the work of several farms on poor land.
+	if wants_local and best_output < MIN_FARM_OUTPUT and sim._has("hydroponics"):
+		_greenhouse(reserve)
+		return
 	if best_region < 0 or _building_underway(best_region, "farm"):
 		return
 	# The first farm is a shortage to fix, not an investment to weigh.
 	var spare: float = 0.0 if capacity <= 0.0 else reserve * 0.5
 	if _affordable(best_region, "farm", spare):
 		act("build", {"region": best_region, "kind": "farm"})
+
+
+## Out of farm land with a food goal still open: grow it under glass.
+func _greenhouse(reserve: float) -> void:
+	if not sim._has("hydroponics"):
+		return
+	var kind: String = "hydroponic_farm"
+	for place: Dictionary in _places():
+		var region: int = int(place.region)
+		if sim.free_workers(place) < int(sim.config.buildings[kind].jobs):
+			continue
+		if not _building_underway(region, kind) and _affordable(region, kind, reserve * 0.5):
+			act("build", {"region": region, "kind": kind})
+			return
+
+
+## A depleted mine anywhere is the moment to learn to dig deeper.
+func _mines_running_out() -> bool:
+	for place: Dictionary in sim.state.settlements:
+		for building: Dictionary in place.buildings:
+			if str(building.status) == sim.Keys.B_DEPLETED:
+				return true
+	return false
+
+
+## A food goal with no good land left needs a technology, not more waiting.
+func _out_of_farm_land() -> bool:
+	if not _wants_local_food():
+		return false
+	for place: Dictionary in sim.state.settlements:
+		if _farm_output(int(place.region)) >= MIN_FARM_OUTPUT:
+			if sim.build_forecast(int(place.region), "farm").plot >= 0:
+				return false
+	return true
 
 
 func _wants_local_food() -> bool:
@@ -505,6 +561,7 @@ func _enterprise() -> void:
 func _options(reserve: float) -> Array:
 	var options: Array = []
 	var other_income: bool = _needs_other_income()
+	var leading_good: String = _dominant_export()
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
 		for kind: String in INVEST_KINDS:
@@ -526,7 +583,13 @@ func _options(reserve: float) -> Array:
 			var reserves: float = float(forecast.reserve_days)
 			if reserves >= 0.0 and reserves < MIN_RESERVE_DAYS:
 				continue
-			if float(sim.state.cash) < float(forecast.cost) + reserve:
+			# Another mine into a market already flooded earns less than its forecast says.
+			if kind.begins_with("mine_") and _flooded(str(sim.config.buildings[kind].output)):
+				continue
+			var cushion: float = reserve
+			if leading_good != "" and not forecast.outputs.has(leading_good):
+				cushion *= DIVERSIFY_CUSHION
+			if float(sim.state.cash) < float(forecast.cost) + cushion:
 				continue
 			options.append(
 				{"region": region, "kind": kind, "jobs": int(forecast.jobs), "payback": payback}
@@ -676,7 +739,11 @@ func _wages() -> void:
 	if today() - last_wage_change < WAGE_REVIEW_PERIOD:
 		return
 	var wage: float = float(sim.state.policy.wage)
-	if lowest < 1.0 and wage < WAGE_LIMIT:
+	if _tight():
+		if wage > 1.0:
+			act("policy", {"wage": wage - WAGE_STEP})
+			last_wage_change = today()
+	elif lowest < 1.0 and wage < WAGE_LIMIT:
 		act("policy", {"wage": wage + WAGE_STEP})
 		last_wage_change = today()
 	elif lowest > 1.4 and lowest < 2.0 and wage > 1.0:
@@ -705,6 +772,36 @@ func _clinic(reserve: float) -> void:
 		if _affordable(region, "clinic", reserve):
 			act("build", {"region": region, "kind": "clinic"})
 			return
+
+
+## The good bringing in over half of recent export money, if there is one: depending on a single
+## market is worth spending some of the cushion to end.
+func _dominant_export() -> String:
+	if str(sim.state.status) != "success":
+		return ""
+	var goods: Dictionary = sim.stats_window(EXPORT_WINDOW_DAYS).goods
+	var total: float = 0.0
+	var top: float = 0.0
+	var leader: String = ""
+	for good: String in goods:
+		var value: float = float(goods[good][sim.Stats.EXPORTED]) * sim.Market.price(sim, good)
+		total += value
+		if value > top:
+			top = value
+			leader = good
+	return leader if total > 0.0 and top / total > DOMINANT_SHARE else ""
+
+
+func _flooded(good: String) -> bool:
+	return sim.Market.factor(sim, good) < MIN_MARKET_FACTOR
+
+
+## A week of losses and little cash left: no bigger bills until the books recover.
+func _tight() -> bool:
+	return (
+		float(sim.summary().operating_average) < 0.0
+		and float(sim.state.cash) < daily_expense() * reserve_days
+	)
 
 
 func _upgrades(reserve: float) -> void:

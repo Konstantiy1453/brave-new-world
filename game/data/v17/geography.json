@@ -285,10 +285,13 @@
       ]
     }
   },
+  "deposit_scale": 1.25,
   "validator": {
     "start_water": 0.35,
     "start_tonnes": 8000.0,
     "start_crystal": 3000.0,
+    "start_general_plots": 12,
+    "partner_general_plots": 6,
     "partner_fertility": 0.6,
     "partner_days": 10,
     "min_pairs": 3

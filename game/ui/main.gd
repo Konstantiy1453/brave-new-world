@@ -15,6 +15,7 @@ const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
 const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
+const OLDER_SAVE_MANUAL: String = "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
 const AUTOSAVE_DAYS: int = 10
 const MODAL_HEIGHT: int = 690
 const PAGE_HEIGHT: int = 535
@@ -117,6 +118,9 @@ func _ready():
 	refresh()
 	if dev_mode:
 		for a in args:
+			# Measures and scripted checks live outside the export; only --dev reaches them.
+			if a.begins_with("--dev-script="):
+				load(a.trim_prefix("--dev-script=")).run(self)
 			if a.begins_with("--qa-v17="):
 				load("res://ui/capture_suite_v17.gd").run(self, a.trim_prefix("--qa-v17="))
 			if a.begins_with("--qa-v16="):
@@ -715,15 +719,12 @@ func show_menu():
 	)
 	D.font_size(reroll, 15)
 	D.label(v, "开局合作方案", 15, D.TEAL)
-	var opts = [
-		["capital", "资本支持", "更多初始公共资金，容错更高。"],
-		["workers", "工人招募", "更多劳动人口，生产更快展开。"],
-		["science", "研究合作", "科研人才与勘探优势，同时保有基础劳力。"]
-	]
 	var group = ButtonGroup.new()
-	for o in opts:
-		var id = o[0]
-		var b = D.button(v, o[1] + "  /  " + o[2], func(): advantage = id)
+	for id: String in sim.config.openings:
+		var opening: Dictionary = sim.config.openings[id]
+		var b = D.button(
+			v, str(opening.name) + "  /  " + str(opening.description), func(): advantage = id
+		)
 		b.toggle_mode = true
 		b.button_group = group
 		b.button_pressed = id == advantage
@@ -759,11 +760,22 @@ func show_menu():
 	D.finish(box)
 
 
-## The newer of the manual and automatic saves, or an empty string.
+func old_save_path(relative: String) -> String:
+	return OS.get_environment("APPDATA") + relative
+
+
+## The newer of the manual and automatic saves; a 1.6 save if this version has none yet.
 func _latest_save() -> String:
+	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(OLD_SAVE_MANUAL), old_save_path(OLD_SAVE_AUTO)])
+	return best
+
+
+func _newest_of(paths: Array) -> String:
 	var best: String = ""
 	var newest: int = -1
-	for path: String in [SAVE_MANUAL, SAVE_AUTO]:
+	for path: String in paths:
 		if FileAccess.file_exists(path) and FileAccess.get_modified_time(path) > newest:
 			newest = FileAccess.get_modified_time(path)
 			best = path
@@ -848,6 +860,12 @@ func load_path(path: String):
 	close_modal()
 	refresh()
 	toast("完整存档已恢复；按空格继续经营。")
+
+
+func export_state_json():
+	var path: String = "user://state_export.json"
+	var error: String = SaveIo.export_json(sim, path)
+	toast(error if error != "" else "已导出：" + ProjectSettings.globalize_path(path))
 
 
 func save_slot(path: String):

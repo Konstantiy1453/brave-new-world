@@ -767,7 +767,7 @@ static func tick(sim) -> void:
 		and waiting < int(definitions().sampling.max_waiting)
 		and day >= int(e.next_draw)
 	):
-		e.next_draw = day + int(definitions().sampling.interval_days)
+		e.next_draw = day + _draw_interval(sim)
 		var candidates: Array = []
 		var total: float = 0
 		for id in definitions().definitions:
@@ -811,6 +811,12 @@ static func modifier(sim, region: int, kind: String) -> float:
 		):
 			value *= float(effect.factor)
 	return value
+
+
+## Harder levels draw events more often; the pool and their rules stay the same.
+static func _draw_interval(sim) -> int:
+	var level: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
+	return roundi(float(definitions().sampling.interval_days) * float(level.event_interval_factor))
 
 
 ## Effects that reach the whole colony, whichever settlement they began in.

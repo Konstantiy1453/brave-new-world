@@ -180,7 +180,41 @@ static func _opening_row(rows: Array, runs: Array) -> void:
 	var low: float = medians.min()
 	var high: float = medians.max()
 	var ok: bool = low > 0.0 and (high - low) / low <= OPENING_SPREAD
-	_row(rows, "Openings", "medians within 15%", ", ".join(labels), _verdict(ok))
+	var best: Dictionary = {}
+	var best_of_styles: Dictionary = {}
+	for opening: String in ["capital", "workers", "science"]:
+		best[opening] = _best_bot(runs, opening, ["balanced", "rush", "research_first"])
+		best_of_styles[opening] = _best_bot(runs, opening, ["balanced", "research_first"])
+	var varied: bool = _distinct(best.values()) >= 2
+	_row(
+		rows,
+		"Openings",
+		"medians within 15%; best bot differs by opening",
+		"%s; best %s; without rush %s" % [", ".join(labels), str(best), str(best_of_styles)],
+		_verdict(ok and varied)
+	)
+
+
+## The bot with the earliest median award among those that reach it in most runs.
+static func _best_bot(runs: Array, opening: String, bots: Array) -> String:
+	var best: String = "none"
+	var earliest: float = INF
+	for bot: String in bots:
+		var chosen: Array = select(runs, bot, "normal", opening)
+		var awards: Array = field(chosen, "award_day")
+		if chosen.is_empty() or awards.size() * 2 <= chosen.size():
+			continue
+		if median(awards) < earliest:
+			earliest = median(awards)
+			best = bot
+	return best
+
+
+static func _distinct(values: Array) -> int:
+	var seen: Dictionary = {}
+	for value: Variant in values:
+		seen[value] = true
+	return seen.size()
 
 
 static func _failure_rows(rows: Array, runs: Array) -> void:

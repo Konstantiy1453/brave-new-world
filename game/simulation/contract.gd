@@ -2,6 +2,7 @@ extends RefCounted
 ## The three-stage contract: foothold, division of labour, self-reliance. Goals live in
 ## data/v17/contract.json. Missing a soft deadline feeds the company process, never instant failure.
 
+const STREAK_WINDOW: int = 7
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
@@ -323,6 +324,17 @@ static func _check_milestones(sim: RefCounted) -> void:
 			sim._log("行星里程碑达成，生涯资金增加 %.0f。" % float(milestone.reward))
 
 
+## One lumpy day (a shipment, a one-off bill) does not undo weeks of sound running.
+static func _solvent_week(sim: RefCounted) -> bool:
+	if float(sim.state.debt) >= 0.001:
+		return false
+	var history: Array = sim.state.operating_history
+	var total: float = float(sim.state.operating_net)
+	for index: int in range(maxi(0, history.size() - STREAK_WINDOW + 1), history.size()):
+		total += float(history[index].net)
+	return total >= -0.000001
+
+
 static func _all_tier_two(sim: RefCounted) -> bool:
 	for tech: String in sim.config.techs:
 		if int(sim.config.techs[tech].tier) == 2 and not sim._has(tech):
@@ -334,7 +346,7 @@ static func daily(sim: RefCounted) -> void:
 	var contract: Dictionary = sim.state.contract
 	var solvent_day: bool = sim.state.operating_net >= -0.000001 and sim.state.debt < 0.001
 	sim.state.streak = int(sim.state.streak) + 1 if solvent_day else 0
-	contract.stage_streak = int(contract.stage_streak) + 1 if solvent_day else 0
+	contract.stage_streak = int(contract.stage_streak) + 1 if _solvent_week(sim) else 0
 	sim.state.grace_days = int(sim.state.grace_days) + 1 if sim.state.debt > 0.001 else 0
 	_record_windows(sim)
 	if sim.state.status == "success":

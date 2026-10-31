@@ -165,8 +165,8 @@ static func goal(row: Dictionary) -> Dictionary:
 			}
 		"stage_streak":
 			return {
-				"text": "连续经营结余非负 %d / %d 天" % [value, target],
-				"hint": "收入不低于支出且没有欠款",
+				"text": "一周平均不亏损，连续 %d / %d 天" % [value, target],
+				"hint": "近 7 日经营结余合计不为负且没有欠款",
 				"page": "economy"
 			}
 		"research_staffed":
@@ -182,7 +182,7 @@ static func goal(row: Dictionary) -> Dictionary:
 		"local_food_share":
 			return {
 				"text": "本地食品自给 %.0f%% / %.0f%%（近 30 日）" % [value * 100.0, target * 100.0],
-				"hint": "在肥沃地块建农场",
+				"hint": "在肥沃地块建农场；农田不够就研究水培技术，建水培温室",
 				"page": "build"
 			}
 		"processing_days":

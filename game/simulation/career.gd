@@ -1,6 +1,7 @@
 extends RefCounted
 ## One active world. Local money remains audited by Sim; career funds are an
 ## explicit outside investor when transferred into that local ledger.
+const Stats = preload("res://simulation/stats.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 
 static var configuration: Dictionary = {}
@@ -135,7 +136,7 @@ static func preview(sim) -> Dictionary:
 						"rate": 0.0
 					}
 				streams[id].rate += rate
-			if b.kind == "processor":
+			if b.kind in ["processor", "component_plant"]:
 				var margin: float = 0.0
 				for k in d.outputs:
 					margin += float(d.outputs[k]) * float(sim.config.prices[k])
@@ -148,6 +149,11 @@ static func preview(sim) -> Dictionary:
 				sustainable_capacity += (
 					float(d.rate) * float(r.fertility) * eff * float(sim.config.prices.food) * 0.25
 				)
+			if b.kind == "hydroponic_farm":
+				sustainable_capacity += float(d.rate) * eff * float(sim.config.prices.food) * 0.25
+	# Paid research keeps running under a steward as long as the team does.
+	var earned: Dictionary = Stats.window(sim.state, count).income
+	sustainable_capacity += float(earned.get("research.contract", 0.0)) / maxi(1, count)
 	var mining: float = minf(income, mining_capacity)
 	for stream in streams.values():
 		stream.rate *= mining / maxf(0.001, mining_capacity)

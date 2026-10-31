@@ -44,6 +44,7 @@ func run() -> void:
 	await _tips_show_once()
 	await _pages()
 	await _menu()
+	await _upgrade_from_old_version()
 	_stats_rollups()
 	print("V17_TUTORIAL_RESULT checks=%d failures=%d" % [checks, failures.size()])
 	for failure: String in failures:
@@ -174,7 +175,8 @@ func _run_tutorial() -> void:
 	check(step_id() == "clock", "step: run time")
 	tick_until(func() -> bool: return int(game.sim.state.day) >= 3)
 	await settle_coach()
-	check(step_id() == "export", "step: first export")
+	# On this planet the first sale can land the day the clock step ends.
+	check(step_id() in ["export", "ledger"], "step: first export")
 	tick_until(func() -> bool: return float(game.sim.state.exports_total) > 0.0)
 	await settle_coach()
 	check(step_id() == "ledger", "step: read the ledger")
@@ -391,6 +393,48 @@ func _menu() -> void:
 	)
 	check(game.modal_box.find_child("TutorialToggle", true, false) != null, "and a tutorial toggle")
 	game.close_modal()
+
+
+## A player coming from 1.6 finds their game. Only inside an isolated APPDATA: the real v16 folder
+## is never written.
+func _upgrade_from_old_version() -> void:
+	var appdata: String = OS.get_environment("APPDATA")
+	if not appdata.contains("evidence"):
+		print("SKIP upgrade check: APPDATA is not isolated")
+		return
+	for path: String in [game.SAVE_MANUAL, game.SAVE_AUTO]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	check(game._latest_save() == "", "no save at all to continue")
+	var old_path: String = game.old_save_path(game.OLD_SAVE_MANUAL)
+	DirAccess.make_dir_recursive_absolute(old_path.get_base_dir())
+	var fixture: FileAccess = FileAccess.open(
+		"res://data/v16/acceptance_governor.json", FileAccess.READ
+	)
+	var text: String = fixture.get_as_text()
+	fixture.close()
+	var copy: FileAccess = FileAccess.open(old_path, FileAccess.WRITE)
+	copy.store_string(text)
+	copy.close()
+	check(game._latest_save() == old_path, "a 1.6 save is offered when there is nothing newer")
+	game.show_menu()
+	await process_frame
+	var button: Button = game.modal_box.find_child("ContinueGame", true, false)
+	check(button != null and not button.disabled, "the menu can continue it")
+	button.pressed.emit()
+	await process_frame
+	check(not game.menu_open, "and continuing leaves the menu")
+	check(int(game.sim.state.schema) == 3, "the old save is migrated")
+	var after: FileAccess = FileAccess.open(old_path, FileAccess.READ)
+	check(after.get_as_text() == text, "and its file stays as it was")
+	after.close()
+	game.open_page("save")
+	await process_frame
+	var found: bool = false
+	for item: Button in game.modal_box.find_children("*", "Button", true, false):
+		found = found or (item.text.contains("1.6 手动档") and not item.disabled)
+	check(found, "the settings page also offers it")
+	game.close_modal()
+	DirAccess.remove_absolute(old_path)
 
 
 func _stats_rollups() -> void:

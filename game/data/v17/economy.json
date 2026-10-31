@@ -59,12 +59,13 @@
       "materials": 155.0,
       "parts": 42.0,
       "food": 280.0,
-      "description": "额外公共资本，容错更高，适合先开双矿。"
+      "first_expedition_factor": 0.6,
+      "description": "额外公共资本，容错更高；第一次远征的费用打六折。"
     },
     "workers": {
       "name": "工人合作",
       "cash": 4600.0,
-      "workers": 56,
+      "workers": 52,
       "scientists": 4,
       "children": 12,
       "materials": 175.0,
@@ -78,13 +79,14 @@
     "science": {
       "name": "科研合作",
       "cash": 4800.0,
-      "workers": 36,
+      "workers": 40,
       "scientists": 12,
       "children": 12,
       "materials": 155.0,
       "parts": 42.0,
       "food": 280.0,
-      "description": "自带研究所，研究员更多，科研经费减半；采矿劳力略少。",
+      "survey_band_factor": 0.6,
+      "description": "自带研究所和 12 名研究员，精细勘探已有进度，勘测误差更小，科研经费减半；采矿劳力略少。",
       "prefab": [
         "lab"
       ],

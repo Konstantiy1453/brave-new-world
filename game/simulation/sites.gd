@@ -230,9 +230,11 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 
 static func _band(sim: RefCounted, reg: Dictionary) -> float:
 	var rules: Dictionary = sim.progression_geo().survey
+	var opening: Dictionary = sim.config.openings[sim.state.advantage]
+	var sharper: float = float(opening.get("survey_band_factor", 1.0))
 	if int(reg.survey) >= 1 or not sim.settlement(int(reg.id)).is_empty():
-		return 0.0 if sim._has("survey") else float(rules.ground_band)
-	return float(rules.orbital_band)
+		return 0.0 if sim._has("survey") else float(rules.ground_band) * sharper
+	return float(rules.orbital_band) * sharper
 
 
 ## A true value seen through the survey band: `low..high` always holds it, off centre by a fixed
@@ -261,6 +263,7 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 		deposits[good] = _estimate(sim, reg, float(reg.deposits[good]), band, salt)
 		grades[good] = _estimate(sim, reg, float(reg.grade[good]), band * 0.5, salt + 10)
 		salt += 1
+	var fertility: Dictionary = _estimate(sim, reg, float(reg.fertility), band * 0.5, 30)
 	return {
 		"id": site,
 		"name": reg.name,
@@ -271,7 +274,13 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 		"surveying": _surveying(sim, site),
 		"deposits": deposits,
 		"grades": grades,
-		"fertility": _estimate(sim, reg, float(reg.fertility), band * 0.5, 30),
+		"fertility": fertility,
+		"farm_yield":
+		(
+			float(sim.config.buildings.farm.rate)
+			* float(fertility.mid)
+			* sim.Production.farm_climate(sim, site)
+		),
 		"water": _estimate(sim, reg, float(reg.water), band * 0.5, 31),
 		"temperature": float(reg.temperature),
 		"elevation": float(reg.elevation),
@@ -427,6 +436,15 @@ static func start_score(sim: RefCounted, site: int) -> float:
 	return value / float(known.development)
 
 
+## The capital opening pays less for its first expedition.
+static func expedition_cash(sim: RefCounted) -> float:
+	var cash: float = float(sim.config.outpost.cash)
+	if sim.state.settlements.size() == 1:
+		var opening: Dictionary = sim.config.openings[sim.state.advantage]
+		cash *= float(opening.get("first_expedition_factor", 1.0))
+	return cash
+
+
 static func _expedition_source(sim: RefCounted, region: int, from: int) -> Dictionary:
 	if from >= 0:
 		return sim.settlement(from)
@@ -495,8 +513,9 @@ static func settle(sim: RefCounted, region: int, from: int = -1) -> String:
 		road = _expedition_route(sim, int(src.region), region)
 		if not bool(road.reachable):
 			return str(road.get("reason", "此地区没有可达陆路；当前不具备海运能力"))
-		if sim.state.cash < float(rules.cash):
-			return "建立前哨需要 %.0f 资金" % float(rules.cash)
+		var fare: float = expedition_cash(sim)
+		if sim.state.cash < fare:
+			return "建立前哨需要 %.0f 资金" % fare
 		if int(src.workers) < int(rules.min_source_workers):
 			return "出发据点技术工人不足 %d 人" % int(rules.min_source_workers)
 		if (
@@ -508,7 +527,7 @@ static func settle(sim: RefCounted, region: int, from: int = -1) -> String:
 				"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资"
 				% [float(rules.materials), float(rules.parts), float(rules.food)]
 			)
-		sim._transfer("public", "external", float(rules.cash), "invest.outpost", false)
+		sim._transfer("public", "external", fare, "invest.outpost", false)
 		sim._consume(src, "materials", float(rules.materials))
 		sim._consume(src, "parts", float(rules.parts))
 		# Expedition population migrates; food stays physically in its convoy until arrival.

@@ -247,7 +247,9 @@ static func _site(
 		var low: float = float(spec.deposits[good][0])
 		var high: float = float(spec.deposits[good][1])
 		var potential: float = float(cell[good + "_potential"])
-		deposits[good] = roundf(rng.randf_range(low, high) * (0.75 + potential * 0.5))
+		deposits[good] = roundf(
+			rng.randf_range(low, high) * (0.75 + potential * 0.5) * float(rules.deposit_scale)
+		)
 		grade[good] = rng.randf_range(0.8, 1.2)
 	var rugged: float = float(cell.ruggedness)
 	return {
@@ -412,8 +414,10 @@ static func _farm_plots(
 				return float(a.height) < float(b.height)
 			return float(a.x) < float(b.x) if a.x != b.x else float(a.z) < float(b.z)
 	)
+	# Fields never take the ground the town needs for housing, utilities and a laboratory.
+	var keep: int = mini(int(spec.town_minimum), slots.size() / 2)
 	for slot: Dictionary in by_height:
-		if wanted <= 0 or slots.size() <= 2:
+		if wanted <= 0 or slots.size() <= keep:
 			break
 		slots.erase(slot)
 		var spread: float = float(spec.fertility_spread)
@@ -504,7 +508,10 @@ static func validate(world: Dictionary, rules: Dictionary) -> Dictionary:
 	for site: Dictionary in regions:
 		if _viable_start(world, site, spec):
 			starts.append(site)
-		if float(site.fertility) >= float(spec.partner_fertility):
+		if (
+			float(site.fertility) >= float(spec.partner_fertility)
+			and _general_count(site) >= int(spec.partner_general_plots)
+		):
 			partners.append(site)
 	starts.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
@@ -569,6 +576,8 @@ static func _partner_for(
 static func _viable_start(world: Dictionary, site: Dictionary, spec: Dictionary) -> bool:
 	if float(site.water) < float(spec.start_water):
 		return false
+	if _general_count(site) < int(spec.start_general_plots):
+		return false
 	if int(world.landmass_sizes[int(site.landmass)]) < int(Rules.read("geography").continent_cells):
 		return false
 	var tonnes: float = float(site.deposits.ore) + float(site.deposits.copper)
@@ -579,6 +588,14 @@ static func _viable_start(world: Dictionary, site: Dictionary, spec: Dictionary)
 
 
 ## What a site's known deposits could earn over its life, per unit of its building cost.
+static func _general_count(site: Dictionary) -> int:
+	var count: int = 0
+	for plot: Dictionary in site.plots:
+		if str(plot.kind) == "general":
+			count += 1
+	return count
+
+
 static func start_value(site: Dictionary) -> float:
 	var value: float = 0.0
 	for good: String in GOODS:
