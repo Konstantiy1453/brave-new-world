@@ -7,44 +7,44 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **1.8 fourth full** · 2026-11-01T01-32-25 · 2726 s wall clock. Source: balance harness.
+Run: **1.8 fifth full** · 2026-11-01T02-21-34 · 2832 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
-| Floor | rush bot day >= 1440 | earliest day 2011 | PASS |
-| Balanced award, normal | 2160-2880 | median 2523 (26/30 awarded) | PASS |
-| Balanced award, easy | 1800-2520 | median 2296 (30/30 awarded) | PASS |
-| Balanced award, hard | 2520-3240 | median 2669 (22/30 awarded) | PASS |
-| Openings | medians within 15%; best bot differs by opening | capital 2563, workers 2634, science 2409; best { "capital": "balanced", "workers": "research_first", "science": "research_first" }; without rush { "capital": "balanced", "workers": "research_first", "science": "research_first" } | PASS |
+| Floor | rush bot day >= 1440 | earliest day 2086 | PASS |
+| Balanced award, normal | 2160-2880 | median 2464 (26/30 awarded) | PASS |
+| Balanced award, easy | 1800-2520 | median 2358 (30/30 awarded) | PASS |
+| Balanced award, hard | 2520-3240 | median 2654 (25/30 awarded) | PASS |
+| Openings | medians within 15%; best bot differs by opening | capital 2847, workers 2411, science 2437; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
 | Failure, passive | review 150-400, failure 400-900 | review 168, failure 438 | PASS |
 | Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 30/30 | PASS |
-| Population | >= 300 by year 2; >= 800 by year 4 | 370 / 957 | PASS |
-| Research, balanced | >= 40 techs; every category; research teams 10-20% | 41 techs; 4 categories; 12% | PASS |
-| Research-first | more techs than balanced, award in standard band | 81 techs; day 2333 | PASS |
-| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 99%; x3.72 | PASS |
-| Export mix | no good > 60% after year 2 | median 28%, worst 44% | PASS |
-| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 214 days; 52 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 45% | PASS |
-| Distrust | largest daily rise <= 0.8 | worst 0.68 | PASS |
-| Pollution | output penalty < 2% through year 3 | year 3 worst 0.6%; year 8 median 2.7% | PASS |
+| Population | >= 300 by year 2; >= 800 by year 4 | 385 / 903 | PASS |
+| Research, balanced | >= 40 techs; every category; research teams 10-20% | 41 techs; 4 categories; 11% | PASS |
+| Research-first | more techs than balanced, award in standard band | 76 techs; day 2214 | PASS |
+| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 94%; x3.33 | PASS |
+| Export mix | no good > 60% after year 2 | median 27%, worst 39% | PASS |
+| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 214 days; 53 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 48% | PASS |
+| Distrust | largest daily rise <= 0.8 | worst 0.47 | PASS |
+| Pollution | output penalty < 2% through year 3 | year 3 worst 0.5%; year 8 median 2.7% | PASS |
 | Roads | first road takes 90-300 days | median 146 days | PASS |
-| Pollution, no control | output penalty >= 15% by year 8 | 21.1% | PASS |
+| Pollution, no control | output penalty >= 15% by year 8 | 22.0% | PASS |
 | Audits | 0 errors in every run | 0 errors in 480 runs | PASS |
-| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 152 to 172 arrivals (+13%) | MISS |
+| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 147 to 185 arrivals (+26%) | PASS |
 | Geography | sites 14-20 / 20-30 / 28-40; 3+ start pairs; 3+ start archetypes; land 25-45%; continents 2-6 | sites 15-20 / 20-30 / 28-40; pairs min 3; 4 archetypes; land 25-45%; continents 2,3,4,5,6 | PASS |
 | Road trade-off | cheaper road is the slower one for 30-70% of pairs | 90% of 2568 pairs | MISS |
 | Determinism | same seed + action log => identical state | 3/3 replays identical | PASS |
 
 | Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop y2 / y4 / y8 | Techs at award |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| balanced | easy | capital | 10 | 100% | 2271 | 0% | -1 | 316 | 415 / 919 / 2138 | 40 |
-| balanced | easy | science | 10 | 100% | 2265 | 0% | -1 | 361 | 305 / 926 / 1671 | 40 |
-| balanced | easy | workers | 10 | 100% | 2389 | 0% | -1 | 396 | 421 / 899 / 2156 | 40 |
-| balanced | hard | capital | 10 | 80% | 2678 | 20% | 2755 | 231 | 351 / 887 / 2206 | 40 |
-| balanced | hard | science | 10 | 70% | 2449 | 30% | 3163 | 377 | 318 / 794 / 1961 | 50 |
-| balanced | hard | workers | 10 | 70% | 2799 | 30% | 2383 | 284 | 378 / 872 / 2282 | 40 |
-| balanced | normal | capital | 10 | 70% | 2563 | 30% | 1860 | 290 | 388 / 881 / 2194 | 40 |
-| balanced | normal | science | 10 | 90% | 2409 | 10% | 3199 | 422 | 340 / 898 / 2168 | 46 |
-| balanced | normal | workers | 10 | 100% | 2634 | 0% | -1 | 412 | 418 / 1034 / 2344 | 41 |
+| balanced | easy | capital | 10 | 100% | 2469 | 0% | -1 | 316 | 413 / 927 / 2300 | 40 |
+| balanced | easy | science | 10 | 100% | 2304 | 0% | -1 | 375 | 299 / 838 / 2062 | 41 |
+| balanced | easy | workers | 10 | 100% | 2372 | 0% | -1 | 458 | 438 / 923 / 2323 | 40 |
+| balanced | hard | capital | 10 | 90% | 2678 | 10% | 2322 | 231 | 365 / 900 / 2522 | 40 |
+| balanced | hard | science | 10 | 80% | 2572 | 20% | 2718 | 339 | 325 / 841 / 2324 | 47 |
+| balanced | hard | workers | 10 | 80% | 2751 | 40% | 3110 | 284 | 381 / 893 / 2265 | 40 |
+| balanced | normal | capital | 10 | 90% | 2847 | 10% | 2504 | 281 | 383 / 886 / 2254 | 40 |
+| balanced | normal | science | 10 | 100% | 2437 | 0% | -1 | 478 | 335 / 900 / 2097 | 47 |
+| balanced | normal | workers | 10 | 70% | 2411 | 30% | 3218 | 488 | 401 / 956 / 2062 | 40 |
 | passive | easy | capital | 10 | 0% | -1 | 100% | 536 | 25821 | -1 / -1 / -1 | -1 |
 | passive | easy | science | 10 | 0% | -1 | 100% | 522 | 9025 | -1 / -1 / -1 | -1 |
 | passive | easy | workers | 10 | 0% | -1 | 100% | 542 | 5454 | -1 / -1 / -1 | -1 |
@@ -54,27 +54,27 @@ Run: **1.8 fourth full** · 2026-11-01T01-32-25 · 2726 s wall clock. Source: ba
 | passive | normal | capital | 10 | 0% | -1 | 100% | 438 | 15851 | -1 / -1 / -1 | -1 |
 | passive | normal | science | 10 | 0% | -1 | 100% | 426 | 3684 | -1 / -1 / -1 | -1 |
 | passive | normal | workers | 10 | 0% | -1 | 100% | 446 | 656 | -1 / -1 / -1 | -1 |
-| random_legal | easy | capital | 10 | 0% | -1 | 90% | 471 | 8034 | 91 / -1 / -1 | -1 |
+| random_legal | easy | capital | 10 | 0% | -1 | 90% | 471 | 8034 | 90 / -1 / -1 | -1 |
 | random_legal | hard | science | 10 | 0% | -1 | 100% | 311 | 0 | -1 / -1 / -1 | -1 |
 | random_legal | normal | workers | 10 | 0% | -1 | 100% | 393 | 0 | -1 / -1 / -1 | -1 |
-| research_first | easy | capital | 10 | 90% | 2059 | 10% | 2997 | 345 | 398 / 786 / 795 | 70 |
-| research_first | easy | science | 10 | 90% | 1887 | 10% | 2972 | 166 | 405 / 932 / 745 | 72 |
-| research_first | easy | workers | 10 | 100% | 2128 | 0% | -1 | 344 | 431 / 767 / -1 | 72 |
-| research_first | hard | capital | 10 | 70% | 2463 | 30% | 1722 | 254 | 343 / 608 / 1761 | 77 |
-| research_first | hard | science | 10 | 90% | 2284 | 10% | 3199 | 281 | 373 / 920 / 1698 | 84 |
-| research_first | hard | workers | 10 | 60% | 2937 | 40% | 1722 | 127 | 342 / 776 / 2026 | 100 |
-| research_first | normal | capital | 10 | 90% | 2623 | 10% | 1904 | 287 | 366 / 755 / 1782 | 87 |
-| research_first | normal | science | 10 | 90% | 2179 | 10% | 1304 | 190 | 391 / 940 / -1 | 82 |
-| research_first | normal | workers | 10 | 90% | 2163 | 10% | 1904 | 339 | 371 / 843 / -1 | 76 |
-| rush | easy | capital | 10 | 90% | 2546 | 10% | 2991 | 178 | 383 / 876 / 1444 | 40 |
-| rush | easy | science | 10 | 100% | 2167 | 0% | -1 | 270 | 398 / 926 / -1 | 40 |
-| rush | easy | workers | 10 | 90% | 2591 | 10% | 3365 | 203 | 397 / 883 / 1486 | 40 |
-| rush | hard | capital | 10 | 70% | 2711 | 30% | 2592 | 226 | 318 / 824 / 2101 | 41 |
-| rush | hard | science | 10 | 30% | 2819 | 70% | 3191 | 243 | 313 / 782 / 2052 | 52 |
-| rush | hard | workers | 10 | 30% | 2435 | 70% | 2582 | 136 | 339 / 826 / 2182 | 40 |
-| rush | normal | capital | 10 | 70% | 2819 | 30% | 2278 | 135 | 362 / 894 / 2071 | 41 |
-| rush | normal | science | 10 | 70% | 2599 | 30% | 2718 | 245 | 323 / 860 / 1859 | 47 |
-| rush | normal | workers | 10 | 80% | 2765 | 20% | 2898 | 309 | 396 / 864 / 1870 | 41 |
+| research_first | easy | capital | 10 | 100% | 1840 | 0% | -1 | 285 | 400 / 1057 / -1 | 66 |
+| research_first | easy | science | 10 | 100% | 1909 | 0% | -1 | 248 | 371 / 918 / -1 | 71 |
+| research_first | easy | workers | 10 | 90% | 2066 | 10% | 2978 | 344 | 413 / 881 / 775 | 71 |
+| research_first | hard | capital | 10 | 70% | 2309 | 30% | 2257 | 254 | 355 / 830 / 2646 | 81 |
+| research_first | hard | science | 10 | 100% | 2329 | 0% | -1 | 293 | 361 / 925 / 2150 | 85 |
+| research_first | hard | workers | 10 | 70% | 2234 | 30% | 1722 | 127 | 340 / 849 / -1 | 76 |
+| research_first | normal | capital | 10 | 90% | 2204 | 10% | 1904 | 282 | 373 / 875 / 1801 | 74 |
+| research_first | normal | science | 10 | 100% | 2132 | 0% | -1 | 250 | 407 / 1011 / -1 | 83 |
+| research_first | normal | workers | 10 | 100% | 2299 | 0% | -1 | 290 | 372 / 1073 / -1 | 75 |
+| rush | easy | capital | 10 | 100% | 2497 | 0% | -1 | 193 | 411 / 864 / -1 | 40 |
+| rush | easy | science | 10 | 100% | 2231 | 0% | -1 | 220 | 403 / 968 / 1611 | 40 |
+| rush | easy | workers | 10 | 100% | 2459 | 0% | -1 | 220 | 409 / 882 / -1 | 40 |
+| rush | hard | capital | 10 | 50% | 2664 | 50% | 2466 | 217 | 324 / 827 / 2005 | 43 |
+| rush | hard | science | 10 | 40% | 2775 | 60% | 3003 | 221 | 311 / 838 / 2270 | 45 |
+| rush | hard | workers | 10 | 70% | 2672 | 30% | 2322 | 137 | 346 / 863 / 2161 | 41 |
+| rush | normal | capital | 10 | 60% | 2518 | 40% | 2837 | 142 | 376 / 895 / 1891 | 40 |
+| rush | normal | science | 10 | 90% | 2506 | 10% | 3281 | 220 | 331 / 950 / 2195 | 45 |
+| rush | normal | workers | 10 | 70% | 2488 | 30% | 3137 | 290 | 404 / 951 / 1876 | 40 |
 | sloppy | easy | capital | 10 | 0% | -1 | 100% | 947 | 16388 | 60 / -1 / -1 | -1 |
 | sloppy | easy | science | 10 | 0% | -1 | 100% | 947 | 2258 | 60 / -1 / -1 | -1 |
 | sloppy | easy | workers | 10 | 0% | -1 | 100% | 820 | 1000 | 105 / -1 / -1 | -1 |
@@ -89,6 +89,7 @@ Run: **1.8 fourth full** · 2026-11-01T01-32-25 · 2726 s wall clock. Source: ba
 ## History
 
 <!-- history:begin -->
+- 2026-11-01T02-21-34 · 1.8 fifth full (full): 20 targets met, 2 missed.
 - 2026-11-01T01-32-25 · 1.8 fourth full (full): 20 targets met, 2 missed.
 - 2026-11-01T00-45-39 · 1.8 third full (full): 19 targets met, 3 missed.
 - 2026-10-31T17-13-30 · v1.7.1 (full): 15 targets met, 3 missed.

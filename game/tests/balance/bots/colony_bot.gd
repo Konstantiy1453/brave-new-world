@@ -861,7 +861,8 @@ func _make_room(place: Dictionary, reserve: float) -> void:
 
 ## Once its technology is known, the money goes to the hall before anything that can wait.
 func _saving_for_hall() -> bool:
-	return sim._has(HALL_TECH) and not _anywhere("capital_hall")
+	var unbuilt: bool = sim._has(HALL_TECH) and not _anywhere("capital_hall")
+	return unbuilt and float(sim.state.cash) < RICH_CASH
 
 
 func _pressed_for_time(stage: int) -> bool:
