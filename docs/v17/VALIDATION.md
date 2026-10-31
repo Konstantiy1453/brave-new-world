@@ -309,6 +309,8 @@ Hardware as above. Evidence labels as above.
 | Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons (`evidence/v17/exe_drive`) | PASS. It found the tutorial's first event breaking into the shortage lesson; fixed |
 | Performance | exported EXE (`evidence/v17/perf`) | as in the table below |
 | Old saves: 1.7.1, 1.7.0, 1.6 | automated test `v18_systems`, `v17_saves`, EXE drive | Load on their own worlds, keep playing with clean audits; files unchanged |
+| The delivered game ZIP, unpacked, then the same scripted run from there | exported EXE from `delivery17`, scripted (`evidence/v17/zip_run`) | PASS |
+| Source ZIP holds no `art_reserve`, `.godot`, engine, evidence, builds or earlier deliveries | archive listing | PASS |
 | Protected folders | file dates | `%APPDATA%\ColonyCharter\v16` and `v17`, `build\v16`, `docs\v16`, `versions`, `tools\godot-4.5.1`, `delivery` outside `v17`, and existing evidence untouched; `%APPDATA%\Godot` not created |
 | Human playtests, manual EXE tutorial | NOT_RUN | The user tried 1.7.1 and reported what led to this version; 1.8.0 has not been played by a person |
 

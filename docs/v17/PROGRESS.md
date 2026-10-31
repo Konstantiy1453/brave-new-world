@@ -46,7 +46,7 @@
 | Pollution | under 2% through year 3; no-control 15% by year 8; no company source | - | 0.5%; 33%; test holds it | PASS |
 | Distrust | largest daily rise 0.8 | - | 0.52 | PASS |
 | Events | 60 short, 10 chains; 25% off; 1 pause per 40 days at most; 25 distinct | 28, 6 | 71, 12; 30%; 1 per 215; 53 | PASS |
-| Geography, 200 seeds | radii, site counts, 3 start pairs, islands can start | - | all hold; worst world 2.6 s | PASS |
+| Geography, 200 seeds | radii, site counts, 3 start pairs, islands can start | - | all hold; worst world 3.0 s | PASS |
 | Roads | first road 3-10 months | - | 146 days | PASS |
 | Road trade-off | cheaper is slower on 30-70% of pairs | 54% | 90% of 2,568 pairs | **MISS** |
 | Determinism and audits | identical at 2,880 days and any speed; 0 audit errors | yes | 3 of 3 replays; 1×, 3×, 6×; 0 errors in 480 runs | PASS |
