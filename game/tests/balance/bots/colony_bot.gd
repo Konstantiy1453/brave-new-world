@@ -3,81 +3,97 @@ extends "res://tests/balance/bots/bot.gd"
 ## order food, water and power, labour, housing; keep a cash cushion; then invest in the best
 ## affordable option. The balanced, rush and research-first bots only change the parameters.
 
-const INVEST_KINDS: Array[String] = [
-	"mine_ore", "mine_copper", "mine_crystal", "processor", "component_plant"
-]
-const MEGAPROJECTS: Array[String] = ["university", "lift_port", "climate_regulator"]
-const PLANTS_PER_PEOPLE: int = 200
+const INVEST_ROLES: Array[String] = ["mine", "harvest", "factory", "income", "commerce"]
+const EXTRACTION_ROLES: Array[String] = ["mine", "harvest"]
+const MEGAPROJECTS: Array[String] = ["university", "climate_regulator", "lift_port"]
 const MEGAPROJECT_RESERVE_FACTOR: float = 1.5
 const SCIENCE_TECH: String = "education"
-const VALLEY_ROAD_DAYS: int = 6
-const EXPEDITION_DAYS: int = 10
+const DECISION_PERIOD: int = 5
+const VALLEY_ROAD_DAYS: int = 18
+const EXPEDITION_DAYS: int = 30
 const SITE_TRIES: int = 5
 const MIN_TOWN_PLOTS: int = 6
 const MIN_IDLE_WORKERS: int = 8
 const IDLE_SHARE: float = 0.15
 const MIN_JOB_NET: float = -20.0
-const JOB_KINDS: Array[String] = [
-	"mine_crystal",
-	"mine_copper",
-	"mine_ore",
-	"component_plant",
-	"processor",
-	"foodworks",
-	"farm",
-	"hydroponic_farm",
-	"clinic",
-	"lab",
-]
-const OUTPOST_CASH: float = 650.0
+const JOB_ROLES: Array[String] = ["mine", "harvest", "factory", "commerce", "foodworks", "farm", "indoor_farm"]
 const UTILITY_MARGIN: float = 5.0
-const PROCESSORS_PER_PEOPLE: int = 150
+const POWER_KINDS: Array[String] = ["fusion", "fission", "geothermal", "wind_farm", "power"]
+const WATER_KINDS: Array[String] = ["desalination", "atmospheric_water", "deep_well", "water"]
+const HOUSING_KINDS: Array[String] = [
+	"arcology", "apartment", "habitat", "frontier_lodge", "crew_quarters"
+]
+const BIG_BUILDING_CASH_SHARE: float = 0.3
+const FACTORY_PEOPLE: int = 150
 const MIN_FARM_OUTPUT: float = 15.0
 const MIN_LOCAL_FARM_OUTPUT: float = 6.0
 const WAGE_STEP: float = 0.1
-const MIN_RESERVE_DAYS: float = 150.0
+const MIN_RESERVE_DAYS: float = 300.0
 const MIN_MARKET_FACTOR: float = 0.8
 const OTHER_INCOME_MARGIN: float = 1.15
 const DIVERSIFY_CUSHION: float = 0.4
 const DOMINANT_SHARE: float = 0.5
 const EXPORT_WINDOW_DAYS: int = 30
-const POLLUTION_LIMIT: float = 32.0
+const POLLUTION_CLEANUP_AT: float = 0.03
+const SCRUBBER_AT: float = 0.005
 const PORT_BUSY_SHARE: float = 0.9
 const WAGE_LIMIT: float = 1.3
-const WAGE_REVIEW_FROM_DAY: int = 30
-const WAGE_REVIEW_PERIOD: int = 30
+const WAGE_REVIEW_FROM_DAY: int = 60
+const WAGE_REVIEW_PERIOD: int = 60
+const TEAM_SMALL: int = 10
+const TEAM_LARGE: int = 20
+const SERVICE_PEOPLE: Dictionary = {
+	"clinic": 40,
+	"park": 60,
+	"school": 90,
+	"civic_center": 200,
+	"culture_center": 150,
+	"hospital": 350,
+}
+const COMMERCE_PEOPLE: int = 150
+const HALL_TECH: String = "capital_planning"
+const RESHUFFLE_PERIOD: int = 90
+const IDLE_STATUSES: Array[String] = ["no_input", "idle"]
+const HARVESTERS_PER_TOWN: int = 3
+const COMFORTABLE_NET: float = 150.0
+const DEADLINE_PRESSED: float = 0.7
+const SECOND_LAB_INCOME: float = 600.0
 
 var home: int = 0
-var reserve_days: float = 30.0
-var payback_limit: float = 120.0
+var reserve_days: float = 8.0
+var payback_limit: float = 450.0
 var recruit_batch: int = 10
-var recruit_buffer: float = 500.0
+var recruit_buffer: float = 2000.0
 var science_target: float = 0.12
-var lab_day: int = 8
+var lab_day: int = 15
 var population_goal: int = 100000
+var last_reshuffle: int = -1000
+var research_full_income: float = 1000.0
 var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
 var tech_order: Array[String] = [
 	"survey",
 	"education",
 	"adaptation",
-	"processing",
 	"irrigation",
+	"processing",
 	"medicine",
 	"logistics",
+	"road_crews",
+	"prefab_modules",
 	"research_network",
 	"deep_mining",
+	"heavy_machinery",
+	"apartments",
+	"commerce_law",
+	"school_system",
 	"electronics",
-	"efficiency",
+	"alloy_smelting",
 	"hydroponics",
+	"efficiency",
 	"remediation",
-	"paved_roads",
-	"prospecting",
-	"shipping",
 	"automation",
 	"university",
-	"lift_port",
-	"climate"
 ]
 
 
@@ -87,23 +103,27 @@ func on_day() -> void:
 	answer_events()
 	if sim.state.settlements.is_empty():
 		return
+	if today() % DECISION_PERIOD != 0 and today() > DECISION_PERIOD:
+		return
 	home = int(sim.state.settlements[0].region)
 	var reserve: float = daily_expense() * reserve_days
 	_utilities()
-	_environment()
+	_environment(reserve)
 	_laboratory(reserve)
-	_staff_research()
+	_staff_research(reserve)
 	_second_settlement(reserve)
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
 	_pave_busy_roads(reserve)
-	if not _saving_for_road():
+	_megaprojects(reserve)
+	_ports(reserve)
+	_goal_projects(reserve)
+	if not _saving_for_road() and not _saving_for_port() and not _saving_for_settlement():
 		_create_jobs(reserve)
 		_invest(reserve)
-		_clinic(reserve)
+		_services(reserve)
 		_upgrades(reserve)
-		_megaprojects(reserve)
 	_research_contract()
 	_wages()
 
@@ -181,13 +201,26 @@ func _utilities() -> void:
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
 		var power_margin: float = float(place.power_supply) - float(place.power_demand)
-		if power_margin < UTILITY_MARGIN and _affordable(region, "power", 0.0):
-			if not _building_underway(region, "power"):
-				act("build", {"region": region, "kind": "power"})
+		if power_margin < UTILITY_MARGIN:
+			_build_utility(region, POWER_KINDS)
 		var water_margin: float = float(place.water_supply) - float(place.water_demand)
-		if water_margin < UTILITY_MARGIN and _affordable(region, "water", 0.0):
-			if not _building_underway(region, "water"):
-				act("build", {"region": region, "kind": "water"})
+		if water_margin < UTILITY_MARGIN:
+			_build_utility(region, WATER_KINDS)
+
+
+## The largest plant of this list the colony can open without emptying the till.
+func _build_utility(region: int, kinds: Array[String]) -> void:
+	for kind: String in kinds:
+		if _building_underway(region, kind):
+			return
+	for kind: String in kinds:
+		var forecast: Dictionary = sim.build_forecast(region, kind)
+		if forecast.is_empty() or forecast.disabled_reason != "":
+			continue
+		var last_resort: bool = kind == kinds[kinds.size() - 1]
+		if last_resort or float(forecast.cost) <= float(sim.state.cash) * BIG_BUILDING_CASH_SHARE:
+			act("build", {"region": region, "kind": kind})
+			return
 
 
 func _building_underway(region: int, kind: String) -> bool:
@@ -201,41 +234,18 @@ func _laboratory(reserve: float) -> void:
 	if today() < lab_day or _building_underway(home, "lab"):
 		return
 	if not has_building(home, "lab"):
-		if _affordable(home, "lab", reserve * 0.5):
+		if _affordable(home, "lab", reserve * 0.1):
 			act("build", {"region": home, "kind": "lab"})
 		return
-	# More scientists than seats: another laboratory puts them to work.
-	var view: Dictionary = sim.research_view()
-	if _saving_for_road() or int(view.total) <= int(view.capacity) + 2:
+	# Four categories want four benches: that is two laboratories, and a third late on.
+	var labs: int = building_count(home, "lab")
+	var wanted: int = 2 if int(sim.state.contract.stage) < 4 else 3
+	if _saving_for_road() or labs >= wanted or int(sim.state.contract.stage) < 2:
+		return
+	if float(sim.state.income_daily) < SECOND_LAB_INCOME:
 		return
 	if _affordable(home, "lab", reserve):
 		act("build", {"region": home, "kind": "lab"})
-
-
-func _staff_research() -> void:
-	if not has_building(home, "lab"):
-		return
-	var view: Dictionary = sim.research_view()
-	var available: int = mini(int(view.available), int(view.capacity) - int(view.allocated))
-	if available < 3 or _staffed_projects() >= int(view.benches):
-		return
-	var order: Array[String] = tech_order
-	if _land_sites_left() < sim.Contract.settlement_cap(sim) - sim.state.settlements.size() + 1:
-		order = ["logistics", "shipping"]
-		order.append_array(tech_order)
-	if _out_of_farm_land():
-		order = ["adaptation", "irrigation", "hydroponics"]
-		order.append_array(tech_order)
-	elif _mines_running_out():
-		order = ["survey", "deep_mining", "prospecting"]
-		order.append_array(tech_order)
-	for tech: String in order:
-		if sim.state.research.completed.has(tech):
-			continue
-		if int(sim.state.research.projects.get(tech, {}).get("staff", 0)) > 0:
-			continue
-		if act("research_allocate", {"tech": tech, "staff": mini(10, available)}) == "":
-			return
 
 
 func _staffed_projects() -> int:
@@ -244,6 +254,110 @@ func _staffed_projects() -> int:
 		if int(project.staff) > 0:
 			count += 1
 	return count
+
+
+## Picks a card for every idle team that has a bench, and keeps teams at a useful size.
+func _staff_research(reserve: float) -> void:
+	var view: Dictionary = sim.research_view()
+	if int(view.benches) <= 0:
+		return
+	var columns: Array = sim.research_cards()
+	var staffed: int = 0
+	for column: Dictionary in columns:
+		if not column.running.is_empty():
+			staffed += 1
+	var free: int = mini(int(view.available), int(view.capacity) - int(view.allocated))
+	var benches: int = mini(int(view.benches), columns.size())
+	var wanted: int = clampi(int(view.total) / maxi(1, benches), TEAM_SMALL, TEAM_LARGE)
+	# Science is paid for out of what the mines earn: a small colony runs a small programme.
+	var income: float = float(sim.state.income_daily)
+	if income < research_full_income:
+		benches = mini(benches, 1 if income < research_full_income * 0.4 else 2)
+		wanted = mini(wanted, 6 if income < research_full_income * 0.4 else TEAM_SMALL)
+	for column: Dictionary in columns:
+		var running: Dictionary = column.running
+		if running.is_empty():
+			if staffed >= benches or free < int(sim.progression.research.minimum_staff):
+				continue
+			var card: String = _best_card(column)
+			if card == "":
+				continue
+			var team: int = mini(wanted, free)
+			if act("research_allocate", {"tech": card, "staff": team}) == "":
+				staffed += 1
+				free -= team
+		elif int(running.staff) < wanted and free > 0:
+			var more: int = mini(wanted - int(running.staff), free)
+			if act("research_allocate", {"tech": running.id, "staff": int(running.staff) + more}) == "":
+				free -= more
+	_seek_hall_technology(reserve)
+
+
+func _best_card(column: Dictionary) -> String:
+	var best: String = ""
+	var top: float = -INF
+	for row: Dictionary in column.offers:
+		var value: float = _card_value(row)
+		if value > top:
+			top = value
+			best = str(row.id)
+	return best
+
+
+## Goal-critical first, then what the bot's plan asks for, then whatever unlocks most for least.
+func _card_value(row: Dictionary) -> float:
+	var id: String = str(row.id)
+	var value: float = float(row.unlocks.size()) * 3.0
+	value += float(sim.config.techs[id].effects.size())
+	value -= float(row.cost) / 300.0
+	var rank: int = tech_order.find(id)
+	if rank >= 0:
+		value += 12.0 + float(tech_order.size() - rank) * 0.5
+	if _hall_chain().has(id):
+		value += 25.0 if int(sim.state.contract.stage) >= 3 else 6.0
+	if _out_of_farm_land() and id in ["adaptation", "irrigation", "hydroponics", "aquaculture"]:
+		value += 30.0
+	if _mines_running_out() and id in ["survey", "deep_mining", "prospecting", "tailings_recovery"]:
+		value += 30.0
+	return value
+
+
+## Everything between here and the technology the final stage cannot do without.
+func _hall_chain() -> Dictionary:
+	var chain: Dictionary = {}
+	var open: Array = [HALL_TECH]
+	while not open.is_empty():
+		var tech: String = str(open.pop_back())
+		if chain.has(tech) or sim._has(tech):
+			continue
+		chain[tech] = true
+		open.append_array(sim.config.techs[tech].requires)
+	return chain
+
+
+## Late in the contract, pays to redraw when no card leads to the capital's hall.
+func _seek_hall_technology(reserve: float) -> void:
+	if int(sim.state.contract.stage) < 4 or sim._has(HALL_TECH):
+		return
+	if today() - last_reshuffle < RESHUFFLE_PERIOD:
+		return
+	var chain: Dictionary = _hall_chain()
+	for tech: String in chain:
+		var category: String = str(sim.config.techs[tech].category)
+		if sim.state.research.offers.get(category, []).has(tech):
+			return
+	var cost: float = sim.Research.reshuffle_cost(sim)
+	if float(sim.state.cash) < cost + reserve:
+		return
+	for tech: String in chain:
+		var category: String = str(sim.config.techs[tech].category)
+		var open: bool = true
+		for need: String in sim.config.techs[tech].requires:
+			open = open and sim._has(need)
+		if open:
+			act("research_reshuffle", {"category": category})
+			last_reshuffle = today()
+			return
 
 
 ## The contract needs the settlements connected: nothing else is worth delaying that for.
@@ -309,7 +423,7 @@ func _best_link(site: int) -> Dictionary:
 					"cost": float(road.cost),
 					"days": int(road.days),
 				}
-		elif sim._has("shipping"):
+		else:
 			var voyage: Dictionary = sim.road_quote(from, site, "sea")
 			if bool(voyage.reachable):
 				return {
@@ -352,15 +466,41 @@ func _create_jobs(reserve: float) -> void:
 		var adults: int = int(place.workers) + int(place.scientists)
 		if idle < MIN_IDLE_WORKERS or float(idle) / maxi(1, adults) < IDLE_SHARE:
 			continue
-		for kind: String in JOB_KINDS:
+		for kind: String in _kinds_with_roles(JOB_ROLES, place):
+			var role: String = sim.Production.role_of(sim, kind)
+			if role == "factory" and not _factory_wanted(region, kind):
+				continue
+			if role == "commerce" and not _commerce_wanted(place):
+				continue
+			if role == "foodworks" and not _food_to_spare():
+				continue
+			if role == "harvest" and building_count(region, kind) >= HARVESTERS_PER_TOWN:
+				continue
 			var forecast: Dictionary = sim.build_forecast(region, kind)
 			if forecast.is_empty() or forecast.disabled_reason != "" or int(forecast.jobs) > idle:
 				continue
 			if float(forecast.net_per_day) < MIN_JOB_NET:
 				continue
+			if float(forecast.reserve_days) >= 0.0 and float(forecast.reserve_days) < MIN_RESERVE_DAYS:
+				continue
 			if float(sim.state.cash) >= float(forecast.cost) + reserve * 0.25:
 				act("build", {"region": region, "kind": kind})
 				return
+
+
+## Building kinds of these roles that this settlement could ever hold, by what is researched.
+func _kinds_with_roles(roles: Array[String], place: Dictionary) -> Array:
+	var kinds: Array = []
+	for kind: String in sim.config.buildings:
+		var spec: Dictionary = sim.config.buildings[kind]
+		if not str(spec.role) in roles:
+			continue
+		if spec.has("requires_tech") and not sim._has(str(spec.requires_tech)):
+			continue
+		if spec.has("site_kinds") and not spec.site_kinds.has(str(place.kind)):
+			continue
+		kinds.append(kind)
+	return kinds
 
 
 ## True while the contract still wants a bigger share of income from outside the mines.
@@ -387,12 +527,23 @@ func _farm_capacity() -> float:
 	for place: Dictionary in sim.state.settlements:
 		var region: int = int(place.region)
 		capacity += building_count(region, "farm") * _farm_output(region)
+		for kind: String in ["field_station", "ranch", "hydroponic_farm", "aquafarm", "vertical_farm"]:
+			var count: int = building_count(region, kind)
+			if count > 0:
+				capacity += count * float(sim.build_forecast(region, kind).outputs.get("food", 0.0))
 	return capacity
 
 
-## The next site worth a settlement: food first, then whatever the ground holds, near home.
+## The next site worth a settlement and what kind to found there: food first, then people, then
+## whatever the ground holds, near home.
 func _next_site(reserve: float) -> Dictionary:
 	var hungry: bool = _farm_capacity() < _food_need() * 1.2
+	var towns: int = 0
+	for place: Dictionary in sim.state.settlements:
+		if str(place.kind) == sim.Keys.SITE_RESIDENTIAL:
+			towns += 1
+	var wants_town: bool = not hungry and towns < 1 + sim.state.settlements.size() / 3
+	var kind: String = sim.Keys.SITE_RESIDENTIAL if wants_town else sim.Keys.SITE_FRONTIER
 	var scored: Array = []
 	var farm_land_in_reach: bool = false
 	for reg: Dictionary in sim.state.world.regions:
@@ -402,7 +553,7 @@ func _next_site(reserve: float) -> Dictionary:
 		var on_land: bool = false
 		for place: Dictionary in sim.state.settlements:
 			on_land = on_land or int(place.region) in reg.neighbors
-		if not on_land and not (sim._has("shipping") and bool(reg.coast)):
+		if not on_land and not bool(reg.coast):
 			continue
 		var known: Dictionary = sim.site_view(id)
 		if int(known.plots.general) < MIN_TOWN_PLOTS:
@@ -410,7 +561,9 @@ func _next_site(reserve: float) -> Dictionary:
 		# Yield falls with the soil and the climate, and the road gets longer with distance.
 		var soil: float = float(known.farm_yield) / float(sim.config.buildings.farm.rate)
 		var score: float = pow(soil, 3.0) * 1000.0
-		if not hungry:
+		if wants_town:
+			score = float(known.plots.general) * (0.5 + float(known.water.mid)) * 10.0
+		elif not hungry:
 			score = sim.Sites.start_score(sim, id) * 0.01
 		scored.append(
 			[score / (0.4 + _angle_between(id, _nearest_settled(id))), id, float(known.farm_yield)]
@@ -430,22 +583,10 @@ func _next_site(reserve: float) -> Dictionary:
 		var link: Dictionary = _best_link(int(row[1]))
 		if link.is_empty() or int(link.days) > EXPEDITION_DAYS:
 			continue
-		if float(sim.state.cash) >= OUTPOST_CASH + float(link.cost) + reserve * 0.5:
-			return {"site": int(row[1]), "from": int(link.from)}
+		var fare: float = sim.Sites.expedition_cash(sim, kind)
+		if float(sim.state.cash) >= fare + float(link.cost) + reserve * 0.3:
+			return {"site": int(row[1]), "from": int(link.from), "kind": kind}
 	return {}
-
-
-## Sites still in reach by land. Few left means it is time to learn to cross water.
-func _land_sites_left() -> int:
-	var left: int = 0
-	for reg: Dictionary in sim.state.world.regions:
-		if not sim.settlement(int(reg.id)).is_empty():
-			continue
-		for place: Dictionary in sim.state.settlements:
-			if int(place.region) in reg.neighbors:
-				left += 1
-				break
-	return left
 
 
 func _second_settlement(reserve: float) -> void:
@@ -454,7 +595,7 @@ func _second_settlement(reserve: float) -> void:
 		return
 	var next: Dictionary = _next_site(reserve)
 	if not next.is_empty():
-		act("settle", {"site": next.site})
+		act("settle", {"site": next.site, "from": next.from, "kind": next.kind})
 
 
 func _farm_output(region: int) -> float:
@@ -465,48 +606,55 @@ func _farm_output(region: int) -> float:
 
 
 func _food(reserve: float) -> void:
+	# A road to the farms is worth more than another farm nobody can reach.
+	if _saving_for_road() and _farm_capacity() > 0.0:
+		return
 	var consumption: float = 0.0
-	var capacity: float = 0.0
+	var capacity: float = _farm_capacity()
 	for place: Dictionary in sim.state.settlements:
-		var region: int = int(place.region)
 		consumption += float(place.population) * float(sim.config.economy.food_per_person)
-		capacity += building_count(region, "farm") * _farm_output(region)
 	# The contract counts what the colony grew, not what it could have grown.
 	var wants_local: bool = _wants_local_food()
 	if capacity >= consumption and not wants_local:
 		return
 	# Imported food costs little more than poor land yields; only farm land worth farming.
 	var best_region: int = -1
+	var best_kind: String = "farm"
 	var best_output: float = MIN_LOCAL_FARM_OUTPUT if wants_local else MIN_FARM_OUTPUT
 	for place: Dictionary in _places():
-		var output: float = _farm_output(int(place.region))
-		if output > best_output and sim.free_workers(place) >= int(sim.config.buildings.farm.jobs):
-			best_output = output
-			best_region = int(place.region)
+		for kind: String in ["field_station", "farm", "ranch"]:
+			var forecast: Dictionary = sim.build_forecast(int(place.region), kind)
+			if forecast.is_empty() or forecast.disabled_reason != "":
+				continue
+			if sim.free_workers(place) + _idle_elsewhere(int(place.region)) < int(forecast.jobs):
+				continue
+			var output: float = float(forecast.outputs.get("food", 0.0))
+			if output > best_output:
+				best_output = output
+				best_region = int(place.region)
+				best_kind = kind
 	# Under glass one greenhouse does the work of several farms on poor land.
-	if wants_local and best_output < MIN_FARM_OUTPUT and sim._has("hydroponics"):
+	if best_region < 0 and wants_local:
 		_greenhouse(reserve)
 		return
-	if best_region < 0 or _building_underway(best_region, "farm"):
+	if best_region < 0 or _building_underway(best_region, best_kind):
 		return
 	# The first farm is a shortage to fix, not an investment to weigh.
 	var spare: float = 0.0 if capacity <= 0.0 else reserve * 0.5
-	if _affordable(best_region, "farm", spare):
-		act("build", {"region": best_region, "kind": "farm"})
+	if _affordable(best_region, best_kind, spare):
+		act("build", {"region": best_region, "kind": best_kind})
 
 
 ## Out of farm land with a food goal still open: grow it under glass.
 func _greenhouse(reserve: float) -> void:
-	if not sim._has("hydroponics"):
-		return
-	var kind: String = "hydroponic_farm"
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
-		if sim.free_workers(place) < int(sim.config.buildings[kind].jobs):
-			continue
-		if not _building_underway(region, kind) and _affordable(region, kind, reserve * 0.5):
-			act("build", {"region": region, "kind": kind})
-			return
+		for kind: String in _kinds_with_roles(["indoor_farm"], place):
+			if sim.free_workers(place) < int(sim.config.buildings[kind].jobs):
+				continue
+			if not _building_underway(region, kind) and _affordable(region, kind, reserve * 0.5):
+				act("build", {"region": region, "kind": kind})
+				return
 
 
 ## A depleted mine anywhere is the moment to learn to dig deeper.
@@ -543,17 +691,61 @@ func _housing(reserve: float) -> void:
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
 		var slack: int = maxi(4, int(float(place.housing) * 0.08))
-		if (
-			sim.Population.free_beds(sim, place) < slack
-			and not _building_underway(region, "habitat")
-		):
-			var full: bool = int(place.housing) <= int(place.population)
-			if _affordable(region, "habitat", 0.0 if full else reserve * 0.5):
-				act("build", {"region": region, "kind": "habitat"})
+		if sim.Population.free_beds(sim, place) >= slack:
+			continue
+		var busy: bool = false
+		for kind: String in HOUSING_KINDS:
+			busy = busy or _building_underway(region, kind)
+		if busy:
+			continue
+		var full: bool = int(place.housing) <= int(place.population)
+		var spare: float = 0.0 if full else reserve * 0.5
+		for kind: String in HOUSING_KINDS:
+			var forecast: Dictionary = sim.build_forecast(region, kind)
+			if forecast.is_empty() or forecast.disabled_reason != "":
+				continue
+			if float(forecast.cost) > float(sim.state.cash) * BIG_BUILDING_CASH_SHARE and kind != "habitat" and kind != "crew_quarters":
+				continue
+			if _affordable(region, kind, spare):
+				act("build", {"region": region, "kind": kind})
+			break
+
+
+## The contract asks for another connected town and the licence is there: that comes first.
+func _saving_for_settlement() -> bool:
+	if sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
+		return false
+	var stage: int = mini(int(sim.state.contract.stage), sim.Contract.STAGE_COUNT)
+	# Saving out of a thin income takes for ever; better to grow it first, unless time is short.
+	var pressed: bool = int(sim.state.day) > sim.Contract.deadline(sim, stage) * DEADLINE_PRESSED
+	if float(sim.summary().operating_average) < COMFORTABLE_NET and not pressed:
+		return false
+	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
+		if goal.key in ["connected", "frontiers"] and not goal.ok:
+			return float(sim.state.settlements.size()) < float(goal.target) or goal.key == "frontiers"
+	return false
+
+
+## A full port is worth more than anything else money can buy: nothing else until it has company.
+func _saving_for_port() -> bool:
+	for place: Dictionary in _places():
+		if _port_full(place):
+			return true
+	return false
+
+
+## Whether this town's exports already fill its port, counting a port still being built as room.
+func _port_full(place: Dictionary) -> bool:
+	if _building_underway(int(place.region), "port"):
+		return false
+	var capacity: float = float(place.port_capacity)
+	return capacity > 0.0 and float(place.port_used) / capacity > PORT_BUSY_SHARE
 
 
 func _enterprise() -> void:
 	if not sim.state.enterprise.is_empty() or not sim.state.policy.private_allowed:
+		return
+	if int(sim.state.contract.stage) < 2:
 		return
 	if float(sim.enterprise_preview(home).get("estimated_profit", -1.0)) >= 0.0:
 		act("enterprise", {"region": home})
@@ -566,17 +758,15 @@ func _options(reserve: float) -> Array:
 	var leading_good: String = _dominant_export()
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
-		for kind: String in INVEST_KINDS:
-			if other_income and kind.begins_with("mine_"):
+		for kind: String in _kinds_with_roles(INVEST_ROLES, place):
+			var role: String = sim.Production.role_of(sim, kind)
+			if other_income and role in EXTRACTION_ROLES:
 				continue
-			if kind == "processor":
-				var allowed: int = 1 + sim.Contract.population_total(sim) / PROCESSORS_PER_PEOPLE
-				allowed += 2 if other_income else 0
-				if building_count(region, "processor") >= allowed:
-					continue
-				if region != home and not (other_income and has_building(region, "mine_ore")):
-					continue
-			if kind == "component_plant" and not _plant_wanted(region):
+			if role == "factory" and not _factory_wanted(region, kind):
+				continue
+			if role == "commerce" and not _commerce_wanted(place):
+				continue
+			if role == "harvest" and building_count(region, kind) >= HARVESTERS_PER_TOWN:
 				continue
 			var forecast: Dictionary = sim.build_forecast(region, kind)
 			if forecast.is_empty() or forecast.disabled_reason != "":
@@ -588,7 +778,10 @@ func _options(reserve: float) -> Array:
 			if reserves >= 0.0 and reserves < MIN_RESERVE_DAYS:
 				continue
 			# Another mine into a market already flooded earns less than its forecast says.
-			if kind.begins_with("mine_") and _flooded(str(sim.config.buildings[kind].output)):
+			if role == "mine" and _flooded(str(sim.config.buildings[kind].output)):
+				continue
+			# Ore the port cannot ship earns nothing at all.
+			if role in EXTRACTION_ROLES and _port_full(place):
 				continue
 			var cushion: float = reserve
 			if leading_good != "" and not forecast.outputs.has(leading_good):
@@ -602,6 +795,43 @@ func _options(reserve: float) -> Array:
 	return options
 
 
+## A factory needs its inputs within reach and enough people around to be worth running.
+func _factory_wanted(region: int, kind: String) -> bool:
+	for building: Dictionary in sim.settlement(region).buildings:
+		if str(building.kind) == kind and str(building.status) in IDLE_STATUSES:
+			return false
+	var other_income: bool = _needs_other_income()
+	var allowed: int = 1 + sim.Contract.population_total(sim) / FACTORY_PEOPLE
+	allowed += 2 if other_income else 0
+	if building_count(region, kind) >= allowed:
+		return false
+	for good: String in sim.config.buildings[kind].inputs:
+		if not _made_within_reach(region, str(good)):
+			return false
+	return true
+
+
+func _made_within_reach(region: int, good: String) -> bool:
+	for place: Dictionary in sim.state.settlements:
+		var here: bool = int(place.region) == region
+		if not here and sim.road_quote(int(place.region), region, "valley").get("refusal", "") == "":
+			continue
+		for building: Dictionary in place.buildings:
+			if str(building.status) == sim.Keys.B_DEPLETED:
+				continue
+			var spec: Dictionary = sim.config.buildings.get(building.kind, {})
+			if str(spec.get("output", "")) == good or spec.get("outputs", {}).has(good):
+				return true
+	return good == "food"
+
+
+func _commerce_wanted(place: Dictionary) -> bool:
+	return (
+		building_count(int(place.region), "commerce")
+		< int(place.population) / COMMERCE_PEOPLE
+	)
+
+
 ## People the contract still asks for; once it is met, only as many as there are open jobs.
 func _people_goal() -> int:
 	var stage: int = int(sim.state.contract.stage)
@@ -610,10 +840,11 @@ func _people_goal() -> int:
 		for place: Dictionary in sim.state.settlements:
 			total += maxi(0, int(place.jobs) - int(place.employed))
 		return total
+	var goal_people: int = 0
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key == "population":
-			return mini(population_goal, int(goal.target))
-	return 0
+			goal_people = mini(population_goal, int(goal.target))
+	return goal_people
 
 
 ## Recruiting pays back within weeks once there is work waiting or a people goal to meet.
@@ -649,8 +880,9 @@ func _adult_counts() -> Dictionary:
 
 
 func _goal_projects(reserve: float) -> void:
+	var stage: int = mini(int(sim.state.contract.stage), sim.Contract.STAGE_COUNT)
 	var needs_processing: bool = false
-	for goal: Dictionary in sim.Contract.stage_goals(sim, mini(int(sim.state.contract.stage), 3)):
+	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
 		if goal.key == "processing_days" and not goal.ok:
 			needs_processing = true
 	if needs_processing and not has_building(home, "processor"):
@@ -659,6 +891,9 @@ func _goal_projects(reserve: float) -> void:
 				act("build", {"region": home, "kind": "processor"})
 		else:
 			_recruit(home, int(sim.config.buildings.processor.jobs), reserve * 0.5)
+	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
+		if goal.key == "capital_population" and not goal.ok:
+			_recruit(home, int(goal.target) - int(goal.value), reserve)
 
 
 ## Workers without a job in other towns on the network: a vacancy here will draw them.
@@ -670,10 +905,24 @@ func _idle_elsewhere(region: int) -> int:
 	return idle
 
 
-func _environment() -> void:
-	for place: Dictionary in _places():
-		if float(place.get("pollution", 0.0)) > POLLUTION_LIMIT:
-			act("company", {"operation": "cleanup", "region": int(place.region)})
+## Cleaner air once it starts to cost something; a scrubber as soon as there is anything to scrub.
+func _environment(reserve: float) -> void:
+	var loss: float = sim.Pollution.penalty(sim)
+	if loss >= SCRUBBER_AT and sim._has("scrubbing") and not _anywhere_underway("scrubber"):
+		for place: Dictionary in _places():
+			if _affordable(int(place.region), "scrubber", reserve):
+				act("build", {"region": int(place.region), "kind": "scrubber"})
+				break
+	if loss >= POLLUTION_CLEANUP_AT:
+		if float(sim.state.cash) > sim.Pollution.cleanup_cost(sim) + reserve:
+			act("company", {"operation": "cleanup"})
+
+
+func _anywhere_underway(kind: String) -> bool:
+	for place: Dictionary in sim.state.settlements:
+		if _building_underway(int(place.region), kind):
+			return true
+	return false
 
 
 ## A port near capacity turns away the most valuable exports last; add one before it costs money.
@@ -685,14 +934,24 @@ func _ports(reserve: float) -> void:
 			continue
 		if (
 			float(place.port_used) / capacity > PORT_BUSY_SHARE
-			and _affordable(region, "port", reserve)
+			and _affordable(region, "port", reserve * 0.1)
 		):
 			act("build", {"region": region, "kind": "port"})
 
 
+## Farms grow more than people and the food works already take, by a working margin.
+func _food_to_spare() -> bool:
+	var used: float = _food_need()
+	for place: Dictionary in sim.state.settlements:
+		used += building_count(int(place.region), "foodworks") * float(
+			sim.config.buildings.foodworks.food_input
+		)
+	return _farm_capacity() > used + float(sim.config.buildings.foodworks.food_input) * 1.5
+
+
 ## Food works turn farm surplus into export income that does not run out.
 func _food_works(reserve: float) -> void:
-	if not sim._has("adaptation"):
+	if not sim._has("adaptation") or not _food_to_spare():
 		return
 	var jobs: int = int(sim.config.buildings.foodworks.jobs)
 	for place: Dictionary in _places():
@@ -711,8 +970,6 @@ func _food_works(reserve: float) -> void:
 
 
 func _invest(reserve: float) -> void:
-	_goal_projects(reserve)
-	_ports(reserve)
 	_food_works(reserve)
 	for option: Dictionary in _options(reserve):
 		var free: int = sim.free_workers(sim.settlement(int(option.region)))
@@ -755,27 +1012,23 @@ func _wages() -> void:
 		last_wage_change = today()
 
 
-## Components need crystal and parts on hand: only where both are already produced.
-func _plant_wanted(region: int) -> bool:
-	if not has_building(region, "mine_crystal") or not has_building(region, "processor"):
-		return false
-	return (
-		building_count(region, "component_plant")
-		< 1 + sim.Contract.population_total(sim) / PLANTS_PER_PEOPLE
-	)
-
-
-## A clinic pays for itself in people staying and arriving.
-func _clinic(reserve: float) -> void:
+## People stay where there is something to stay for: each town gets what its size calls for.
+func _services(reserve: float) -> void:
 	for place: Dictionary in _places():
+		if str(place.kind) != sim.Keys.SITE_RESIDENTIAL:
+			continue
 		var region: int = int(place.region)
-		if has_building(region, "clinic") or int(place.population) < 40:
-			continue
-		if sim.free_workers(place) < int(sim.config.buildings.clinic.jobs):
-			continue
-		if _affordable(region, "clinic", reserve):
-			act("build", {"region": region, "kind": "clinic"})
-			return
+		for kind: String in SERVICE_PEOPLE:
+			if has_building(region, kind) or int(place.population) < int(SERVICE_PEOPLE[kind]):
+				continue
+			var forecast: Dictionary = sim.build_forecast(region, kind)
+			if forecast.is_empty() or forecast.disabled_reason != "":
+				continue
+			if sim.free_workers(place) < int(forecast.jobs):
+				continue
+			if float(sim.state.cash) >= float(forecast.cost) + reserve:
+				act("build", {"region": region, "kind": kind})
+				return
 
 
 ## The good bringing in over half of recent export money, if there is one: depending on a single
@@ -841,9 +1094,16 @@ func _upgrade_worthwhile(place: Dictionary, building: Dictionary, rule: Dictiona
 	return sim.free_workers(place) >= extra_jobs
 
 
-## Once the contract is met, the great works are where surplus money goes.
+## The hall is what the final stage asks for; the other great works wait for spare money.
 func _megaprojects(reserve: float) -> void:
-	if sim.state.status != "success":
+	if sim._has(HALL_TECH) and not _anywhere("capital_hall"):
+		if sim.free_workers(sim.settlement(home)) < int(sim.config.buildings.capital_hall.jobs):
+			_recruit(home, int(sim.config.buildings.capital_hall.jobs), reserve)
+			return
+		if _affordable(home, "capital_hall", reserve * 0.5):
+			act("build", {"region": home, "kind": "capital_hall"})
+		return
+	if str(sim.state.status) != "success" and int(sim.state.contract.stage) < 4:
 		return
 	for kind: String in MEGAPROJECTS:
 		var needed: String = str(sim.config.buildings[kind].requires_tech)

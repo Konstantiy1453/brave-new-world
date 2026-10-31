@@ -227,6 +227,8 @@ static func _reward(sim, option: Dictionary) -> float:
 static func trigger(sim, id: String, region: int) -> void:
 	if not sim.state.has("events_v2") or sim.settlement(region).is_empty():
 		return
+	if not definitions().definitions.has(id):
+		return
 	if _open_now(sim, id) or not _cooled(sim, id):
 		return
 	_open(sim, id, region)
@@ -397,6 +399,8 @@ static func _colony_reason(sim, s: Dictionary, option: Dictionary) -> String:
 static func _closed_road(sim, region: int) -> Dictionary:
 	for road: Dictionary in sim.state.roads:
 		if int(road.a) != region and int(road.b) != region:
+			continue
+		if int(road.get("ready_day", 0)) >= int(sim.state.day):
 			continue
 		if int(road.get("blocked_until", 0)) >= int(sim.state.day):
 			return road
@@ -589,7 +593,7 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 			float(sim.state.company.distrust) + float(option.distrust), 0.0, 100.0
 		)
 	if option.has("pollution"):
-		s.pollution = clampf(float(s.get("pollution", 0.0)) + float(option.pollution), 0.0, 100.0)
+		sim.Pollution.add_points(sim, float(option.pollution))
 	if float(option.get("research_points", 0.0)) > 0.0:
 		sim.Research.add_progress(sim, float(option.research_points))
 	if bool(option.get("found_enterprise", false)):

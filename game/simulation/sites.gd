@@ -10,14 +10,23 @@ const SiteGen = preload("res://world/geo2/site_gen.gd")
 const Rules = preload("res://simulation/rules.gd")
 
 const GOODS: Array[String] = ["ore", "copper", "crystal"]
+const KIT_GOODS: Array[String] = ["materials", "parts", "food"]
 const PLOT_SPACING: float = 6.0
 const LEGACY_TOWN_OFFSET: float = 12.0
 const MINE_KINDS: Dictionary = {
-	"mine_ore": "ore", "mine_copper": "copper", "mine_crystal": "crystal"
+	"mine_ore": "ore",
+	"mine_copper": "copper",
+	"mine_crystal": "crystal",
+	"mine_ore_heavy": "ore",
+	"mine_copper_heavy": "copper",
+	"mine_crystal_heavy": "crystal",
+	"mine_ore_auto": "ore",
+	"mine_copper_auto": "copper",
+	"mine_crystal_auto": "crystal",
 }
 const NAME_LIMIT: int = 16
 const FIRST_PRINTABLE: int = 32
-const FARM_KINDS: Array[String] = ["farm"]
+const FARM_KINDS: Array[String] = ["farm", "field_station", "ranch"]
 const LEGACY_FREE_GENERAL: int = 8
 const LEGACY_MIN_GENERAL: int = 20
 const LEGACY_MIN_FARMS: int = 4
@@ -30,11 +39,28 @@ static func ensure_state(state: Dictionary) -> void:
 	for reg: Dictionary in state.world.regions:
 		if not reg.has("plots"):
 			_legacy_site(state, reg)
+	var first: bool = true
 	for s: Dictionary in state.settlements:
 		for b: Dictionary in s.buildings:
 			if not b.has("plot"):
 				b.plot = -1
 		_legacy_claims(state, s)
+		if not s.has("kind"):
+			s.kind = Keys.SITE_RESIDENTIAL if first else _kind_from_buildings(s)
+		first = false
+
+
+## A settlement from before there were kinds is what most of its buildings make it.
+static func _kind_from_buildings(s: Dictionary) -> String:
+	var fields: int = 0
+	var town: int = 0
+	for b: Dictionary in s.buildings:
+		var kind: String = str(b.kind)
+		if MINE_KINDS.has(kind) or kind in FARM_KINDS:
+			fields += 1
+		elif not kind in ["power", "water", "port"]:
+			town += 1
+	return Keys.SITE_FRONTIER if fields > town else Keys.SITE_RESIDENTIAL
 
 
 static func _legacy_site(state: Dictionary, reg: Dictionary) -> void:
@@ -304,7 +330,7 @@ static func _surveying(sim: RefCounted, site: int) -> int:
 
 static func survey_cost(sim: RefCounted) -> float:
 	var rules: Dictionary = sim.progression_geo().survey
-	var cost: float = float(rules.cost)
+	var cost: float = float(rules.cost) * maxf(0.2, 1.0 + sim.Research.bonus(sim, "survey_cost"))
 	if sim._has("prospecting"):
 		cost *= float(rules.prospecting_cost_factor)
 	return cost
@@ -438,13 +464,24 @@ static func start_score(sim: RefCounted, site: int) -> float:
 	return value / float(known.development)
 
 
-## The capital opening pays less for its first expedition.
-static func expedition_cash(sim: RefCounted) -> float:
-	var cash: float = float(sim.config.outpost.cash)
+## The capital opening pays less for its first expedition; a frontier camp costs less than a town.
+static func expedition_cash(sim: RefCounted, kind: String = Keys.SITE_RESIDENTIAL) -> float:
+	var cash: float = (
+		float(sim.config.outpost.cash)
+		* maxf(0.2, 1.0 + sim.Research.bonus(sim, "expedition_cost"))
+	)
+	if kind == Keys.SITE_FRONTIER:
+		cash *= float(sim.config.outpost.frontier_cash)
 	if sim.state.settlements.size() == 1:
 		var opening: Dictionary = sim.config.openings[sim.state.advantage]
 		cash *= float(opening.get("first_expedition_factor", 1.0))
 	return cash
+
+
+static func expedition_workers(sim: RefCounted, kind: String) -> int:
+	if kind == Keys.SITE_FRONTIER:
+		return int(sim.config.outpost.frontier_workers)
+	return int(sim.config.outpost.workers)
 
 
 static func _expedition_source(sim: RefCounted, region: int, from: int) -> Dictionary:
@@ -477,7 +514,7 @@ static func _expedition_source(sim: RefCounted, region: int, from: int) -> Dicti
 	return best
 
 
-## How an expedition would travel: by land if it can, by sea with the technology and a port.
+## How an expedition would travel: by land if it can, by sea from a town with a port.
 static func _expedition_route(sim: RefCounted, from: int, to: int) -> Dictionary:
 	var road: Dictionary = Logistics.route_between(sim, from, to, "engineered")
 	if bool(road.reachable):
@@ -485,10 +522,7 @@ static func _expedition_route(sim: RefCounted, from: int, to: int) -> Dictionary
 	var sea: Dictionary = Logistics.route_between(sim, from, to, "sea")
 	if not bool(sea.reachable):
 		return sea
-	if not sim._has(str(sim.config.roads.sea.tech)):
-		sea.reachable = false
-		sea.reason = "此地点没有可达陆路；需要沿海航运技术"
-	elif not Logistics._has_port(sim.settlement(from)):
+	if not Logistics._has_port(sim.settlement(from)):
 		sea.reachable = false
 		sea.reason = "海上远征需要出发地有运转的货运站"
 	return sea
@@ -504,7 +538,9 @@ static func clean_name(typed: String) -> String:
 
 
 ## Why this site cannot be settled now, or an empty string. Changes nothing.
-static func settle_refusal(sim: RefCounted, region: int, from: int = -1) -> String:
+static func settle_refusal(
+	sim: RefCounted, region: int, from: int = -1, kind: String = Keys.SITE_RESIDENTIAL
+) -> String:
 	if region < 0 or region >= sim.state.world.regions.size():
 		return "请选择候选地区"
 	if not sim.settlement(region).is_empty():
@@ -513,7 +549,7 @@ static func settle_refusal(sim: RefCounted, region: int, from: int = -1) -> Stri
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
 	if sim.state.settlements.is_empty():
 		if not _can_expand_from(sim, region):
-			return "该登陆点没有可达的第二陆地据点，无法履行双据点合同"
+			return "该登陆点既没有陆路相邻的地点，也不靠海，无法履行双据点合同"
 		return ""
 	var rules: Dictionary = sim.config.outpost
 	var src: Dictionary = _expedition_source(sim, region, from)
@@ -521,22 +557,44 @@ static func settle_refusal(sim: RefCounted, region: int, from: int = -1) -> Stri
 		return "请选择出发据点"
 	var road: Dictionary = _expedition_route(sim, int(src.region), region)
 	if not bool(road.reachable):
-		return str(road.get("reason", "此地区没有可达陆路；当前不具备海运能力"))
-	var fare: float = expedition_cash(sim)
-	if sim.state.cash < fare:
-		return "建立前哨需要 %.0f 资金" % fare
+		return str(road.get("reason", "此地区没有可达陆路，也没有航线"))
+	var fare: float = expedition_cash(sim, kind)
 	if int(src.workers) < int(rules.min_source_workers):
-		return "出发据点技术工人不足 %d 人" % int(rules.min_source_workers)
-	if (
-		float(src.stock.materials) < float(rules.materials)
-		or float(src.stock.parts) < float(rules.parts)
-		or float(src.stock.food) < float(rules.food)
-	):
+		return "出发据点工程队不足 %d 支" % int(rules.min_source_workers)
+	var kit: float = _kit_shortfall_cost(sim, src)
+	if kit > 0.0 and not Logistics._has_port(src):
 		return (
-			"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资"
+			"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资；有货运站才能现买"
 			% [float(rules.materials), float(rules.parts), float(rules.food)]
 		)
+	if sim.state.cash < fare + kit:
+		return "建立前哨需要 %.0f 资金（含 %.0f 物资采购）" % [fare + kit, kit]
 	return ""
+
+
+static func _kit_price(sim: RefCounted, good: String) -> float:
+	return float(sim.config.prices[good]) * (1.0 + float(sim.config.economy.port_fee))
+
+
+## What the expedition's stores cost to buy in, for whatever the warehouse lacks.
+static func _kit_shortfall_cost(sim: RefCounted, src: Dictionary) -> float:
+	var rules: Dictionary = sim.config.outpost
+	var total: float = 0.0
+	for good: String in KIT_GOODS:
+		total += maxf(0.0, float(rules[good]) - float(src.stock[good])) * _kit_price(sim, good)
+	return total
+
+
+static func _buy_kit(sim: RefCounted, src: Dictionary) -> void:
+	var rules: Dictionary = sim.config.outpost
+	for good: String in KIT_GOODS:
+		var missing: float = maxf(0.0, float(rules[good]) - float(src.stock[good]))
+		if missing <= 0.0:
+			continue
+		sim._transfer(
+			"public", "external", missing * _kit_price(sim, good), "import.stock", false, good
+		)
+		sim._produce(src, good, missing, Keys.SOURCE_IMPORT)
 
 
 ## The player's name for a settled site. Numbers and keys identify places; names are only shown.
@@ -558,11 +616,21 @@ static func _give_name(sim: RefCounted, region: int, cleaned: String) -> void:
 	reg.named = true
 
 
-static func settle(sim: RefCounted, region: int, from: int = -1, typed_name: String = "") -> String:
-	var refusal: String = settle_refusal(sim, region, from)
+static func settle(
+	sim: RefCounted,
+	region: int,
+	from: int = -1,
+	typed_name: String = "",
+	wanted_kind: String = Keys.SITE_RESIDENTIAL
+) -> String:
+	var first: bool = sim.state.settlements.is_empty()
+	# The first town is where people live; nothing else can start a colony.
+	var site_kind: String = Keys.SITE_RESIDENTIAL if first else wanted_kind
+	if not site_kind in [Keys.SITE_RESIDENTIAL, Keys.SITE_FRONTIER]:
+		return "未知据点类型"
+	var refusal: String = settle_refusal(sim, region, from, site_kind)
 	if refusal != "":
 		return refusal
-	var first: bool = sim.state.settlements.is_empty()
 	var reg: Dictionary = sim.state.world.regions[region]
 	var cleaned: String = clean_name(typed_name)
 	if cleaned != "":
@@ -573,23 +641,27 @@ static func settle(sim: RefCounted, region: int, from: int = -1, typed_name: Str
 	if not first:
 		src = _expedition_source(sim, region, from)
 		road = _expedition_route(sim, int(src.region), region)
-		sim._transfer("public", "external", expedition_cash(sim), "invest.outpost", false)
+		_buy_kit(sim, src)
+		sim._transfer("public", "external", expedition_cash(sim, site_kind), "invest.outpost", false)
 		sim._consume(src, "materials", float(rules.materials))
 		sim._consume(src, "parts", float(rules.parts))
 		# Expedition population migrates; food stays physically in its convoy until arrival.
-		src.workers -= int(rules.workers)
-		src.population -= int(rules.workers)
+		src.workers -= expedition_workers(sim, site_kind)
+		src.population -= expedition_workers(sim, site_kind)
 		sim._reconcile_jobs(src)
 	var op: Dictionary = sim.config.openings[sim.state.advantage]
-	var workers: int = int(op.workers) if first else int(rules.workers)
+	var workers: int = int(op.workers) if first else expedition_workers(sim, site_kind)
 	var scientists: int = int(op.scientists) if first else 0
 	var children: int = int(op.children) if first else 0
 	var landing_beds: int = int(
 		sim.pop_rules.housing.capital if first else sim.pop_rules.housing.outpost
 	)
+	if site_kind == Keys.SITE_FRONTIER:
+		landing_beds = int(sim.pop_rules.housing.frontier)
 	var s: Dictionary = {
 		"region": region,
 		"name": reg.name,
+		"kind": site_kind,
 		"population": workers + scientists + children,
 		"children": children,
 		"workers": workers,
@@ -671,7 +743,9 @@ static func settle(sim: RefCounted, region: int, from: int = -1, typed_name: Str
 
 static func _can_expand_from(sim: RefCounted, region: int) -> bool:
 	if WorldGen.is_generated(str(sim.geo.version)):
-		return not sim.state.world.regions[region].neighbors.is_empty()
+		var site: Dictionary = sim.state.world.regions[region]
+		var ships: bool = bool(site.get("sea_links", false)) and bool(site.get("coast", false))
+		return ships or not site.neighbors.is_empty()
 	for other: Variant in sim.state.world.candidates:
 		if int(other) != region:
 			if WorldGen.new().route(sim.geo, region, int(other), true).reachable:

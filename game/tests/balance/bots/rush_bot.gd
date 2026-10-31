@@ -4,14 +4,13 @@ extends "res://tests/balance/bots/colony_bot.gd"
 
 
 func _init() -> void:
-	reserve_days = 5.0
-	payback_limit = 200.0
+	reserve_days = 2.0
+	payback_limit = 700.0
 	recruit_batch = 20
 	recruit_buffer = 0.0
-	science_target = 0.06
-	population_goal = 240
+	science_target = 0.08
 	lab_day = 1
-	tech_order = ["adaptation", "survey"]
+	tech_order = ["adaptation", "survey", "education", "community_admin", "green_spaces"]
 
 
 func finished() -> bool:

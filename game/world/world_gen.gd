@@ -1,9 +1,11 @@
 extends RefCounted
 ## Authoritative, deterministic spherical geography. All coordinates use degrees.
-const VERSION := "CC-GEO-2.1"
-const GENERATED_VERSIONS: Array[String] = ["CC-GEO-2.0", "CC-GEO-2.1"]
+const VERSION := "CC-GEO-2.2"
+const GENERATED_VERSIONS: Array[String] = ["CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2"]
 const LEGACY_VERSION := "CC-GEO-1.6"
-const SUPPORTED_VERSIONS := ["CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0", "CC-GEO-2.1"]
+const SUPPORTED_VERSIONS := [
+	"CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2"
+]
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Hydrology = preload("res://world/hydrology.gd")
 const Plates = preload("res://world/geo2/plates.gd")
@@ -50,6 +52,11 @@ static func world_compatibility_error(world: Dictionary) -> String:
 static func road_blocked(route: Dictionary, day: int) -> bool:
 	# Until is inclusive, matching transport and contract connectivity.
 	return int(route.get("blocked_until", 0)) >= day
+
+
+## A road still being built counts as blocked until its finish day, but it is not a closure.
+static func road_building(route: Dictionary, day: int) -> bool:
+	return int(route.get("ready_day", 0)) >= day
 
 
 ## Derived geography for a seed. Grid data is shared read-only between games on the same seed;

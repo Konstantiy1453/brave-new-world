@@ -1,5 +1,5 @@
 extends RefCounted
-## Save schema 3: "CCS3" | u32 header length | header JSON | zstd(var_to_bytes(state)).
+## Save schema 4 (3 is read too): "CCS3" | u32 header length | header JSON | zstd(var_to_bytes(state)).
 ## The header can be read without touching the payload. Landing checkpoint and stewardship
 ## archives live in sibling files named with their hash. Geography is not saved: it is
 ## regenerated from the seed and checked against the stored world hash.
@@ -13,7 +13,9 @@ const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
 const SaveMigration = preload("res://simulation/save_migration.gd")
-const SCHEMA: int = 3
+const SCHEMA: int = 4
+## 1.7 saves: same format, older rules. Newer systems arrive through ensure_systems on load.
+const OLD_SCHEMA: int = 3
 const MAGIC: String = "CCS3"
 const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
@@ -104,7 +106,7 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	var header: Variant = JSON.parse_string(
 		bytes.slice(HEADER_OFFSET, HEADER_OFFSET + header_size).get_string_from_utf8()
 	)
-	if not header is Dictionary or int(header.get("version", 0)) != SCHEMA:
+	if not header is Dictionary or not int(header.get("version", 0)) in [SCHEMA, OLD_SCHEMA]:
 		return "存档格式或版本不兼容"
 	var payload: PackedByteArray = bytes.slice(HEADER_OFFSET + header_size)
 	if _sha256(payload) != str(header.get("sha256", "")):
@@ -113,11 +115,20 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	if raw_size <= 0:
 		return "存档校验失败"
 	var candidate: Variant = bytes_to_var(payload.decompress(raw_size, FileAccess.COMPRESSION_ZSTD))
+	if int(header.version) == OLD_SCHEMA and candidate is Dictionary:
+		_upgrade_old_schema(sim, candidate)
 	var error: String = validate(sim, candidate)
 	if error != "":
 		return error
 	var loaded_blobs: Dictionary = _read_blobs(path, candidate)
 	return adopt(sim, candidate, loaded_blobs)
+
+
+static func _upgrade_old_schema(sim: RefCounted, candidate: Dictionary) -> void:
+	if int(candidate.get("schema", 0)) != OLD_SCHEMA:
+		return
+	sim.ensure_systems(candidate)
+	candidate.schema = SCHEMA
 
 
 ## Binds a validated state to its geography and commits it. Any failure leaves sim unchanged.
@@ -148,7 +159,7 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 		return error
 	if int(candidate.schema) != SCHEMA:
 		return "存档版本或阶段无效"
-	if int(candidate.contract.stage) < 1 or int(candidate.contract.stage) > 4:
+	if int(candidate.contract.stage) < 1 or int(candidate.contract.stage) > sim.Contract.STAGE_COUNT + 1:
 		return "合同阶段无效"
 	if float(candidate.policy.get("wage", 0.0)) <= 0.0:
 		return "工资政策无效"
@@ -370,6 +381,7 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 			"milestones": []
 		},
 		"market": {"saturation": {}},
+		"pollution": {"load": 0, "emitted": 0, "absorbed": 0, "stage": 0},
 		"recruits": [{"region": 0, "kind": "", "count": 0, "arrive_day": 0}],
 		"recruit_campaigns": []
 	}
@@ -449,6 +461,7 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 	return {
 		"region": 0,
 		"name": "",
+		"kind": "",
 		"population": 0,
 		"children": 0,
 		"workers": 0,
@@ -520,7 +533,7 @@ static func _validate_settlements(
 				error = shape(s.targets[resource], 0, "stock_target")
 				if error != "":
 					return error
-		for field: String in ["pollution", "social_days"]:
+		for field: String in ["social_days"]:
 			error = shape(s.get(field, 0), 0, "settlement." + field)
 			if error != "":
 				return error

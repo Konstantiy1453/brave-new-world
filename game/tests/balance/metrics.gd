@@ -2,11 +2,14 @@ extends RefCounted
 ## Per-run metrics, read from Sim state after every simulated day.
 
 const EventsV2 = preload("res://simulation/events_v2.gd")
-const POPULATION_CHECKPOINTS: Array[int] = [90, 180, 360, 720]
-const RESEARCH_WINDOW_FIRST_DAY: int = 60
-const RESEARCH_WINDOW_LAST_DAY: int = 180
-const EXPORT_MIX_FROM_DAY: int = 180
+const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
+const RESEARCH_WINDOW_FIRST_DAY: int = 360
+const RESEARCH_WINDOW_LAST_DAY: int = 1440
+const EXPORT_MIX_FROM_DAY: int = 720
 const INCOME_SAMPLE_DAYS: int = 30
+const EARLY_INCOME_DAY: int = 720
+const LATE_INCOME_DAY: int = 2160
+const POLLUTION_CHECK_DAYS: Array[int] = [1080, 2880]
 
 var record: Dictionary = {}
 var _pending_seen: Dictionary = {}
@@ -17,6 +20,7 @@ var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
 var _last_entry: Dictionary = {}
 var _opened_at: Dictionary = {}
+var _last_distrust: float = 0.0
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -42,11 +46,15 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"company_stage_days": {},
 				"audit_errors": [],
 				"audit_error_count": 0,
-				"immigrants_180": -1,
-				"operating_income_180": -1.0,
-				"operating_income_720": -1.0,
-				"reinvested_share_720": -1.0,
+				"operating_income_early": -1.0,
+				"operating_income_late": -1.0,
+				"reinvested_share": -1.0,
 				"distinct_events": 0,
+				"events_off": 0,
+				"largest_distrust_rise": 0.0,
+				"pollution_penalty": {},
+				"categories_at_award": 0,
+				"first_road_days": -1,
 				"final_day": 0,
 				"final_status": "",
 			}
@@ -70,12 +78,20 @@ func sample(sim: RefCounted) -> void:
 	record.stage_days = state.contract.completed.duplicate()
 	if POPULATION_CHECKPOINTS.has(day):
 		record.population[str(day)] = _population(state)
-	if day == 180:
-		record.immigrants_180 = int(state.immigrants_total)
+	if POLLUTION_CHECK_DAYS.has(day):
+		record.pollution_penalty[str(day)] = sim.Pollution.penalty(sim)
+	var distrust: float = float(state.company.distrust)
+	record.largest_distrust_rise = maxf(
+		float(record.largest_distrust_rise), distrust - _last_distrust
+	)
+	_last_distrust = distrust
+	if int(record.first_road_days) < 0 and not state.roads.is_empty():
+		record.first_road_days = int(state.roads[0].get("build_days", 0))
 	if state.status == "success" and int(record.award_day) < 0:
 		record.award_day = day
 		record.techs_by_award = state.research.completed.size()
 		record.scientist_share_at_award = _scientist_share(state)
+		record.categories_at_award = _categories(sim)
 	if state.status == "failed" and int(record.failure_day) < 0:
 		record.failure_day = day
 		record.failure_reason = str(state.failure_reason)
@@ -88,11 +104,20 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.final_population = _population(state)
 	record.final_cash = float(state.cash)
 	record.distinct_events = _distinct_events(state)
+	record.events_off = state.get("events_v2", {}).get("off", []).size()
+	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
-		record.reinvested_share_720 = _reinvested / _operating_surplus
+		record.reinvested_share = _reinvested / _operating_surplus
 	return record
+
+
+func _categories(sim: RefCounted) -> int:
+	var seen: Dictionary = {}
+	for tech: String in sim.state.research.completed:
+		seen[str(sim.config.techs[tech].category)] = true
+	return seen.size()
 
 
 func _population(state: Dictionary) -> int:
@@ -190,10 +215,10 @@ func _scan_income(state: Dictionary, day: int) -> void:
 	_income_window.append(float(state.income_daily))
 	if _income_window.size() > INCOME_SAMPLE_DAYS:
 		_income_window.pop_front()
-	if day == 180:
-		record.operating_income_180 = _mean(_income_window)
-	if day == 720:
-		record.operating_income_720 = _mean(_income_window)
+	if day == EARLY_INCOME_DAY:
+		record.operating_income_early = _mean(_income_window)
+	if day == LATE_INCOME_DAY:
+		record.operating_income_late = _mean(_income_window)
 
 
 func _mean(values: Array[float]) -> float:

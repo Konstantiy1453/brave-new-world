@@ -3,9 +3,11 @@ const Keys = preload("res://simulation/keys.gd")
 const Contract = preload("res://simulation/contract.gd")
 const Population = preload("res://simulation/population.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Pollution = preload("res://simulation/pollution.gd")
 
 
-## One causal source per economic/social/environmental chain, retained stage letters.
+## One causal source per economic and social chain, retained stage letters. Pollution is not one
+## of them: it has its own consequences in pollution.gd.
 static func ensure(sim) -> void:
 	if not sim.state.has("company"):
 		sim.state.company = {
@@ -25,14 +27,8 @@ static func ensure(sim) -> void:
 	if not sim.state.has("departed_total"):
 		sim.state.departed_total = 0
 	for s in sim.state.settlements:
-		if not s.has("pollution"):
-			s.pollution = 0.0
 		if not s.has("social_days"):
 			s.social_days = 0
-
-
-static func environmental_factor(s: Dictionary) -> float:
-	return clampf(1.0 - maxf(0.0, float(s.get("pollution", 0)) - 35.0) * 0.006, 0.55, 1.0)
 
 
 static func social_environment(sim) -> void:
@@ -41,27 +37,6 @@ static func social_environment(sim) -> void:
 	for s in sim.state.settlements:
 		if s.arrival > 0:
 			continue
-		var pollution: float = 0.0
-		for b in s.buildings:
-			if not b.active:
-				continue
-			if b.kind.begins_with("mine_"):
-				pollution += float(sim.progression.production.mine_pollution) * float(b.efficiency)
-			if b.kind in ["processor", "component_plant"]:
-				pollution += (
-					float(sim.progression.production.processor_pollution) * float(b.efficiency)
-				)
-		var decay: float = float(sim.progression.production.pollution_decay)
-		if sim._has("remediation"):
-			decay *= float(sim.progression.production.remediation_decay_factor)
-		s.pollution = clampf(float(s.pollution) + pollution - decay, 0.0, 100.0)
-		if s.pollution > float(cfg.pollution_threshold):
-			sim._public_expense(
-				(float(s.pollution) - float(cfg.pollution_threshold)) * 0.10,
-				"company.health",
-				"external"
-			)
-			sim._short(s, Keys.SH_POLLUTION)
 		var adult: int = int(s.workers) + int(s.scientists)
 		var underemployment: bool = (
 			int(sim.state.day) > 20 and float(s.employed) < float(adult) * 0.35
@@ -87,15 +62,21 @@ static func social_environment(sim) -> void:
 			sim.state.departed_total += leaving
 			Stats.people(sim.state, int(s.region), false, leaving)
 			sim._reconcile_jobs(s)
-			sim._log("%s：持续缺乏住房、工作或食品，%d 名工人离开星球。" % [s.name, leaving])
+			sim._log("%s：持续缺乏住房、工作或食品，%d 支工程队离开星球。" % [s.name, leaving])
 
 
 ## The settlement that most lacks what this aid carries; ties go to the earliest settlement.
 ## Better wages keep people through hard times: departures come less often.
 static func _departure_period(sim: RefCounted, cfg: Dictionary, s: Dictionary) -> int:
-	var period: float = float(cfg.departure_period) * Population.wage_multiplier(sim)
-	if Population.has_clinic(s):
-		period *= float(sim.pop_rules.departure.clinic_factor)
+	var period: float = (
+		float(cfg.departure_period)
+		* Population.wage_multiplier(sim)
+		* (
+			1.0
+			+ Population.service_total(sim, s, "departure")
+			+ sim.Research.bonus(sim, "departure")
+		)
+	)
 	return maxi(1, int(round(period)))
 
 
@@ -181,19 +162,7 @@ static func act(sim, args: Dictionary) -> String:
 		"accept":
 			return accept(sim, str(args.get("offer", "")), int(args.get("region", -1)))
 		"cleanup":
-			var s: Dictionary = sim.settlement(int(args.get("region", -1)))
-			if s.is_empty():
-				return "请选择据点"
-			var cost: float = float(sim.progression.production.cleanup_cost)
-			if sim._has("remediation"):
-				cost *= float(sim.progression.production.remediation_cost_factor)
-			if sim.state.cash < cost:
-				return "治理需要 %.0f 资金" % cost
-			sim._transfer("public", "external", cost, "company.cleanup", false)
-			s.pollution = maxf(
-				0.0, float(s.pollution) - float(sim.progression.production.cleanup_amount)
-			)
-			return ""
+			return Pollution.cleanup(sim)
 	return "未知公司行动"
 
 
@@ -261,42 +230,42 @@ static func tick(sim) -> void:
 	var diff: Dictionary = sim.progression.difficulty[sim.state.difficulty]
 	var economic: float = 0.0
 	var social: float = 0.0
-	var environment: float = 0.0
 	var reason: String = ""
 	if float(sim.state.debt) > 0.01:
-		economic = minf(2.0, 0.5 + float(sim.state.grace_days) * 0.08)
+		economic = minf(
+			float(cfg.debt_cap),
+			float(cfg.debt_base) + float(sim.state.grace_days) * float(cfg.debt_per_day)
+		)
 		reason = "必要支出逾期；偿还欠款、收缩支出或申请周转资金"
 	for s in sim.state.settlements:
 		if int(s.starvation) > 0:
-			economic = maxf(economic, minf(2.4, 0.6 + float(s.starvation) * 0.12))
+			economic = maxf(
+				economic,
+				minf(
+					float(cfg.starving_cap),
+					float(cfg.starving_base) + float(s.starvation) * float(cfg.starving_per_day)
+				)
+			)
 			reason = "必要食品短缺；进口、开港、调拨、限产或申请物资"
 		if int(s.social_days) > 0 and int(s.starvation) == 0:
 			var rate: float = minf(
 				float(cfg.social_rate_cap), float(s.social_days) * float(cfg.social_rate_per_day)
 			)
 			social = maxf(social, rate * _population_weight(sim, s, cfg))
-		if float(s.pollution) > float(cfg.pollution_threshold):
-			environment = maxf(
-				environment, (float(s.pollution) - float(cfg.pollution_threshold)) * 0.02
-			)
 	if Contract.overdue(sim):
 		economic = maxf(economic, float(sim.contract_rules.overdue_distrust_per_day))
 		reason = "主要合同超过期限；完成未达目标后停止此项风险"
 	for a in c.aid:
 		if a.status == "breached":
-			economic = maxf(economic, 1.8)
+			economic = maxf(economic, float(cfg.breached_rate))
 			reason = "援助偿还逾期；补足偿还后停止处罚"
 	var next_sources: Dictionary = {}
-	for item in [
-		["economic", economic, reason],
-		["social", social, "持续住房或就业不足；人口正向星球外流失"],
-		["environment", environment, "污染地区健康成本增加、生产效率下降；治理或限产"]
-	]:
+	for item in [["economic", economic, reason], ["social", social, "持续住房或就业不足；人口正向星球外流失"]]:
 		var previous: Dictionary = c.sources.get(item[0], {})
 		var days: int = int(previous.get("days", 0)) + 1 if float(item[1]) > 0 else 0
 		next_sources[item[0]] = {"rate": float(item[1]), "days": days, "reason": item[2]}
 	c.sources = next_sources
-	var risk: float = (economic + social + environment) * float(diff.risk)
+	var risk: float = (economic + social) * float(diff.risk)
 	# One small town's troubles are the governor's business, not the company's.
 	if risk <= float(cfg.tolerated_risk):
 		risk = 0.0
@@ -319,7 +288,7 @@ static func tick(sim) -> void:
 				and days_in_stage >= int(cfg.minimum_stage_days)
 			):
 				transition(
-					sim, "review", int(diff.review_days), "正式整改：解决当前经济、社会与环境原因。现有合同到期不会绕过此窗口。"
+					sim, "review", int(diff.review_days), "正式整改：解决当前经济与社会原因。现有合同到期不会绕过此窗口。"
 				)
 			elif c.stable >= int(cfg.stable_days):
 				transition(sim, "recovery", 0, "问题已解决，持续稳定将恢复评价。")
@@ -352,7 +321,9 @@ static func view(sim) -> Dictionary:
 		row.claimed = sim.state.company.claimed.has(key)
 		row.target_region = aid_target(sim, row)
 		c.offers.append(row)
-	c.next_condition = "解决原因并稳定 10 日可阻止升级；后续不信任逐日恢复"
+	c.next_condition = (
+		"解决原因并稳定 %d 日可阻止升级；后续不信任逐日恢复" % int(sim.progression.company.stable_days)
+	)
 	return c
 
 

@@ -3,8 +3,10 @@ extends RefCounted
 ## compares them.
 
 const RESOURCES: Array[String] = [
-	"ore", "copper", "crystal", "food", "materials", "parts", "components"
+	"ore", "copper", "crystal", "food", "materials", "parts", "components", "alloy", "machinery", "pharma"
 ]
+const SITE_RESIDENTIAL: String = "residential"
+const SITE_FRONTIER: String = "frontier"
 
 const B_BUILDING: String = "building"
 const B_PENDING: String = "pending"

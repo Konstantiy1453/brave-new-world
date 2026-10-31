@@ -7,27 +7,30 @@ const EventsV2 = preload("res://simulation/events_v2.gd")
 const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
 const AWARD_BANDS: Dictionary = {
-	"easy": [90, 150],
-	"normal": [120, 180],
-	"hard": [160, 230],
+	"easy": [1800, 2520],
+	"normal": [2160, 2880],
+	"hard": [2520, 3240],
 }
-const FLOOR_DAY: int = 90
+const FLOOR_DAY: int = 1440
 const OPENING_SPREAD: float = 0.15
-const PASSIVE_REVIEW_DAY: Array[int] = [40, 80]
-const PASSIVE_FAILURE_DAY: Array[int] = [120, 180]
-const POPULATION_AT_360: int = 300
-const POPULATION_AT_720: int = 600
-const STAGE3_POPULATION: Dictionary = {"easy": 144, "normal": 180, "hard": 216}
-const MIN_TECHS_BALANCED: int = 3
-const MIN_TECHS_RESEARCH_FIRST: int = 6
+const PASSIVE_REVIEW_DAY: Array[int] = [150, 400]
+const PASSIVE_FAILURE_DAY: Array[int] = [400, 900]
+const POPULATION_AT_720: int = 300
+const POPULATION_AT_1440: int = 800
+const MIN_TECHS_BALANCED: int = 40
 const SCIENTIST_SHARE: Array[float] = [0.10, 0.20]
-const RESEARCH_SHARE: Array[float] = [0.15, 0.30]
 const REINVEST_SHARE: float = 0.60
 const INCOME_GROWTH: float = 2.5
 const EXPORT_CONCENTRATION: float = 0.60
-const PAUSE_INTERVAL_DAYS: float = 20.0
-const DISTINCT_EVENTS: int = 15
+const PAUSE_INTERVAL_DAYS: float = 40.0
+const DISTINCT_EVENTS: int = 25
 const LABOUR_LEVER: float = 0.20
+const MIN_SHORT_EVENTS: int = 60
+const MIN_CHAINS: int = 10
+const MIN_OFF_SHARE: float = 0.25
+const LARGEST_DISTRUST_RISE: float = 0.8
+const POLLUTION_EARLY_LIMIT: float = 0.02
+const ROAD_DAYS: Array[int] = [90, 300]
 
 
 static func median(values: Array) -> float:
@@ -98,9 +101,9 @@ static func group_table(runs: Array) -> Array:
 					"failure_rate": float(failures.size()) / group.size(),
 					"failure_median": median(failures),
 					"min_cash_median": median(field(group, "min_cash", -1e12)),
-					"population_180": median(population_at(group, 180)),
-					"population_360": median(population_at(group, 360)),
 					"population_720": median(population_at(group, 720)),
+					"population_1440": median(population_at(group, 1440)),
+					"population_2880": median(population_at(group, 2880)),
 					"techs_by_award": median(field(group, "techs_by_award")),
 					"audit_errors": _sum_field(group, "audit_error_count"),
 				}
@@ -258,14 +261,14 @@ static func _failure_rows(rows: Array, runs: Array) -> void:
 
 static func _population_rows(rows: Array, runs: Array) -> void:
 	var group: Array = select(runs, "balanced", "normal")
-	var at_360: float = median(population_at(group, 360))
-	var at_720: float = median(population_at(group, 720))
+	var early: float = median(population_at(group, 720))
+	var later: float = median(population_at(group, 1440))
 	_row(
 		rows,
 		"Population",
-		">= %d by 360; >= %d by 720" % [POPULATION_AT_360, POPULATION_AT_720],
-		"%.0f / %.0f" % [at_360, at_720],
-		_verdict(at_360 >= POPULATION_AT_360 and at_720 >= POPULATION_AT_720, not group.is_empty())
+		">= %d by year 2; >= %d by year 4" % [POPULATION_AT_720, POPULATION_AT_1440],
+		"%.0f / %.0f" % [early, later],
+		_verdict(early >= POPULATION_AT_720 and later >= POPULATION_AT_1440, not group.is_empty())
 	)
 
 
@@ -273,19 +276,18 @@ static func _research_rows(rows: Array, runs: Array) -> void:
 	var group: Array = select(runs, "balanced", "normal")
 	var techs: float = median(field(group, "techs_by_award"))
 	var share: float = median(field(group, "scientist_share_at_award"))
-	var spend: float = median(field(group, "research_share"))
+	var categories: float = median(field(group, "categories_at_award"))
 	var ok: bool = (
 		techs >= MIN_TECHS_BALANCED
+		and categories >= 4.0
 		and share >= SCIENTIST_SHARE[0]
 		and share <= SCIENTIST_SHARE[1]
-		and spend >= RESEARCH_SHARE[0]
-		and spend <= RESEARCH_SHARE[1]
 	)
 	_row(
 		rows,
 		"Research, balanced",
-		">= 3 techs; scientists 10-20%; spend 15-30%",
-		"%.0f techs; %.0f%%; %.0f%%" % [techs, share * 100.0, spend * 100.0],
+		">= 40 techs; every category; research teams 10-20%",
+		"%.0f techs; %.0f categories; %.0f%%" % [techs, categories, share * 100.0],
 		_verdict(ok, not group.is_empty())
 	)
 	var first: Array = select(runs, "research_first", "normal")
@@ -293,14 +295,12 @@ static func _research_rows(rows: Array, runs: Array) -> void:
 	var first_award: float = median(field(first, "award_day"))
 	var band: Array = AWARD_BANDS["normal"]
 	var first_ok: bool = (
-		first_techs >= MIN_TECHS_RESEARCH_FIRST
-		and first_award >= band[0]
-		and first_award <= band[1]
+		first_techs > techs and first_award >= band[0] and first_award <= band[1]
 	)
 	_row(
 		rows,
 		"Research-first",
-		">= 6 techs, award in standard band",
+		"more techs than balanced, award in standard band",
 		"%.0f techs; day %.0f" % [first_techs, first_award],
 		_verdict(first_ok, not first.is_empty())
 	)
@@ -308,14 +308,14 @@ static func _research_rows(rows: Array, runs: Array) -> void:
 
 static func _money_rows(rows: Array, runs: Array) -> void:
 	var group: Array = select(runs, "balanced", "normal")
-	var reinvest: float = median(field(group, "reinvested_share_720"))
-	var income_180: float = median(field(group, "operating_income_180"))
-	var income_720: float = median(field(group, "operating_income_720"))
-	var growth: float = income_720 / income_180 if income_180 > 0.0 else 0.0
+	var reinvest: float = median(field(group, "reinvested_share"))
+	var income_early: float = median(field(group, "operating_income_early"))
+	var income_late: float = median(field(group, "operating_income_late"))
+	var growth: float = income_late / income_early if income_early > 0.0 else 0.0
 	_row(
 		rows,
 		"Money",
-		"reinvest >= 60%; income x2.5 from 180 to 720",
+		"reinvest >= 60%; income x2.5 from year 2 to year 6",
 		"%.0f%%; x%.2f" % [reinvest * 100.0, growth],
 		_verdict(reinvest >= REINVEST_SHARE and growth >= INCOME_GROWTH, not group.is_empty())
 	)
@@ -329,7 +329,7 @@ static func _money_rows(rows: Array, runs: Array) -> void:
 	_row(
 		rows,
 		"Export mix",
-		"no good > 60% after day 180",
+		"no good > 60% after year 2",
 		"median %.0f%%, worst %.0f%%" % [median(shares) * 100.0, worst * 100.0],
 		_verdict(worst <= EXPORT_CONCENTRATION, not shares.is_empty())
 	)
@@ -363,24 +363,86 @@ static func _event_rows(rows: Array, runs: Array) -> void:
 			chains += 1
 		else:
 			shorts += 1
+	var off_share: float = median(field(group, "events_off")) / maxi(1, shorts + chains)
+	var overlap: float = _opened_overlap(group)
 	_row(
 		rows,
 		"Events",
-		"<= 1 pause per 20 days; >= 15 distinct by 720; no repeat inside cooldown; 25 short, 5 chains",
 		(
-			"1 per %.0f days; %.0f distinct; %d repeats; %d short, %d chains"
-			% [interval, distinct, breaks, shorts, chains]
+			"<= 1 pause per %d days; >= %d distinct; %d short, %d chains; >= %d%% off each run"
+			% [PAUSE_INTERVAL_DAYS, DISTINCT_EVENTS, MIN_SHORT_EVENTS, MIN_CHAINS, MIN_OFF_SHARE * 100.0]
+		),
+		(
+			"1 per %.0f days; %.0f distinct; %d repeats; %d short, %d chains; %.0f%% off; seeds share %.0f%%"
+			% [interval, distinct, breaks, shorts, chains, off_share * 100.0, overlap * 100.0]
 		),
 		_verdict(
 			(
 				interval >= PAUSE_INTERVAL_DAYS
 				and distinct >= DISTINCT_EVENTS
 				and breaks == 0
-				and shorts >= 25
-				and chains >= 5
+				and shorts >= MIN_SHORT_EVENTS
+				and chains >= MIN_CHAINS
+				and off_share >= MIN_OFF_SHARE
+				and overlap < 0.95
 			),
 			not intervals.is_empty()
 		)
+	)
+	_pressure_rows(rows, runs)
+
+
+## How alike two different seeds' runs were: events both saw, over events either saw.
+static func _opened_overlap(group: Array) -> float:
+	var shares: Array = []
+	for at: int in range(group.size() - 1):
+		var a: Array = group[at].get("opened_events", [])
+		var b: Array = group[at + 1].get("opened_events", [])
+		if int(group[at].seed) == int(group[at + 1].seed) or a.is_empty() or b.is_empty():
+			continue
+		var both: int = 0
+		for id: Variant in a:
+			if b.has(id):
+				both += 1
+		shares.append(float(both) / maxi(1, a.size() + b.size() - both))
+	return median(shares)
+
+
+## Distrust climbs slowly and pollution stays out of it until the late game.
+static func _pressure_rows(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var rises: Array = field(group, "largest_distrust_rise")
+	var worst: float = 0.0 if rises.is_empty() else float(rises.max())
+	_row(
+		rows,
+		"Distrust",
+		"largest daily rise <= %.1f" % LARGEST_DISTRUST_RISE,
+		"worst %.2f" % worst,
+		_verdict(worst <= LARGEST_DISTRUST_RISE, not rises.is_empty())
+	)
+	var early: Array = []
+	var late: Array = []
+	for run: Dictionary in group:
+		if run.pollution_penalty.has("1080"):
+			early.append(float(run.pollution_penalty["1080"]))
+		if run.pollution_penalty.has("2880"):
+			late.append(float(run.pollution_penalty["2880"]))
+	var early_worst: float = 0.0 if early.is_empty() else float(early.max())
+	_row(
+		rows,
+		"Pollution",
+		"output penalty < %.0f%% through year 3" % (POLLUTION_EARLY_LIMIT * 100.0),
+		"year 3 worst %.1f%%; year 8 median %.1f%%" % [early_worst * 100.0, median(late) * 100.0],
+		_verdict(early_worst < POLLUTION_EARLY_LIMIT, not early.is_empty())
+	)
+	var roads: Array = field(group, "first_road_days", 0.0)
+	var road_median: float = median(roads)
+	_row(
+		rows,
+		"Roads",
+		"first road takes %d-%d days" % ROAD_DAYS,
+		"median %.0f days" % road_median,
+		_verdict(road_median >= ROAD_DAYS[0] and road_median <= ROAD_DAYS[1], not roads.is_empty())
 	)
 
 
@@ -400,7 +462,7 @@ static func _audit_row(rows: Array, runs: Array, extras: Dictionary) -> void:
 		_row(
 			rows,
 			"Labour lever",
-			"wage 1.0x to 1.3x changes 180-day immigration by >= 20%",
+			"wage 1.0x to 1.3x changes 360-day immigration by >= 20%",
 			"%.0f to %.0f arrivals (%+.0f%%)" % [base, float(lever.raised), gain * 100.0],
 			_verdict(absf(gain) >= LABOUR_LEVER, base > 0.0)
 		)
@@ -484,7 +546,7 @@ static func markdown(
 	lines.append(
 		(
 			"| Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day"
-			+ " | Min cash | Pop 180 / 360 / 720 | Techs at award |"
+			+ " | Min cash | Pop y2 / y4 / y8 | Techs at award |"
 		)
 	)
 	lines.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|")
@@ -504,9 +566,9 @@ static func markdown(
 						group.failure_rate * 100.0,
 						group.failure_median,
 						group.min_cash_median,
-						group.population_180,
-						group.population_360,
 						group.population_720,
+						group.population_1440,
+						group.population_2880,
 						group.techs_by_award,
 					]
 				)

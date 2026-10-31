@@ -9,22 +9,40 @@ const Hydrology = preload("res://world/hydrology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Rules = preload("res://simulation/rules.gd")
 
-const VERSION: String = "CC-GEO-2.1"
+const VERSION: String = "CC-GEO-2.2"
 ## 1.7.0 saves are bound to this one: same seed, same terrain, so it must never change.
 const FROZEN_VERSION: String = "CC-GEO-2.0"
 ## Bump when the same seed would generate a different world: disk caches are keyed on it.
-const REVISION: int = 4
+const REVISION: int = 5
 const SOFTER_CLIMATE_ATTEMPT: int = 5
 const SOFTER_LAYOUT_ATTEMPT: int = 8
 const GW: int = 144
 const GH: int = 72
 const RADIUS_KM: Array[float] = [730.0, 1000.0, 1430.0]
 
+static var _version_rules: Dictionary = {}
+
+
+## The rule tables a generator version runs on. Older versions keep the base tables and the road
+## table they were validated with, or their saves would stop matching what they regenerate.
+static func rules_for(version: String) -> Dictionary:
+	if _version_rules.has(version):
+		return _version_rules[version]
+	var base: Dictionary = Rules.read("geography")
+	var merged: Dictionary = base
+	if base.overrides.has(version):
+		merged = base.duplicate(false)
+		for key: String in base.overrides[version]:
+			merged[key] = base.overrides[version][key]
+		merged.erase("frozen_roads")
+	_version_rules[version] = merged
+	return merged
+
 
 static func generate(seed_input: Variant, size_id: int, version: String = VERSION) -> Dictionary:
 	var seed_value: int = SeedGeo.normalize_seed(seed_input)
 	var size: int = clampi(size_id, 0, 2)
-	var rules: Dictionary = Rules.read("geography")
+	var rules: Dictionary = rules_for(version)
 	var planet: Dictionary = {}
 	if version != FROZEN_VERSION:
 		planet = Plates.character(seed_value, rules)
@@ -42,6 +60,7 @@ static func generate(seed_input: Variant, size_id: int, version: String = VERSIO
 			seed_value, attempt, rules, _softened(planet, attempt)
 		)
 		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
+		world.radius_km = _radius(rules, size)
 		var count: int = int(world.statistics.continent_count)
 		if count < int(rules.continents[0]) or count > int(rules.continents[1]):
 			rejected.append({"attempt": attempt, "reason": "continents", "value": count})
@@ -60,12 +79,17 @@ static func generate(seed_input: Variant, size_id: int, version: String = VERSIO
 			seed_value, attempts, rules, _softened(planet, attempts)
 		)
 		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
+		world.radius_km = _radius(rules, size)
 		_finish_grid(world, noise)
 		SiteGen.place(world, rules, ctx, attempts)
 		fallback = {"world": world, "ctx": ctx}
 	SiteGen.carve_basin(fallback.world, rules)
 	var carved: Dictionary = SiteGen.validate(fallback.world, rules)
 	return _accept(fallback.world, fallback.ctx, carved, rejected, true)
+
+
+static func _radius(rules: Dictionary, size: int) -> float:
+	return float(rules.get("radius_km", RADIUS_KM)[size])
 
 
 ## A character that keeps failing the playability check gives way: first the climate, then the

@@ -3,12 +3,14 @@
 Single-player colony management game. Godot 4.5.1, GDScript, GL Compatibility, Windows x64.
 Deterministic fixed-step simulation, audited ledgers, Chinese UI, offline and free.
 
-The current job is version 1.7. Read these before doing anything:
+The current job is version 1.8. Read these before doing anything:
 
-1. `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` — the brief; §5.2 is the acceptance bar.
+1. `docs/v17/V18_BRIEF.md` — the user's request, word for word, and the acceptance bar.
 2. `docs/v17/PROGRESS.md` — what is done, in progress and next. **Update it before stopping.**
-3. `docs/v17/PLAN.md` — modules, data ownership, save schema, order of work.
+3. `docs/v17/V18_PLAN.md` — design and order of work for 1.8. `docs/v17/PLAN.md` still describes modules and data ownership.
 4. `docs/v17/DECISIONS.md` — judgment calls already made. Add one line per new call.
+
+Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` is the 1.7 brief. Folders keep the name `v17`.
 
 ## Paths
 
@@ -27,7 +29,8 @@ The current job is version 1.7. Read these before doing anything:
 
 `%APPDATA%\ColonyCharter\v16` (player saves), `build\v16`, `delivery\` (except `delivery\v17`), `versions\`,
 `docs\v16\`, existing files under `evidence\` (write only to `evidence\v17`), `tools\godot-4.5.1\`,
-and the `1.6.0 baseline` commit / `v1.6.0` tag.
+and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.8 keeps its own saves in `%APPDATA%\ColonyCharter\v18` and only
+reads the user's 1.7 saves in `%APPDATA%\ColonyCharter\v17`; never write there either.
 
 `art_reserve/` belongs to a separate 3ds Max modelling task that may be running at the same time. Do not
 touch it and do not stage it. **Stage explicit paths; never `git add -A`.**
@@ -64,7 +67,7 @@ Do not set `$env:APPDATA` in the shell that runs an export: Godot looks for expo
   run recorded in `BALANCE.md`, `PROGRESS.md` updated, and a tag `v17-phaseN`.
 - A process that exits 0 while its log has `SCRIPT ERROR` or failed checks is a failure.
 - Label evidence: automated test · balance harness · source-project window · exported EXE · screenshot viewed ·
-  human playtest. Human playtests are NOT_RUN unless the user reports one. Report misses against §5.2 plainly.
+  human playtest. Human playtests are NOT_RUN unless the user reports one. Report misses against the bar plainly.
 - Numbers live in `game/data/v17/`. Rules, UI text and tests read the same values.
 - `audit()` must pass every simulated day in every harness run; extend it to every new system.
 - Same seed + same action log ⇒ byte-identical state, at any game speed.

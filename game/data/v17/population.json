@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -8,7 +8,8 @@
   },
   "housing": {
     "capital": 60,
-    "outpost": 24
+    "outpost": 24,
+    "frontier": 30
   },
   "immigration": {
     "base_per_month": 7.5,
@@ -16,7 +17,8 @@
     "scientist_share_per_lab": 0.12,
     "scientist_share_max": 0.3,
     "jobless_free_share": 0.1,
-    "jobless_stop_share": 0.35
+    "jobless_stop_share": 0.35,
+    "frontier_factor": 0.3
   },
   "attractiveness": {
     "base": 1.0,
@@ -38,11 +40,9 @@
     "jobless": -0.3,
     "wage_per_multiplier": 1.0,
     "service_enterprise": 0.1,
-    "pollution_threshold": 35.0,
-    "pollution_per_point": -0.01,
     "shortage": -0.2,
     "company_review": -0.2,
-    "service_clinic": 0.3
+    "frontier": -0.2
   },
   "wage": {
     "min": 0.8,
@@ -50,25 +50,23 @@
     "default": 1.0
   },
   "recruitment": {
-    "worker_price": 120.0,
-    "scientist_price": 200.0,
-    "travel_days": 10,
-    "price_step": 0.1,
-    "window_days": 90,
+    "worker_price": 400.0,
+    "scientist_price": 700.0,
+    "travel_days": 30,
+    "price_step": 0.2,
+    "window_days": 180,
     "max_per_campaign": 20,
     "scientist_tech": "education"
   },
   "departure": {
     "threshold": 0.5,
-    "share": 0.01,
-    "clinic_factor": 2.0
+    "share": 0.01
   },
   "births": {
-    "per_adult_per_year": 0.01,
-    "clinic_factor": 1.5
+    "per_adult_per_year": 0.01
   },
   "migration": {
     "per_road_per_day": 3,
-    "keep_workers": 18
+    "keep_workers": 12
   }
 }

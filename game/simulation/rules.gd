@@ -12,6 +12,7 @@ const FILES: Dictionary = {
 	"market": "res://data/v17/market.json",
 	"geography": "res://data/v17/geography.json",
 	"tutorial": "res://data/v17/tutorial.json",
+	"techs": "res://data/v17/techs.json",
 }
 const REQUIRED: Dictionary = {
 	"economy":
@@ -23,10 +24,11 @@ const REQUIRED: Dictionary = {
 		"economy",
 		"openings",
 		"buildings",
-		"techs",
 		"contract"
 	],
-	"progression": ["version", "units", "difficulty", "research", "company", "production", "time"],
+	"techs": ["version", "units", "categories", "offers", "first_offers", "techs"],
+	"progression":
+	["version", "units", "difficulty", "research", "company", "production", "pollution", "time"],
 	"career": ["version", "units", "calendar", "management"],
 	"events": ["version", "units", "sampling", "definitions"],
 	"population":
@@ -67,7 +69,9 @@ const REQUIRED: Dictionary = {
 		"validator",
 		"plots",
 		"survey",
-		"names"
+		"names",
+		"frozen_roads",
+		"overrides"
 	],
 }
 
@@ -99,6 +103,8 @@ static func _load_file(name: String) -> Dictionary:
 	for key: String in REQUIRED[name]:
 		if not data.has(key):
 			_complain("%s is missing '%s'" % [path, key])
+	if name == "economy":
+		data.techs = read("techs").techs
 	return data
 
 

@@ -115,7 +115,7 @@ static func _unreachable_reason(variant: String) -> String:
 		return "两地之间没有可通行的海路"
 	if variant == "valley":
 		return "高山或海洋阻断河谷公路"
-	return "海洋阻断陆路；需要沿海航运"
+	return "海洋阻断陆路；可以开辟沿海航线"
 
 
 static func _passable(terrain: Dictionary, cell: int, variant: String, ends: Array[int]) -> bool:
@@ -272,7 +272,15 @@ static func _record(
 		"b": b,
 		"capacity": int(spec.capacity),
 		"reason": str(spec.reason),
+		"build_days": _build_days(spec, distance),
 	}
+
+
+## Laying a road takes time in proportion to its length; a sea route only needs its terminals.
+static func _build_days(spec: Dictionary, distance: float) -> int:
+	if not spec.has("build_km_per_day"):
+		return int(spec.get("build_days", 0))
+	return maxi(int(spec.get("build_days", 0)), ceili(distance / float(spec.build_km_per_day)))
 
 
 static func _push(keys: PackedFloat64Array, cells: PackedInt32Array, key: float, cell: int) -> void:

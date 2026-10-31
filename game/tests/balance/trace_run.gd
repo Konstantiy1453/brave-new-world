@@ -26,7 +26,7 @@ var options: Dictionary = {
 
 
 func _initialize() -> void:
-	Watchdog.arm(self, 300.0)
+	Watchdog.arm(self, 900.0)
 	call_deferred("run")
 
 
@@ -81,21 +81,17 @@ func _line(sim: RefCounted) -> void:
 		if float(state.company.sources[key].rate) > 0.0:
 			causes.append("%s %.1f" % [key, float(state.company.sources[key].rate)])
 	if not causes.is_empty():
-		print(
-			"  risk: ",
-			", ".join(causes),
-			" pollution ",
-			state.settlements.map(func(x): return int(x.pollution))
-		)
+		print("  risk: ", ", ".join(causes))
 	var row: PackedStringArray = []
 	for s: Dictionary in state.settlements:
 		(
 			row
 			. append(
 				(
-					"[%d pop%d w%d sci%d emp%d jobs%d beds%d food%.0f att%.2f b%d]"
+					"[%d%s pop%d w%d sci%d emp%d jobs%d beds%d food%.0f att%.2f b%d]"
 					% [
 						int(s.region),
+						str(s.kind).left(1),
 						int(s.population),
 						int(s.workers),
 						int(s.scientists),
@@ -111,15 +107,17 @@ func _line(sim: RefCounted) -> void:
 		)
 	print(
 		(
-			"D%d cash %.0f net %+.0f inc %.0f exp %.0f debt %.0f tech %d co %s/%.0f %s"
+			"D%d stage %d cash %.0f net %+.0f inc %.0f exp %.0f debt %.0f tech %d poll %.3f co %s/%.0f %s"
 			% [
 				int(state.day),
+				int(state.contract.stage),
 				float(state.cash),
 				float(state.operating_net),
 				float(state.income_daily),
 				float(state.expense_daily),
 				float(state.debt),
 				state.research.completed.size(),
+				sim.Pollution.penalty(sim),
 				str(state.company.stage),
 				float(state.company.distrust),
 				" ".join(row),
@@ -130,7 +128,7 @@ func _line(sim: RefCounted) -> void:
 
 func _goals(sim: RefCounted) -> void:
 	var stage: int = int(sim.state.contract.stage)
-	if stage > 3:
+	if stage > Contract.STAGE_COUNT:
 		print("All stages complete: ", sim.state.contract.completed)
 		return
 	for goal: Dictionary in Contract.stage_goals(sim, stage):

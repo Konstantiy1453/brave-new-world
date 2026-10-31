@@ -21,7 +21,8 @@ const SaveIo = preload("res://simulation/save_io.gd")
 const Market = preload("res://simulation/market.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
-const SAVE_VERSION: int = 3
+const Pollution = preload("res://simulation/pollution.gd")
+const SAVE_VERSION: int = 4
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
 const LOG_LIMIT: int = 120
@@ -35,6 +36,9 @@ var pop_rules: Dictionary = {}
 var contract_rules: Dictionary = {}
 var market_rules: Dictionary = {}
 var blobs: Dictionary = {"checkpoint": PackedByteArray(), "archives": {}}
+## What finished technologies add up to. Derived from state, rebuilt when the list grows.
+var tech_effects: Dictionary = {}
+var tech_effects_count: int = -1
 
 
 func _init() -> void:
@@ -54,6 +58,7 @@ func new_game(
 		advantage = "capital"
 	geo = WorldGen.new().build(seed_value, size)
 	blobs = {"checkpoint": PackedByteArray(), "archives": {}}
+	tech_effects_count = -1
 	state = {
 		"schema": SAVE_VERSION,
 		"world": WorldGen.world_record(geo),
@@ -121,6 +126,7 @@ func new_game(
 static func ensure_systems(target: Dictionary) -> void:
 	Contract.ensure_state(target)
 	Population.ensure_state(target)
+	Pollution.ensure_state(target)
 	Market.ensure_state(target)
 	Production.ensure_state(target)
 	Research.ensure_state(target)
@@ -131,15 +137,10 @@ static func ensure_systems(target: Dictionary) -> void:
 
 
 func _stock() -> Dictionary:
-	return {
-		"ore": 0.0,
-		"copper": 0.0,
-		"crystal": 0.0,
-		"food": 0.0,
-		"materials": 0.0,
-		"parts": 0.0,
-		"components": 0.0
-	}
+	var stock: Dictionary = {}
+	for key: String in KEYS:
+		stock[key] = 0.0
+	return stock
 
 
 func settlement(region: int) -> Dictionary:
@@ -157,7 +158,11 @@ func act(action: String, args: Dictionary = {}) -> String:
 	match action:
 		"settle":
 			return Sites.settle(
-				self, _site_arg(args), int(args.get("from", -1)), str(args.get("name", ""))
+				self,
+				_site_arg(args),
+				int(args.get("from", -1)),
+				str(args.get("name", "")),
+				str(args.get("kind", Keys.SITE_RESIDENTIAL))
 			)
 		"rename":
 			return Sites.rename(self, _site_arg(args), str(args.get("name", "")))
@@ -192,6 +197,10 @@ func act(action: String, args: Dictionary = {}) -> String:
 			return Enterprise.recover(self, int(args.get("region", -1)))
 		"research_allocate":
 			return Research.allocate(self, str(args.get("tech", "")), int(args.get("staff", 0)))
+		"research_reshuffle":
+			return Research.reshuffle(self, str(args.get("category", "")))
+		"demolish":
+			return Production.demolish(self, int(args.get("region", -1)), int(args.get("index", -1)))
 		"company":
 			return Company.act(self, args)
 		"batch_toggle":
@@ -273,6 +282,7 @@ func tick() -> void:
 	_public_expense(_admin_cost(), "admin", "external")
 	Population.daily(self)
 	Company.social_environment(self)
+	Pollution.daily(self)
 	_event_tick()
 	if state.status == "success" and state.day > state.success_day:
 		var tax: float = (
@@ -308,10 +318,16 @@ func _admin_cost() -> float:
 	var residents: int = 0
 	for s: Dictionary in state.settlements:
 		residents += int(s.population)
+	var saved: float = Research.bonus(self, "admin")
+	for s: Dictionary in state.settlements:
+		saved += Population.service_total(self, s, "admin")
 	return (
-		float(config.economy.admin)
-		+ float(config.economy.admin_per_resident) * residents
-		+ float(config.economy.admin_per_settlement) * state.settlements.size()
+		maxf(0.3, 1.0 + saved)
+		* (
+			float(config.economy.admin)
+			+ float(config.economy.admin_per_resident) * residents
+			+ float(config.economy.admin_per_settlement) * state.settlements.size()
+		)
 	)
 
 
@@ -548,6 +564,19 @@ func audit() -> Array:
 		if int(party.count) <= 0 or settlement(int(party.region)).is_empty():
 			errors.append("recruit party invalid")
 	errors.append_array(_audit_sites())
+	if float(state.pollution.load) < 0.0:
+		errors.append("negative pollution")
+	for s: Dictionary in state.settlements:
+		if not str(s.kind) in [Keys.SITE_RESIDENTIAL, Keys.SITE_FRONTIER]:
+			errors.append("unknown settlement kind")
+	var offered: Dictionary = {}
+	for hand: Array in state.research.get("offers", {}).values():
+		for tech: String in hand:
+			if offered.has(tech):
+				errors.append("technology offered twice")
+			offered[tech] = true
+			if state.research.completed.has(tech):
+				errors.append("finished technology offered")
 	for good: String in state.market.saturation:
 		if float(state.market.saturation[good]) < 0.0:
 			errors.append("negative market saturation")
@@ -641,8 +670,8 @@ func site_view(site: int) -> Dictionary:
 	return Sites.view(self, site)
 
 
-func settle_refusal(site: int) -> String:
-	return Sites.settle_refusal(self, site)
+func settle_refusal(site: int, kind: String = Keys.SITE_RESIDENTIAL) -> String:
+	return Sites.settle_refusal(self, site, -1, kind)
 
 
 func site_links(site: int) -> Dictionary:
@@ -675,6 +704,14 @@ func upgrade_preview(region: int, index: int) -> Dictionary:
 
 func research_tree() -> Array:
 	return Research.tree(self)
+
+
+func research_cards() -> Array:
+	return Research.cards(self)
+
+
+func pollution_view() -> Dictionary:
+	return Pollution.view(self)
 
 
 func contract_view() -> Dictionary:

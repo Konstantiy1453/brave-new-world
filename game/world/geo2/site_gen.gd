@@ -28,6 +28,8 @@ const SLOT_X: int = 4
 const SLOT_Z: int = 3
 const RIVER_CLEARANCE: float = 3.2
 const PARTNER_TRIES: int = 3
+## A coast counts as this many neighbours where ships can go from the first day.
+const SEA_LINK_NEIGHBORS: int = 2
 
 
 static func place(world: Dictionary, rules: Dictionary, ctx: Dictionary, attempt: int) -> void:
@@ -256,6 +258,7 @@ static func _site(
 		"id": id,
 		"name": _site_name(world, rules, id, str(pick.archetype), rng, names),
 		"named": not world.has("character"),
+		"sea_links": bool(rules.validator.get("sea_partners", false)),
 		"start_bias": rng.randf_range(0.75, 1.25) if world.has("character") else 1.0,
 		"lat": lat,
 		"lon": lon,
@@ -330,12 +333,14 @@ static func _unique_name(
 
 ## Plot slots on a grid around the town centre, nearest first, leaving out sea and river corridors.
 static func _slots(
-	world: Dictionary, site: Dictionary, noise: FastNoiseLite, ctx: Dictionary
+	world: Dictionary, site: Dictionary, noise: FastNoiseLite, ctx: Dictionary, rules: Dictionary
 ) -> Array:
 	var near_rivers: Array = _local_rivers(world, site)
 	var slots: Array = []
-	for iz: int in range(-SLOT_Z, SLOT_Z + 1):
-		for ix: int in range(-SLOT_X, SLOT_X + 1):
+	var reach_x: int = int(rules.plots.get("slot_x", SLOT_X))
+	var reach_z: int = int(rules.plots.get("slot_z", SLOT_Z))
+	for iz: int in range(-reach_z, reach_z + 1):
+		for ix: int in range(-reach_x, reach_x + 1):
 			var x: float = ix * SLOT_SPACING
 			var z: float = iz * SLOT_SPACING
 			if ix == 0:
@@ -397,7 +402,7 @@ static func _add_plots(
 	noise: FastNoiseLite
 ) -> void:
 	for site: Dictionary in world.regions:
-		var slots: Array = _slots(world, site, noise, ctx)
+		var slots: Array = _slots(world, site, noise, ctx, rules)
 		var plots: Array = []
 		# Deposits take the outer ground first, the town and its fields what remains.
 		_deposit_plots(site, rules, slots, plots, rng)
@@ -522,7 +527,7 @@ static func refresh_deposits(site: Dictionary) -> void:
 static func validate(world: Dictionary, rules: Dictionary) -> Dictionary:
 	var spec: Dictionary = rules.validator
 	var regions: Array = world.regions
-	var roads: Dictionary = Rules.read("economy").roads
+	var roads: Dictionary = rules.get("frozen_roads", Rules.read("economy").roads)
 	var starts: Array = []
 	var partners: Array = []
 	for site: Dictionary in regions:
@@ -567,8 +572,12 @@ static func _partner_for(
 ) -> Dictionary:
 	var at: Vector3 = SeedGeo.unit(float(start.lat), float(start.lon))
 	var near: Array = []
+	var by_sea: bool = bool(spec.get("sea_partners", false)) and bool(start.coast)
 	for partner: Dictionary in partners:
-		if int(partner.id) == int(start.id) or int(partner.landmass) != int(start.landmass):
+		if int(partner.id) == int(start.id):
+			continue
+		var same_land: bool = int(partner.landmass) == int(start.landmass)
+		if not same_land and not (by_sea and bool(partner.coast)):
 			continue
 		near.append([at.angle_to(SeedGeo.unit(float(partner.lat), float(partner.lon))), partner])
 	near.sort_custom(
@@ -581,6 +590,11 @@ static func _partner_for(
 	var fallback: Dictionary = {}
 	for row: Array in near.slice(0, PARTNER_TRIES):
 		var partner: Dictionary = row[1]
+		if int(partner.landmass) != int(start.landmass):
+			var voyage: Dictionary = Routes.find(world, int(start.id), int(partner.id), "sea", roads)
+			if fallback.is_empty() and bool(voyage.reachable) and int(voyage.days) <= limit:
+				fallback = {"id": int(partner.id), "valley": false}
+			continue
 		var valley: Dictionary = Routes.find(world, int(start.id), int(partner.id), "valley", roads)
 		if bool(valley.reachable) and int(valley.days) <= limit:
 			return {"id": int(partner.id), "valley": true}
@@ -598,7 +612,10 @@ static func _viable_start(world: Dictionary, site: Dictionary, spec: Dictionary)
 		return false
 	if _general_count(site) < int(spec.start_general_plots):
 		return false
-	if int(world.landmass_sizes[int(site.landmass)]) < int(Rules.read("geography").continent_cells):
+	if (
+		not bool(spec.get("islands_can_start", false))
+		and int(world.landmass_sizes[int(site.landmass)]) < int(Rules.read("geography").continent_cells)
+	):
 		return false
 	var tonnes: float = float(site.deposits.ore) + float(site.deposits.copper)
 	return (
@@ -622,7 +639,10 @@ static func start_value(site: Dictionary) -> float:
 		value += float(site.deposits[good]) * float(GOOD_VALUE[good]) * float(site.grade[good])
 	value *= 0.7 + 0.6 * float(site.water)
 	# Room to grow: a rich start on a crowded little landmass runs out of places to go.
-	value *= 0.55 + 0.09 * mini(site.neighbors.size(), 5)
+	var reachable: int = site.neighbors.size()
+	if bool(site.get("sea_links", false)) and bool(site.coast):
+		reachable += SEA_LINK_NEIGHBORS
+	value *= 0.55 + 0.09 * mini(reachable, 5)
 	return value * float(site.get("start_bias", 1.0)) / float(site.development_multiplier)
 
 

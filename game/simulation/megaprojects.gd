@@ -3,7 +3,7 @@ extends RefCounted
 ## Each is an ordinary building marked `megaproject` in economy.json; numbers live under
 ## `megaprojects` in the same file.
 
-const KINDS: Array[String] = ["university", "lift_port", "climate_regulator"]
+const KINDS: Array[String] = ["university", "lift_port", "climate_regulator", "capital_hall"]
 
 
 ## The settlement holding a finished, enabled copy of this megaproject, or an empty dictionary.

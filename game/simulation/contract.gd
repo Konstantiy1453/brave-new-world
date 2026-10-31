@@ -1,18 +1,22 @@
 extends RefCounted
-## The three-stage contract: foothold, division of labour, self-reliance. Goals live in
-## data/v17/contract.json. Missing a soft deadline feeds the company process, never instant failure.
+## The staged contract, from a foothold to a capital city. Goals live in data/v17/contract.json.
+## Missing a soft deadline feeds the company process, never instant failure.
 
 const STREAK_WINDOW: int = 7
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
-const STAGE_COUNT: int = 3
+const STAGE_COUNT: int = 5
+const OLD_STAGE_COUNT: int = 3
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
 
 
 static func ensure_state(state: Dictionary) -> void:
 	if state.has("contract"):
+		# A 1.7 colony that finished its three stages has earned the award for good.
+		if state.status == "success" and int(state.contract.stage) == OLD_STAGE_COUNT + 1:
+			state.contract.stage = STAGE_COUNT + 1
 		return
 	var finished: bool = state.get("status", "") == "success"
 	state.contract = {
@@ -20,7 +24,8 @@ static func ensure_state(state: Dictionary) -> void:
 		"stage_started": int(state.get("day", 0)),
 		"completed": {},
 		"missed": [],
-		"licences": ["expedition", "third_settlement"] if finished else [],
+		"licences":
+		["expedition", "third_settlement", "network", "self_reliance"] if finished else [],
 		"stage_streak": 0,
 		"food_window": [],
 		"income_window": [],
@@ -128,6 +133,14 @@ static func _housed(sim: RefCounted) -> bool:
 	return not sim.state.settlements.is_empty()
 
 
+static func _frontiers(sim: RefCounted) -> int:
+	var count: int = 0
+	for s: Dictionary in sim.state.settlements:
+		if int(s.arrival) <= 0 and str(s.kind) == Keys.SITE_FRONTIER:
+			count += 1
+	return count
+
+
 static func _research_staffed(sim: RefCounted) -> int:
 	var count: int = 0
 	for project: Dictionary in sim.state.research.get("projects", {}).values():
@@ -150,10 +163,7 @@ static func _review_blocks_award(sim: RefCounted) -> bool:
 	for aid: Dictionary in company.aid:
 		if aid.status == "breached":
 			return true
-	for name: String in ["social", "environment"]:
-		if float(company.sources.get(name, {}).get("rate", 0.0)) > 0.0:
-			return true
-	return false
+	return float(company.sources.get("social", {}).get("rate", 0.0)) > 0.0
 
 
 ## Current value of one goal, in the units of its target.
@@ -189,6 +199,14 @@ static func goal_value(sim: RefCounted, key: String) -> float:
 			return non_mining_share(sim)
 		"no_review":
 			return 0.0 if _review_blocks_award(sim) else 1.0
+		"frontiers":
+			return _frontiers(sim)
+		"capital_population":
+			if sim.state.settlements.is_empty():
+				return 0.0
+			return int(sim.state.settlements[0].population)
+		"capital_hall":
+			return 1.0 if Megaprojects.active(sim, "capital_hall") else 0.0
 	return 0.0
 
 
@@ -275,7 +293,10 @@ static func _record_windows(sim: RefCounted) -> void:
 		contract.income_window.pop_front()
 	for s: Dictionary in sim.state.settlements:
 		for b: Dictionary in s.buildings:
-			if b.kind == "processor" and str(b.status) in [Keys.B_RUNNING, Keys.B_TARGET_FULL]:
+			if (
+				str(sim.config.buildings.get(b.kind, {}).get("role", "")) == "factory"
+				and str(b.status) in [Keys.B_RUNNING, Keys.B_TARGET_FULL]
+			):
 				contract.processing_days = int(contract.processing_days) + 1
 				return
 
@@ -314,8 +335,8 @@ static func _check_milestones(sim: RefCounted) -> void:
 				reached = sim.state.settlements.size() >= int(milestone.target)
 			"megaprojects":
 				reached = Megaprojects.count(sim) >= int(milestone.target)
-			"tier2_techs":
-				reached = _all_tier_two(sim)
+			"technologies":
+				reached = sim.state.research.completed.size() >= int(milestone.target)
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)
@@ -333,13 +354,6 @@ static func _solvent_week(sim: RefCounted) -> bool:
 	for index: int in range(maxi(0, history.size() - STREAK_WINDOW + 1), history.size()):
 		total += float(history[index].net)
 	return total >= -0.000001
-
-
-static func _all_tier_two(sim: RefCounted) -> bool:
-	for tech: String in sim.config.techs:
-		if int(sim.config.techs[tech].tier) == 2 and not sim._has(tech):
-			return false
-	return true
 
 
 static func daily(sim: RefCounted) -> void:

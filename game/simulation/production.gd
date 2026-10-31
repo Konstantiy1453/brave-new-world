@@ -10,26 +10,40 @@ const EventsV2 = preload("res://simulation/events_v2.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Sites = preload("res://simulation/sites.gd")
 const Stats = preload("res://simulation/stats.gd")
-const AUTOMATED_KINDS: Array[String] = [
-	"mine_ore", "mine_copper", "mine_crystal", "processor", "component_plant"
+const Pollution = preload("res://simulation/pollution.gd")
+const UTILITY_ROLES: Array[String] = ["power", "water", "port"]
+const LOWEST_JOB_FACTOR: float = 0.2
+const LOWEST_USE_FACTOR: float = 0.3
+const POLLUTED_ROLES: Array[String] = [
+	"mine", "harvest", "farm", "indoor_farm", "factory", "foodworks"
 ]
-const AUTOMATION_JOB_FACTOR: float = 0.7
-const FACTORY_KINDS: Array[String] = ["processor", "component_plant", "farm", "hydroponic_farm"]
+const RATIONED_ROLES: Array[String] = ["mine", "farm", "indoor_farm", "factory"]
+const EVENT_KINDS: Dictionary = {
+	"mine": "mine", "harvest": "mine", "farm": "farm", "indoor_farm": "farm", "factory": "processor"
+}
 
 
-## Adds what older saves lack: the components column and building levels.
+## Adds what older saves lack: goods added since, building levels and construction totals.
 static func ensure_state(state: Dictionary) -> void:
 	for key: String in ["resource_sources", "resource_sinks"]:
-		if not state[key].has("components"):
-			state[key].components = 0.0
+		for good: String in Keys.RESOURCES:
+			if not state[key].has(good):
+				state[key][good] = 0.0
 	for s: Dictionary in state.settlements:
 		for key: String in ["stock", "stock_delta"]:
-			if not s[key].has("components"):
-				s[key].components = 0.0
+			for good: String in Keys.RESOURCES:
+				if not s[key].has(good):
+					s[key][good] = 0.0
 		for b: Dictionary in s.buildings:
 			if not b.has("level"):
 				b.level = 1
 				b.upgrade_days = 0
+			if not b.has("total_days"):
+				b.total_days = int(b.remaining)
+
+
+static func role_of(sim: RefCounted, kind: String) -> String:
+	return str(sim.config.buildings.get(kind, {}).get("role", ""))
 
 
 ## The rule of this building's current level, or an empty dictionary at level 1.
@@ -45,9 +59,13 @@ static func level_rule(sim: RefCounted, b: Dictionary) -> Dictionary:
 
 static func jobs_for(sim: RefCounted, b: Dictionary) -> int:
 	var jobs: int = int(sim.config.buildings[b.kind].jobs) + int(level_rule(sim, b).get("jobs", 0))
-	if sim._has("automation") and b.kind in AUTOMATED_KINDS:
-		jobs = ceili(jobs * AUTOMATION_JOB_FACTOR)
-	return jobs
+	var role: String = role_of(sim, b.kind)
+	var change: float = 0.0
+	if role == "mine":
+		change = Research.bonus(sim, "mine_jobs")
+	elif role == "factory":
+		change = Research.bonus(sim, "factory_jobs")
+	return ceili(jobs * maxf(LOWEST_JOB_FACTOR, 1.0 + change))
 
 
 static func output_factor(sim: RefCounted, b: Dictionary) -> float:
@@ -125,6 +143,7 @@ static func new_building(_sim: RefCounted, kind: String, remaining: int) -> Dict
 		"owner": "public",
 		"level": 1,
 		"upgrade_days": 0,
+		"total_days": remaining,
 		"plot": -1
 	}
 
@@ -133,7 +152,18 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 	if not sim.config.buildings.has(kind) or region < 0 or region >= sim.state.world.regions.size():
 		return {}
 	var d: Dictionary = sim.config.buildings[kind].duplicate(true)
-	d.cost *= float(sim.state.world.regions[region].get("development_multiplier", 1.0))
+	d.kind_id = kind
+	var great: bool = bool(d.get("megaproject", false))
+	var cheaper: float = Research.bonus(sim, "build_cost")
+	var faster: float = Research.bonus(sim, "build_speed")
+	if great:
+		cheaper += Research.bonus(sim, "great_cost")
+		faster += Research.bonus(sim, "great_speed")
+	d.cost *= (
+		float(sim.state.world.regions[region].get("development_multiplier", 1.0))
+		* maxf(0.3, 1.0 + cheaper)
+	)
+	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster)))
 	return d
 
 
@@ -147,6 +177,9 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "无此设施"
 	var d: Dictionary = build_preview(sim, region, kind)
 	var reg: Dictionary = sim.state.world.regions[region]
+	var place_refusal: String = _place_refusal(s, reg, d)
+	if place_refusal != "":
+		return place_refusal
 	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
 	if chosen < 0:
 		return _no_plot_reason(kind)
@@ -163,18 +196,44 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 				if existing.kind == kind:
 					return "每颗星球只能建设一座"
 	if (
-		kind == "farm"
+		str(d.role) == "farm"
+		and not d.has("fertility_floor")
 		and (reg.fertility < 0.20 or reg.temperature < -5)
 		and not sim._has("adaptation")
 	):
 		return "土地或气温不适合当前温室技术"
-	if bool(d.get("megaproject", false)):
-		var total: float = float(d.cost) + _supply_train_cost(sim, s, d)
-		return "" if sim.state.cash >= total else "公共资金不足：需要 %.0f（含工程物资采购）" % total
-	if sim.state.cash < float(d.cost):
+	var short: bool = s.stock.materials < float(d.materials) or s.stock.parts < float(d.parts)
+	if short and not bool(d.get("megaproject", false)) and not _port_ready(s):
+		return "本地仓库不足：需要 %.0f 建材 / %.0f 部件；没有货运站时要靠道路运来" % [d.materials, d.parts]
+	var total: float = float(d.cost) + _supply_train_cost(sim, s, d)
+	if sim.state.cash < total:
+		if total > float(d.cost):
+			return "公共资金不足：需要 %.0f（含工程物资采购）" % total
 		return "公共资金不足：需要 %.0f" % d.cost
-	if s.stock.materials < float(d.materials) or s.stock.parts < float(d.parts):
-		return "本地仓库不足：需要 %.0f 建材 / %.0f 部件；远方库存需运输" % [d.materials, d.parts]
+	return ""
+
+
+## A working port can buy what a building site lacks, at import price.
+static func _port_ready(s: Dictionary) -> bool:
+	for b: Dictionary in s.buildings:
+		if str(b.kind) == "port" and int(b.remaining) <= 0 and bool(b.get("active", false)):
+			return true
+	return false
+
+
+## Whether this kind of building belongs in this kind of settlement on this ground.
+static func _place_refusal(s: Dictionary, reg: Dictionary, d: Dictionary) -> String:
+	var kinds: Array = d.get("site_kinds", [])
+	if not kinds.is_empty() and not kinds.has(str(s.kind)):
+		return "只能建在居住据点" if kinds.has(Keys.SITE_RESIDENTIAL) else "只能建在边疆据点"
+	if bool(d.get("needs_coast", false)) and not bool(reg.get("coast", false)):
+		return "只能建在沿海地点"
+	if float(reg.get("ruggedness", 0.0)) < float(d.get("needs_rugged", 0.0)):
+		return "只能建在地形崎岖的地点"
+	if bool(d.get("unique_local", false)):
+		for b: Dictionary in s.buildings:
+			if str(b.kind) == str(d.get("kind_id", "")):
+				return "每个据点只能有一座"
 	return ""
 
 
@@ -192,8 +251,7 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 		return refusal
 	var s: Dictionary = sim.settlement(region)
 	var d: Dictionary = build_preview(sim, region, kind)
-	if bool(d.get("megaproject", false)):
-		_buy_supply_train(sim, s, d)
+	_buy_supply_train(sim, s, d)
 	sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
@@ -202,6 +260,34 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	s.buildings.append(building)
 	sim._log(s.name + "开始建设" + d.name + "，工期 %d 天。" % int(d.days))
 	return ""
+
+
+## Pulls a building down and frees its plot. Nothing comes back; a dead mine at least stops costing.
+static func demolish(sim: RefCounted, region: int, index: int) -> String:
+	var s: Dictionary = sim.settlement(region)
+	if s.is_empty() or index < 0 or index >= s.buildings.size():
+		return "设施不存在"
+	var b: Dictionary = s.buildings[index]
+	if str(b.get("owner", "public")) != "public":
+		return "民营设施不能拆除"
+	if bool(sim.config.buildings.get(b.kind, {}).get("megaproject", false)):
+		return "巨型工程不能拆除"
+	if str(b.kind) in ["port", "power", "water"] and _last_of(s, str(b.kind)):
+		return "这是本据点最后一座，不能拆除"
+	s.buildings.remove_at(index)
+	sim._log("%s · 拆除了%s。" % [s.name, sim.config.buildings[b.kind].name])
+	sim._refresh(s)
+	sim._reconcile_jobs(s)
+	Research.rebalance(sim, false)
+	return ""
+
+
+static func _last_of(s: Dictionary, kind: String) -> bool:
+	var count: int = 0
+	for other: Dictionary in s.buildings:
+		if str(other.kind) == kind:
+			count += 1
+	return count <= 1
 
 
 ## What the local store lacks for a megaproject, bought at import price and delivered with it.
@@ -215,6 +301,8 @@ static func _supply_train_cost(sim: RefCounted, s: Dictionary, d: Dictionary) ->
 static func _buy_supply_train(sim: RefCounted, s: Dictionary, d: Dictionary) -> void:
 	for key: String in ["materials", "parts"]:
 		var missing: float = maxf(0.0, float(d[key]) - float(s.stock[key]))
+		if missing <= 0.0:
+			continue
 		sim._transfer(
 			"public", "external", missing * _import_price(sim, key), "import.stock", false, key
 		)
@@ -247,13 +335,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		# This moves actual workers out of extraction, never duplicates personnel.
 		work_order.sort_custom(
 			func(a, b):
-				var pa: int = (
-					0 if a.kind in ["power", "water", "port"] else (1 if a.kind == "lab" else 2)
-				)
-				var pb: int = (
-					0 if b.kind in ["power", "water", "port"] else (1 if b.kind == "lab" else 2)
-				)
-				return pa < pb
+				return _work_rank(sim, a) < _work_rank(sim, b)
 		)
 	for b in work_order:
 		b.active = false
@@ -285,6 +367,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			sim._short(s, Keys.SH_DEPLETED, b.kind)
 			continue
 		var d: Dictionary = sim.config.buildings[b.kind]
+		var role: String = str(d.role)
 		var private_reserved: int = (
 			6
 			if (
@@ -315,20 +398,26 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				b.kind
 			)
 		b.active = b.efficiency > 0.0
-		if b.kind == "power":
+		if role == "power":
 			s.power_supply += (
-				float(d.capacity) * b.efficiency * EventsV2.modifier(sim, int(s.region), "power")
+				float(d.capacity)
+				* b.efficiency
+				* EventsV2.modifier(sim, int(s.region), "power")
+				* (1.0 + Research.bonus(sim, "power_output"))
 			)
-		if b.kind == "water":
+		if role == "water":
 			s.water_supply += (
 				float(d.capacity)
-				* (0.48 + float(reg.water) * 0.70)
+				* (float(d.site_floor) + float(reg.water) * float(d.site_gain))
 				* b.efficiency
 				* water_factor(sim)
 				* EventsV2.modifier(sim, int(s.region), "water")
+				* (1.0 + Research.bonus(sim, "water_output"))
 			)
-		var pf: float = 0.75 if sim._has("efficiency") else 1.0
-		var wf: float = 0.7 if b.kind == "farm" and sim._has("irrigation") else 1.0
+		var pf: float = maxf(LOWEST_USE_FACTOR, 1.0 + Research.bonus(sim, "power_use"))
+		var wf: float = maxf(LOWEST_USE_FACTOR, 1.0 + Research.bonus(sim, "water_use"))
+		if role == "farm":
+			wf = maxf(LOWEST_USE_FACTOR, wf + Research.bonus(sim, "farm_water"))
 		var extra_power: float = float(level_rule(sim, b).get("power", 0.0))
 		s.power_demand += (float(d.power) + extra_power) * b.efficiency * pf
 		s.water_demand += float(d.water) * b.efficiency * wf
@@ -340,23 +429,25 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		sim._short(s, Keys.SH_POWER)
 	if water_ratio < 0.999:
 		sim._short(s, Keys.SH_WATER)
+	var clean_air: float = Pollution.factor(sim)
+	var field_bonus: float = _field_bonus(sim, s)
+	var upkeep_factor: float = maxf(0.2, 1.0 + Research.bonus(sim, "upkeep"))
 	for b in s.buildings:
 		if b.kind == "service" or b.remaining > 0 or not b.get("enabled", true):
 			continue
 		if _depleted(sim, s, b):
 			continue
 		var d: Dictionary = sim.config.buildings[b.kind]
+		var role: String = str(d.role)
 		var eff: float = float(b.efficiency)
-		if b.kind.begins_with("mine_") or b.kind in FACTORY_KINDS or b.kind == "foodworks":
-			eff *= Company.environmental_factor(s)
-		eff *= EventsV2.modifier(
-			sim, int(s.region), "mine" if b.kind.begins_with("mine_") else str(b.kind)
-		)
+		if role in POLLUTED_ROLES:
+			eff *= clean_air
+		eff *= EventsV2.modifier(sim, int(s.region), str(EVENT_KINDS.get(role, b.kind)))
 		if float(d.power) > 0:
 			eff *= power_ratio
 		if float(d.water) > 0:
 			eff *= water_ratio
-		if ration_active(sim) and (b.kind.begins_with("mine_") or b.kind in FACTORY_KINDS):
+		if ration_active(sim) and role in RATIONED_ROLES:
 			eff *= 0.85
 		b.efficiency = eff
 		b.active = eff > 0.001
@@ -370,23 +461,24 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			"residents",
 			b.kind
 		)
+		var cost_factor: float = upkeep_factor
+		if role == "mine":
+			cost_factor = maxf(0.2, cost_factor + Research.bonus(sim, "mine_upkeep"))
 		sim._public_expense(
-			float(d.maintenance) * (0.8 if sim._has("efficiency") else 1.0),
-			"upkeep.facility",
-			"external",
-			b.kind
+			float(d.maintenance) * cost_factor, "upkeep.facility", "external", b.kind
 		)
 		if eff <= 0.001:
 			continue
-		match str(b.kind):
+		match role:
 			"port":
 				s.port_capacity += (
 					float(d.capacity)
 					* eff
 					* float(level_rule(sim, b).get("capacity", 1.0))
 					* Megaprojects.port_factor(sim, s)
+					* (1.0 + Research.bonus(sim, "port_capacity"))
 				)
-			"mine_ore", "mine_copper", "mine_crystal":
+			"mine":
 				var resource: String = d.output
 				var seam: Dictionary = Sites.plot_of(sim, s, b)
 				var amount: float = minf(
@@ -395,7 +487,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 						float(d.rate)
 						* float(seam.grade)
 						* eff
-						* (1.2 if sim._has("survey") else 1.0)
+						* field_bonus
+						* _good_bonus(sim, resource)
 						* output_factor(sim, b)
 					)
 				)
@@ -407,9 +500,16 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					b.active = false
 					b.status = Keys.B_DEPLETED
 					sim._short(s, Keys.SH_DEPLETED, b.kind)
-			"hydroponic_farm":
+			"harvest":
+				for good: String in d.outputs:
+					var made: float = (
+						float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
+					)
+					produce(sim, s, good, made, "矿产开采")
+			"indoor_farm":
 				var grown: float = minf(
-					maxf(0, target(sim, s, "food") - float(s.stock.food)), float(d.rate) * eff
+					maxf(0, target(sim, s, "food") - float(s.stock.food)),
+					float(d.rate) * eff * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
 				)
 				produce(sim, s, "food", grown, "农业生产")
 				sim.state.contract.today_food = float(sim.state.contract.today_food) + grown
@@ -418,14 +518,18 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			"farm":
 				var climate: float = farm_climate(sim, int(s.region))
 				var field: Dictionary = Sites.plot_of(sim, s, b)
+				var soil: float = maxf(
+					float(field.get("fertility", reg.fertility)), float(d.get("fertility_floor", 0.0))
+				)
 				var amount: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
 					(
 						float(d.rate)
-						* float(field.get("fertility", reg.fertility))
+						* soil
 						* climate
 						* eff
-						* (1.2 if sim._has("irrigation") else 1.0)
+						* field_bonus
+						* (1.0 + Research.bonus(sim, "farm_output"))
 						* output_factor(sim, b)
 					)
 				)
@@ -433,9 +537,17 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				sim.state.contract.today_food = float(sim.state.contract.today_food) + amount
 				if amount <= 0:
 					b.status = Keys.B_TARGET_FULL
-			"processor", "component_plant":
-				var boost: float = 1.3 if sim._has("processing") and b.kind == "processor" else 1.0
-				boost *= output_factor(sim, b)
+			"commerce":
+				var served: float = minf(float(d.customers), float(s.population)) * eff
+				sim._transfer(
+					"residents", "public", served * float(d.spend), "commerce.income", true, b.kind
+				)
+			"income":
+				sim._transfer(
+					"external", "public", float(d.daily_income) * eff, "service.income", true, b.kind
+				)
+			"factory":
+				var boost: float = _factory_boost(sim, b) * output_factor(sim, b)
 				var scale: float = 0.0
 				var wanted_any: bool = false
 				# Coproduct recipe runs when either output has genuine demand; no stock deletion.
@@ -464,11 +576,38 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				if scale <= 0:
 					b.active = false
 					b.status = Keys.B_NO_INPUT if wanted_any else Keys.B_TARGET_FULL
-			"lab":
-				pass
-			"foodworks":
-				pass
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)
+
+
+static func _work_rank(sim: RefCounted, b: Dictionary) -> int:
+	var role: String = role_of(sim, b.kind)
+	if role in UTILITY_ROLES:
+		return 0
+	return 1 if role == "lab" else 2
+
+
+## Frontier settlements get more out of the ground; everyone else digs at the plain rate.
+static func _field_bonus(sim: RefCounted, s: Dictionary) -> float:
+	if str(s.get("kind", Keys.SITE_RESIDENTIAL)) != Keys.SITE_FRONTIER:
+		return 1.0
+	return (
+		1.0
+		+ float(sim.config.site_rules.frontier_output)
+		+ Research.bonus(sim, "frontier_output")
+	)
+
+
+static func _good_bonus(sim: RefCounted, good: String) -> float:
+	return 1.0 + Research.bonus(sim, "mine_output") + Research.bonus(sim, good + "_output")
+
+
+static func _factory_boost(sim: RefCounted, b: Dictionary) -> float:
+	var boost: float = 1.0 + Research.bonus(sim, "factory_output")
+	if str(b.kind) == "processor":
+		boost += Research.bonus(sim, "processor_output")
+	if sim.config.buildings[b.kind].outputs.has("alloy"):
+		boost += Research.bonus(sim, "alloy_output")
+	return boost
 
 
 ## A mine with nothing left to dig lets its crew go and stops costing money.
@@ -570,7 +709,7 @@ static func target(sim: RefCounted, s: Dictionary, resource: String) -> float:
 				* float(sim.progression.production.target_days)
 			)
 		)
-	return {"materials": 160.0, "parts": 40.0}.get(resource, 120.0)
+	return sim.progression.production.default_targets.get(resource, 120.0)
 
 
 static func set_stock_target(sim: RefCounted, args: Dictionary) -> String:
@@ -593,7 +732,7 @@ static func toggle_preview(sim: RefCounted, region: int, index: int) -> Dictiona
 		return {}
 	var b: Dictionary = s.buildings[index]
 	var housing: int = int(s.housing)
-	if b.kind == "habitat" and b.remaining <= 0:
+	if role_of(sim, b.kind) == "housing" and b.remaining <= 0:
 		housing += Population.habitat_beds(sim, b) * (-1 if b.enabled else 1)
 	return {
 		"housing_after": housing,
@@ -615,7 +754,7 @@ static func batch_toggle(sim: RefCounted, args: Dictionary) -> String:
 			or category == b.kind
 			or (
 				category == "production"
-				and (b.kind.begins_with("mine_") or b.kind in ["farm", "processor", "foodworks"])
+				and role_of(sim, b.kind) in ["mine", "harvest", "farm", "factory", "foodworks"]
 			)
 		):
 			b.enabled = bool(args.get("enabled", true))
@@ -655,44 +794,60 @@ static func build_forecast(
 	var fee: float = float(sim.config.economy.port_fee)
 	var outputs: Dictionary = {}
 	var revenue: float = 0.0
-	var kind_name: String = kind
+	var role: String = str(spec.role)
 	var reserve_days: float = -1.0
-	if kind_name.begins_with("mine_"):
+	var field_bonus: float = _field_bonus(sim, s) if not s.is_empty() else 1.0
+	if role == "mine":
 		var good: String = spec.output
 		var rate: float = (
 			float(spec.rate)
 			* float(ground.get("grade", reg.grade.get(good, 1.0)))
-			* (1.2 if sim._has("survey") else 1.0)
+			* field_bonus
+			* _good_bonus(sim, good)
 		)
 		outputs[good] = rate
 		revenue = rate * Market.price(sim, good) * (1.0 - fee)
 		reserve_days = float(ground.get("reserves", 0.0)) / maxf(0.001, rate)
-	elif kind_name == "farm":
+	elif role == "harvest":
+		for good: String in spec.outputs:
+			var made: float = float(spec.outputs[good]) * field_bonus * _good_bonus(sim, good)
+			outputs[good] = made
+			revenue += made * Market.price(sim, good) * (1.0 - fee)
+	elif role == "farm":
 		var climate: float = farm_climate(sim, region)
+		var soil: float = maxf(
+			float(ground.get("fertility", reg.fertility)), float(spec.get("fertility_floor", 0.0))
+		)
 		var rate: float = (
 			float(spec.rate)
-			* float(ground.get("fertility", reg.fertility))
+			* soil
 			* climate
-			* (1.2 if sim._has("irrigation") else 1.0)
+			* field_bonus
+			* (1.0 + Research.bonus(sim, "farm_output"))
 		)
 		outputs.food = rate
 		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
-	elif kind_name == "hydroponic_farm":
-		outputs.food = float(spec.rate)
-		revenue = float(spec.rate) * float(sim.config.prices.food) * (1.0 + fee)
-	elif kind_name in ["processor", "component_plant"]:
-		var boost: float = 1.3 if sim._has("processing") and kind_name == "processor" else 1.0
+	elif role == "indoor_farm":
+		var rate: float = float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
+		outputs.food = rate
+		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+	elif role == "factory":
+		var boost: float = _factory_boost(sim, {"kind": kind})
 		for good: String in spec.outputs:
 			var made: float = float(spec.outputs[good]) * boost
 			outputs[good] = made
 			revenue += made * Market.price(sim, good) * (1.0 - fee)
 		for good: String in spec.inputs:
 			revenue -= float(spec.inputs[good]) * Market.price(sim, good) * (1.0 - fee)
-	elif kind_name == "foodworks":
+	elif role == "foodworks":
 		revenue = (
-			float(spec.daily_payment) * (1.0 - fee)
+			float(spec.daily_payment) * (1.0 + Research.bonus(sim, "foodworks")) * (1.0 - fee)
 			- float(spec.food_input) * float(sim.config.prices.food) * (1.0 + fee)
 		)
+	elif role == "commerce":
+		revenue = float(spec.customers) * float(spec.spend)
+	elif role == "income":
+		revenue = float(spec.daily_income)
 	var jobs: int = jobs_for(sim, {"kind": kind, "level": 1})
 	var wages: float = (
 		jobs * Population.worker_wage(sim)

@@ -1,6 +1,6 @@
 extends SceneTree
-## Balance harness. --quick: 5 seeds, standard, 3 openings. --full: 20 seeds, 3 openings,
-## 3 difficulties, 720 days. Writes evidence/v17/balance/<timestamp>.json and refreshes the
+## Balance harness. --quick: 3 seeds, standard, 3 openings. --full: 10 seeds, 3 openings,
+## 3 difficulties, 9 years. Writes evidence/v17/balance/<timestamp>.json and refreshes the
 ## results table in docs/v17/BALANCE.md (skip with --no-doc).
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
@@ -40,24 +40,28 @@ const SEEDS: Array[int] = [
 const OPENINGS: Array[String] = ["capital", "workers", "science"]
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SIZE_MEDIUM: int = 1
-const DEFAULT_DAYS: int = 720
-const QUICK_SEEDS: int = 5
-const QUICK_FUZZ_RUNS: int = 5
-const FULL_FUZZ_RUNS: int = 50
+const DEFAULT_DAYS: int = 3240
+const FUZZ_DAYS: int = 720
+const QUICK_SEEDS: int = 3
+const FULL_SEEDS: int = 10
+const QUICK_FUZZ_RUNS: int = 3
+const FULL_FUZZ_RUNS: int = 30
+const LEVER_SEEDS: int = 3
 const OUT_DIR: String = "res://../evidence/v17/balance"
 const DOC_PATH: String = "res://../docs/v17/BALANCE.md"
 const RESULTS_BEGIN: String = "<!-- results:begin -->"
 const RESULTS_END: String = "<!-- results:end -->"
 const HISTORY_BEGIN: String = "<!-- history:begin -->"
 const POLL_SECONDS: float = 0.5
-const LEVER_DAYS: int = 180
+const LEVER_DAYS: int = 360
+const DETERMINISM_DAYS: int = 2880
 const GEOGRAPHY_SEEDS: int = 200
 
 var options: Dictionary = {}
 
 
 func _initialize() -> void:
-	Watchdog.arm(self, 1500.0)
+	Watchdog.arm(self, 14400.0)
 	call_deferred("run")
 
 
@@ -104,7 +108,7 @@ func _list_option(key: String, fallback: Array) -> Array:
 
 func _build_cases() -> Array:
 	var quick: bool = options.mode == "quick"
-	var seed_pool: Array = SEEDS.slice(0, QUICK_SEEDS) if quick else SEEDS.duplicate()
+	var seed_pool: Array = SEEDS.slice(0, QUICK_SEEDS if quick else FULL_SEEDS)
 	if options.has("seeds"):
 		seed_pool = []
 		for text: String in str(options.seeds).split(","):
@@ -143,7 +147,7 @@ func _build_cases() -> Array:
 						"seed": SEEDS[index % SEEDS.size()] + index,
 						"opening": OPENINGS[index % OPENINGS.size()],
 						"difficulty": DIFFICULTIES[index % DIFFICULTIES.size()],
-						"days": days,
+						"days": mini(days, FUZZ_DAYS),
 					}
 				)
 			)
@@ -254,7 +258,7 @@ func _geography() -> Dictionary:
 ## so that only attractiveness moves arrivals.
 func _labour_lever() -> Dictionary:
 	var arrivals: Dictionary = {"1.0": [], "1.3": []}
-	for seed_value: int in SEEDS.slice(0, QUICK_SEEDS):
+	for seed_value: int in SEEDS.slice(0, LEVER_SEEDS):
 		for wage: String in arrivals:
 			var sim: RefCounted = Sim.new()
 			sim.new_game(seed_value, "capital", SIZE_MEDIUM, "normal")
@@ -284,7 +288,7 @@ func _determinism_check() -> Dictionary:
 			"seed": SEEDS[0],
 			"opening": opening,
 			"difficulty": "normal",
-			"days": int(options.get("days", DEFAULT_DAYS)),
+			"days": mini(int(options.get("days", DEFAULT_DAYS)), DETERMINISM_DAYS),
 		}
 		var original: Dictionary = _run_case(case_info, true)
 		var replayed: PackedByteArray = _replay(

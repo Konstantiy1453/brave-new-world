@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -9,7 +9,8 @@
     "exports_total",
     "population",
     "stage_streak",
-    "processing_days"
+    "processing_days",
+    "capital_population"
   ],
   "difficulty_scale": {
     "easy": 0.8,
@@ -18,96 +19,130 @@
   },
   "deadlines": {
     "easy": [
-      120,
-      250,
-      360
+      450,
+      1100,
+      1800,
+      2500,
+      3240
     ],
     "normal": [
-      90,
-      200,
-      300
+      360,
+      900,
+      1500,
+      2100,
+      2880
     ],
     "hard": [
-      75,
-      170,
-      260
+      300,
+      780,
+      1300,
+      1850,
+      2550
     ]
   },
-  "overdue_distrust_per_day": 1.2,
+  "overdue_distrust_per_day": 0.3,
   "windows": {
     "local_food": 30,
-    "non_mining": 30
+    "non_mining": 60
   },
   "settlement_cap": {
     "initial": 1,
     "expedition": 2,
     "third_settlement": 3,
-    "after_award": 6
+    "network": 5,
+    "self_reliance": 7,
+    "after_award": 12
   },
   "stages": [
     {
       "id": "foothold",
-      "reward_cash": 1500.0,
+      "reward_cash": 8000.0,
       "licence": "expedition",
       "goals": {
         "settlements": 1,
-        "exports_total": 3000.0,
+        "exports_total": 40000.0,
         "food_days": 10.0,
-        "stage_streak": 10,
+        "stage_streak": 30,
         "research_staffed": 1
       }
     },
     {
       "id": "division",
-      "reward_cash": 2500.0,
+      "reward_cash": 15000.0,
       "licence": "third_settlement",
       "goals": {
         "connected": 2,
         "local_food_share": 0.8,
-        "processing_days": 20,
-        "population": 120,
-        "technologies": 2
+        "processing_days": 120,
+        "population": 200,
+        "technologies": 5
+      }
+    },
+    {
+      "id": "network",
+      "reward_cash": 25000.0,
+      "licence": "network",
+      "goals": {
+        "connected": 3,
+        "frontiers": 1,
+        "population": 600,
+        "technologies": 14,
+        "non_mining_share": 0.15
       }
     },
     {
       "id": "self_reliance",
+      "reward_cash": 40000.0,
+      "licence": "self_reliance",
+      "goals": {
+        "connected": 4,
+        "population": 1000,
+        "employment": 0.6,
+        "housed": 1,
+        "enterprise_profit_days": 180,
+        "non_mining_share": 0.3,
+        "technologies": 24,
+        "stage_streak": 90
+      }
+    },
+    {
+      "id": "capital",
       "reward_cash": 0.0,
       "licence": "",
       "goals": {
-        "population": 180,
-        "employment": 0.6,
-        "housed": 1,
-        "enterprise_profit_days": 30,
-        "non_mining_share": 0.25,
-        "stage_streak": 30,
+        "capital_population": 600,
+        "population": 1800,
+        "technologies": 35,
+        "capital_hall": 1,
+        "stage_streak": 180,
         "no_review": 1
       }
     }
   ],
   "milestones": [
     {
-      "id": "population_1000",
+      "id": "population_5000",
       "goal": "population",
-      "target": 1000,
-      "reward": 2000.0
+      "target": 5000,
+      "reward": 10000.0
     },
     {
-      "id": "five_settlements",
+      "id": "ten_settlements",
       "goal": "settlements",
-      "target": 5,
-      "reward": 2000.0
+      "target": 10,
+      "reward": 10000.0
     },
     {
-      "id": "three_megaprojects",
+      "id": "four_megaprojects",
       "goal": "megaprojects",
-      "target": 3,
-      "reward": 3000.0
+      "target": 4,
+      "reward": 15000.0
     },
     {
-      "id": "all_tier2",
-      "goal": "tier2_techs",
-      "target": 1,
-      "reward": 1500.0
+      "id": "eighty_technologies",
+      "goal": "technologies",
+      "target": 80,
+      "reward": 8000.0
     }
   ]
 }

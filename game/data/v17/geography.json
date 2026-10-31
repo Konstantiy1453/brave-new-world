@@ -1,12 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "land_fraction": "share of the sphere's area",
     "deposits": "tonnes before the potential factor",
     "days": "game days",
     "fertility": "0-1",
     "water": "0-1",
-    "band": "fraction of the true value, plus or minus"
+    "band": "fraction of the true value, plus or minus",
+    "radius_km": "planet radius; 0.6, 1.0 and 1.3 Earth radii in CC-GEO-2.2"
   },
   "land_fraction": [
     0.28,
@@ -289,7 +290,11 @@
   "planet_types": {
     "attempts": 16,
     "pinned": {
-      "260129": {"layout": "scattered", "climate": "temperate", "relief": "gentle"}
+      "260129": {
+        "layout": "scattered",
+        "climate": "temperate",
+        "relief": "gentle"
+      }
     },
     "layouts": {
       "scattered": {
@@ -543,8 +548,8 @@
     "town_minimum": 10
   },
   "survey": {
-    "cost": 150.0,
-    "days": 4,
+    "cost": 800.0,
+    "days": 15,
     "orbital_band": 0.4,
     "ground_band": 0.12,
     "prospecting_radius_degrees": 30.0,
@@ -593,5 +598,99 @@
       "岭",
       "渊"
     ]
+  },
+  "frozen_roads": {
+    "valley": {
+      "capacity": 28,
+      "upkeep": 1.5,
+      "closure_chance_per_day": 0.0,
+      "closure_days": [
+        0,
+        0
+      ],
+      "speed_km_per_day": 300.0,
+      "min_days": 2,
+      "base_cost": 390.0,
+      "cost_per_km": 1.05,
+      "reason": "沿河谷绕山",
+      "name": "河谷公路（绕山）"
+    },
+    "engineered": {
+      "capacity": 42,
+      "upkeep": 5.0,
+      "closure_chance_per_day": 0.00833,
+      "closure_days": [
+        3,
+        8
+      ],
+      "speed_km_per_day": 260.0,
+      "min_days": 2,
+      "base_cost": 600.0,
+      "cost_per_km": 1.63,
+      "reason": "跨山工程",
+      "name": "工程公路（跨山）",
+      "closure_cost": 300.0
+    },
+    "sea": {
+      "capacity": 36,
+      "upkeep": 4.0,
+      "closure_chance_per_day": 0.0,
+      "closure_days": [
+        0,
+        0
+      ],
+      "speed_km_per_day": 340.0,
+      "min_days": 3,
+      "base_cost": 700.0,
+      "cost_per_km": 0.35,
+      "reason": "沿海航线",
+      "name": "沿海航线",
+      "tech": "shipping",
+      "fee_factor": 1.5
+    }
+  },
+  "overrides": {
+    "CC-GEO-2.2": {
+      "radius_km": [
+        3823.0,
+        6371.0,
+        8282.0
+      ],
+      "deposit_scale": 10.0,
+      "plots": {
+        "tonnes_per_plot": {
+          "ore": 24000.0,
+          "copper": 16000.0,
+          "crystal": 9600.0
+        },
+        "max_deposit_plots": 8,
+        "general_base": 30,
+        "general_flat_bonus": 24,
+        "farm_max": 14,
+        "farm_fertility_step": 0.12,
+        "grade_spread": 0.15,
+        "fertility_spread": 0.12,
+        "deep_chance": 0.55,
+        "deep_tonnes": 1.4,
+        "deep_grade": 1.25,
+        "hidden_chance": 0.45,
+        "hidden_tonnes": 0.8,
+        "town_minimum": 24,
+        "slot_x": 7,
+        "slot_z": 5
+      },
+      "validator": {
+        "start_water": 0.35,
+        "start_tonnes": 64000.0,
+        "start_crystal": 24000.0,
+        "start_general_plots": 12,
+        "partner_general_plots": 6,
+        "partner_fertility": 0.6,
+        "partner_days": 22,
+        "min_pairs": 3,
+        "islands_can_start": true,
+        "sea_partners": true
+      }
+    }
   }
 }

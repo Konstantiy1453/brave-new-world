@@ -7,6 +7,7 @@ const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Research = preload("res://simulation/research.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Pollution = preload("res://simulation/pollution.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -25,8 +26,16 @@ static func ensure_state(state: Dictionary) -> void:
 			s.attractiveness_parts = {}
 
 
+## Food per person per day, after what cold chains and reserves save.
+static func food_rate(sim: RefCounted) -> float:
+	return (
+		float(sim.config.economy.food_per_person)
+		* maxf(0.5, 1.0 + Research.bonus(sim, "food_need"))
+	)
+
+
 static func feed(sim: RefCounted, s: Dictionary) -> void:
-	var need: float = float(s.population) * float(sim.config.economy.food_per_person)
+	var need: float = float(s.population) * food_rate(sim)
 	var amount: float = minf(need, float(s.stock.food))
 	sim._consume(s, "food", amount)
 	s.food_consumed = amount
@@ -84,13 +93,17 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 		and enterprise.status == Keys.E_OPEN
 	):
 		parts.services = float(rules.service_enterprise)
-	if has_clinic(s):
-		parts.services = float(parts.get("services", 0.0)) + float(rules.service_clinic)
-	var pollution: float = float(s.get("pollution", 0.0))
-	if pollution > float(rules.pollution_threshold):
-		parts.pollution = (
-			(pollution - float(rules.pollution_threshold)) * float(rules.pollution_per_point)
-		)
+	var services: float = service_total(sim, s, "appeal")
+	if services > 0.0:
+		parts.services = float(parts.get("services", 0.0)) + services
+	var dirty: float = Pollution.penalty(sim) * float(sim.progression.pollution.appeal_weight)
+	if dirty >= 0.005:
+		parts.pollution = -dirty
+	if str(s.get("kind", Keys.SITE_RESIDENTIAL)) == Keys.SITE_FRONTIER:
+		parts.frontier = float(rules.frontier)
+	var learned: float = Research.bonus(sim, "appeal")
+	if learned > 0.0:
+		parts.tech = learned
 	for shortage: Dictionary in s.shortages:
 		if shortage.key in [Keys.SH_POWER, Keys.SH_WATER]:
 			parts.shortages = float(rules.shortage)
@@ -111,17 +124,45 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 
 static func has_clinic(s: Dictionary) -> bool:
 	for b: Dictionary in s.buildings:
-		if b.kind == "clinic" and int(b.remaining) <= 0 and bool(b.get("enabled", true)):
+		if (
+			str(b.kind) in ["clinic", "hospital"]
+			and int(b.remaining) <= 0
+			and bool(b.get("enabled", true))
+		):
 			return true
 	return false
 
 
-static func labs_at(s: Dictionary) -> int:
+## What this settlement's finished services add up to for one effect.
+static func service_total(sim: RefCounted, s: Dictionary, field: String) -> float:
+	var total: float = 0.0
+	for b: Dictionary in s.buildings:
+		if int(b.remaining) > 0 or not bool(b.get("enabled", true)):
+			continue
+		total += float(sim.config.buildings.get(b.kind, {}).get("service", {}).get(field, 0.0))
+	return total
+
+
+static func labs_at(sim: RefCounted, s: Dictionary) -> int:
 	var count: int = 0
 	for b: Dictionary in s.buildings:
-		if b.kind == "lab" and int(b.remaining) <= 0 and bool(b.get("enabled", true)):
+		if Research.is_lab(sim, b) and int(b.remaining) <= 0 and bool(b.get("enabled", true)):
 			count += 1
 	return count
+
+
+## Arrivals a month at this attractiveness: frontier towns draw few on their own.
+static func arrivals_per_month(sim: RefCounted, s: Dictionary, appeal: float) -> float:
+	var rules: Dictionary = sim.pop_rules.immigration
+	var rate: float = (
+		float(rules.base_per_month)
+		* appeal
+		* job_prospects(sim, s)
+		* (1.0 + Research.bonus(sim, "immigration"))
+	)
+	if str(s.get("kind", Keys.SITE_RESIDENTIAL)) == Keys.SITE_FRONTIER:
+		rate *= float(rules.frontier_factor)
+	return rate
 
 
 static func _reserved_beds(sim: RefCounted, region: int) -> int:
@@ -160,8 +201,7 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 	s.attractiveness = result.value
 	s.attractiveness_parts = result.parts
 	s.arrival_accrual = (
-		float(s.arrival_accrual)
-		+ float(rules.base_per_month) * float(result.value) * job_prospects(sim, s) / 30.0
+		float(s.arrival_accrual) + arrivals_per_month(sim, s, float(result.value)) / 30.0
 	)
 	var whole: int = int(floor(float(s.arrival_accrual)))
 	var beds: int = free_beds(sim, s)
@@ -170,7 +210,8 @@ static func _immigration(sim: RefCounted, s: Dictionary) -> void:
 		s.arrival_accrual = float(s.arrival_accrual) - arrivals
 		var share: float = (
 			minf(
-				float(rules.scientist_share_max), float(rules.scientist_share_per_lab) * labs_at(s)
+				float(rules.scientist_share_max),
+				float(rules.scientist_share_per_lab) * labs_at(sim, s)
 			)
 			+ Megaprojects.scientist_share_bonus(sim)
 		)
@@ -193,10 +234,13 @@ static func job_prospects(sim: RefCounted, s: Dictionary) -> float:
 
 
 static func _births(sim: RefCounted, s: Dictionary) -> void:
+	if str(s.get("kind", Keys.SITE_RESIDENTIAL)) == Keys.SITE_FRONTIER:
+		return
 	var adults: int = int(s.workers) + int(s.scientists)
-	var yearly: float = float(sim.pop_rules.births.per_adult_per_year)
-	if has_clinic(s):
-		yearly *= float(sim.pop_rules.births.clinic_factor)
+	var yearly: float = (
+		float(sim.pop_rules.births.per_adult_per_year)
+		* (1.0 + service_total(sim, s, "births") + Research.bonus(sim, "births"))
+	)
 	s.birth_accrual = float(s.birth_accrual) + adults * yearly / 360.0
 	if float(s.birth_accrual) < 1.0:
 		return
@@ -224,18 +268,19 @@ static func _mature(sim: RefCounted, s: Dictionary) -> void:
 
 
 static func _train(sim: RefCounted, s: Dictionary) -> void:
-	var period: int = 15 if sim._has("education") else 30
+	var faster: float = Research.bonus(sim, "training_speed") + service_total(sim, s, "training")
+	var period: int = maxi(1, int(30.0 / (1.0 + faster)))
 	var training_capacity: int = 0
 	for facility: Dictionary in s.buildings:
-		if facility.kind == "lab" and facility.enabled and facility.remaining <= 0:
+		if Research.is_lab(sim, facility) and facility.enabled and facility.remaining <= 0:
 			training_capacity += Research.lab_seats(sim, facility)
 	if int(sim.state.day) % period == 0 and s.workers > 8 and s.scientists < training_capacity:
 		for b: Dictionary in s.buildings:
-			if b.kind == "lab" and b.active:
+			if Research.is_lab(sim, b) and b.active:
 				s.workers -= 1
 				s.scientists += 1
 				reconcile_jobs(sim, s)
-				sim._log(s.name + "教学研究所完成 1 名工人的科研职业培训。")
+				sim._log(s.name + "教学研究所完成 1 支工程队的科研职业培训。")
 				break
 
 
@@ -298,7 +343,10 @@ static func daily(sim: RefCounted) -> void:
 
 static func campaign_price(sim: RefCounted, kind: String) -> float:
 	var rules: Dictionary = sim.pop_rules.recruitment
-	var base: float = float(rules.scientist_price if kind == "scientist" else rules.worker_price)
+	var base: float = (
+		float(rules.scientist_price if kind == "scientist" else rules.worker_price)
+		* maxf(0.2, 1.0 + Research.bonus(sim, "recruit_price"))
+	)
 	var window: int = int(rules.window_days)
 	var recent: int = 0
 	for day: Variant in sim.state.recruit_campaigns:
@@ -315,7 +363,7 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 		return "未知招募类型"
 	var rules: Dictionary = sim.pop_rules.recruitment
 	if kind == "scientist" and not sim._has(str(rules.scientist_tech)):
-		return "招募研究员需要技术：" + str(sim.config.techs[rules.scientist_tech].name)
+		return "招募研究团队需要技术：" + str(sim.config.techs[rules.scientist_tech].name)
 	if count < 1 or count > int(rules.max_per_campaign):
 		return "每次招募 1—%d 人" % int(rules.max_per_campaign)
 	if free_beds(sim, s) < count:
@@ -360,11 +408,7 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 	if s.is_empty():
 		return {}
 	var result: Dictionary = attractiveness(sim, s)
-	var rate: float = (
-		float(sim.pop_rules.immigration.base_per_month)
-		* float(result.value)
-		* job_prospects(sim, s)
-	)
+	var rate: float = arrivals_per_month(sim, s, float(result.value))
 	return {
 		"attractiveness": result.value,
 		"parts": result.parts,
@@ -381,11 +425,12 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 	}
 
 
+## Beds in one housing building at its level.
 static func habitat_beds(sim: RefCounted, b: Dictionary) -> int:
 	var rule: Dictionary = sim.config.upgrades.habitat[0]
-	if int(b.get("level", 1)) >= int(rule.level):
+	if str(b.kind) == "habitat" and int(b.get("level", 1)) >= int(rule.level):
 		return int(rule.housing)
-	return int(sim.config.buildings.habitat.housing)
+	return int(sim.config.buildings[b.kind].housing)
 
 
 static func _people_30(sim: RefCounted, column: String, region: int) -> float:
@@ -395,11 +440,13 @@ static func _people_30(sim: RefCounted, column: String, region: int) -> float:
 static func refresh(sim: RefCounted, s: Dictionary) -> void:
 	s.housing = int(s.base_housing)
 	for b: Dictionary in s.buildings:
-		if b.kind == "habitat" and b.remaining <= 0 and b.get("enabled", true):
+		if (
+			str(sim.config.buildings.get(b.kind, {}).get("role", "")) == "housing"
+			and b.remaining <= 0
+			and b.get("enabled", true)
+		):
 			s.housing += habitat_beds(sim, b)
-	s.food_days = (
-		float(s.stock.food) / maxf(0.001, float(s.population) * sim.config.economy.food_per_person)
-	)
+	s.food_days = float(s.stock.food) / maxf(0.001, float(s.population) * food_rate(sim))
 	if s.housing < s.population:
 		sim._short(s, Keys.SH_HOUSING)
 

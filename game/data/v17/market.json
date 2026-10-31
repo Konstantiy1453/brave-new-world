@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "scale": "tonnes of saturation at which the price falls by the full depth",
     "decay_per_day": "fraction of saturation lost per day"
@@ -8,11 +8,14 @@
   "depth": 0.4,
   "floor": 0.6,
   "scale": {
-    "ore": 3000.0,
-    "copper": 1500.0,
-    "crystal": 500.0,
-    "materials": 1200.0,
-    "parts": 400.0,
-    "components": 300.0
+    "ore": 6000.0,
+    "copper": 3000.0,
+    "crystal": 1000.0,
+    "materials": 2400.0,
+    "parts": 800.0,
+    "components": 600.0,
+    "alloy": 1000.0,
+    "machinery": 300.0,
+    "pharma": 500.0
   }
 }

@@ -9,7 +9,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build" / "v17"
 OUT = ROOT / "delivery" / "v17"
-VERSION = "1.7.1"
+VERSION = "1.8.0"
 GAME_ZIP = OUT / f"ColonyCharter-{VERSION}-Windows-x64.zip"
 SOURCE_ZIP = OUT / f"ColonyCharter-{VERSION}-Source.zip"
 # Nothing used only for testing belongs in the export.
@@ -118,8 +118,8 @@ def identity():
         "version": VERSION,
         "commit": commit_id(),
         "engine": "Godot 4.5.1-stable, GL Compatibility, Windows x64",
-        "save_schema": 3,
-        "world_generator": "CC-GEO-2.1",
+        "save_schema": 4,
+        "world_generator": "CC-GEO-2.2",
         "files": {
             path.name: {"sha256": digest(path), "bytes": path.stat().st_size}
             for path in [

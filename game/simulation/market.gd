@@ -5,6 +5,7 @@ extends RefCounted
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Research = preload("res://simulation/research.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -19,7 +20,8 @@ static func factor(sim: RefCounted, good: String) -> float:
 	var saturation: float = float(sim.state.market.saturation.get(good, 0.0))
 	var level: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
 	var depth: float = float(rules.depth) * float(level.market_depth_factor)
-	return clampf(1.0 - depth * saturation / float(rules.scale[good]), float(rules.floor), 1.0)
+	var market_size: float = float(rules.scale[good]) * (1.0 + Research.bonus(sim, "market_depth"))
+	return clampf(1.0 - depth * saturation / market_size, float(rules.floor), 1.0)
 
 
 static func price(sim: RefCounted, good: String) -> float:
@@ -28,6 +30,7 @@ static func price(sim: RefCounted, good: String) -> float:
 		* factor(sim, good)
 		* Megaprojects.export_factor(sim)
 		* EventsV2.colony_modifier(sim, "export_price")
+		* (1.0 + Research.bonus(sim, "export_price"))
 	)
 
 

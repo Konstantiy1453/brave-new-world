@@ -198,7 +198,7 @@ static func convert_v2(old: Dictionary) -> Dictionary:
 		else:
 			archive.hash = ""
 		archive.erase("snapshot")
-	old.schema = 3
+	old.schema = 4
 	load("res://simulation/sim.gd").ensure_systems(old)
 	_settle_research(old)
 	old.rng_state = (absi(int(old.get("rng_state", 1))) % 2147483646) + 1

@@ -25,7 +25,8 @@ func _random_action() -> void:
 			act("build", {"region": region, "kind": kinds[rng.randi_range(0, kinds.size() - 1)]})
 		4:
 			var count: int = sim.state.world.regions.size()
-			act("settle", {"region": rng.randi_range(0, count - 1)})
+			var settle_kind: String = "frontier" if rng.randf() < 0.5 else "residential"
+			act("settle", {"region": rng.randi_range(0, count - 1), "kind": settle_kind})
 		5:
 			if places.size() >= 2:
 				act(
@@ -40,6 +41,17 @@ func _random_action() -> void:
 			var techs: Array = sim.config.techs.keys()
 			var tech: String = techs[rng.randi_range(0, techs.size() - 1)]
 			act("research_allocate", {"tech": tech, "staff": rng.randi_range(0, 10)})
+			for hand: Array in sim.state.research.offers.values():
+				if not hand.is_empty():
+					var card: String = str(hand[rng.randi_range(0, hand.size() - 1)])
+					act("research_allocate", {"tech": card, "staff": rng.randi_range(0, 12)})
+			if rng.randf() < 0.05:
+				act("research_reshuffle", {"category": "industry"})
+			if rng.randf() < 0.1 and not place.buildings.is_empty():
+				act(
+					"demolish",
+					{"region": region, "index": rng.randi_range(0, place.buildings.size() - 1)}
+				)
 		7:
 			act("enterprise", {"region": region})
 		8:
