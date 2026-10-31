@@ -65,7 +65,7 @@ The header holds `version`, `sha256` and `raw_size` of the payload, plus `planet
 | File | Responsibility | Phase |
 |---|---|---|
 | `world_gen.gd`, `seed_geography.gd`, `hydrology.gd` | Legacy generator paths 1.4–1.6, kept | — |
-| `geo2/plates.gd` | CC-GEO-2.0 plate-like continents and continuous height sampling | 5 |
+| `geo2/plates.gd` | Plate-like continents and continuous height sampling (CC-GEO-2.0); planet characters and their recipes (CC-GEO-2.1) | 5, after release |
 | `geo2/climate.gd` | Latitude, altitude, pressure, wind, rain shadow | 5 |
 | `geo2/world_gen2.gd` | Sea-level quantile, per-cell attributes, D8 hydrology, retries, hash | 5 |
 | `geo2/site_gen.gd` | Poisson-disk sites, archetypes, quotas, plots, names, playability validator | 5 |

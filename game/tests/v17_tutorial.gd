@@ -569,7 +569,8 @@ func _new_game_choices() -> void:
 	check(not game.tutorial_on, "asking for another seed leaves the tutorial")
 	check(game.seed_edit.editable, "and unlocks the seed")
 	check(
-		game.planet_preview.text.begins_with("这个种子："), "the menu names the planet that seed makes"
+		game.planet_preview.text.begins_with("这个种子多半是："),
+		"the menu names the planet that seed makes"
 	)
 	game.seed_edit.text = "12345"
 	game.seed_edit.text_changed.emit("12345")

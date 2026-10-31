@@ -7,12 +7,14 @@ const WorldGen2 = preload("res://world/geo2/world_gen2.gd")
 const Routes = preload("res://world/routes.gd")
 const Rules = preload("res://simulation/rules.gd")
 const SiteGen = preload("res://world/geo2/site_gen.gd")
+const Plates = preload("res://world/geo2/plates.gd")
 
-const VARIETY_CHECKS: int = 4
+const VARIETY_CHECKS: int = 5
 const MIN_TYPE_SEEDS: int = 8
 const MIN_LAND_SPREAD: float = 0.15
 const MIN_TEMPERATURE_SPREAD: float = 15.0
 const MIN_RAIN_SPREAD: float = 0.2
+const MIN_KEPT_SHARE: float = 0.75
 
 
 func _initialize() -> void:
@@ -54,7 +56,9 @@ func _variety_failures(rows: Array) -> int:
 	var land: Array[float] = []
 	var warmth: Array[float] = []
 	var rain: Array[float] = []
+	var kept: int = 0
 	for row: Dictionary in rows:
+		kept += 1 if row.kept_promise else 0
 		for part: String in seen:
 			var value: String = str(row.character.get(part, ""))
 			seen[part][value] = int(seen[part].get(value, 0)) + 1
@@ -68,6 +72,10 @@ func _variety_failures(rows: Array) -> int:
 				failures += 1
 				print("FAIL %s %s appears on only %d seeds" % [part, key, seen[part].get(key, 0)])
 	print("planet types ", seen)
+	print("the menu's planet type holds on %d of %d seeds" % [kept, rows.size()])
+	if float(kept) / rows.size() < MIN_KEPT_SHARE:
+		failures += 1
+		print("FAIL the menu's planet type holds too rarely")
 	print(
 		(
 			"spreads: land %.2f, mean temperature %.1f C, rainfall %.2f"
@@ -115,6 +123,8 @@ func _row(world: Dictionary, seed_value: int, size: int, ms: int, roads: Diction
 		"rejected": world.generation.validation.rejected.size(),
 		"best": world.regions[0].archetype,
 		"character": world.get("character", {}),
+		"kept_promise":
+		world.get("character", {}) == Plates.character(seed_value, Rules.read("geography")),
 		"mean_temperature": float(world.statistics.mean_temperature_c),
 		"mean_rainfall": float(world.statistics.mean_rainfall),
 		"best_terrain": world.regions[0].terrain,

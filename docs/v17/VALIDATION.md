@@ -252,3 +252,43 @@ Problems these checks found and fixed: a settlement's action row pushed the side
 | Test | Change | Why |
 |---|---|---|
 | `v16_rules_tests.gd` | Departure check compares with the town's own starting population | Opening crews changed |
+
+## 1.7.1
+
+Hardware as above. Evidence labels as above.
+
+| Check | Evidence | Result |
+|---|---|---|
+| All headless suites | automated test, runner | 45 of 45 PASS |
+| Window suites | source-project window, runner `-Window` | 4 of 4 PASS |
+| Balance `--full`, 950 runs with 50 fuzz runs | balance harness, `2026-10-31T17-13-30` | 15 of 18 rows PASS, 0 audit errors; 3 misses in `BALANCE.md` |
+| 200 seeds: site counts, 3 start pairs, land 25-45%, 2-6 continents, every planet type present, spreads of land, temperature and rainfall | automated test `v17_world_stats` | PASS: 0 carved worlds, land spread 0.19, temperature spread 26 °C, rainfall spread 0.38, the menu's type holds on 168 of 200 seeds |
+| 12 seeds rendered before and after | source-project window; screenshot viewed | Layouts and ice clearly differ now; the green and tan palette is shared on purpose |
+| A 1.7.0 save (CC-GEO-2.0) loads, keeps its names, plays and saves again, even after 2.1 worlds of the same seed | automated test `v17_saves` | PASS |
+| Naming: dialog, cancel, Enter, odd text, limit, blank, rename, save and load, map and lists | automated test `v17_tutorial` | PASS |
+| Building list, seed box, tutorial lock, menu's planet preview matches the planet | automated test `v17_tutorial` | PASS |
+| New pages at 3 resolutions × 2 text sizes, 144 images | source-project window; screenshot viewed (about 20) | Problems below fixed |
+| Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons | PASS, log has no errors |
+| Performance | exported EXE (`evidence/v17/perf`) | as in the table below |
+| Human playtests, manual EXE tutorial | NOT_RUN | The user tried 1.7.0 and reported what led to this version; 1.7.1 has not been played by a person |
+
+| Measure, day-720 save | First run, empty caches | Second run | Target |
+|---|---|---|---|
+| Save size | 47,219 bytes | same | 1.5 MB |
+| Save, median of 20 (worst) | 9.7 ms (10.9) | 9.6 ms (14.1) | 100 ms |
+| Load, median of 20 (worst) | 19.5 ms (23.7) | 18.0 ms (19.2) | 300 ms |
+| Worst frame during autosave | 33.7 ms | 17.7 ms | 50 ms |
+| Page open, warm, worst | 17.6 ms | 17.5 ms | 100 ms |
+| Region, cold, 8 sites: median (worst) | 767 ms (826) | 766 ms (799) | 1.0 s |
+| Worst frame during a cold region load | 43.4 ms | 42.8 ms | 50 ms |
+
+Problems found and fixed on the way: new games ignored the seed with the tutorial on, and the seed box defaulted to the tutorial's seed; the route cache mixed the two generators; site numbers did not match ids after the validator reordered sites; the balanced bot's new mines undid the non-mining goal; the menu overflowed at the largest text; the site chooser cut off the terrain; an island's card showed a heading with no routes under it.
+
+World generation is slower on hard seeds: mean 0.7 s, worst 3.6 s over 200 seeds (was 0.5 s and 1.5 s).
+
+### Tests changed
+
+| Test | Change | Why |
+|---|---|---|
+| `sim_tests`, `v16_events_tests`, `v16_event_order_probe`, `v16_research_company_review`, `v17_contract_population`, `v17_tutorial` | Waits read build days from the rules; the scenario retries its farm and allows a processor until day 150 | Builds take longer |
+| `v17_world_stats` | Adds variety checks | Planets must differ |

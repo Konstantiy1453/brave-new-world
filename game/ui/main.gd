@@ -823,6 +823,7 @@ func _on_seed_changed(text: String):
 
 
 ## What the typed seed will give, before any world is built.
+## A forecast: a draw that gives no playable world softens, which only building the world can tell.
 func _show_planet_preview():
 	if tutorial_on:
 		planet_preview.text = "新手引导使用专用星球。想自己选种子、大小、难度和开局，先把引导关掉，或点「换个种子」。"
@@ -831,7 +832,7 @@ func _show_planet_preview():
 	var character: Dictionary = WorldGen.Plates.character(
 		WorldGen.SeedGeo.normalize_seed(seed_edit.text), rules
 	)
-	planet_preview.text = "这个种子：" + Labels.planet_type(rules.planet_types, character)
+	planet_preview.text = "这个种子多半是：" + Labels.planet_type(rules.planet_types, character)
 
 
 func old_save_path(relative: String) -> String:

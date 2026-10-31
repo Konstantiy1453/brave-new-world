@@ -35,13 +35,13 @@ Three stages, each a set of goals checked daily; a stage completes on the first 
 | 2 分工 | 250 / 200 / 170 | Two settlements connected; local food ≥ 80% over 30 days; processing active ≥ 20 days; population ≥ 120; ≥ 2 technologies | ¥2,500; third-settlement licence |
 | 3 自立 | 360 / 300 / 260 | Population ≥ 180; employment ≥ 60%; everyone housed; enterprise profitable 30 days; non-mining income ≥ 25% over 30 days; 30-day streak from the start of this stage; no active review | Governor |
 
-Goal sizes for exports and population scale ×0.8 / ×1.0 / ×1.2 by difficulty. An overdue stage adds an economic risk of 1.2 distrust a day to the company process; it never fails the game by itself. Rewards are non-operating.
+Goal sizes for exports, population, the stage streak and processing days scale ×0.8 / ×1.0 / ×1.2 by difficulty. An overdue stage adds an economic risk of 1.2 distrust a day to the company process; it never fails the game by itself. Rewards are non-operating.
 
 ## Population (data/v17/population.json)
 
 Attractiveness per settlement, clamped 0–2: base 1.0; beds (over capacity −0.6, none free −0.4, ≥ 10% free +0.2); food (< 3 days −0.5, < 7 −0.2, ≥ 14 +0.1); jobs (≥ 30% unemployed −0.3, vacancies ≥ 5% +0.2); wage (multiplier − 1); open enterprise +0.1; pollution above 35, −0.01 a point; power or water short −0.2; company review −0.2.
 
-Arrivals accrue at 6 a month × attractiveness, capped by free beds, with ¥60 savings each. Scientists are 12% of arrivals per lab, at most 30%. Recruitment: ¥120 a worker, ¥200 a scientist, +10% for each campaign in the last 90 days, at most 20 people, 10 days' travel, beds reserved at purchase. Births: 1% of adults a year when beds and food allow. Below attractiveness 0.5, or with too little housing, food or work, 1% leave each period after 12 days; a higher wage multiplier stretches the period.
+Arrivals accrue at 7.5 a month × attractiveness, capped by free beds, with ¥60 savings each. Scientists are 12% of arrivals per lab, at most 30%. Recruitment: ¥120 a worker, ¥200 a scientist, +10% for each campaign in the last 90 days, at most 20 people, 10 days' travel, beds reserved at purchase. Births: 1% of adults a year when beds and food allow. Below attractiveness 0.5, or with too little housing, food or work, 1% leave each period after 12 days; a higher wage multiplier stretches the period.
 
 ## Economy
 
@@ -55,7 +55,7 @@ Arrivals accrue at 6 a month × attractiveness, capped by free beds, with ¥60 s
 | Supplies aid | ≈ ¥1,500 for ¥700 | ≈ ¥1,500 for ¥1,400 over 90 days | Same |
 | Administration | ¥5 | ¥5 + ¥0.04 a resident + ¥3 a settlement | Growth has running costs |
 | Landing housing | 80 / 40 | 60 / 24 | Housing is an early decision |
-| Immigration | +2 per 24 days | 6 a month × attractiveness | Responds to the player |
+| Immigration | +2 per 24 days | 7.5 a month × attractiveness | Responds to the player |
 | Research R10 | 1.0 | 2.0 | Research arrives inside the first contract |
 
 Export price = base × clamp(1 − 0.4 · S / M, 0.6, 1), where S rises with every tonne exported and decays 2% a day. M: ore 3,000, copper 1,500, crystal 500, materials 1,200, parts 400 t.
@@ -74,7 +74,7 @@ R(n) = R10 × (n / 10)^α with R10 = 2.0 points a day and α = ln 0.6 / ln 0.5, 
 | 2 | 100-140 | deep_mining 120, prospecting 100, hydroponics 120, efficiency 110, electronics 130, paved_roads 100, shipping 120, research_network 110, remediation 100 |
 | 3 | 220-260 | automation 240, university 220, lift_port 260, climate 260 |
 
-Scientists go first to investigations, then to projects in the order staffed, then to contracts. Labs: L1 10 seats and 2 benches; L2 (research_network, ¥1,200) 20 seats and 3 benches. A contract takes a bench and pays R(n) × ¥40 a day as operating income, counted as non-mining income by the contract.
+Scientists go first to investigations, then to projects in the order staffed, then to contracts. Labs: L1 10 seats and 2 benches; L2 (research_network, ¥1,200) 20 seats and 3 benches. A contract takes a bench and pays R(n) × ¥50 a day as operating income, counted as non-mining income by the contract.
 
 ## Buildings added and upgrades (data/v17/economy.json `buildings`, `upgrades`)
 
@@ -83,9 +83,9 @@ Scientists go first to investigations, then to projects in the order staffed, th
 | Clinic | medicine | Attractiveness +0.3, births ×1.5, departures half as often |
 | Hydroponic farm | hydroponics | 26 t food a day regardless of soil, power 10 |
 | Component plant | electronics | 0.8 parts + 0.6 crystal → 1 t components (¥110, market scale 300) |
-| University | university, ¥9,000, 60 days | Research ×1.25, +20 points of scientist immigration share |
-| Lift port | lift_port, ¥16,000, 90 days | Local port capacity ×3, all export prices +10% |
-| Climate regulator | climate, ¥14,000, 75 days | +3 °C and +10% farm yield within 35° |
+| University | university, ¥9,000, 80 days | Research ×1.25, +20 points of scientist immigration share |
+| Lift port | lift_port, ¥16,000, 120 days | Local port capacity ×3, all export prices +10% |
+| Climate regulator | climate, ¥14,000, 100 days | +3 °C and +10% farm yield within 35° |
 
 Upgrades: mine L2 (deep_mining: +60%, +4 jobs) and L3 (automation: ×2.2, +6 jobs); habitat L2 (medicine: 70 beds); lab L2; processor L2 (electronics: ×1.5, +3 jobs); farm L2 (hydroponics: ×1.4, +3 power); port L2 (logistics: ×1.5). Automation also takes 30% of jobs from mines and processing plants. A building keeps working at its old level while it is upgraded. Paving a road (paved_roads): half the road's cost and 30 t of materials for +50% capacity, one day less, 70% less closure risk.
 
@@ -167,7 +167,7 @@ The same rules at every level. Per level in `progression.json` `difficulty`: `ca
 |---|---|---|
 | capital | ¥6,200, 44 workers, 4 scientists | first expedition costs 60% (`first_expedition_factor`) |
 | workers | ¥4,600, 52 workers, 4 scientists, more stores | prefab habitat |
-| science | ¥4,800, 40 workers, 12 scientists | prefab lab, head start on survey, survey bands 60% as wide (`survey_band_factor`), research 1.2×, funding 0.5× |
+| science | ¥5,300, 40 workers, 12 scientists | prefab lab, head start on survey, survey bands 60% as wide (`survey_band_factor`), research 1.2×, funding 0.5× |
 
 ## Food along the road network
 
@@ -189,3 +189,42 @@ town's lasting joblessness comes to about 0.11. Sources stay visible on the comp
 
 The streak goal counts consecutive days whose last 7 days sum to no loss, with no debt. The status line's streak still counts single
 days, because that is what the running colony reports each day.
+
+## Planet character (CC-GEO-2.1, data/v17/geography.json `planet_types`)
+
+A seed draws three things before any terrain, from weighted tables: a layout (群陆世界, 超大陆, 双子大陆, 群岛世界, 半球陆地, 赤道陆带), a climate (温和, 寒冷, 炎热, 干旱, 湿润) and a relief (平缓, ordinary, 崎岖). Together they set the recipe: land share, continent count and sizes, where continents may sit, lobes, island chains, coastline warp, base temperature and rainfall, height scale. Ice caps grow with cold, and colours follow temperature and rainfall within the existing palette.
+
+The draw depends on the seed alone, so the menu can forecast a planet before building it. It says 多半是 (most likely), because 168 of 200 seeds keep their draw; the toast at the start and the world page show the real type. If a world fails the playability check the attempt retries; from attempt 5 the climate softens to temperate, from attempt 8 the layout to 群陆世界 and the relief to ordinary. Seed 260129, the tutorial's, is pinned to a mild character.
+
+CC-GEO-2.0 stays reachable and frozen: `WorldGen2.generate(seed, size, "CC-GEO-2.0")` draws no character and uses the numbers it always did, so 1.7.0 saves regenerate byte for byte. `acceptance_geo20.save` proves it in `v17_saves`. Do not change its recipe or the older keys of `geography.json`.
+
+## Names
+
+Sites of a CC-GEO-2.1 world are numbered (`地点 07`) until settled; lists add the terrain and the map shows only the terrain. The settle button asks for a name; `Sim.act("settle", {site, name})` stores it on the site and the settlement. Any text will do: control characters are dropped, edges trimmed, 16 characters kept. Blank keeps the number. `rename` changes it later. Logic identifies places by id, never by name, and names may repeat. Worlds from 1.7.0 and older keep their generated names.
+
+## Pace
+
+Days remain the time unit: every deadline, rate and balance figure is in days. 1× is 5 seconds a day.
+
+| Building | Before | Now |
+|---|---|---|
+| 轻型铁矿场 | 3 | 7 |
+| 轻型铜矿场 | 4 | 8 |
+| 晶体采掘站 | 5 | 10 |
+| 净水泵站 | 3 | 6 |
+| 光伏储能站 | 4 | 8 |
+| 模块住区 | 4 | 8 |
+| 温室农场 | 5 | 10 |
+| 水培温室 | 6 | 12 |
+| 教学研究所 | 5 | 8 |
+| 社区诊所 | 5 | 8 |
+| 食品出口加工坊 | 5 | 8 |
+| 复合加工厂 | 6 | 10 |
+| 轨道货运站 | 6 | 10 |
+| 电子元件厂 | 8 | 14 |
+| 行星大学 | 60 | 80 |
+| 气候调节站 | 75 | 100 |
+| 轨道升降港 | 90 | 120 |
+| Building upgrades | 5, 8 | 10, 16 |
+
+The building list (`设施清单`) shows what is under construction across the colony, soonest first with days left, and every settlement's buildings by kind with running, staff and problems.

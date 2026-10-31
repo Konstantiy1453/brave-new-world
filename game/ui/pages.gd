@@ -44,6 +44,7 @@ static func region(g, b):
 				g.map.focus_region(id)
 	)
 	var filter = _site_filter(g, pickers)
+	chooser.size_flags_stretch_ratio = 1.6
 	for picker: OptionButton in [chooser, filter]:
 		D.font_size(picker, 15)
 		picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -84,19 +85,21 @@ static func _site_card(g, b, known: Dictionary):
 		D.label(b, hint, 16, D.INK)
 	var links: Dictionary = g.sim.site_links(g.selected)
 	if not links.is_empty():
-		D.label(b, "从 %s 出发：" % links.name, 15, D.TEAL)
+		var ways: PackedStringArray = []
 		for variant: String in ["valley", "engineered", "sea"]:
 			var road: Dictionary = links.variants[variant]
 			if bool(road.reachable):
-				D.label(
-					b,
+				ways.append(
 					(
 						"%s  %d 天 · ¥ %.0f"
 						% [g.sim.config.roads[variant].name, int(road.days), float(road.cost)]
-					),
-					15,
-					D.MUTED
+					)
 				)
+		if ways.is_empty():
+			D.label(b, "从 %s 还到不了这里。" % links.name, 15, D.GOLD)
+		else:
+			D.label(b, "从 %s 出发：" % links.name, 15, D.TEAL)
+			D.label(b, "\n".join(ways), 15, D.MUTED)
 
 
 static func _site_actions(g, b, known: Dictionary):
