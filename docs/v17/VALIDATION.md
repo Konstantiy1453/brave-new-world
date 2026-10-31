@@ -245,7 +245,7 @@ Problems these checks found and fixed: a settlement's action row pushed the side
 
 - `v17_speed` crashed once at 37 s under the runner (signal 11, main thread, top frame `EventsV2.pause_required`, where a dictionary is allocated each call, so probably earlier heap damage). No C++ symbols. 38 repeats, 32 of them under heavy load, did not reproduce it. Cause unknown. The test then ran days with no engine frames, unlike a real game; it now gives the engine a frame per simulated day.
 - `v16_scroll_probe` timed out once (540 s) while the machine was in use by someone else, and passed in 48 s alone. A window suite needs its window to keep drawing.
-- `tools/build_v17.ps1` found no export templates in `%APPDATA%\Godot`, so it now unpacks the two it needs into `build\godot_home`. The first attempt, before that fallback existed, created `%APPDATA%\Godot` and `%APPDATA%\ColonyCharter17` on the real machine. Both were new and held only engine defaults and an empty lock file; both were removed. `%APPDATA%\ColonyCharter16` has no file newer than the baseline.
+- `tools/build_v17.ps1` found no export templates in `%APPDATA%\Godot`, so it now unpacks the two it needs into `build\godot_home`. The first attempt, before that fallback existed, created `%APPDATA%\Godot` and `%APPDATA%\ColonyCharter\v17` on the real machine. Both were new and held only engine defaults and an empty lock file; both were removed. `%APPDATA%\ColonyCharter\v16` has no file newer than the baseline.
 
 ### Tests rewritten
 
