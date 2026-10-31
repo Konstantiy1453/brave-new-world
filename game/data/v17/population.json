@@ -38,11 +38,11 @@
     "jobs_open": 0.2,
     "jobless_share": 0.3,
     "jobless": -0.3,
-    "wage_per_multiplier": 1.5,
+    "wage_per_multiplier": 2.0,
     "service_enterprise": 0.1,
     "shortage": -0.2,
     "company_review": -0.2,
-    "frontier": -0.2
+    "frontier": -0.1
   },
   "wage": {
     "min": 0.8,

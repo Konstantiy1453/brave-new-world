@@ -1018,6 +1018,7 @@ func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) 
 		float(counts.scientists) / maxi(1, int(counts.adults)) < science_target
 		and sim._has(SCIENCE_TECH)
 		and has_building(home, "lab")
+		and sim.Population.free_beds(sim, sim.settlement(home)) > 0
 	):
 		kind = "scientist"
 		region = home
