@@ -15,6 +15,8 @@ const LEGACY_TOWN_OFFSET: float = 12.0
 const MINE_KINDS: Dictionary = {
 	"mine_ore": "ore", "mine_copper": "copper", "mine_crystal": "crystal"
 }
+const NAME_LIMIT: int = 16
+const FIRST_PRINTABLE: int = 32
 const FARM_KINDS: Array[String] = ["farm"]
 const LEGACY_FREE_GENERAL: int = 8
 const LEGACY_MIN_GENERAL: int = 20
@@ -492,42 +494,86 @@ static func _expedition_route(sim: RefCounted, from: int, to: int) -> Dictionary
 	return sea
 
 
-static func settle(sim: RefCounted, region: int, from: int = -1) -> String:
+## What the player typed, made safe to show: one line, no longer than the limit.
+static func clean_name(typed: String) -> String:
+	var cleaned: String = ""
+	for at: int in range(typed.length()):
+		if typed.unicode_at(at) >= FIRST_PRINTABLE:
+			cleaned += typed[at]
+	return cleaned.strip_edges().left(NAME_LIMIT)
+
+
+## Why this site cannot be settled now, or an empty string. Changes nothing.
+static func settle_refusal(sim: RefCounted, region: int, from: int = -1) -> String:
 	if region < 0 or region >= sim.state.world.regions.size():
 		return "请选择候选地区"
 	if not sim.settlement(region).is_empty():
 		return "此地区已经建立据点"
 	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
+	if sim.state.settlements.is_empty():
+		if not _can_expand_from(sim, region):
+			return "该登陆点没有可达的第二陆地据点，无法履行双据点合同"
+		return ""
+	var rules: Dictionary = sim.config.outpost
+	var src: Dictionary = _expedition_source(sim, region, from)
+	if src.is_empty():
+		return "请选择出发据点"
+	var road: Dictionary = _expedition_route(sim, int(src.region), region)
+	if not bool(road.reachable):
+		return str(road.get("reason", "此地区没有可达陆路；当前不具备海运能力"))
+	var fare: float = expedition_cash(sim)
+	if sim.state.cash < fare:
+		return "建立前哨需要 %.0f 资金" % fare
+	if int(src.workers) < int(rules.min_source_workers):
+		return "出发据点技术工人不足 %d 人" % int(rules.min_source_workers)
+	if (
+		float(src.stock.materials) < float(rules.materials)
+		or float(src.stock.parts) < float(rules.parts)
+		or float(src.stock.food) < float(rules.food)
+	):
+		return (
+			"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资"
+			% [float(rules.materials), float(rules.parts), float(rules.food)]
+		)
+	return ""
+
+
+## The player's name for a settled site. Numbers and keys identify places; names are only shown.
+static func rename(sim: RefCounted, region: int, typed: String) -> String:
+	var s: Dictionary = sim.settlement(region)
+	if s.is_empty():
+		return "这里还没有据点"
+	var cleaned: String = clean_name(typed)
+	if cleaned == "":
+		return "名字不能为空"
+	_give_name(sim, region, cleaned)
+	s.name = cleaned
+	return ""
+
+
+static func _give_name(sim: RefCounted, region: int, cleaned: String) -> void:
+	var reg: Dictionary = sim.state.world.regions[region]
+	reg.name = cleaned
+	reg.named = true
+
+
+static func settle(sim: RefCounted, region: int, from: int = -1, typed_name: String = "") -> String:
+	var refusal: String = settle_refusal(sim, region, from)
+	if refusal != "":
+		return refusal
 	var first: bool = sim.state.settlements.is_empty()
 	var reg: Dictionary = sim.state.world.regions[region]
-	if first and not _can_expand_from(sim, region):
-		return "该登陆点没有可达的第二陆地据点，无法履行双据点合同"
+	var cleaned: String = clean_name(typed_name)
+	if cleaned != "":
+		_give_name(sim, region, cleaned)
 	var src: Dictionary = {}
 	var road: Dictionary = {}
 	var rules: Dictionary = sim.config.outpost
 	if not first:
 		src = _expedition_source(sim, region, from)
-		if src.is_empty():
-			return "请选择出发据点"
 		road = _expedition_route(sim, int(src.region), region)
-		if not bool(road.reachable):
-			return str(road.get("reason", "此地区没有可达陆路；当前不具备海运能力"))
-		var fare: float = expedition_cash(sim)
-		if sim.state.cash < fare:
-			return "建立前哨需要 %.0f 资金" % fare
-		if int(src.workers) < int(rules.min_source_workers):
-			return "出发据点技术工人不足 %d 人" % int(rules.min_source_workers)
-		if (
-			float(src.stock.materials) < float(rules.materials)
-			or float(src.stock.parts) < float(rules.parts)
-			or float(src.stock.food) < float(rules.food)
-		):
-			return (
-				"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资"
-				% [float(rules.materials), float(rules.parts), float(rules.food)]
-			)
-		sim._transfer("public", "external", fare, "invest.outpost", false)
+		sim._transfer("public", "external", expedition_cash(sim), "invest.outpost", false)
 		sim._consume(src, "materials", float(rules.materials))
 		sim._consume(src, "parts", float(rules.parts))
 		# Expedition population migrates; food stays physically in its convoy until arrival.
@@ -624,7 +670,7 @@ static func settle(sim: RefCounted, region: int, from: int = -1) -> String:
 
 
 static func _can_expand_from(sim: RefCounted, region: int) -> bool:
-	if str(sim.geo.version) == WorldGen.VERSION:
+	if WorldGen.is_generated(str(sim.geo.version)):
 		return not sim.state.world.regions[region].neighbors.is_empty()
 	for other: Variant in sim.state.world.candidates:
 		if int(other) != region:

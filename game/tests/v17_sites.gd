@@ -199,7 +199,8 @@ func _plots() -> void:
 			sim.act("build", {"site": 0, "kind": "habitat", "plot": farmland}) != "",
 			"a habitat cannot go on farmland"
 		)
-		check(sim.act("build", {"site": 0, "kind": "farm", "plot": farmland}) == "", "a farm can")
+		var farm_refusal: String = sim.act("build", {"site": 0, "kind": "farm", "plot": farmland})
+		check(farm_refusal == "", "a farm can: " + farm_refusal)
 		check(int(s.buildings.back().plot) == farmland, "and stands on the plot asked for")
 	if general >= 0:
 		check(

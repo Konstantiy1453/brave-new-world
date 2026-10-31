@@ -119,7 +119,13 @@ static func _first_part(g) -> void:
 	await _wait(g, "two site cards read", func() -> bool: return _step(g) == "land")
 	await _shot(g, "03_land")
 	await _press(g, "SettleButton")
+	var name_edit: LineEdit = g.modal_box.find_child("SiteNameEdit", true, false)
+	_note("settling asks for a name", name_edit != null)
+	await _shot(g, "03b_name")
+	name_edit.text = "脚本首府"
+	await _press(g, "SiteNameConfirm")
 	await _wait(g, "the capital is founded", func() -> bool: return _step(g) == "income")
+	_note("it has the typed name", g.sim.settlement(0).name == "脚本首府")
 	await _press(g, "OpenBuild")
 	await _shot(g, "04_build")
 	await _press(g, "Build_mine_ore")

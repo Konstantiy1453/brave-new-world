@@ -49,6 +49,7 @@ func run() -> void:
 		JSON.stringify(report, "\t")
 	)
 	_json_export()
+	_frozen_generator()
 	print("V17_SAVES_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -207,3 +208,22 @@ func _json_export() -> void:
 	check(SaveIo.export_json(sim, path) == "", "a developer can export the state as JSON")
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	check(parsed is Dictionary and int(parsed.schema) == 3, "and read it")
+
+
+## A 1.7.0 save is bound to CC-GEO-2.0: its terrain must regenerate exactly, forever.
+func _frozen_generator() -> void:
+	var sim: RefCounted = Sim.new()
+	var error: String = sim.load_game("res://data/v17/acceptance_geo20.save")
+	check(error == "", "a 1.7.0 save loads: " + error)
+	check(str(sim.geo.version) == "CC-GEO-2.0", "with the world it was played on")
+	var named: bool = true
+	for region: Dictionary in sim.state.world.regions:
+		named = named and bool(region.get("named", true)) and not str(region.name).begins_with("地点")
+	check(named, "and its sites keep their names")
+	for _i: int in range(5):
+		sim.tick()
+	check(sim.audit().is_empty(), "and it plays on")
+	check(sim.save_game("user://geo20_again.save") == "", "and saves again")
+	var again: RefCounted = Sim.new()
+	check(again.load_game("user://geo20_again.save") == "", "and loads again")
+	check(str(again.geo.version) == "CC-GEO-2.0", "still on its own world")

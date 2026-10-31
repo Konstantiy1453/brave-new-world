@@ -156,7 +156,11 @@ func act(action: String, args: Dictionary = {}) -> String:
 		return "本局已经结束，请读取存档或开始新局"
 	match action:
 		"settle":
-			return Sites.settle(self, _site_arg(args), int(args.get("from", -1)))
+			return Sites.settle(
+				self, _site_arg(args), int(args.get("from", -1)), str(args.get("name", ""))
+			)
+		"rename":
+			return Sites.rename(self, _site_arg(args), str(args.get("name", "")))
 		"build":
 			return Production.build(
 				self, _site_arg(args), str(args.get("kind", "")), int(args.get("plot", -1))
@@ -635,6 +639,10 @@ func build_forecast(region: int, kind: String, plot: int = -1) -> Dictionary:
 
 func site_view(site: int) -> Dictionary:
 	return Sites.view(self, site)
+
+
+func settle_refusal(site: int) -> String:
+	return Sites.settle_refusal(self, site)
 
 
 func site_links(site: int) -> Dictionary:

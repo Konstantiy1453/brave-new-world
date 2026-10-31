@@ -230,7 +230,7 @@ func water_chain() -> void:
 		check(i.status == "waiting", "calendar alone cannot finish construction")
 		var build: Dictionary = s.settlement(0).buildings[int(i.variables.building_index)]
 		check(build.remaining > 0, "actual pump is still under construction without simulation")
-		for k in range(3):
+		for k in range(int(s.config.buildings.water.days)):
 			s.tick()
 		check(i.node == "inspection", "actual completed and operating pump triggers inspection")
 		check(choose(s, i, final_choice) == "", "water inspection outcome " + final_choice)
@@ -456,7 +456,7 @@ func deferred_nodes() -> void:
 			days(s, 5 if target in ["plan", "inspection"] else 7)
 			if target == "inspection":
 				choose(s, i, "build")
-				for n in range(3):
+				for n in range(int(s.config.buildings.water.days)):
 					s.tick()
 			if target == "findings":
 				choose(s, i, "sample")
@@ -484,7 +484,7 @@ func integrated_production() -> void:
 			s.act("build", {"region": 0, "kind": kind}) == "",
 			"real industrial fixture builds " + kind
 		)
-	for n in range(10):
+	for n in range(int(s.config.buildings.processor.days) + 2):
 		s.tick()
 	var i: Dictionary = opened(s, "industry")
 	check(choose(s, i, "small") == "", "actual operating industry can accept order")
@@ -537,7 +537,7 @@ func integrated_production() -> void:
 	)
 	var r = make()
 	r.act("build", {"region": 0, "kind": "lab"})
-	for n in range(5):
+	for n in range(int(r.config.buildings.lab.days) + 1):
 		r.tick()
 	check(
 		r.act("research_allocate", {"tech": "survey", "staff": 10}) == "",

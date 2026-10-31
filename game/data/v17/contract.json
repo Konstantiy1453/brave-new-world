@@ -7,7 +7,9 @@
   },
   "scaled_goals": [
     "exports_total",
-    "population"
+    "population",
+    "stage_streak",
+    "processing_days"
   ],
   "difficulty_scale": {
     "easy": 0.8,

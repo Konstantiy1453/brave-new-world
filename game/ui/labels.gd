@@ -353,3 +353,22 @@ static func plot(row: Dictionary) -> String:
 	if str(row.kind) == "farm":
 		return "肥力 %.0f%%" % (float(row.fertility) * 100.0)
 	return "建设用地"
+
+
+## A site in lists: a settlement's name, or a number and what kind of place it is.
+static func site_label(reg: Dictionary) -> String:
+	if bool(reg.get("named", true)):
+		return str(reg.name)
+	return "%s · %s" % [str(reg.name), str(reg.terrain)]
+
+
+## "A cold archipelago world, rugged." Empty for worlds from before planets had a character.
+static func planet_type(types: Dictionary, character: Dictionary) -> String:
+	if character.is_empty():
+		return ""
+	var text: String = (
+		"%s的%s"
+		% [str(types.climates[character.climate].name), str(types.layouts[character.layout].name)]
+	)
+	var relief: String = str(types.reliefs[character.relief].name)
+	return text if relief == "" else "%s，%s" % [text, relief]

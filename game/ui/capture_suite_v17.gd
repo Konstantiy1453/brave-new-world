@@ -25,6 +25,8 @@ const PAGES: Dictionary = {
 	"world": "midgame",
 	"save": "governor",
 	"guide": "early",
+	"buildings": "governor",
+	"naming": "early",
 }
 const MAP_PAGES: Array[String] = ["planet", "flat", "region"]
 const SIDEBAR_PAGES: Array[String] = ["site", "settlement"]
@@ -85,6 +87,12 @@ static func _capture_page(
 	elif page == "site":
 		g.navigate("planet")
 		g.select_region(_free_site(g))
+	elif page == "naming":
+		g.navigate("planet")
+		g.select_region(_free_site(g))
+		g.naming_site = g.selected
+		g.naming_again = false
+		g.open_page("name_site")
 	elif page == "settlement":
 		g.navigate("planet")
 		g.select_region(_settled_site(g))

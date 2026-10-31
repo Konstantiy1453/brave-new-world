@@ -2,7 +2,7 @@ config_version=5
 
 [application]
 config/name="殖民契约 · COLONY CHARTER 1.7"
-config/version="1.7.0"
+config/version="1.7.1"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ColonyCharter/v17"
 run/main_scene="res://main.tscn"

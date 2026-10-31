@@ -11,7 +11,7 @@ func _init() -> void:
 	sim.state.events_v2.next_draw = 9999  # Explicit event fixture, real economy thereafter.
 	for kind in ["mine_ore", "mine_copper", "processor", "power"]:
 		sim.act("build", {"region": 0, "kind": kind})
-	for d in range(10):
+	for d in range(int(sim.config.buildings.processor.days) + 2):
 		sim.tick()
 	var inst: Dictionary = events._open(sim, "industry", 0)
 	events.act(sim, {"instance_id": inst.instance_id, "choice": "small"})

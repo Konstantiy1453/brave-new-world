@@ -19,11 +19,17 @@ const RES = {
 static func region(g, b):
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
-	D.label(b, r.name, 27)
+	var title = D.row(b)
+	var heading = D.label(title, r.name, 27)
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if not g.settlement().is_empty():
+		var rename = D.button(title, "改名", func(): g.ask_site_name(true), "", "RenameSite")
+		D.font_size(rename, 14)
+		rename.custom_minimum_size.y = 28
 	D.label(b, "%s  ·  %.1f°C" % [r.terrain, r.temperature], 16, D.MUTED)
 	var site_names: Array = []
 	for reg in g.sim.state.world.regions:
-		site_names.append(reg.name)
+		site_names.append(Labels.site_label(reg))
 	var pickers = D.row(b)
 	var chooser = D.option(
 		pickers,
@@ -105,13 +111,147 @@ static func _site_actions(g, b, known: Dictionary):
 	D.button(
 		b,
 		"在此建立首府" if first else "派遣远征队建立据点",
-		func(): g.act("settle", {"site": g.selected}),
+		func(): g.ask_site_name(false),
 		"首府需要这块陆地上还有其他地点；远征需要出发据点备齐人员和物资。",
 		"SettleButton"
 	)
 
 
 ## A settlement: key figures, then problems with a way to fix each, then its buildings.
+## Settling a site, or renaming a settlement: the name is whatever the player types.
+static func name_site(g, b):
+	var reg: Dictionary = g.sim.state.world.regions[g.naming_site]
+	var first: bool = g.sim.state.settlements.is_empty()
+	D.label(b, Labels.site_label(reg), 22, D.TEAL)
+	var fallback: String = str(reg.name)
+	var hint: String = "写什么都行，最多 %d 个字。" % g.sim.Sites.NAME_LIMIT
+	if not g.naming_again:
+		hint += "留空就叫「%s」。" % fallback
+	D.label(b, hint, 17, D.MUTED)
+	var edit = D.line_edit(b, "SiteNameEdit", "")
+	edit.max_length = g.sim.Sites.NAME_LIMIT
+	edit.placeholder_text = fallback
+	if not edit.text_submitted.is_connected(g.confirm_site_name):
+		edit.text_submitted.connect(g.confirm_site_name)
+	var line = D.row(b)
+	var action: String = "保存名字"
+	if not g.naming_again:
+		action = "在此建立首府" if first else "派遣远征队"
+	D.button(line, action, func(): g.confirm_site_name(), "", "SiteNameConfirm")
+	D.button(line, "取消", g.close_modal, "", "SiteNameCancel")
+
+
+## Every building of the colony in one place, what is still being built first.
+static func buildings(g, b):
+	var state: Dictionary = g.sim.state
+	var underway: Array = []
+	for s: Dictionary in state.settlements:
+		if int(s.arrival) > 0:
+			underway.append({"days": int(s.arrival), "text": "远征队前往 %s" % str(s.name), "total": 0})
+		for item: Dictionary in s.buildings:
+			var name: String = Labels.building_name(g.sim.config, item.kind)
+			if int(item.remaining) > 0:
+				var spec: Dictionary = g.sim.config.buildings.get(item.kind, {})
+				(
+					underway
+					. append(
+						{
+							"days": int(item.remaining),
+							"text": "%s · %s" % [name, str(s.name)],
+							"total": maxi(int(spec.get("days", 0)), int(item.remaining)),
+						}
+					)
+				)
+			elif int(item.get("upgrade_days", 0)) > 0:
+				(
+					underway
+					. append(
+						{
+							"days": int(item.upgrade_days),
+							"text": "%s 升级到 %d 级 · %s" % [name, int(item.level) + 1, str(s.name)],
+							"total": 0,
+						}
+					)
+				)
+	underway.sort_custom(
+		func(x: Dictionary, y: Dictionary) -> bool:
+			return (
+				str(x.text) < str(y.text)
+				if int(x.days) == int(y.days)
+				else int(x.days) < int(y.days)
+			)
+	)
+	D.label(b, "在建工程 %d 项" % underway.size(), 21, D.GOLD)
+	if underway.is_empty():
+		D.label(b, "现在没有在建的工程。", 16, D.MUTED)
+	var queue = D.grid(D.card(b), 2)
+	for row: Dictionary in underway:
+		var text = D.label(queue, str(row.text), 16, D.INK, false)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var left: String = "还需 %d 天" % int(row.days)
+		if int(row.total) > 0:
+			left += " / 共 %d 天" % int(row.total)
+		D.label(queue, left, 16, D.TEAL, false)
+	for s: Dictionary in state.settlements:
+		_settlement_buildings(g, b, s)
+
+
+static func _settlement_buildings(g, b, s: Dictionary):
+	var card = D.card(b)
+	var head = D.row(card)
+	var title = D.label(head, str(s.name), 20, D.TEAL)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var region: int = int(s.region)
+	var look = D.button(
+		head,
+		"查看此据点",
+		func():
+			g.select_region(region)
+			g.map.focus_region(region)
+			g.close_modal(),
+		"",
+		"ShowSite_%d" % region
+	)
+	D.font_size(look, 14)
+	look.custom_minimum_size.y = 28
+	var kinds: Dictionary = {}
+	for item: Dictionary in s.buildings:
+		var kind: String = str(item.kind)
+		if not kinds.has(kind):
+			kinds[kind] = {"count": 0, "built": 0, "running": 0, "staff": 0, "jobs": 0, "notes": {}}
+		var row: Dictionary = kinds[kind]
+		row.count += 1
+		if bool(item.get("active", false)):
+			row.running += 1
+		if int(item.remaining) <= 0:
+			row.built += 1
+			row.staff += int(item.get("employed", 0))
+			row.jobs += (
+				g.sim.Production.jobs_for(g.sim, item) if g.sim.config.buildings.has(kind) else 0
+			)
+		if not bool(item.get("active", false)) and int(item.remaining) <= 0:
+			var note: String = Labels.building_status(item)
+			row.notes[note] = int(row.notes.get(note, 0)) + 1
+	var table = D.grid(card, 4)
+	for heading: String in ["设施", "数量", "运营", "工人"]:
+		D.label(table, heading, 14, D.MUTED, false)
+	for kind: String in kinds:
+		var row: Dictionary = kinds[kind]
+		var notes: PackedStringArray = []
+		for note: String in row.notes:
+			notes.append("%s ×%d" % [note, int(row.notes[note])])
+		var words: String = Labels.building_name(g.sim.config, kind)
+		var name_label = D.label(table, words, 15, D.RED if not notes.is_empty() else D.INK, false)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		D.label(table, str(int(row.count)), 15, D.INK, false)
+		D.label(table, "%d / %d" % [int(row.running), int(row.built)], 15, D.INK, false)
+		D.label(table, "%d / %d" % [int(row.staff), int(row.jobs)], 15, D.INK, false)
+		if not notes.is_empty():
+			D.label(table, "· ".join(notes), 14, D.RED, false)
+			for _pad: int in range(3):
+				D.label(table, "", 14, D.MUTED, false)
+
+
 static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 	D.label(
 		b,
@@ -169,8 +309,22 @@ static func _building_groups(g, b, s: Dictionary):
 		var item: Dictionary = s.buildings[index]
 		var kind: String = str(item.kind)
 		if not groups.has(kind):
-			groups[kind] = {"kind": kind, "rows": [], "running": 0, "problems": 0, "first": index}
+			groups[kind] = {
+				"kind": kind,
+				"rows": [],
+				"running": 0,
+				"problems": 0,
+				"first": index,
+				"building": 0,
+				"soonest": 0
+			}
 		groups[kind].rows.append(index)
+		if int(item.remaining) > 0:
+			groups[kind].building += 1
+			var soonest: int = int(groups[kind].soonest)
+			groups[kind].soonest = (
+				int(item.remaining) if soonest == 0 else mini(soonest, int(item.remaining))
+			)
 		if bool(item.get("active", false)):
 			groups[kind].running += 1
 		elif str(item.get("status", "")) in PROBLEM_STATUSES:
@@ -190,6 +344,8 @@ static func _building_groups(g, b, s: Dictionary):
 			"%s ×%d · 运营 %d"
 			% [Labels.building_name(g.sim.config, kind), group.rows.size(), group.running]
 		)
+		if int(group.building) > 0:
+			words += " · 在建 %d（还需 %d 天）" % [int(group.building), int(group.soonest)]
 		if int(group.problems) > 0:
 			words += " · 问题 %d" % int(group.problems)
 		var caption = D.label(line, words, 15, D.RED if int(group.problems) > 0 else D.INK)
@@ -365,6 +521,10 @@ static func populate(g, b, page):
 			contract(g, b)
 		"build":
 			build(g, b)
+		"buildings":
+			buildings(g, b)
+		"name_site":
+			name_site(g, b)
 		"economy":
 			economy(g, b)
 		"transport":
@@ -387,6 +547,11 @@ static func world_info(g, b):
 	var world: Dictionary = g.sim.geo
 	D.label(b, "种子 %d  ·  %s" % [world.seed, world.version], 24, D.GOLD)
 	D.label(b, "球面与平铺使用同一世界。地区的气温、水源、土地和矿藏影响建设、农业与运输。", 18, D.MUTED)
+	var kind_of_planet: String = Labels.planet_type(
+		g.sim.progression_geo().get("planet_types", {}), world.get("character", {})
+	)
+	if kind_of_planet != "":
+		D.label(b, "星球类型：" + kind_of_planet, 20, D.TEAL)
 	var generation: Dictionary = world.get("generation", {})
 	var stats: Dictionary = world.get("statistics", {})
 	if generation.is_empty():

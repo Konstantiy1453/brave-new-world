@@ -30,8 +30,8 @@
     {
       "id": "land",
       "title": "建立首府",
-      "text": "这个地点矿藏丰富，水源够用，附近也有能耕作的土地。点「在此建立首府」。",
-      "target": ["SettleButton"],
+      "text": "这个地点矿藏丰富，水源够用，附近也有能耕作的土地。点「在此建立首府」，给它起个名字。",
+      "target": ["SiteNameConfirm", "SettleButton"],
       "site": "start",
       "done": {"name": "settlements", "count": 1}
     },
@@ -95,8 +95,8 @@
     {
       "id": "expedition",
       "title": "派出远征队",
-      "text": "这里土地肥沃，适合种粮。点「派遣远征队建立据点」；队伍路上要走几天。",
-      "target": ["SettleButton"],
+      "text": "这里土地肥沃，适合种粮。点「派遣远征队建立据点」，给新据点起个名字；队伍路上要走几天。",
+      "target": ["SiteNameConfirm", "SettleButton"],
       "site": "partner",
       "done": {"name": "settlements", "count": 2}
     },

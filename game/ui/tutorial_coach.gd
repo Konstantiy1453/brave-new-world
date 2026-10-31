@@ -105,6 +105,7 @@ func stop(finished: bool) -> void:
 	outline.visible = false
 	if finished:
 		_remember("tutorial", "done")
+		game.tutorial_on = false
 
 
 func skip() -> void:

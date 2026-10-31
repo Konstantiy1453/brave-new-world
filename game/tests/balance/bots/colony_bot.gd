@@ -37,6 +37,7 @@ const MIN_LOCAL_FARM_OUTPUT: float = 6.0
 const WAGE_STEP: float = 0.1
 const MIN_RESERVE_DAYS: float = 150.0
 const MIN_MARKET_FACTOR: float = 0.8
+const OTHER_INCOME_MARGIN: float = 1.15
 const DIVERSIFY_CUSHION: float = 0.4
 const DOMINANT_SHARE: float = 0.5
 const EXPORT_WINDOW_DAYS: int = 30
@@ -367,9 +368,10 @@ func _needs_other_income() -> bool:
 	var stage: int = int(sim.state.contract.stage)
 	if stage > sim.Contract.STAGE_COUNT:
 		return false
+	# With a margin: a new mine would otherwise push the share straight back under the goal.
 	for goal: Dictionary in sim.Contract.stage_goals(sim, stage):
-		if goal.key == "non_mining_share" and not goal.ok:
-			return true
+		if goal.key == "non_mining_share":
+			return float(goal.value) < float(goal.target) * OTHER_INCOME_MARGIN
 	return false
 
 
@@ -570,7 +572,9 @@ func _options(reserve: float) -> Array:
 			if kind == "processor":
 				var allowed: int = 1 + sim.Contract.population_total(sim) / PROCESSORS_PER_PEOPLE
 				allowed += 2 if other_income else 0
-				if building_count(region, "processor") >= allowed or region != home:
+				if building_count(region, "processor") >= allowed:
+					continue
+				if region != home and not (other_income and has_building(region, "mine_ore")):
 					continue
 			if kind == "component_plant" and not _plant_wanted(region):
 				continue

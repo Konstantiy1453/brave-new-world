@@ -9,6 +9,8 @@ const WorldGen = preload("res://world/world_gen.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Coach = preload("res://ui/tutorial_coach.gd")
 const Sim = preload("res://simulation/sim.gd")
+const Labels = preload("res://ui/labels.gd")
+const Sites = preload("res://simulation/sites.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 
 const SETTINGS: String = "user://settings.cfg"
@@ -45,6 +47,9 @@ func run() -> void:
 	await _pages()
 	await _menu()
 	await _upgrade_from_old_version()
+	await _naming()
+	await _building_list()
+	await _new_game_choices()
 	_stats_rollups()
 	print("V17_TUTORIAL_RESULT checks=%d failures=%d" % [checks, failures.size()])
 	for failure: String in failures:
@@ -85,7 +90,7 @@ func _pinned_world() -> void:
 	check(sim.act("settle", {"site": 0}) == "", "landing works")
 	for kind: String in ["mine_ore", "mine_copper", "habitat"]:
 		check(sim.act("build", {"site": 0, "kind": kind}) == "", "building " + kind)
-	for _i: int in range(6):
+	for _i: int in range(int(sim.config.buildings.habitat.days) + 2):
 		sim.tick()
 	check(sim.act("tutorial_shortage", {"site": 0}) == "", "the shortage can be started")
 	sim.tick()
@@ -94,7 +99,7 @@ func _pinned_world() -> void:
 		short = short or entry.key == "water"
 	check(short, "the scripted first shortage happens")
 	check(sim.act("build", {"site": 0, "kind": "water"}) == "", "a second pump can be ordered")
-	for _i: int in range(5):
+	for _i: int in range(int(sim.config.buildings.water.days) + 2):
 		sim.tick()
 	var cleared: bool = true
 	for entry: Dictionary in sim.settlement(0).shortages:
@@ -159,8 +164,16 @@ func _run_tutorial() -> void:
 	check(settle_button != null and settle_button.is_visible_in_tree(), "the target exists")
 	check(game.coach._target() == settle_button, "and is outlined")
 	check(game.sidebar_actions.is_ancestor_of(settle_button), "and stays on screen")
-	game.act("settle", {"site": 0})
+	settle_button.pressed.emit()
+	await process_frame
+	check(game.current_page == "name_site", "settling asks for a name")
+	var confirm: Control = game.modal_box.find_child("SiteNameConfirm", true, false)
+	check(game.coach._target() == confirm, "and the outline moves to the confirm button")
+	game.modal_box.find_child("SiteNameEdit", true, false).text = "第一个家"
+	confirm.pressed.emit()
 	await settle_coach()
+	check(game.sim.settlement(0).name == "第一个家", "the capital has the typed name")
+	check(not is_instance_valid(game.overlay), "and the dialog closes")
 	check(step_id() == "income", "step: start income")
 	game.open_page("build")
 	await process_frame
@@ -435,6 +448,151 @@ func _upgrade_from_old_version() -> void:
 	check(found, "the settings page also offers it")
 	game.close_modal()
 	DirAccess.remove_absolute(old_path)
+
+
+## Sites have a number until the player names what is built there, and the name can be anything.
+func _naming() -> void:
+	game.tutorial_on = false
+	game.seed_edit.text = "42"
+	game.start_game()
+	game.close_modal()
+	await process_frame
+	var sim: RefCounted = game.sim
+	var regions: Array = sim.state.world.regions
+	check(regions[3].name == "地点 04", "an unsettled site has only a number")
+	check(not bool(regions[3].named), "and is not named")
+	check(
+		Labels.site_label(regions[3]).contains(str(regions[3].terrain)),
+		"lists show what kind it is"
+	)
+	check(game.map._site_text(regions[3], false) == str(regions[3].terrain), "so does the map")
+	var home: int = int(sim.geo.playability.pairs[0][0])
+	game.select_region(home)
+	game.ui.find_child("SettleButton", true, false).pressed.emit()
+	await process_frame
+	var edit: LineEdit = game.modal_box.find_child("SiteNameEdit", true, false)
+	check(edit.text == "", "the name starts empty")
+	check(edit.placeholder_text == str(regions[home].name), "with the number as the fallback")
+	game.modal_box.find_child("SiteNameCancel", true, false).pressed.emit()
+	await process_frame
+	check(sim.state.settlements.is_empty(), "cancelling settles nothing")
+	game.ui.find_child("SettleButton", true, false).pressed.emit()
+	await process_frame
+	edit = game.modal_box.find_child("SiteNameEdit", true, false)
+	edit.text = "  100%d {x} [b]家  "
+	edit.text_submitted.emit(edit.text)
+	await process_frame
+	var named: String = "100%d {x} [b]家"
+	check(sim.settlement(home).name == named, "any text will do, trimmed, and Enter confirms it")
+	check(regions[home].name == named, "the site carries the same name")
+	check(game.map._site_text(regions[home], true) == "◆ " + named, "the map shows it")
+	for _i: int in range(15):
+		sim.tick()
+	for page: String in ["contract", "economy", "transport", "buildings", "company", "events"]:
+		game.open_page(page)
+		await process_frame
+		game.close_modal()
+	check(sim.audit().is_empty(), "an odd name breaks nothing")
+	check(sim.act("settle", {"site": home}) != "", "a settled site cannot be settled again")
+	var long_name: String = "一二三四五六七八九十一二三四五六七八九十"
+	check(sim.act("rename", {"site": home, "name": long_name}) == "", "a settlement can be renamed")
+	check(sim.settlement(home).name.length() == Sites.NAME_LIMIT, "names are cut at the limit")
+	check(sim.act("rename", {"site": home, "name": "\t \n"}) != "", "an empty rename is refused")
+	check(sim.act("rename", {"site": 99, "name": "x"}) != "", "so is renaming nothing")
+	check(sim.save_game("user://named.save") == "", "named settlements save")
+	var other: RefCounted = Sim.new()
+	check(other.load_game("user://named.save") == "", "and load")
+	check(other.settlement(home).name == sim.settlement(home).name, "with their names")
+	game.refresh_sidebar()
+	game.ui.find_child("RenameSite", true, false).pressed.emit()
+	await process_frame
+	edit = game.modal_box.find_child("SiteNameEdit", true, false)
+	check(edit.text == sim.settlement(home).name, "the rename dialog starts from the current name")
+	edit.text = "新名字"
+	game.modal_box.find_child("SiteNameConfirm", true, false).pressed.emit()
+	await process_frame
+	check(sim.settlement(home).name == "新名字", "and saves the new one")
+	var blank: RefCounted = Sim.new()
+	blank.new_game(42, "capital", 1, "normal")
+	check(blank.act("settle", {"site": 0}) == "", "a bot or a blank name settles too")
+	check(blank.settlement(0).name == "地点 01", "under the site's number")
+
+
+## Every building of the colony on one page, what is under construction first.
+func _building_list() -> void:
+	var sim: RefCounted = game.sim
+	var home: int = int(sim.state.settlements[0].region)
+	sim._transfer("external", "public", 5000.0, "test fund", false)
+	sim._produce(sim.settlement(home), "materials", 80.0, "test")
+	sim._produce(sim.settlement(home), "parts", 30.0, "test")
+	check(sim.act("build", {"site": home, "kind": "habitat"}) == "", "something to list: housing")
+	check(sim.act("build", {"site": home, "kind": "processor"}) == "", "and a processing plant")
+	game.ui.find_child("Nav_buildings", true, false).pressed.emit()
+	await process_frame
+	check(game.current_page == "buildings", "the list has its own page")
+	var names: PackedStringArray = _labels(game.modal_box)
+	check(_contains(names, "在建工程 2 项"), "it counts what is being built")
+	var habitat_days: int = int(sim.config.buildings.habitat.days)
+	check(_contains(names, "还需 %d 天 / 共 %d 天" % [habitat_days, habitat_days]), "with days left")
+	check(_contains(names, "光伏储能站"), "and lists what already stands")
+	var first_row: int = -1
+	var second_row: int = -1
+	for index: int in range(names.size()):
+		if names[index].contains("模块住区 ·") and first_row < 0:
+			first_row = index
+		if names[index].contains("复合加工厂 ·") and second_row < 0:
+			second_row = index
+	check(first_row >= 0 and second_row > first_row, "soonest finished first")
+	game.modal_box.find_child("ShowSite_%d" % home, true, false).pressed.emit()
+	await process_frame
+	check(
+		game.selected == home and not is_instance_valid(game.overlay), "it can jump to a settlement"
+	)
+	check(int(sim.config.buildings.mine_ore.days) >= 6, "building takes about a week now")
+
+
+## New games: the seed field means what it says, and the tutorial no longer overrides it unseen.
+func _new_game_choices() -> void:
+	game.tutorial_on = true
+	game.menu_seed = ""
+	game.show_menu()
+	await process_frame
+	check(
+		game.seed_edit.text != str(Tutorial.data().seed),
+		"the seed box does not hold the tutorial's seed"
+	)
+	check(not game.seed_edit.editable, "while the tutorial is on, the seed cannot be typed")
+	check(game.size_option.disabled and game.difficulty_option.disabled, "nor size and difficulty")
+	check(game.planet_preview.text.contains("专用星球"), "and the menu says why")
+	game._reroll_seed()
+	await process_frame
+	check(not game.tutorial_on, "asking for another seed leaves the tutorial")
+	check(game.seed_edit.editable, "and unlocks the seed")
+	check(
+		game.planet_preview.text.begins_with("这个种子："), "the menu names the planet that seed makes"
+	)
+	game.seed_edit.text = "12345"
+	game.seed_edit.text_changed.emit("12345")
+	var one: String = game.planet_preview.text
+	game.start_game()
+	await process_frame
+	check(
+		int(game.sim.state.world.seed) != int(Tutorial.data().seed),
+		"a new game uses the seed typed"
+	)
+	var rules: Dictionary = game.sim.progression_geo()
+	var actual: String = Labels.planet_type(rules.planet_types, game.sim.geo.character)
+	check(one.contains(actual), "and makes the planet the menu promised: " + actual)
+	game.open_page("world")
+	await process_frame
+	check(
+		_contains(_labels(game.modal_box), actual), "the world page says what kind of planet it is"
+	)
+	game.close_modal()
+	check(str(game.sim.geo.version) == "CC-GEO-2.1", "new games use the current generator")
+	game.tutorial_on = true
+	game.coach.stop(true)
+	check(not game.tutorial_on, "finishing or ending the tutorial turns its toggle off")
 
 
 func _stats_rollups() -> void:

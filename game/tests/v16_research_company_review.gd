@@ -41,7 +41,7 @@ func run():
 		sim.act("build", {"region": 1, "kind": "lab"}) == "",
 		"remote-only lab construction accepted"
 	)
-	for i in range(5):
+	for i in range(int(sim.config.buildings.lab.days) + 1):
 		sim.tick()
 	check(
 		sim.act("research_allocate", {"tech": "survey", "staff": 4}) == "",

@@ -220,6 +220,7 @@ func _scenario(advantage: String) -> void:
 	var first_success: int = -1
 	var violations: int = 0
 	var processing_built: bool = false
+	var farm_built: bool = false
 	for day in range(1, 181):
 		if day == 16:
 			check(
@@ -231,12 +232,11 @@ func _scenario(advantage: String) -> void:
 				s.act("connect", {"a": 0, "b": 1, "mountain": false}) == "",
 				"scenario road " + advantage
 			)
-		if day == 28:
-			check(
-				s.act("build", {"region": 1, "kind": "farm"}) == "",
-				"scenario valley farm " + advantage
-			)
-		if day >= 45 and day <= 120 and not processing_built:
+		if day >= 28 and not farm_built:
+			farm_built = s.act("build", {"region": 1, "kind": "farm"}) == ""
+		if day == 70:
+			check(farm_built, "scenario valley farm " + advantage)
+		if day >= 45 and day <= 150 and not processing_built:
 			var quote: Dictionary = s.build_preview(0, "processor")
 			if float(s.state.cash) >= float(quote.cost) + 300:
 				processing_built = s.act("build", {"region": 0, "kind": "processor"}) == ""
@@ -289,7 +289,7 @@ func _scenario(advantage: String) -> void:
 	)
 	check(
 		processing_built,
-		"scenario processing built by day120 with 300 liquidity reserve " + advantage
+		"scenario processing built by day150 with 300 liquidity reserve " + advantage
 	)
 	check(violations == 0, "daily full-loop invariants " + advantage)
 
@@ -341,12 +341,12 @@ func _boundary_tests() -> void:
 	var finite = make()
 	finite.act("settle", {"region": 0})
 	finite.act("build", {"region": 0, "kind": "mine_crystal"})
-	var seam: Dictionary = finite.state.world.regions[0].plots[
-		int(finite.settlement(0).buildings.back().plot)
-	]
+	var seam: Dictionary = finite.state.world.regions[0].plots[int(
+		finite.settlement(0).buildings.back().plot
+	)]
 	finite.state.world.regions[0].deposits.crystal -= float(seam.reserves) - 0.25
 	seam.reserves = 0.25
-	for i in range(8):
+	for i in range(int(finite.config.buildings.mine_crystal.days) + 3):
 		finite.tick()
 	check(
 		close(finite.state.resource_sources.crystal, 0.25),

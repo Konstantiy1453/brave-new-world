@@ -9,6 +9,8 @@ const Events = preload("res://simulation/events_v2.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Contract = preload("res://simulation/contract.gd")
 const TutorialCoach = preload("res://ui/tutorial_coach.gd")
+const WorldGen = preload("res://world/world_gen.gd")
+const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
@@ -40,6 +42,10 @@ var build_plots: Dictionary = {}
 var expanded_kinds: Dictionary = {}
 var coach: PanelContainer
 var tutorial_on: bool = true
+var naming_site: int = 0
+var naming_again: bool = false
+var menu_seed: String = ""
+var planet_preview: Label
 var local_view: bool = false
 var paused: bool = true
 var speed: int = 1
@@ -192,6 +198,7 @@ func build_shell():
 		["平铺地图", "flat"],
 		["星球档案", "world"],
 		["地区建设", "region"],
+		["设施清单", "buildings"],
 		["经营账本", "economy"],
 		["科研教育", "research"],
 		["交通运输", "transport"],
@@ -466,6 +473,33 @@ func select_region(id: int):
 	refresh_sidebar()
 
 
+## A settlement gets its name from the player: asked when settling, and whenever they rename it.
+func ask_site_name(again: bool):
+	if not again:
+		var refusal: String = sim.settle_refusal(selected)
+		if refusal != "":
+			toast(refusal)
+			return
+	naming_site = selected
+	naming_again = again
+	open_page("name_site")
+	var edit: LineEdit = modal_box.find_child("SiteNameEdit", true, false)
+	edit.text = str(sim.state.world.regions[selected].name) if again else ""
+	edit.grab_focus.call_deferred()
+
+
+func confirm_site_name(_typed: String = ""):
+	var edit: LineEdit = modal_box.find_child("SiteNameEdit", true, false)
+	var error: String = ""
+	if naming_again:
+		error = act("rename", {"site": naming_site, "name": edit.text})
+	else:
+		error = act("settle", {"site": naming_site, "name": edit.text})
+	if error == "":
+		close_modal()
+		refresh_sidebar()
+
+
 ## The shortcut from a shortage line: the right page, on the right part of it.
 func open_fix(fix: Dictionary):
 	if fix.has("category"):
@@ -678,6 +712,8 @@ func open_page(page: String):
 	var titles = {
 		"world": "星球档案 / 自然环境",
 		"build": "地区工程 / 建设与生产",
+		"buildings": "设施清单 / 在建与运营",
+		"name_site": "给据点起名",
 		"economy": "公共账本 / 经济与库存",
 		"research": "知识就是生产力 / 科研教育",
 		"transport": "交通运输 / 道路与航线",
@@ -704,20 +740,27 @@ func show_menu():
 	var h = D.row(box)
 	D.portrait(h, "liaison", 260, 430)
 	var v = D.col(h)
-	v.add_theme_constant_override("separation", 8)
+	v.add_theme_constant_override("separation", 5)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.label(v, "一颗星球。一纸契约。\n从第一座矿场，到自己的明天。", 28, D.INK)
 	D.label(v, "你是公司的殖民外包专员。选址、开矿、养活大家，把几处据点连成一个能自负盈亏的社会，赢得总督资格。", 18, D.MUTED)
 	var r = D.row(v)
 	D.label(r, "星球种子", 17, D.MUTED, false)
-	seed_edit = D.line_edit(r, "SeedEdit", "260129")
+	if menu_seed == "":
+		menu_seed = _new_seed()
+	seed_edit = D.line_edit(r, "SeedEdit", menu_seed)
 	seed_edit.custom_minimum_size.x = 180
+	seed_edit.editable = not tutorial_on
+	if not seed_edit.text_changed.is_connected(_on_seed_changed):
+		seed_edit.text_changed.connect(_on_seed_changed)
 	size_option = D.option(r, "SizeOption", ["小型 · 短途", "中型 · 标准", "大型 · 长途"], 1)
+	size_option.disabled = tutorial_on
 	difficulty_option = D.option(r, "DifficultyOption", ["简单", "标准", "困难"], 1)
-	var reroll = D.button(
-		r, "换个种子", func(): seed_edit.text = str(randi_range(1, 2147483646)), "只更换输入框中的种子；新建后生成对应星球"
-	)
+	difficulty_option.disabled = tutorial_on
+	var reroll = D.button(r, "换个种子", _reroll_seed, "只更换输入框中的种子；新建后生成对应星球")
 	D.font_size(reroll, 15)
+	planet_preview = D.label(v, "", 16, D.GOLD)
+	_show_planet_preview()
 	D.label(v, "开局合作方案", 15, D.TEAL)
 	var group = ButtonGroup.new()
 	for id: String in sim.config.openings:
@@ -728,7 +771,9 @@ func show_menu():
 		b.toggle_mode = true
 		b.button_group = group
 		b.button_pressed = id == advantage
-		D.font_size(b, 16)
+		b.disabled = tutorial_on
+		b.custom_minimum_size.y = 34
+		D.font_size(b, 15)
 		b.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 10))
 		b.add_theme_stylebox_override("pressed", D.box(Color("31565e"), D.TEAL, 10))
 		b.add_theme_stylebox_override("hover", D.box(Color("264553"), D.TEAL, 10))
@@ -742,6 +787,7 @@ func show_menu():
 		"TutorialToggle"
 	)
 	D.font_size(teach, 15)
+	teach.custom_minimum_size.y = 34
 	var launch = D.button(v, "新建殖民远征  →", start_game, "", "NewGame")
 	launch.add_theme_stylebox_override("normal", D.box(Color("1a3042"), D.TEAL, 10))
 	var resume = D.row(v)
@@ -758,6 +804,34 @@ func show_menu():
 	if dev_mode:
 		D.button(resume, "读取1.6事件中段", func(): load_path("res://data/v16/acceptance_event_mid.json"))
 	D.finish(box)
+
+
+func _new_seed() -> String:
+	return str(randi_range(1, 2147483646))
+
+
+## Asking for another planet means leaving the tutorial's own one.
+func _reroll_seed():
+	menu_seed = _new_seed()
+	tutorial_on = false
+	show_menu()
+
+
+func _on_seed_changed(text: String):
+	menu_seed = text
+	_show_planet_preview()
+
+
+## What the typed seed will give, before any world is built.
+func _show_planet_preview():
+	if tutorial_on:
+		planet_preview.text = "新手引导使用专用星球。想自己选种子、大小、难度和开局，先把引导关掉，或点「换个种子」。"
+		return
+	var rules: Dictionary = sim.progression_geo()
+	var character: Dictionary = WorldGen.Plates.character(
+		WorldGen.SeedGeo.normalize_seed(seed_edit.text), rules
+	)
+	planet_preview.text = "这个种子：" + Labels.planet_type(rules.planet_types, character)
 
 
 func old_save_path(relative: String) -> String:
@@ -804,8 +878,14 @@ func start_game():
 	var scale_id = size_option.selected
 	difficulty = ["easy", "normal", "hard"][difficulty_option.selected]
 	_begin_world(seed_value, advantage, scale_id, difficulty)
+	menu_seed = ""
 	coach.stop(false)
 	open_page("contract")
+	var kind_of_planet: String = Labels.planet_type(
+		sim.progression_geo().planet_types, sim.geo.get("character", {})
+	)
+	if kind_of_planet != "":
+		toast("星球类型：" + kind_of_planet)
 
 
 ## A new game on the tutorial's own planet, with the coach panel running.
