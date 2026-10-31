@@ -42,6 +42,10 @@ const PORT_BUSY_SHARE: float = 0.9
 const WAGE_LIMIT: float = 1.3
 const WAGE_REVIEW_FROM_DAY: int = 60
 const WAGE_REVIEW_PERIOD: int = 60
+const RICH_CASH: float = 120000.0
+const FAR_EXPEDITION_DAYS: int = 90
+const JOBLESS_ELSEWHERE: int = 40
+const CHARTER_TEAM_FACTOR: int = 2
 const LARGE_SCIENCE_SHARE: float = 0.15
 const LARGE_CAMPAIGN: int = 20
 const HOUSING_TECHS: Array[String] = ["apartments", "frontier_lodges", "arcology_design"]
@@ -69,6 +73,7 @@ const SECOND_LAB_INCOME: float = 600.0
 const LOW_FOOD_DAYS: float = 12.0
 const PORT_PEOPLE: int = 100
 const SWAP_KINDS: Array[String] = ["apartment", "arcology"]
+const SWAP_FREE_BEDS: int = 35
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -133,6 +138,9 @@ func on_day() -> void:
 	_ports(reserve)
 	_goal_projects(reserve)
 	var saving: bool = _saving_for_road() or _saving_for_port() or _saving_for_settlement()
+	# Saving is for the poor: with this much in the bank nothing has to wait for anything else.
+	if float(sim.state.cash) >= RICH_CASH:
+		saving = false
 	if not saving and not _saving_for_hall():
 		_create_jobs(reserve)
 		_invest(reserve)
@@ -292,10 +300,13 @@ func _staff_research(reserve: float) -> void:
 	if income < research_full_income:
 		benches = mini(benches, 1 if income < research_full_income * 0.4 else 2)
 		wanted = mini(wanted, 6 if income < research_full_income * 0.4 else TEAM_SMALL)
+	var chain_first: Dictionary = _hall_chain()
 	# A team bigger than its share keeps a whole direction of research waiting for a seat.
 	for column: Dictionary in columns:
 		var large: Dictionary = column.running
-		if not large.is_empty() and int(large.staff) > wanted and staffed < benches:
+		if large.is_empty() or chain_first.has(str(large.id)):
+			continue
+		if int(large.staff) > wanted and staffed < benches:
 			if act("research_allocate", {"tech": large.id, "staff": wanted}) == "":
 				free += int(large.staff) - wanted
 	# What the final stage cannot do without gets the first seat.
@@ -312,18 +323,24 @@ func _staff_research(reserve: float) -> void:
 			var card: String = _best_card(column)
 			if card == "":
 				continue
-			var team: int = mini(wanted, free)
+			var team: int = mini(wanted * _team_factor(card, chain), free)
 			if act("research_allocate", {"tech": card, "staff": team}) == "":
 				staffed += 1
 				free -= team
-		elif int(running.staff) < wanted and free > 0:
-			var more: int = mini(wanted - int(running.staff), free)
+		elif int(running.staff) < wanted * _team_factor(str(running.id), chain) and free > 0:
+			var goal: int = wanted * _team_factor(str(running.id), chain)
+			var more: int = mini(goal - int(running.staff), free)
 			if (
 				act("research_allocate", {"tech": running.id, "staff": int(running.staff) + more})
 				== ""
 			):
 				free -= more
 	_seek_hall_technology(reserve)
+
+
+## What the charter needs gets the larger team.
+func _team_factor(tech: String, chain: Dictionary) -> int:
+	return CHARTER_TEAM_FACTOR if chain.has(tech) else 1
 
 
 func _offers_any(column: Dictionary, techs: Dictionary) -> bool:
@@ -506,7 +523,12 @@ func _create_jobs(reserve: float) -> void:
 		var region: int = int(place.region)
 		var idle: int = sim.free_workers(place)
 		var adults: int = int(place.workers) + int(place.scientists)
-		if idle < MIN_IDLE_WORKERS or float(idle) / maxi(1, adults) < IDLE_SHARE:
+		# Crews without work in a town with no ground left will move for a job down the road.
+		var elsewhere: int = _idle_elsewhere(region)
+		var idle_here: bool = (
+			idle >= MIN_IDLE_WORKERS and float(idle) / maxi(1, adults) >= IDLE_SHARE
+		)
+		if not idle_here and elsewhere < JOBLESS_ELSEWHERE:
 			continue
 		for kind: String in _kinds_with_roles(JOB_ROLES, place):
 			var role: String = sim.Production.role_of(sim, kind)
@@ -519,7 +541,9 @@ func _create_jobs(reserve: float) -> void:
 			if role == "harvest" and building_count(region, kind) >= HARVESTERS_PER_TOWN:
 				continue
 			var forecast: Dictionary = sim.build_forecast(region, kind)
-			if forecast.is_empty() or forecast.disabled_reason != "" or int(forecast.jobs) > idle:
+			if forecast.is_empty() or forecast.disabled_reason != "":
+				continue
+			if int(forecast.jobs) > idle + elsewhere:
 				continue
 			if float(forecast.net_per_day) < MIN_JOB_NET:
 				continue
@@ -628,7 +652,9 @@ func _next_site(reserve: float) -> Dictionary:
 		if hungry and farm_land_in_reach and float(row[2]) < MIN_LOCAL_FARM_OUTPUT:
 			continue
 		var link: Dictionary = _best_link(int(row[1]))
-		if link.is_empty() or int(link.days) > EXPEDITION_DAYS:
+		var stage: int = mini(int(sim.state.contract.stage), sim.Contract.STAGE_COUNT)
+		var longest: int = FAR_EXPEDITION_DAYS if _pressed_for_time(stage) else EXPEDITION_DAYS
+		if link.is_empty() or int(link.days) > longest:
 			continue
 		var fare: float = sim.Sites.expedition_cash(sim, kind)
 		if float(sim.state.cash) >= fare + float(link.cost) + reserve * 0.3:
@@ -820,6 +846,9 @@ func _make_room(place: Dictionary, reserve: float) -> void:
 		if rule.disabled_reason == "" and float(sim.state.cash) >= float(rule.cost) + reserve:
 			act("upgrade", {"region": region, "index": index})
 			return
+	# Pulling down a block with nowhere for its people to go is how a review starts.
+	if sim.Population.free_beds(sim, place) < SWAP_FREE_BEDS:
+		return
 	for kind: String in SWAP_KINDS:
 		var spec: Dictionary = sim.config.buildings[kind]
 		if not sim._has(str(spec.get("requires_tech", ""))) or oldest < 0:

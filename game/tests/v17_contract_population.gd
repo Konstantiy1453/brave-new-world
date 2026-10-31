@@ -38,6 +38,7 @@ func make(difficulty: String = "normal") -> RefCounted:
 
 func run() -> void:
 	_stages()
+	_late_finish()
 	_licence_gate()
 	_deadlines_feed_company()
 	_difficulty_scales_goals()
@@ -121,6 +122,32 @@ func _stages() -> void:
 		check(day > rise, "stage %d's deadline comes after the last one" % stage)
 		rise = day
 	check(rise >= 2160 and rise <= 2880, "the standard charter runs six to eight years")
+
+
+## Being late must not make a finished charter impossible: lateness alone starts a review, and a
+## review over nothing but lateness does not hold up the award.
+func _late_finish() -> void:
+	var sim: RefCounted = make()
+	var last: int = Contract.STAGE_COUNT
+	sim.state.contract.stage = last
+	sim.state.day = Contract.deadline(sim, last) + 1
+	sim.state.company.stage = "review"
+	var key: String = "no_review"
+	var rows: Array = Contract.stage_goals(sim, last).filter(
+		func(goal: Dictionary) -> bool: return goal.key == key
+	)
+	check(Contract.overdue(sim), "the charter is late")
+	check(bool(rows[0].ok), "lateness alone does not block the award")
+	sim.state.company.sources = {"social": {"rate": 0.2, "days": 40, "reason": ""}}
+	rows = Contract.stage_goals(sim, last).filter(
+		func(goal: Dictionary) -> bool: return goal.key == key
+	)
+	check(not bool(rows[0].ok), "real unrest does")
+	sim.state.company.sources = {"social": {"rate": 0.01, "days": 2, "reason": ""}}
+	rows = Contract.stage_goals(sim, last).filter(
+		func(goal: Dictionary) -> bool: return goal.key == key
+	)
+	check(bool(rows[0].ok), "a small town's passing troubles do not")
 
 
 func _licence_gate() -> void:

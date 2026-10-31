@@ -111,8 +111,8 @@
       "licence": "",
       "goals": {
         "capital_population": 600,
-        "population": 1800,
-        "technologies": 35,
+        "population": 2000,
+        "technologies": 40,
         "capital_hall": 1,
         "stage_streak": 180,
         "no_review": 1

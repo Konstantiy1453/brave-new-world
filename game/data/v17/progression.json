@@ -120,7 +120,7 @@
   "pollution": {
     "absorption_per_day": 6.0,
     "reference_radius_km": 6371.0,
-    "scale": 6000.0,
+    "scale": 7500.0,
     "strength": 0.02,
     "cap": 0.6,
     "appeal_weight": 1.0,

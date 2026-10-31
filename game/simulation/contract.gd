@@ -163,7 +163,9 @@ static func _review_blocks_award(sim: RefCounted) -> bool:
 	for aid: Dictionary in company.aid:
 		if aid.status == "breached":
 			return true
-	return float(company.sources.get("social", {}).get("rate", 0.0)) > 0.0
+	# A small town's troubles, or ones just over, do not hold up an award that is otherwise earned.
+	var social: float = float(company.sources.get("social", {}).get("rate", 0.0))
+	return social > float(sim.progression.company.tolerated_risk)
 
 
 ## Current value of one goal, in the units of its target.
