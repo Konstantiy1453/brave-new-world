@@ -3,6 +3,7 @@ extends "res://world/building_models.gd"
 ## height field; everything placed on the ground afterwards reads that field. Trees, rocks and
 ## free plots are instanced; each building kind is one baked mesh.
 
+const Rules = preload("res://simulation/rules.gd")
 const FIELD_RES: int = 86
 const FIELD_WIDTH: float = 57.0
 const FIELD_DEPTH: float = 47.0
@@ -593,7 +594,9 @@ func _baked_model(kind: String, active: bool) -> ArrayMesh:
 		return baked_models[key]
 	var root := Node3D.new()
 	add_child(root)
-	_build_facility(root, kind, active)
+	# Newer buildings wear the model of the closest older one until they have their own.
+	var spec: Dictionary = Rules.read("economy").buildings.get(kind, {})
+	_build_facility(root, str(spec.get("model", kind)), active)
 	var groups: Dictionary = {}
 	_collect_parts(root, Transform3D.IDENTITY, groups)
 	remove_child(root)
@@ -795,6 +798,9 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 	var label := Label3D.new()
 	var blocked: bool = Geo.road_blocked(route, int(state.get("day", 0)))
 	var kind: String = "海运 · " if str(route.get("variant", "")) == "sea" else "陆运 · "
+	if Geo.road_building(route, int(state.get("day", 0))):
+		kind = "在建 · "
+		blocked = false
 	label.text = (
 		("停运 · " if blocked else kind) + str(to.name) + " / " + str(route.get("days", 0)) + "天"
 	)

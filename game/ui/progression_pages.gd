@@ -20,11 +20,11 @@ static func populate(g, b, page: String):
 
 static func research(g, b):
 	var v: Dictionary = g.sim.research_view()
-	D.label(b, "科研 / 技术树", 25, D.TEAL)
+	D.label(b, "科研 / 四个方向的课题", 25, D.TEAL)
 	D.label(
 		b,
 		(
-			"研究员 %d · 调查 %d · 可用 %d · 科研席位 %d · 实验台 %d"
+			"研究团队 %d · 调查 %d · 可用 %d · 科研席位 %d · 实验台 %d"
 			% [
 				int(v.total),
 				int(v.investigating),
@@ -36,123 +36,110 @@ static func research(g, b):
 		20,
 		D.GOLD
 	)
-	D.label(b, "同等条件：5 人速度是 10 人的 60%。集中团队更早取得关键技术；分散团队受实验台限制，经费也更多。调配保留全部已完成工作。", 17, D.MUTED)
-	var rows: Array = g.sim.research_tree()
-	var chosen: Dictionary = _chosen_tech(g, rows)
-	if not chosen.is_empty():
-		_tech_detail(g, b, chosen, v)
+	D.label(b, "每个方向同时做一个课题，候选是随机出现的。挑一张，再派研究团队：5 支的速度是 10 支的 60%。换课题不丢进度；课题完成后，这个方向会出现新的候选。", 17, D.MUTED)
+	var columns: Array = g.sim.research_cards()
+	var grid = D.grid(b, columns.size())
+	for column: Dictionary in columns:
+		_research_column(g, grid, column, v)
 	_research_contract(g, b, v)
-	for branch: String in Labels.TECH_BRANCHES:
-		var card = D.card(b)
-		D.label(card, str(Labels.TECH_BRANCHES[branch]), 20, D.TEAL)
-		var tiers = D.grid(card, 3)
-		for tier: int in [1, 2, 3]:
-			var column = D.col(tiers)
-			column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			D.label(column, "第 %d 层" % tier, 14, D.MUTED)
-			for row: Dictionary in rows:
-				if row.branch == branch and int(row.tier) == tier:
-					_tech_node(g, column, row)
+	for column: Dictionary in columns:
+		if not column.finished.is_empty():
+			D.label(
+				b,
+				(
+					"%s 已完成 %d / %d：%s"
+					% [
+						column.name,
+						column.finished.size(),
+						int(column.pool),
+						"、".join(PackedStringArray(column.finished))
+					]
+				),
+				15,
+				D.MUTED
+			)
 
 
-## The technology shown in detail: the player's pick, or the first one that can start now.
-static func _chosen_tech(g, rows: Array) -> Dictionary:
-	var fallback: Dictionary = {}
-	for row: Dictionary in rows:
-		if row.id == g.selected_tech:
-			return row
-		if fallback.is_empty() and not row.done and row.missing.is_empty():
-			fallback = row
-	return fallback
-
-
-static func _tech_state(row: Dictionary) -> String:
-	if row.done:
-		return "✓ 已完成"
-	if float(row.rate) > 0.0:
-		return "在研 · 约 %d 日" % ceili((float(row.cost) - float(row.work)) / float(row.rate))
-	if int(row.staff) > 0:
-		return "已分配 · 未开工"
-	if not row.missing.is_empty():
-		return "需要 " + "、".join(PackedStringArray(row.missing))
-	return "%.0f 点" % (float(row.cost) - float(row.work))
-
-
-static func _tech_node(g, parent, row: Dictionary):
-	var id: String = row.id
-	var node = D.button(
-		parent,
-		"%s\n%s" % [row.name, _tech_state(row)],
-		func():
-			g.selected_tech = id
-			g.populate_current_page(),
-		str(row.description),
-		"Tech_" + id
+static func _research_column(g, grid, column: Dictionary, v: Dictionary):
+	var box = D.col(grid)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 6)
+	var id: String = str(column.id)
+	D.label(box, "%s（%s）" % [column.name, column.description], 17, D.TEAL)
+	var running: Dictionary = column.running
+	var wanted: int = int(g.research_team.get(id, clampi(int(v.available), 3, 10)))
+	var line = D.row(box)
+	D.label(line, "团队", 14, D.MUTED, false)
+	var count = D.spin(
+		line,
+		"Staff_" + id,
+		0,
+		maxi(10, int(v.total)),
+		1,
+		int(running.staff) if not running.is_empty() else wanted
 	)
-	D.font_size(node, 15)
-	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var color: Color = D.INK
-	if row.done:
-		color = D.TEAL
-	elif not row.missing.is_empty():
-		color = D.MUTED
-	elif float(row.rate) > 0.0:
-		color = D.GOLD
-	node.add_theme_color_override("font_color", color)
-
-
-static func _tech_detail(g, b, row: Dictionary, v: Dictionary):
-	var t: Dictionary = g.sim.config.techs[row.id]
-	var c = D.card(b)
-	D.label(c, row.name, 22, D.GOLD)
-	D.label(c, row.description, 17)
-	var requires: Array = t.requires.map(func(k): return g.sim.config.techs[k].name)
-	D.label(
-		c,
-		(
-			"研究量 %.0f 点 · 10 人基准日经费 ¥ %.1f（人员工资另计）· 最低团队 %d 人 · 前置：%s"
-			% [
-				float(row.cost),
-				float(t.funding) * (0.5 if g.sim.state.advantage == "science" else 1.0),
-				int(t.get("minimum_staff", 3)),
-				"无" if requires.is_empty() else "、".join(PackedStringArray(requires))
-			]
-		),
-		16,
-		D.MUTED
+	if not running.is_empty():
+		var tech: String = str(running.id)
+		var apply = D.button(
+			line,
+			"调整",
+			func(): g.act("research_allocate", {"tech": tech, "staff": int(count.value)}),
+			"0 支就是暂停，已做的研究量不丢"
+		)
+		D.font_size(apply, 13)
+		apply.custom_minimum_size.y = 28
+	for row: Dictionary in column.offers:
+		_tech_card(g, box, row, count)
+	if column.offers.is_empty():
+		D.label(box, "这个方向暂时没有新课题。", 15, D.MUTED)
+	var category: String = id
+	var again = D.button(
+		box,
+		"重新调研 · ¥ %.0f" % float(g.sim.Research.reshuffle_cost(g.sim)),
+		func(): g.act("research_reshuffle", {"category": category}),
+		"付钱换掉还没开工的候选课题",
+		"Reshuffle_" + id
 	)
-	if row.done:
-		D.label(c, "研究完成 · 效果已启用", 18, D.TEAL)
+	D.font_size(again, 13)
+	again.custom_minimum_size.y = 28
+
+
+static func _tech_card(g, parent, row: Dictionary, count):
+	var c = D.card(parent)
+	var running: bool = int(row.staff) > 0
+	D.label(c, str(row.name), 16, D.GOLD if running else D.INK)
+	D.label(c, "第 %d 级 · %.0f 点" % [int(row.tier), float(row.cost)], 13, D.MUTED)
+	D.label(c, str(row.description), 13, D.MUTED)
+	var work: float = float(row.work)
+	if work > 0.0:
+		D.progress(c, work / float(row.cost), D.GOLD if running else D.MUTED)
+	if running:
+		if float(row.rate) > 0.0:
+			var left: int = ceili((float(row.cost) - work) / float(row.rate))
+			D.label(
+				c,
+				"%d 支团队 · 还要 %d 天（%s）"
+				% [int(row.effective), left, Labels.short_date(int(g.sim.state.day) + left)],
+				13,
+				D.TEAL
+			)
+		else:
+			D.label(c, str(row.reason), 13, D.GOLD)
 		return
 	var previews: PackedStringArray = []
 	for preview: Dictionary in row.previews:
-		previews.append("%d 人 → %d 日" % [int(preview.staff), int(preview.days)])
-	D.label(c, "人员预估：" + "，".join(previews), 17, D.TEAL)
-	D.label(
+		previews.append("%d 支 %d 天" % [int(preview.staff), int(preview.days)])
+	D.label(c, "、".join(previews), 13, D.MUTED)
+	var tech: String = str(row.id)
+	var pick = D.button(
 		c,
-		(
-			"已完成 %.1f / %.0f 点 · 分配 %d 人 / 实投 %d 人 · 速度 %.2f 点/日"
-			% [
-				float(row.work),
-				float(row.cost),
-				int(row.staff),
-				int(row.effective),
-				float(row.rate)
-			]
-		),
-		17
+		"选这个课题",
+		func(): g.act("research_allocate", {"tech": tech, "staff": int(count.value)}),
+		"",
+		"Card_" + tech
 	)
-	if str(row.reason) != "":
-		D.label(c, str(row.reason), 16, D.MUTED)
-	var line = D.row(c)
-	var count = D.spin(line, "Staff", 0, maxi(10, int(v.total)), 1, int(row.staff))
-	var tech: String = row.id
-	D.button(
-		line,
-		"应用团队分配",
-		func(): g.act("research_allocate", {"tech": tech, "staff": int(count.value)})
-	)
-	D.button(line, "暂停项目（保留进度）", func(): g.act("research_allocate", {"tech": tech, "staff": 0}))
+	D.font_size(pick, 14)
+	pick.custom_minimum_size.y = 30
 
 
 ## Paid outside work for the labs, once the academic network exists.
@@ -166,7 +153,7 @@ static func _research_contract(g, b, v: Dictionary):
 	D.label(
 		c,
 		(
-			"占用一个实验台和研究员，按研究量收取外部付款（每点 ¥ %.0f）。分配 %d 人 / 实投 %d 人 · 累计收入 ¥ %.0f"
+			"占用一个实验台和研究团队，按研究量收取外部付款（每点 ¥ %.0f）。分配 %d 支 / 实投 %d 支 · 累计收入 ¥ %.0f"
 			% [
 				float(g.sim.progression.research.contract_point_price),
 				int(contract.staff),
@@ -200,7 +187,7 @@ static func company(g, b):
 		23,
 		D.GOLD
 	)
-	D.label(b, str(v.get("summary", v.get("reason", "公司根据真实逾期、社会和环境问题评估；投资期亏损本身不等于违约。"))), 18)
+	D.label(b, str(v.get("summary", v.get("reason", "公司根据真实的逾期和社会问题评估；投资期亏损本身不等于违约。"))), 18)
 	for source in v.get("sources", {}).values():
 		if float(source.rate) > 0:
 			D.label(
@@ -260,16 +247,24 @@ static func company(g, b):
 		)
 		bt.disabled = bool(offer.get("claimed", false)) or v.get("stage", "normal") == "normal"
 		bt.tooltip_text = str(offer.get("reason", ""))
-	D.button(
-		b,
+	var dirt: Dictionary = g.sim.pollution_view()
+	var air = D.card(b)
+	D.label(air, "星球污染（不影响公司评价）", 20, D.TEAL)
+	D.label(
+		air,
 		(
-			"治理所选据点污染 · 支出%.0f / 降低%.0f"
-			% [
-				g.sim.progression.production.cleanup_cost,
-				g.sim.progression.production.cleanup_amount
-			]
+			"累积负荷 %.0f · 每日排放 %.1f / 星球吸收 %.1f · 产出损失 %.1f%%"
+			% [float(dirt.load), float(dirt.emitted), float(dirt.absorbed), float(dirt.penalty) * 100.0]
 		),
-		func(): g.act("company", {"operation": "cleanup", "region": g.selected})
+		17
+	)
+	D.label(air, "排放低于吸收时不会累积。负荷越高，后果越是成倍地放大：产出下降、吸引力下降、医疗开支上升。", 15, D.MUTED)
+	D.button(
+		air,
+		"出资治理 · 支出 ¥ %.0f / 负荷 -%.0f" % [float(dirt.cleanup_cost), float(dirt.cleanup_amount)],
+		func(): g.act("company", {"operation": "cleanup"}),
+		"",
+		"CleanupButton"
 	)
 	for a in v.get("aid", []):
 		D.label(
@@ -325,8 +320,8 @@ static func events(g, b):
 		D.label(
 			c,
 			(
-				"殖民第 %s 日截止 · 余 %s 日"
-				% [str(node.get("deadline", "—")), str(node.get("remaining_days", "—"))]
+				"%s 截止 · 还有 %s 天"
+				% [Labels.short_date(int(node.get("deadline", 0))), str(node.get("remaining_days", "—"))]
 			),
 			16,
 			D.TEAL

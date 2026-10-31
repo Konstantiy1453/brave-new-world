@@ -9,24 +9,52 @@ const Events = preload("res://simulation/events_v2.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Contract = preload("res://simulation/contract.gd")
 const TutorialCoach = preload("res://ui/tutorial_coach.gd")
+const DistrustGauge = preload("res://ui/distrust_gauge.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
+const Stats = preload("res://simulation/stats.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
+const V17_SAVE_MANUAL: String = "/ColonyCharter/v17/manual.save"
+const V17_SAVE_AUTO: String = "/ColonyCharter/v17/autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
 const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
 const OLDER_SAVE_MANUAL: String = "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
 const AUTOSAVE_DAYS: int = 10
 const MODAL_HEIGHT: int = 690
 const PAGE_HEIGHT: int = 535
+const TOP_CELLS: Array = [
+	["money", "¥", "公共资金"],
+	["people", "人", "人口"],
+	["places", "据", "据点"],
+	["food", "food", "食品"],
+	["power", "power", "电力"],
+	["water", "water", "水"],
+	["ore", "ore", "铁矿"],
+	["copper", "copper", "铜矿"],
+	["crystal", "crystal", "工业晶体"],
+	["materials", "materials", "建材"],
+	["parts", "parts", "部件"],
+	["components", "元", "电子元件"],
+]
+const TOP_GOODS: Array[String] = ["food", "ore", "copper", "crystal", "materials", "parts", "components"]
+const MONTH_DAYS: float = 30.0
+const COLUMN_LEFT: int = 170
+const COLUMN_WIDTH: int = 300
 var sim = Sim.new()
 var map: Node3D
 var ui: Control
 var sidebar: VBoxContainer
 var sidebar_actions: VBoxContainer
-var top_stats: Label
+var top_stats: GridContainer
+var top_cells: Dictionary = {}
+var gauge: PanelContainer
+var column_panel: PanelContainer
+var column_box: VBoxContainer
+var column_tab: Button
+var column_open: bool = true
 var date_label: Label
 var mission: Label
 var toast_label: Label
@@ -34,7 +62,7 @@ var overlay: Control
 var modal_box: VBoxContainer
 var modal_feedback: Label
 var selected: int = 0
-var selected_tech: String = ""
+var research_team: Dictionary = {}
 var site_filter: int = 0
 var announced_event: int = 0
 var build_category: String = "all"
@@ -44,6 +72,7 @@ var coach: PanelContainer
 var tutorial_on: bool = true
 var naming_site: int = 0
 var naming_again: bool = false
+var naming_kind: String = "residential"
 var menu_seed: String = ""
 var planet_preview: Label
 var local_view: bool = false
@@ -142,8 +171,8 @@ func build_shell():
 	top.offset_bottom = 91
 	var h = D.row(top)
 	var brand = D.col(h)
-	brand.custom_minimum_size.x = 185
-	D.label(brand, "殖 民 契 约", 25, D.INK, false)
+	brand.custom_minimum_size.x = 150
+	D.label(brand, "殖民契约", 23, D.INK, false)
 	var file_actions = D.row(brand)
 	for entry in [["存档", true], ["读档", false]]:
 		var saving: bool = entry[1]
@@ -157,22 +186,20 @@ func build_shell():
 					open_page("save"),
 			"Ctrl+S 快速存档；读档页面可选择手动、自动和验收档"
 		)
-		action.custom_minimum_size = Vector2(72, 26)
+		action.custom_minimum_size = Vector2(62, 26)
 		action.add_theme_font_size_override("font_size", 14)
 		for style_name in ["normal", "hover", "pressed"]:
 			action.add_theme_stylebox_override(style_name, D.box(Color("1a3042"), D.TEAL, 5))
-	top_stats = D.label(h, "", 18, D.INK, false)
-	top_stats.name = "TopStats"
-	top_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_build_resource_table(h)
 	var clockbox = D.col(h)
 	date_label = D.label(clockbox, "", 17, D.GOLD, false)
 	var controls = D.row(clockbox)
 	var time_rules: Dictionary = sim.progression.time
 	for item in [
 		["暂停", 0],
-		["正常", 1],
-		["快进", int(time_rules.fast_multiplier)],
-		["极快", int(time_rules.very_fast_multiplier)],
+		["1×", 1],
+		["%d×" % int(time_rules.fast_multiplier), int(time_rules.fast_multiplier)],
+		["%d×" % int(time_rules.very_fast_multiplier), int(time_rules.very_fast_multiplier)],
 	]:
 		var val = int(item[1])
 		var b = D.button(
@@ -263,14 +290,82 @@ func build_shell():
 	toast_label = D.label(ui, "", 18, D.GOLD)
 	toast_label.anchor_top = 1
 	toast_label.anchor_bottom = 1
-	toast_label.offset_left = 195
+	toast_label.offset_left = COLUMN_LEFT + COLUMN_WIDTH + 10
 	toast_label.offset_right = 1200
 	toast_label.offset_top = -145
 	toast_label.offset_bottom = -100
 	map_hint = D.label(ui, "球面总览  ·  右键旋转  ·  滚轮缩放", 14, D.MUTED, false)
 	map_hint.name = "MapHint"
-	map_hint.position = Vector2(215, 112)
+	map_hint.position = Vector2(COLUMN_LEFT + COLUMN_WIDTH + 10, 96)
+	_build_gauge()
+	_build_column()
 	refresh()
+
+
+## Colony totals with their change over a month, one small cell each: icons where there are icons.
+func _build_resource_table(parent: Control) -> void:
+	top_stats = GridContainer.new()
+	top_stats.name = "TopStats"
+	top_stats.columns = 6
+	top_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_stats.add_theme_constant_override("h_separation", 10)
+	top_stats.add_theme_constant_override("v_separation", 6)
+	parent.add_child(top_stats)
+	for row: Array in TOP_CELLS:
+		var cell := HBoxContainer.new()
+		cell.name = "Top_" + str(row[0])
+		cell.add_theme_constant_override("separation", 4)
+		cell.mouse_filter = Control.MOUSE_FILTER_STOP
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top_stats.add_child(cell)
+		if ResourceLoader.exists("res://assets/icons/%s.svg" % str(row[1])):
+			D.icon(cell, str(row[1]), 20)
+		else:
+			D.label(cell, str(row[1]), 15, D.GOLD, false)
+		var value: Label = D.label(cell, "", 16, D.INK, false)
+		var delta: Label = D.label(cell, "", 13, D.TEAL, false)
+		top_cells[str(row[0])] = {"cell": cell, "value": value, "delta": delta}
+
+
+func _build_gauge() -> void:
+	gauge = DistrustGauge.new()
+	gauge.setup(self)
+	ui.add_child(gauge)
+	gauge.anchor_left = 1
+	gauge.anchor_right = 1
+	gauge.offset_left = -440
+	gauge.offset_right = -372
+	gauge.offset_top = 115
+
+
+## The selected settlement's buildings in a column of their own, beside the navigation.
+func _build_column() -> void:
+	column_panel = PanelContainer.new()
+	column_panel.name = "BuildingColumn"
+	ui.add_child(column_panel)
+	column_panel.anchor_bottom = 1
+	column_panel.offset_left = COLUMN_LEFT
+	column_panel.offset_right = COLUMN_LEFT + COLUMN_WIDTH
+	column_panel.offset_top = 115
+	column_panel.offset_bottom = -116
+	column_panel.add_theme_stylebox_override(
+		"panel", D.box(Color(0.07, 0.14, 0.2, 0.94), Color("304756"), 10)
+	)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column_panel.add_child(scroll)
+	column_box = D.col(scroll)
+	column_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column_box.add_theme_constant_override("separation", 6)
+	column_tab = D.button(ui, "设施 ▸", set_column_open.bind(true), "展开设施栏", "ColumnTab")
+	column_tab.position = Vector2(COLUMN_LEFT, 115)
+	column_tab.custom_minimum_size = Vector2(70, 32)
+	D.font_size(column_tab, 14)
+
+
+func set_column_open(open: bool) -> void:
+	column_open = open
+	refresh_sidebar()
 
 
 func _process(delta):
@@ -476,7 +571,8 @@ func select_region(id: int):
 ## A settlement gets its name from the player: asked when settling, and whenever they rename it.
 func ask_site_name(again: bool):
 	if not again:
-		var refusal: String = sim.settle_refusal(selected)
+		naming_kind = "residential" if sim.state.settlements.is_empty() else "frontier"
+		var refusal: String = sim.settle_refusal(selected, naming_kind)
 		if refusal != "":
 			toast(refusal)
 			return
@@ -494,7 +590,7 @@ func confirm_site_name(_typed: String = ""):
 	if naming_again:
 		error = act("rename", {"site": naming_site, "name": edit.text})
 	else:
-		error = act("settle", {"site": naming_site, "name": edit.text})
+		error = act("settle", {"site": naming_site, "name": edit.text, "kind": naming_kind})
 	if error == "":
 		close_modal()
 		refresh_sidebar()
@@ -537,43 +633,130 @@ func settlement() -> Dictionary:
 func refresh():
 	if not is_instance_valid(top_stats):
 		return
-	var pop = 0
-	for s in sim.state.settlements:
-		pop += int(s.population)
-	var net = float(sim.state.get("operating_net", 0))
-	top_stats.text = (
-		"公共资金  ¥ %s    经营结余  %+.0f /日\n人口  %d    据点  %d / %d    种子  %d"
-		% [
-			money(sim.state.cash),
-			net,
-			pop,
-			sim.state.settlements.size(),
-			Contract.settlement_cap(sim),
-			int(sim.state.world.seed)
-		]
-	)
+	_refresh_top()
+	var state: Dictionary = sim.state
 	date_label.text = (
-		"生涯 %d 日 / 登陆 %d 日 · %s"
-		% [sim.state.career.global_day, sim.state.day, "已暂停" if paused else str(speed) + " 倍速"]
+		"%s · %s"
+		% [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
 	)
-	var steps = ["立足：登陆、矿场、出口、科研 → 分工：第二据点、食品、加工 → 自立：人口、企业、非矿业收入 → 总督"]
+	date_label.tooltip_text = "登陆第 %d 日 · 生涯第 %d 日" % [state.day, state.career.global_day]
+	var company: Dictionary = state.get("company", {})
+	var level: Dictionary = sim.progression.difficulty[state.get("difficulty", "normal")]
+	gauge.show_state(
+		company,
+		float(level.warning),
+		float(sim.progression.company.review_threshold),
+		float(sim.progression.company.intervention_threshold)
+	)
+	var steps = ["立足 → 分工 → 网络 → 自立 → 首府：一步步把据点变成能自立的殖民地，赢得总督资格"]
 	var hint = "在地图上选一个地点，右侧卡片告诉你它适合做什么。"
-	if sim.state.status != "planning":
+	if state.status != "planning":
 		var phase = {"active": "契约考核中", "success": "总督阶段", "failed": "经营终止"}
-		hint = (
-			"经营连盈 %d 期  ·  %s"
-			% [sim.state.get("streak", 0), phase.get(sim.state.status, sim.state.status)]
-		)
-		if sim.state.settlements.size() < 2:
+		hint = phase.get(state.status, state.status)
+		if state.settlements.size() < 2:
 			hint += "  |  矿山负责出口，肥沃的土地负责粮食。"
-		elif sim.state.roads.is_empty():
-			hint += "  |  据点尚未相连，打开交通运输修路。"
+		elif state.roads.is_empty():
+			hint += "  |  据点尚未相连，打开交通运输修路或开航线。"
 		else:
 			hint += "  |  贸易和运输按本地库存自动进行。"
-	if not sim.state.get("event", {}).is_empty():
-		hint = "! 待处理通讯：" + str(sim.state.event.get("title", "事件")) + "  ·  打开左侧通讯事件"
+		if not sim.Research.idle_categories(sim).is_empty():
+			hint = "! 有研究团队闲着：打开科研教育，给他们挑一个课题"
+	if not state.get("event", {}).is_empty():
+		hint = "! 待处理通讯：" + str(state.event.get("title", "事件")) + "  ·  打开左侧通讯事件"
 	mission.text = steps[0] + "\n" + hint
 	refresh_sidebar()
+
+
+## Colony totals and what the last month did to them, scaled up while the colony is younger than that.
+func _refresh_top() -> void:
+	var state: Dictionary = sim.state
+	var window: Dictionary = sim.stats_window(int(MONTH_DAYS))
+	var scale: float = MONTH_DAYS / maxi(1, int(window.days))
+	var income: float = 0.0
+	var expense: float = 0.0
+	for key: String in window.income:
+		income += float(window.income[key])
+	for key: String in window.expense:
+		expense += float(window.expense[key])
+	_set_cell(
+		"money",
+		float(state.cash),
+		(income - expense) * scale,
+		"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
+		% [float(state.cash), income, expense]
+	)
+	var people: int = 0
+	var power: float = 0.0
+	var power_used: float = 0.0
+	var water: float = 0.0
+	var water_used: float = 0.0
+	var stock: Dictionary = {}
+	var places: PackedStringArray = []
+	for s: Dictionary in state.settlements:
+		people += int(s.population)
+		power += float(s.power_supply)
+		power_used += float(s.power_demand)
+		water += float(s.water_supply)
+		water_used += float(s.water_demand)
+		places.append(
+			(
+				"%s：电 %.0f/%.0f · 水 %.0f/%.0f"
+				% [s.name, s.power_supply, s.power_demand, s.water_supply, s.water_demand]
+			)
+		)
+		for good: String in TOP_GOODS:
+			stock[good] = float(stock.get(good, 0.0)) + float(s.stock.get(good, 0.0))
+	var moved: float = 0.0
+	for key: String in window.arrivals:
+		moved += float(window.arrivals[key])
+	for key: String in window.departures:
+		moved -= float(window.departures[key])
+	_set_cell("people", people, moved * scale, "人口 %d\n后面的数字是每月迁入减离开。" % people)
+	_set_cell_text(
+		"places",
+		"%d / %d" % [state.settlements.size(), Contract.settlement_cap(sim)],
+		"",
+		0.0,
+		"已建立的据点 / 合同许可的上限"
+	)
+	var utility_note: String = "\n电和水不能储存：第一个数是全部据点的供给，后面是供给减需求。\n"
+	_set_cell_flow("power", power, power - power_used, "电力" + utility_note + "\n".join(places))
+	_set_cell_flow("water", water, water - water_used, "水" + utility_note + "\n".join(places))
+	for good: String in TOP_GOODS:
+		var flows: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		var change: float = (
+			float(flows[Stats.PRODUCED])
+			+ float(flows[Stats.IMPORTED])
+			- float(flows[Stats.CONSUMED])
+			- float(flows[Stats.EXPORTED])
+		)
+		_set_cell(
+			good,
+			float(stock.get(good, 0.0)),
+			change * scale,
+			Labels.flow_text(str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), flows)
+		)
+
+
+func _set_cell(key: String, value: float, change: float, hint: String) -> void:
+	var sign_text: String = "+" if change >= 0.0 else ""
+	_set_cell_text(key, Labels.compact(value), sign_text + Labels.compact(change), change, hint)
+
+
+## Power and water: a rate, not a stock, so the sign is the surplus and red means somebody is short.
+func _set_cell_flow(key: String, supply: float, surplus: float, hint: String) -> void:
+	var sign_text: String = "+" if surplus >= 0.0 else ""
+	_set_cell_text(key, Labels.compact(supply), sign_text + Labels.compact(surplus), surplus, hint)
+
+
+func _set_cell_text(key: String, value: String, change: String, amount: float, hint: String) -> void:
+	var cell: Dictionary = top_cells[key]
+	if cell.value.text != value:
+		cell.value.text = value
+	if cell.delta.text != change:
+		cell.delta.text = change
+		cell.delta.add_theme_color_override("font_color", D.TEAL if amount >= 0.0 else D.RED)
+	cell.cell.tooltip_text = hint
 
 
 func refresh_sidebar():
@@ -585,6 +768,13 @@ func refresh_sidebar():
 	D.begin(sidebar_actions)
 	Pages.region_actions(self, sidebar_actions)
 	D.finish(sidebar_actions)
+	var settled: bool = not settlement().is_empty()
+	column_panel.visible = settled and column_open
+	column_tab.visible = settled and not column_open
+	if column_panel.visible:
+		D.begin(column_box)
+		Pages.building_column(self, column_box)
+		D.finish(column_box)
 
 
 func act(action: String, args: Dictionary = {}):
@@ -753,7 +943,7 @@ func show_menu():
 	seed_edit.editable = not tutorial_on
 	if not seed_edit.text_changed.is_connected(_on_seed_changed):
 		seed_edit.text_changed.connect(_on_seed_changed)
-	size_option = D.option(r, "SizeOption", ["小型 · 短途", "中型 · 标准", "大型 · 长途"], 1)
+	size_option = D.option(r, "SizeOption", ["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"], 1)
 	size_option.disabled = tutorial_on
 	difficulty_option = D.option(r, "DifficultyOption", ["简单", "标准", "困难"], 1)
 	difficulty_option.disabled = tutorial_on
@@ -839,9 +1029,11 @@ func old_save_path(relative: String) -> String:
 	return OS.get_environment("APPDATA") + relative
 
 
-## The newer of the manual and automatic saves; a 1.6 save if this version has none yet.
+## The newer of the manual and automatic saves; a 1.7 or 1.6 save if this version has none yet.
 func _latest_save() -> String:
 	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(V17_SAVE_MANUAL), old_save_path(V17_SAVE_AUTO)])
 	if best == "":
 		best = _newest_of([old_save_path(OLD_SAVE_MANUAL), old_save_path(OLD_SAVE_AUTO)])
 	return best

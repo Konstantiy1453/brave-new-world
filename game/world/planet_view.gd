@@ -422,6 +422,13 @@ func _update_transport() -> void:
 		_draw_road_on_globe(r)
 
 
+func _road_color(r: Dictionary) -> Color:
+	var day: int = int(state.get("day", 0))
+	if Geo.road_building(r, day):
+		return Color("8fa1a8")
+	return Color("d77963") if Geo.road_blocked(r, day) else Color("e9bf71")
+
+
 func _draw_road_on_globe(r: Dictionary) -> void:
 	var coordinates: Array = r.get("coordinates", []).duplicate()
 	if coordinates.is_empty():
@@ -434,7 +441,7 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 	_line(
 		transport_root,
 		points,
-		Color("d77963") if Geo.road_blocked(r, int(state.get("day", 0))) else Color("e9bf71"),
+		_road_color(r),
 		1.5
 	)
 	for shipment in state.get("shipments", []):

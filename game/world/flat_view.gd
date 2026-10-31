@@ -334,9 +334,12 @@ func _update_flat_transport() -> void:
 
 
 func _draw_road_on_flat(route: Dictionary) -> void:
-	var route_color := (
-		Color("d77963") if Geo.road_blocked(route, int(state.get("day", 0))) else Color("e7bb75")
-	)
+	var day: int = int(state.get("day", 0))
+	var route_color := Color("e7bb75")
+	if Geo.road_building(route, day):
+		route_color = Color("8fa1a8")
+	elif Geo.road_blocked(route, day):
+		route_color = Color("d77963")
 	var coordinates: Array = route.get("coordinates", []).duplicate()
 	if coordinates.is_empty():
 		for index in route.get("path", []):

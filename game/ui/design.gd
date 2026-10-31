@@ -241,6 +241,26 @@ static func line_edit(parent: Node, key: String, text: String) -> LineEdit:
 	return n
 
 
+## A thin bar, full at ratio 1, for anything that takes time.
+static func progress(parent: Node, ratio: float, color: Color = TEAL, height: int = 8) -> ProgressBar:
+	var bar: ProgressBar = _take(parent, "ProgressBar")
+	if not bar.has_meta(META_LAST):
+		bar.show_percentage = false
+		bar.min_value = 0.0
+		bar.max_value = 1.0
+		bar.step = 0.001
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.add_theme_stylebox_override("background", box(Color("0c1925"), Color("294251"), 0))
+		bar.set_meta(META_LAST, true)
+	if not bar.has_meta(META_COLOR) or bar.get_meta(META_COLOR) != color:
+		bar.add_theme_stylebox_override("fill", box(color, color, 0))
+		bar.set_meta(META_COLOR, color)
+	bar.custom_minimum_size.y = height
+	bar.value = clampf(ratio, 0.0, 1.0)
+	return bar
+
+
 static func portrait(parent: Node, who: String, width: int = 185, height: int = 245) -> TextureRect:
 	var p: TextureRect = _take(parent, "TextureRect")
 	var path: String = "res://assets/portraits/" + who + ".png"

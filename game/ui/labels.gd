@@ -11,6 +11,17 @@ const RESOURCE_NAMES: Dictionary = {
 	"materials": "建材",
 	"parts": "部件",
 	"components": "电子元件",
+	"alloy": "合金",
+	"machinery": "精密机械",
+	"pharma": "药品",
+}
+const SITE_KIND_NAMES: Dictionary = {
+	Keys.SITE_RESIDENTIAL: "居住据点",
+	Keys.SITE_FRONTIER: "边疆据点",
+}
+const SITE_KIND_TEXT: Dictionary = {
+	Keys.SITE_RESIDENTIAL: "人们在这里安家：住房、医疗、学校、研究所和精密工厂都建在这里。自发移民多，有新生儿；只能开轻型矿场。",
+	Keys.SITE_FRONTIER: "工程队驻扎的矿区或农区：重型矿场、大田农业只能建在这里，产量 +15%，远征更便宜。很少有人自愿来，要靠道路把人调过来。",
 }
 const ENTERPRISE_STATUS: Dictionary = {
 	Keys.E_FITTING: "装修中",
@@ -22,7 +33,7 @@ const ENTERPRISE_STATUS: Dictionary = {
 const ENTERPRISE_REASON: Dictionary = {
 	Keys.ER_FITTING: "自主租用社区商业场地；装修需要 4 天",
 	Keys.ER_PAUSED: "玩家暂停了服务设施",
-	Keys.ER_NO_WORKERS: "可雇用工人不足",
+	Keys.ER_NO_WORKERS: "可雇用工程队不足",
 	Keys.ER_NO_CASH: "企业现金不足以支付工资与租金",
 	Keys.ER_RUNNING: "自主经营，无需逐日操作；利润税只对正利润征收",
 	Keys.ER_RECOVERING: "有偿重组或迁址，3 日后重新营业",
@@ -72,25 +83,21 @@ const LEDGER: Dictionary = {
 	"contract.reward": "合同阶段发展资金",
 	"road.upkeep": "道路养护",
 	"recruit": "招募移民",
+	"commerce.income": "商业街区营业收入",
+	"service.income": "数据服务收入",
+	"research.reshuffle": "重新调研",
 	"invest.upgrade": "设施升级",
 	"invest.survey": "地面勘察",
 	"research.contract": "科研委托收入",
 	"legacy.event": "旧版事件",
 }
 
-const TECH_BRANCHES: Dictionary = {
-	"extraction": "采掘",
-	"agriculture": "农业",
-	"industry": "工业",
-	"logistics": "物流",
-	"society": "社会",
-}
 const BUILD_CATEGORIES: Dictionary = {
 	"extraction": "矿业",
 	"food": "食品",
 	"industry": "加工",
 	"utilities": "水电与货运",
-	"people": "人口",
+	"people": "住房与服务",
 	"research": "科研",
 	"great": "巨型工程",
 }
@@ -99,8 +106,8 @@ const ROLE_HINTS: Dictionary = {
 	"fertile_valley": "土地肥沃，适合作为粮食据点，矿藏很少。",
 	"highland_mining": "铜和晶体多，但建设费高、耕地少，需要外来粮食。",
 	"grassland": "地形开阔、地块多，各方面都不差，适合扩张人口。",
-	"coastal_plain": "靠海、地块平整，将来可以通航。",
-	"island": "晶体往往集中在这里，但地块少，要有海运才到得了。",
+	"coastal_plain": "靠海、地块平整，可以开辟航线。",
+	"island": "晶体往往集中在这里，地块少一些，靠海运和外界相连。",
 	"lake_basin": "水源充足，矿和地都还可以。",
 	"arid": "矿藏丰富但水少，要留意供水和尘暴。",
 	"cold": "矿藏不错，但耕作困难、建设费高。",
@@ -125,11 +132,15 @@ const SITE_FILTERS: Array = [
 const STAGE_NAMES: Dictionary = {
 	"foothold": "第一阶段 · 立足",
 	"division": "第二阶段 · 分工",
-	"self_reliance": "第三阶段 · 自立",
+	"network": "第三阶段 · 网络",
+	"self_reliance": "第四阶段 · 自立",
+	"capital": "第五阶段 · 首府",
 }
 const LICENCE_NAMES: Dictionary = {
 	"expedition": "第二据点远征许可",
 	"third_settlement": "第三据点许可",
+	"network": "第四、第五据点许可",
+	"self_reliance": "第六、第七据点许可",
 }
 const ATTRACTIVENESS_PARTS: Dictionary = {
 	"beds": "住房",
@@ -141,6 +152,8 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 	"shortages": "水电短缺",
 	"company": "公司审查",
 	"events": "近期事件",
+	"frontier": "边疆条件艰苦",
+	"tech": "技术与制度",
 }
 
 
@@ -171,7 +184,7 @@ static func goal(row: Dictionary) -> Dictionary:
 			}
 		"research_staffed":
 			return {
-				"text": "在研项目 %d / %d" % [value, target], "hint": "建研究所并分配研究员", "page": "research"
+				"text": "在研项目 %d / %d" % [value, target], "hint": "建研究所并分配研究团队", "page": "research"
 			}
 		"connected":
 			return {
@@ -198,7 +211,7 @@ static func goal(row: Dictionary) -> Dictionary:
 				"page": "population"
 			}
 		"technologies":
-			return {"text": "完成技术 %d / %d" % [value, target], "hint": "分配更多研究员", "page": "research"}
+			return {"text": "完成技术 %d / %d" % [value, target], "hint": "分配更多研究团队", "page": "research"}
 		"employment":
 			return {
 				"text": "就业率 %.0f%% / %.0f%%" % [value * 100.0, target * 100.0],
@@ -229,7 +242,51 @@ static func goal(row: Dictionary) -> Dictionary:
 				"hint": "解决公司关系页列出的原因",
 				"page": "company"
 			}
+		"frontiers":
+			return {
+				"text": "边疆据点 %d / %d" % [value, target],
+				"hint": "派远征队时选择边疆据点",
+				"page": ""
+			}
+		"capital_population":
+			return {
+				"text": "首府人口 %d / %d" % [value, target],
+				"hint": "在首府盖更高的住宅，招募更多人",
+				"page": "population"
+			}
+		"capital_hall":
+			return {
+				"text": "行星议会大厦已建成" if value >= target else "建成行星议会大厦",
+				"hint": "需要技术：首府规划。可以建在任何居住据点",
+				"page": "build"
+			}
 	return {"text": str(row.key), "hint": "", "page": ""}
+
+
+## 第 3 年 4 月 12 日, counted from the landing. Months have 30 days, years 360.
+static func date(day: int) -> String:
+	return "第 %d 年 %d 月 %d 日" % [day / 360 + 1, (day % 360) / 30 + 1, day % 30 + 1]
+
+
+## The same in the little space a list row has.
+static func short_date(day: int) -> String:
+	return "%d年%d月%d日" % [day / 360 + 1, (day % 360) / 30 + 1, day % 30 + 1]
+
+
+## Whole numbers up to five digits, then 万: what fits in a cell of the resource table.
+static func compact(value: float) -> String:
+	var size: float = absf(value)
+	if size >= 100000.0:
+		return "%.1f万" % (value / 10000.0)
+	return "%d" % roundi(value)
+
+
+## The icon file for a building: its own, or that of what it is modelled on.
+static func icon_key(config: Dictionary, kind: String) -> String:
+	var spec: Dictionary = config.buildings.get(kind, {})
+	if spec.has("output"):
+		return str(spec.output)
+	return str(spec.get("model", kind)).trim_prefix("mine_")
 
 
 static func building_name(config: Dictionary, kind: String) -> String:
@@ -282,9 +339,9 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 	var detail: String = str(entry.get("detail", ""))
 	match str(entry.get("key", "")):
 		Keys.SH_JOBS_WORKERS:
-			return "岗位缺员：%s（需要工人）" % building_name(config, detail)
+			return "岗位缺员：%s（需要工程队）" % building_name(config, detail)
 		Keys.SH_JOBS_SPECIALISTS:
-			return "岗位缺员：%s（需要研究员）" % building_name(config, detail)
+			return "岗位缺员：%s（需要研究团队）" % building_name(config, detail)
 		Keys.SH_POWER:
 			return "电力不足：生产按供需比例减产"
 		Keys.SH_WATER:
@@ -296,13 +353,13 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 		Keys.SH_NO_PORT:
 			return "无本地货运站；依赖陆路补给"
 		Keys.SH_PORT_FULL:
-			return "港口吞吐不足：存在尚未满足的补给需求"
+			return "港口吞吐不足：货物运不出去，补给也进不来"
 		Keys.SH_STARVING:
 			return "食品供给不足 · 已持续 %s 天" % detail
 		Keys.SH_HOUSING:
 			return "住房不足"
 		Keys.SH_POLLUTION:
-			return "污染影响健康与生产；可治理或停用高污染设施"
+			return "星球污染开始影响健康与生产：可建净化塔、研究清洁技术或出资治理"
 	return str(entry.get("key", ""))
 
 
@@ -343,6 +400,14 @@ static func fix(entry: Dictionary) -> Dictionary:
 		Keys.SH_POLLUTION:
 			return {"text": "处理", "page": "company"}
 	return {}
+
+
+## Text for one row of the top resource table's tooltip: where the month's change came from.
+static func flow_text(name: String, stock: float, flows: Array) -> String:
+	return (
+		"%s：全部据点合计 %.0f t\n近 30 日：产出 %.0f · 进口 %.0f · 消耗 %.0f · 出口 %.0f"
+		% [name, stock, float(flows[0]), float(flows[3]), float(flows[1]), float(flows[2])]
+	)
 
 
 ## Text for one plot in the build dialog's plot list.
