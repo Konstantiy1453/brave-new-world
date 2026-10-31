@@ -220,6 +220,8 @@ Hardware: Intel Core i9-14900HX, NVIDIA GeForce RTX 4070 Laptop GPU, Windows 11,
 | Images viewed | screenshot viewed | about 60: all 22 at 1920×1080 18 px; 1280×720 at 20 px and 16 px and 2560×1440 at 20 px for the hardest pages. Not every image |
 | Tutorial through stage 1, save, quit, relaunch, continue, reach stage 2 | exported EXE, scripted through real buttons and the real clock (`tests/exe_drive_v17.gd`, `evidence/v17/exe_drive`) | PASS, log has no errors, audit clean |
 | 1.6 save: found by settings page and menu, migrated, original file unchanged | exported EXE, scripted, in an isolated APPDATA | PASS |
+| The delivered ZIP unpacked to another folder, tutorial part of the same run | exported EXE, scripted | PASS |
+| PCK directory: 131 files, no tests, fixtures or capture suite | `tools/package_v17.py` reads the PCK's directory | PASS |
 | Performance | exported EXE (`tests/perf_probe_v17.gd`, `evidence/v17/perf`) | table below |
 | Manual tutorial run in the EXE | NOT_RUN | No person has done it. The scripted run above is not a substitute for reading the text |
 | Human first-time run and all human playtests | NOT_RUN | Checklist in `PLAYTEST.md` |
@@ -243,7 +245,7 @@ Problems these checks found and fixed: a settlement's action row pushed the side
 
 - `v17_speed` crashed once at 37 s under the runner (signal 11, main thread, top frame `EventsV2.pause_required`, where a dictionary is allocated each call, so probably earlier heap damage). No C++ symbols. 38 repeats, 32 of them under heavy load, did not reproduce it. Cause unknown. The test then ran days with no engine frames, unlike a real game; it now gives the engine a frame per simulated day.
 - `v16_scroll_probe` timed out once (540 s) while the machine was in use by someone else, and passed in 48 s alone. A window suite needs its window to keep drawing.
-- `tools/build_v17.ps1` found no export templates in `%APPDATA%\Godot`, so it unpacks the two it needs into `build\godot_home`. Nothing outside the repository was written.
+- `tools/build_v17.ps1` found no export templates in `%APPDATA%\Godot`, so it now unpacks the two it needs into `build\godot_home`. The first attempt, before that fallback existed, created `%APPDATA%\Godot` and `%APPDATA%\ColonyCharter17` on the real machine. Both were new and held only engine defaults and an empty lock file; both were removed. `%APPDATA%\ColonyCharter16` has no file newer than the baseline.
 
 ### Tests rewritten
 
