@@ -275,11 +275,23 @@ static func demolish(sim: RefCounted, region: int, index: int) -> String:
 	if str(b.kind) in ["port", "power", "water"] and _last_of(s, str(b.kind)):
 		return "这是本据点最后一座，不能拆除"
 	s.buildings.remove_at(index)
+	_reclaim_plot(sim, s, b)
 	sim._log("%s · 拆除了%s。" % [s.name, sim.config.buildings[b.kind].name])
 	sim._refresh(s)
 	sim._reconcile_jobs(s)
 	Research.rebalance(sim, false)
 	return ""
+
+
+## A dug-out deposit becomes ordinary building ground once its mine is gone.
+static func _reclaim_plot(sim: RefCounted, s: Dictionary, b: Dictionary) -> void:
+	var at: int = int(b.get("plot", -1))
+	var reg: Dictionary = sim.state.world.regions[int(s.region)]
+	if at < 0 or at >= reg.plots.size():
+		return
+	var ground: Dictionary = reg.plots[at]
+	if str(ground.kind) == "deposit" and float(ground.reserves) <= 0.0:
+		reg.plots[at] = {"kind": "general", "x": ground.x, "z": ground.z}
 
 
 static func _last_of(s: Dictionary, kind: String) -> bool:

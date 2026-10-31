@@ -61,7 +61,7 @@ func _bug1_event_build_checks_labour() -> void:
 	place.workers = int(place.workers) - spare + jobs - 1
 	place.population = int(place.children) + int(place.workers) + int(place.scientists)
 	var reason: String = Events._reason(sim, instance, build_option)
-	check(reason.contains("工人"), "build option refused when one worker short: " + reason)
+	check(reason.contains("工程队"), "build option refused when one crew short: " + reason)
 	check(
 		reason.contains(str(jobs)) and reason.contains(str(jobs - 1)),
 		"refusal states needed and free workers"
@@ -107,10 +107,10 @@ func _bug6_aid_goes_to_shortage() -> void:
 	sim.state.contract.licences.append("expedition")
 	sim.act("settle", {"region": 1})
 	sim.state.events_v2.next_draw = 99999
-	for _i: int in range(12):
-		sim.tick()
 	var capital: Dictionary = sim.settlement(0)
 	var outpost: Dictionary = sim.settlement(1)
+	while int(outpost.arrival) > 0:
+		sim.tick()
 	sim._produce(capital, "food", 400.0, "test surplus")
 	sim._produce(capital, "materials", 200.0, "test surplus")
 	sim._produce(capital, "parts", 60.0, "test surplus")

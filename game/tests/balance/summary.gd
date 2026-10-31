@@ -237,7 +237,15 @@ static func _failure_rows(rows: Array, runs: Array) -> void:
 	_row(
 		rows,
 		"Failure, passive",
-		"review ~60, failure ~150",
+		(
+			"review %d-%d, failure %d-%d"
+			% [
+				PASSIVE_REVIEW_DAY[0],
+				PASSIVE_REVIEW_DAY[1],
+				PASSIVE_FAILURE_DAY[0],
+				PASSIVE_FAILURE_DAY[1]
+			]
+		),
 		text,
 		_verdict(ok_review and ok_failure, not passive.is_empty())
 	)

@@ -1,6 +1,6 @@
 extends SceneTree
-## Phase 4 rules: the research curve, the technology tree, laboratories, paid contracts, building
-## upgrades, new buildings, road paving and megaprojects, and 1.6 research progress on load.
+## The research curve, the technology pool and its cards, laboratories, paid contracts, building
+## upgrades, new buildings, road paving and megaprojects, and old research progress on load.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -15,6 +15,12 @@ const SaveMigration = preload("res://simulation/save_migration.gd")
 
 const LAB_LEVEL_TWO_SEATS: int = 20
 const LAB_LEVEL_TWO_PROJECTS: int = 3
+const MIN_POOL: int = 100
+const MIN_NEW_BUILDINGS: int = 30
+const MIN_CATEGORY_POOL: int = 20
+const V171_BUILDINGS: Array[String] = [
+	"climate_regulator", "clinic", "component_plant", "farm", "foodworks", "habitat", "hydroponic_farm", "lab", "lift_port", "mine_copper", "mine_crystal", "mine_ore", "port", "power", "processor", "university", "water"
+]
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -43,6 +49,8 @@ func make(opening: String = "capital") -> RefCounted:
 func grant(sim: RefCounted, techs: Array) -> void:
 	for tech: String in techs:
 		sim.state.research.completed.append(tech)
+		for hand: Array in sim.state.research.offers.values():
+			hand.erase(tech)
 
 
 ## Money and goods go through the ledger, or the audit would rightly object.
@@ -62,7 +70,8 @@ func add_finished(sim: RefCounted, kind: String) -> int:
 
 func run() -> void:
 	_curve()
-	_tree()
+	_pool()
+	_cards()
 	_gates()
 	_lab_levels()
 	_contracts()
@@ -72,7 +81,7 @@ func run() -> void:
 	_megaprojects()
 	_openings()
 	_old_progress()
-	await _tree_page()
+	await _card_page()
 	print("V17_RESEARCH_RESULT checks=%d failures=%d" % [checks, failures.size()])
 	for failure: String in failures:
 		print("FAIL: " + failure)
@@ -90,39 +99,161 @@ func _curve() -> void:
 		last = now
 	check(rising, "output rises with every added scientist")
 	var reference: float = float(Rules.progression().research.reference_rate)
-	check(reference == 2.0, "reference output is 2.0 points a day")
+	check(reference > 0.0, "the reference output comes from the rules")
 	check(Research.rate(10, reference) == reference, "ten scientists give the reference output")
 
 
-func _tree() -> void:
-	var techs: Dictionary = Rules.economy().techs
-	check(techs.size() == 20, "twenty technologies")
-	var branches: Dictionary = {}
+func _pool() -> void:
+	var rules: Dictionary = Rules.read("techs")
+	var techs: Dictionary = rules.techs
+	check(techs.size() >= MIN_POOL, "the pool holds at least a hundred technologies")
+	check(rules.categories.size() in [3, 4], "three or four research categories")
+	var per_category: Dictionary = {}
+	var sound: bool = true
 	for key: String in techs:
 		var t: Dictionary = techs[key]
-		branches[t.branch] = true
-		var low: float = {1: 40.0, 2: 100.0, 3: 200.0}[int(t.tier)]
-		var high: float = {1: 60.0, 2: 140.0, 3: 260.0}[int(t.tier)]
-		check(float(t.cost) >= low and float(t.cost) <= high, key + " cost fits its tier")
+		per_category[t.category] = int(per_category.get(t.category, 0)) + 1
+		sound = sound and rules.categories.has(t.category)
+		sound = sound and float(t.cost) > 0.0 and float(t.weight) > 0.0
 		for req: String in t.requires:
-			check(techs.has(req), key + " requires a technology that exists")
-			check(int(techs[req].tier) <= int(t.tier), key + " does not require a later tier")
-	check(branches.size() == 5, "the branches of the draft tree")
+			sound = sound and techs.has(req) and int(techs[req].tier) <= int(t.tier)
+	check(sound, "every technology has a category, a cost and earlier prerequisites")
+	for category: String in rules.categories:
+		check(
+			int(per_category.get(category, 0)) >= MIN_CATEGORY_POOL,
+			category + " has plenty of technologies"
+		)
+	# Every card can come up one day: walk the prerequisites from nothing.
+	var known: Dictionary = {}
+	var grew: bool = true
+	while grew:
+		grew = false
+		for key: String in techs:
+			if known.has(key):
+				continue
+			var open: bool = true
+			for req: String in techs[key].requires:
+				open = open and known.has(req)
+			if open:
+				known[key] = true
+				grew = true
+	check(known.size() == techs.size(), "no technology is out of reach")
+	var economy: Dictionary = Rules.economy()
+	var fresh: int = 0
+	var gated: bool = true
+	for kind: String in economy.buildings:
+		if not V171_BUILDINGS.has(kind):
+			fresh += 1
+		var needed: String = str(economy.buildings[kind].get("requires_tech", ""))
+		gated = gated and (needed == "" or techs.has(needed))
+	check(fresh >= MIN_NEW_BUILDINGS, "at least thirty new buildings: %d" % fresh)
+	check(gated, "every building's technology exists")
 	var sim: RefCounted = make()
-	var rows: Array = sim.research_tree()
-	check(rows.size() == 20, "the tree view lists every technology")
 	var row: Dictionary = {}
-	for candidate: Dictionary in rows:
+	for candidate: Dictionary in sim.research_tree():
 		if candidate.id == "survey":
 			row = candidate
 	check(row.previews.size() == 3, "staffing previews are offered")
 	check(
 		int(row.previews[0].days) > int(row.previews[1].days),
-		"more scientists finish sooner in the preview"
+		"more research teams finish sooner in the preview"
 	)
 	check(
-		int(row.previews[1].days) == ceili(float(row.cost) / 2.0),
-		"the ten-person preview uses the real rate and cost"
+		(
+			int(row.previews[1].days)
+			== ceili(float(row.cost) / float(sim.progression.research.reference_rate))
+		),
+		"the ten-team preview uses the real rate and cost"
+	)
+
+
+func _hands(sim: RefCounted) -> String:
+	return JSON.stringify(sim.state.research.offers)
+
+
+func _cards() -> void:
+	var rules: Dictionary = Rules.read("techs")
+	var sim: RefCounted = make()
+	var r: Dictionary = sim.state.research
+	var good: bool = true
+	for category: String in rules.categories:
+		var hand: Array = r.offers[category]
+		good = good and hand.size() == int(rules.offers)
+		for key: String in hand:
+			good = good and str(rules.techs[key].category) == category
+			good = good and rules.techs[key].requires.is_empty()
+		for key: String in rules.first_offers.get(category, []):
+			good = good and hand.has(key)
+	check(good, "each category deals its starter card and only what is open")
+	var other: RefCounted = Sim.new()
+	other.new_game(42, "capital")
+	check(_hands(other) != _hands(sim), "another seed deals other cards")
+	var twin: RefCounted = make()
+	check(_hands(twin) == _hands(sim), "the same seed deals the same cards")
+
+	var lab: int = add_finished(sim, "lab")
+	sim.settlement(0).buildings[lab].active = true
+	var town: Dictionary = sim.settlement(0)
+	town.workers = int(town.workers) + int(town.scientists) - 12
+	town.scientists = 12
+	var locked: String = ""
+	for key: String in rules.techs:
+		if str(rules.techs[key].category) == "industry" and not r.offers.industry.has(key):
+			if rules.techs[key].requires.is_empty():
+				locked = key
+	if locked != "":
+		check(sim.act("research_allocate", {"tech": locked, "staff": 4}) != "", "a card not dealt waits")
+	var first: String = str(r.offers.industry[0])
+	var second: String = str(r.offers.industry[1])
+	check(sim.act("research_allocate", {"tech": first, "staff": 4}) == "", "a dealt card can be staffed")
+	r.projects[first].work = 7.0
+	check(sim.act("research_allocate", {"tech": second, "staff": 4}) == "", "and another taken up")
+	check(int(r.projects[first].staff) == 0, "one project per category: the first stands down")
+	check(float(r.projects[first].work) == 7.0, "and keeps its work")
+	check(r.offers.industry.has(first), "started work stays on the table")
+
+	fund(sim, 20000.0)
+	var before: Array = r.offers.agriculture.duplicate()
+	var cash: float = float(sim.state.cash)
+	var cost: float = sim.Research.reshuffle_cost(sim)
+	check(sim.act("research_reshuffle", {"category": "agriculture"}) == "", "cards can be redrawn")
+	check(float(sim.state.cash) == cash - cost, "for a price")
+	check(r.offers.agriculture != before, "the hand changes")
+	check(sim.act("research_reshuffle", {"category": "nothing"}) != "", "only real categories")
+
+	var count_before: int = sim.Research.bonus(sim, "mine_output") as int
+	r.projects[second].work = float(rules.techs[second].cost) - 0.01
+	var before_done: int = r.completed.size()
+	sim.tick()
+	check(r.completed.size() == before_done + 1, "the project finishes")
+	check(not r.offers.industry.has(second), "a finished card leaves the hand")
+	check(r.offers.industry.size() >= int(rules.offers), "and the category deals again")
+	check(count_before == 0, "no effect before a technology is done")
+	var effects: Dictionary = rules.techs[second].get("effects", {})
+	for effect: String in effects:
+		check(
+			is_equal_approx(sim.Research.bonus(sim, effect), float(effects[effect])),
+			"finished technologies add their effects: " + effect
+		)
+	check(sim.audit().is_empty(), "the research ledger stays clean")
+
+	var lead: String = ""
+	for key: String in rules.techs:
+		var t: Dictionary = rules.techs[key]
+		if t.requires.is_empty() and not r.offers[t.category].has(key) and not r.completed.has(key):
+			lead = key
+			break
+	if lead != "":
+		check(sim.Research.add_lead(sim, lead), "an event can put a lead on the table")
+		check(r.offers[rules.techs[lead].category].has(lead), "and the lead is dealt")
+	var path: String = "user://cards.save"
+	check(sim.save_game(path) == "", "cards are saved")
+	var loaded: RefCounted = Sim.new()
+	check(loaded.load_game(path) == "", "and loaded")
+	check(_hands(loaded) == _hands(sim), "with the same hands")
+	check(
+		int(loaded.state.research.rng_state) == int(r.rng_state),
+		"and the same draw still to come"
 	)
 
 
@@ -210,6 +341,7 @@ func _upgrades() -> void:
 	var sim: RefCounted = make()
 	var index: int = add_finished(sim, "mine_ore")
 	var s: Dictionary = sim.settlement(0)
+	s.buildings[index].plot = sim.Sites.find_plot(sim, 0, "mine_ore")
 	var base_jobs: int = Production.jobs_for(sim, s.buildings[index])
 	grant(sim, ["deep_mining"])
 	fund(sim, 9000.0)
@@ -258,7 +390,7 @@ func _new_buildings() -> void:
 	check(
 		is_equal_approx(
 			Population.attractiveness(sim, s).value,
-			minf(2.0, appeal_before + float(sim.pop_rules.attractiveness.service_clinic))
+			minf(2.0, appeal_before + float(sim.config.buildings.clinic.service.appeal))
 		),
 		"a clinic adds to attractiveness"
 	)
@@ -302,13 +434,21 @@ func _road_paving() -> void:
 		sim.tick()
 	var a: Dictionary = sim.settlement(0)
 	supply(sim, a, "materials", 200.0)
-	check(sim.act("connect", {"a": 0, "b": 1, "mountain": true}) == "", "the road is built")
+	check(sim.act("connect", {"a": 0, "b": 1, "mountain": true}) == "", "the road is ordered")
 	var route: Dictionary = sim.state.roads[0]
+	grant(sim, ["paved_roads"])
+	check(sim.act("upgrade_road") != "", "a road still being built cannot be paved")
+	sim.state.research.completed.erase("paved_roads")
+	check(int(route.build_days) >= int(sim.config.roads.engineered.build_days), "roads take time")
+	route.ready_day = int(sim.state.day) - 1
+	route.blocked_until = int(sim.state.day) - 1
 	var capacity: int = int(route.capacity)
 	var days: int = int(route.days)
 	check(sim.act("upgrade_road") != "", "paving waits for the technology")
 	grant(sim, ["paved_roads"])
 	check(sim.act("upgrade_road") == "", "paving is accepted")
+	for _day: int in range(int(sim.config.road_upgrade.build_days) + 1):
+		sim.tick()
 	check(int(route.capacity) == int(round(capacity * 1.5)), "paving adds 50% capacity")
 	check(int(route.days) == maxi(1, days - 1), "paving takes a day off the trip")
 	check(sim.act("upgrade_road") != "", "a paved road cannot be paved again")
@@ -351,14 +491,15 @@ func _megaprojects() -> void:
 		Production.farm_climate(sim, 0) != yield_before or temperature > 40.0,
 		"the regulator changes farm yields"
 	)
-	check(Megaprojects.count(sim) == 3, "all three are counted")
+	add_finished(sim, "capital_hall")
+	check(Megaprojects.count(sim) == 4, "all four are counted")
 	sim.state.status = "success"
-	sim.state.contract.stage = 4
+	sim.state.contract.stage = Contract.STAGE_COUNT + 1
 	var balance: float = float(sim.state.career.balance)
 	Contract._check_milestones(sim)
 	check(
-		"three_megaprojects" in sim.state.contract.milestones,
-		"three megaprojects meet their milestone"
+		"four_megaprojects" in sim.state.contract.milestones,
+		"four megaprojects meet their milestone"
 	)
 	check(float(sim.state.career.balance) > balance, "the milestone pays out")
 	check(sim.save_game("user://milestone.save") == "", "a save after a milestone is written")
@@ -418,16 +559,20 @@ func _old_progress() -> void:
 			}
 		}
 	}
+	state.research.projects.survey.work = 5000.0
 	SaveMigration._settle_research(state)
 	check(state.research.completed.has("survey"), "old work past the new cost finishes the project")
 	check(
-		float(state.research.projects.survey.work) == 45.0, "finished work is clamped to the cost"
+		is_equal_approx(
+			float(state.research.projects.survey.work), float(Rules.read("techs").techs.survey.cost)
+		),
+		"finished work is clamped to the cost"
 	)
 	check(int(state.research.projects.survey.staff) == 0, "its scientists are released")
 	check(not state.research.completed.has("processing"), "work below the cost stays in progress")
 
 
-func _tree_page() -> void:
+func _card_page() -> void:
 	var scene: Node = load("res://main.tscn").instantiate()
 	root.add_child(scene)
 	await process_frame
@@ -436,18 +581,29 @@ func _tree_page() -> void:
 	scene.sim.act("settle", {"region": 0})
 	scene.open_page("research")
 	await process_frame
-	var nodes: Array[Node] = scene.ui.find_children("Tech_*", "Button", true, false)
-	check(nodes.size() == 20, "the research page shows every technology as a node")
-	var picked: Button = scene.ui.find_child("Tech_deep_mining", true, false)
-	check(picked != null, "a tier 2 technology has a node")
-	picked.pressed.emit()
+	check(scene.ui.find_children("Tech_*", "Button", true, false).is_empty(), "no tree is shown")
+	var cards: Array[Node] = scene.ui.find_children("Card_*", "Button", true, false)
+	var dealt: int = 0
+	for hand: Array in scene.sim.state.research.offers.values():
+		dealt += hand.size()
+	check(cards.size() == dealt, "the research page shows every dealt card")
+	for category: String in Rules.read("techs").categories:
+		check(scene.ui.find_child("Staff_" + category, true, false) != null, category + " has a team")
+		check(
+			scene.ui.find_child("Reshuffle_" + category, true, false) != null,
+			category + " can redraw"
+		)
+	var survey: Button = scene.ui.find_child("Card_survey", true, false)
+	check(survey != null, "the starter card is there")
+	var team: SpinBox = scene.ui.find_child("Staff_industry", true, false)
+	team.value = 4
+	survey.pressed.emit()
 	await process_frame
-	check(scene.selected_tech == "deep_mining", "pressing a node selects the technology")
-	var found: bool = false
-	for label: Label in scene.ui.find_children("*", "Label", true, false):
-		if label.is_visible_in_tree() and label.text.begins_with("人员预估："):
-			found = "10 人 → " in label.text
-	check(found, "the selected technology shows staffing previews")
+	check(
+		int(scene.sim.state.research.projects.survey.staff) == 4,
+		"pressing a card sends the chosen team"
+	)
+	check(scene.ui.find_child("Card_survey", true, false) == null, "and it no longer asks to be picked")
 	scene.close_modal()
 	root.remove_child(scene)
 	scene.free()

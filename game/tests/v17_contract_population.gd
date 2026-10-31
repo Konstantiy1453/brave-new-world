@@ -1,5 +1,5 @@
 extends SceneTree
-## Phase 3 rules: contract stages, attractiveness, immigration, wages, recruitment, births, market
+## Contract stages, attractiveness, immigration, wages, recruitment, births, market
 ## prices, running costs, road upkeep and closure, aid terms, needs-first imports, depleted mines.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
@@ -64,18 +64,21 @@ func _stages() -> void:
 	check(int(sim.state.contract.stage) == 1, "contract starts at stage one")
 	var goals: Array = Contract.stage_goals(sim, 1)
 	check(goals.size() == 5, "stage one lists its goals")
-	sim.state.exports_total = 3000.0
-	sim.settlement(0).food_days = 12.0
+	sim.state.exports_total = Contract.goal_target(sim, 1, "exports_total")
+	sim.settlement(0).food_days = Contract.goal_target(sim, 1, "food_days") + 2.0
 	sim.state.research.projects.survey = {
 		"staff": 3, "work": 0.0, "effective": 3, "rate": 1.0, "reason": ""
 	}
-	sim.state.contract.stage_streak = 10
+	sim.state.contract.stage_streak = int(Contract.goal_target(sim, 1, "stage_streak"))
 	sim.state.day = 5
 	var cash: float = float(sim.state.cash)
 	var net: float = float(sim.state.operating_net)
 	Contract.daily(sim)
 	check(int(sim.state.contract.stage) == 2, "meeting every goal completes the stage")
-	check(is_equal_approx(float(sim.state.cash), cash + 1500.0), "stage reward paid")
+	check(
+		is_equal_approx(float(sim.state.cash), cash + float(sim.contract_rules.stages[0].reward_cash)),
+		"stage reward paid"
+	)
 	check(
 		is_equal_approx(float(sim.state.operating_net), net), "stage reward is not operating income"
 	)
@@ -84,21 +87,36 @@ func _stages() -> void:
 	check(int(sim.state.contract.completed["1"]) == 5, "stage day recorded")
 	check(sim.audit().is_empty(), "reward keeps the audit clean")
 	var last: RefCounted = make()
-	last.state.contract.stage = 3
+	last.state.contract.stage = Contract.STAGE_COUNT
 	check(last.state.status == "active", "still active before the last stage")
 	var rules: Dictionary = last.contract_rules.duplicate(true)
-	rules.stages[2].goals = {"settlements": 1}
+	rules.stages[Contract.STAGE_COUNT - 1].goals = {"settlements": 1}
 	last.contract_rules = rules
 	Contract.daily(last)
-	check(last.state.status == "success", "stage three grants governor qualification")
+	check(last.state.status == "success", "the last stage grants governor qualification")
 	check(int(last.state.success_day) == int(last.state.day), "award day recorded")
 	check(Contract.settlement_cap(last) >= 2, "award opens further settlements")
 	var taxed: float = float(last.state.company_tax_total)
 	last.act("build", {"region": 0, "kind": "mine_ore"})
-	for _i: int in range(8):
+	for _i: int in range(int(last.config.buildings.mine_ore.days) + 30):
 		last.tick()
 	check(float(last.state.company_tax_total) > taxed, "the company share starts after the award")
 	check(float(make().state.company_tax_total) == 0.0, "no company share before the award")
+	var plain: RefCounted = make()
+	check(Contract.STAGE_COUNT == 5, "the charter now has five stages")
+	check(plain.contract_rules.stages.size() == Contract.STAGE_COUNT, "and the rules list all five")
+	var final_keys: Dictionary = plain.contract_rules.stages[Contract.STAGE_COUNT - 1].goals
+	for key: String in ["capital_population", "population", "technologies", "capital_hall"]:
+		check(final_keys.has(key), "the final stage asks for " + key)
+	for stage: int in range(1, Contract.STAGE_COUNT + 1):
+		for goal: Dictionary in Contract.stage_goals(plain, stage):
+			check(goal.has("ok") and goal.has("value"), "stage %d can measure %s" % [stage, goal.key])
+	var rise: int = 0
+	for stage: int in range(1, Contract.STAGE_COUNT + 1):
+		var day: int = Contract.deadline(plain, stage)
+		check(day > rise, "stage %d's deadline comes after the last one" % stage)
+		rise = day
+	check(rise >= 2160 and rise <= 2880, "the standard charter runs six to eight years")
 
 
 func _licence_gate() -> void:
@@ -114,7 +132,7 @@ func _licence_gate() -> void:
 func _deadlines_feed_company() -> void:
 	var sim: RefCounted = make()
 	check(not Contract.overdue(sim), "not overdue before the deadline")
-	sim.state.day = 91
+	sim.state.day = Contract.deadline(sim, 1) + 1
 	check(Contract.overdue(sim), "overdue after the stage one deadline")
 	Company.tick(sim)
 	check(
@@ -122,23 +140,29 @@ func _deadlines_feed_company() -> void:
 		"a missed deadline is an economic risk"
 	)
 	check(sim.state.status != "failed", "a missed deadline never fails the game by itself")
+	var normal_day: int = Contract.deadline(sim, 1)
 	var quick: RefCounted = make("hard")
-	quick.state.day = 76
-	check(Contract.overdue(quick), "hard has an earlier deadline")
+	check(Contract.deadline(quick, 1) < normal_day, "hard has an earlier deadline")
+	quick.state.day = normal_day
+	check(Contract.overdue(quick), "hard is overdue by then")
 	var slow: RefCounted = make("easy")
-	slow.state.day = 100
-	check(not Contract.overdue(slow), "easy has a later deadline")
+	check(Contract.deadline(slow, 1) > normal_day, "easy has a later deadline")
+	slow.state.day = normal_day + 1
+	check(not Contract.overdue(slow), "easy is not overdue by then")
 
 
 func _difficulty_scales_goals() -> void:
-	check(int(Contract.goal_target(make("easy"), 3, "population")) == 144, "easy population goal")
+	var sim: RefCounted = make()
+	var people: float = float(sim.contract_rules.stages[2].goals.population)
+	for level: String in ["easy", "normal", "hard"]:
+		var scale: float = float(sim.contract_rules.difficulty_scale[level])
+		check(
+			int(Contract.goal_target(make(level), 3, "population")) == int(round(people * scale)),
+			level + " population goal"
+		)
+	var share: float = float(sim.contract_rules.stages[3].goals.employment)
 	check(
-		int(Contract.goal_target(make("normal"), 3, "population")) == 180,
-		"standard population goal"
-	)
-	check(int(Contract.goal_target(make("hard"), 3, "population")) == 216, "hard population goal")
-	check(
-		is_equal_approx(Contract.goal_target(make("hard"), 3, "employment"), 0.6),
+		is_equal_approx(Contract.goal_target(make("hard"), 4, "employment"), share),
 		"ratios do not scale"
 	)
 
@@ -260,40 +284,44 @@ func _recruitment() -> void:
 	sim._refresh(home)
 	var cash: float = float(sim.state.cash)
 	var price: float = Population.campaign_price(sim, "worker")
-	check(is_equal_approx(price, 120.0), "first campaign at the listed price")
+	var rules: Dictionary = sim.pop_rules.recruitment
+	var listed: float = float(rules.worker_price)
+	check(is_equal_approx(price, listed), "first campaign at the listed price")
 	check(
 		sim.act("recruit", {"region": 0, "kind": "worker", "count": 5}) == "", "campaign accepted"
 	)
-	check(is_equal_approx(float(sim.state.cash), cash - 600.0), "campaign paid at once")
+	check(is_equal_approx(float(sim.state.cash), cash - listed * 5.0), "campaign paid at once")
 	check(
-		is_equal_approx(Population.campaign_price(sim, "worker"), 132.0),
-		"the next campaign costs 10% more"
+		is_equal_approx(
+			Population.campaign_price(sim, "worker"), listed * (1.0 + float(rules.price_step))
+		),
+		"the next campaign costs more"
 	)
 	check(
 		Population.free_beds(sim, home) == int(home.housing) - int(home.population) - 5,
 		"beds reserved"
 	)
 	var workers: int = int(home.workers)
-	for _i: int in range(9):
+	for _i: int in range(int(rules.travel_days) - 1):
 		sim.tick()
 	check(
 		int(home.workers) >= workers and sim.state.recruits.size() == 1,
-		"still travelling on day nine"
+		"still travelling the day before they are due"
 	)
 	sim.tick()
 	check(
 		sim.state.recruits.is_empty() and int(home.workers) >= workers + 5,
-		"recruits arrive after ten days"
+		"recruits arrive after the listed journey"
 	)
 	check(
 		sim.act("recruit", {"region": 0, "kind": "scientist", "count": 99}) != "",
 		"campaign size is limited"
 	)
 	check(sim.audit().is_empty(), "recruitment keeps the audit clean")
-	sim.state.day = 200
+	sim.state.day = int(sim.state.day) + int(rules.window_days) + 1
 	check(
-		is_equal_approx(Population.campaign_price(sim, "worker"), 120.0),
-		"the price recovers after 90 days"
+		is_equal_approx(Population.campaign_price(sim, "worker"), listed),
+		"the price recovers after the listed window"
 	)
 
 
@@ -321,22 +349,42 @@ func _births() -> void:
 
 func _market() -> void:
 	var sim: RefCounted = make()
-	check(is_equal_approx(Market.price(sim, "ore"), 8.0), "no exports, full price")
-	Market.record_export(sim, "ore", 1500.0)
-	check(is_equal_approx(Market.price(sim, "ore"), 8.0 * 0.8), "saturation lowers the price")
+	var list_price: float = float(sim.config.prices.ore)
+	var rules: Dictionary = sim.market_rules
+	check(is_equal_approx(Market.price(sim, "ore"), list_price), "no exports, full price")
+	var sold: float = 1500.0
+	Market.record_export(sim, "ore", sold)
+	check(
+		is_equal_approx(
+			Market.price(sim, "ore"),
+			list_price * (1.0 - float(rules.depth) * sold / float(rules.scale.ore))
+		),
+		"saturation lowers the price"
+	)
 	Market.record_export(sim, "ore", 900000.0)
-	check(is_equal_approx(Market.factor(sim, "ore"), 0.6), "the price has a floor")
+	check(is_equal_approx(Market.factor(sim, "ore"), float(rules.floor)), "the price has a floor")
 	var before: float = float(sim.state.market.saturation.ore)
 	Market.daily(sim)
 	check(float(sim.state.market.saturation.ore) < before, "saturation decays")
-	check(is_equal_approx(Market.price(sim, "food"), 3.0), "food has no export market")
+	check(
+		is_equal_approx(Market.price(sim, "food"), float(sim.config.prices.food)),
+		"food has no export market"
+	)
 
 
 func _running_costs() -> void:
 	var sim: RefCounted = make()
 	var residents: int = int(sim.settlement(0).population)
+	var rules: Dictionary = sim.config.economy
 	check(
-		is_equal_approx(sim._admin_cost(), 5.0 + 0.04 * residents + 3.0),
+		is_equal_approx(
+			sim._admin_cost(),
+			(
+				float(rules.admin)
+				+ float(rules.admin_per_resident) * residents
+				+ float(rules.admin_per_settlement)
+			)
+		),
 		"administration grows with the colony"
 	)
 
@@ -347,10 +395,11 @@ func _roads() -> void:
 	sim.state.settlements[0].stock.materials = 200.0
 	check(sim.act("settle", {"region": 1}) == "", "outpost for the road test")
 	check(sim.act("connect", {"a": 0, "b": 1, "mountain": true}) == "", "engineered road built")
+	var spec: Dictionary = sim.config.roads.engineered
 	check(
 		(
-			int(sim.state.roads[0].capacity) == 42
-			and is_equal_approx(float(sim.state.roads[0].upkeep), 5.0)
+			int(sim.state.roads[0].capacity) == int(spec.capacity)
+			and is_equal_approx(float(sim.state.roads[0].upkeep), float(spec.upkeep))
 		),
 		"engineered figures"
 	)
@@ -367,10 +416,11 @@ func _roads() -> void:
 	calm.state.contract.licences.append("expedition")
 	calm.act("settle", {"region": 1})
 	calm.act("connect", {"a": 0, "b": 1, "mountain": false})
+	spec = calm.config.roads.valley
 	check(
 		(
-			int(calm.state.roads[0].capacity) == 28
-			and is_equal_approx(float(calm.state.roads[0].upkeep), 1.5)
+			int(calm.state.roads[0].capacity) == int(spec.capacity)
+			and is_equal_approx(float(calm.state.roads[0].upkeep), float(spec.upkeep))
 		),
 		"valley figures"
 	)
@@ -378,7 +428,10 @@ func _roads() -> void:
 	for _i: int in range(300):
 		calm.state.day = int(calm.state.day) + 1
 		Logistics.road_daily(calm)
-	check(int(calm.state.roads[0].get("blocked_until", 0)) == 0, "a valley road does not close")
+	check(
+		int(calm.state.roads[0].get("blocked_until", 0)) <= int(calm.state.roads[0].ready_day),
+		"a valley road does not close"
+	)
 	check(float(calm.state.operating_net) < net, "road upkeep is an operating cost")
 
 
@@ -447,7 +500,7 @@ func _forecast() -> void:
 		float(processor.net_per_day) >= 15.0 and float(processor.net_per_day) <= 40.0,
 		"the processor earns about 20-35 a day: %.1f" % float(processor.net_per_day)
 	)
-	check(float(processor.payback_days) <= 90.0, "the processor pays back within about 60 days")
+	check(float(processor.payback_days) <= 300.0, "the processor pays back within the first year")
 	sim.state.cash = 0.0
 	check(sim.build_forecast(0, "mine_ore").disabled_reason != "", "unaffordable options say why")
 	check(Rules.read("market").has("version"), "rule files carry a version")

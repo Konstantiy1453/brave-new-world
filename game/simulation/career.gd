@@ -118,7 +118,8 @@ static func preview(sim) -> Dictionary:
 				+ float(b.get("specialists", 0)) * float(sim.config.economy.scientist_wage)
 			)
 			var eff: float = clampf(float(b.get("efficiency", 0.0)), 0.0, 1.0)
-			if str(b.kind).begins_with("mine_"):
+			var role: String = str(d.get("role", ""))
+			if role == "mine":
 				var rate: float = (
 					float(d.rate)
 					* float(r.grade.get(d.output, 1.0))
@@ -136,20 +137,25 @@ static func preview(sim) -> Dictionary:
 						"rate": 0.0
 					}
 				streams[id].rate += rate
-			if b.kind in ["processor", "component_plant"]:
+			if role == "harvest":
+				for k in d.outputs:
+					sustainable_capacity += float(d.outputs[k]) * float(sim.config.prices[k]) * eff
+			if role == "factory":
 				var margin: float = 0.0
 				for k in d.outputs:
 					margin += float(d.outputs[k]) * float(sim.config.prices[k])
 				for k in d.inputs:
 					margin -= float(d.inputs[k]) * float(sim.config.prices[k]) * 1.04
 				sustainable_capacity += maxf(0.0, margin) * eff
-			if b.kind == "foodworks":
+			if role == "foodworks":
 				sustainable_capacity += float(d.daily_payment) * eff
-			if b.kind == "farm":
+			if role == "income":
+				sustainable_capacity += float(d.daily_income) * eff
+			if role == "farm":
 				sustainable_capacity += (
 					float(d.rate) * float(r.fertility) * eff * float(sim.config.prices.food) * 0.25
 				)
-			if b.kind == "hydroponic_farm":
+			if role == "indoor_farm":
 				sustainable_capacity += float(d.rate) * eff * float(sim.config.prices.food) * 0.25
 	# Paid research keeps running under a steward as long as the team does.
 	var earned: Dictionary = Stats.window(sim.state, count).income

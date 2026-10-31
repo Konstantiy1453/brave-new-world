@@ -43,12 +43,12 @@
   },
   "research": {
     "reference_staff": 10,
-    "reference_rate": 2.0,
+    "reference_rate": 2.4,
     "half_staff_ratio": 0.6,
     "seats_per_lab": 10,
     "projects_per_lab": 2,
     "minimum_staff": 3,
-    "contract_point_price": 40.0,
+    "contract_point_price": 50.0,
     "contract_tech": "research_network",
     "science_opening_rate": 1.2,
     "science_opening_funding": 0.5

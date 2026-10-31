@@ -254,8 +254,8 @@ func _geography() -> Dictionary:
 	return parsed if parsed is Dictionary else {}
 
 
-## A/B of the wage policy: the same colonies at 1.0x and 1.3x wages, with recruiting switched off
-## so that only attractiveness moves arrivals.
+## A/B of the wage policy on colonies past their first lean year: the same colony from day 360 at
+## 1.0x and 1.3x wages, with recruiting switched off so that only attractiveness moves arrivals.
 func _labour_lever() -> Dictionary:
 	var arrivals: Dictionary = {"1.0": [], "1.3": []}
 	for seed_value: int in SEEDS.slice(0, LEVER_SEEDS):
@@ -263,15 +263,19 @@ func _labour_lever() -> Dictionary:
 			var sim: RefCounted = Sim.new()
 			sim.new_game(seed_value, "capital", SIZE_MEDIUM, "normal")
 			var bot: RefCounted = BOTS.balanced.new()
-			bot.recruit_batch = 0
-			bot.fixed_wage = float(wage)
+			bot.fixed_wage = 1.0
 			bot.begin(sim, seed_value)
-			for _day: int in range(LEVER_DAYS):
+			var before: int = 0
+			for day: int in range(LEVER_DAYS * 2):
+				if day == LEVER_DAYS:
+					before = int(sim.state.immigrants_total)
+					bot.recruit_batch = 0
+					bot.fixed_wage = float(wage)
 				bot.on_day()
 				sim.tick()
 				if sim.state.status == "failed":
 					break
-			arrivals[wage].append(int(sim.state.immigrants_total))
+			arrivals[wage].append(int(sim.state.immigrants_total) - before)
 	return {
 		"days": LEVER_DAYS,
 		"base": Summary.median(arrivals["1.0"]),

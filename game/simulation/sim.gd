@@ -27,6 +27,7 @@ const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
 const LOG_LIMIT: int = 120
 const HISTORY_LIMIT: int = 90
+const ROUNDING_SHARE: float = 0.000000001
 
 var state: Dictionary = {}
 var geo: Dictionary = {}
@@ -155,9 +156,10 @@ func act(action: String, args: Dictionary = {}) -> String:
 		return "请先开始新游戏"
 	if state.status == "failed":
 		return "本局已经结束，请读取存档或开始新局"
+	var refusal: String = "未知操作"
 	match action:
 		"settle":
-			return Sites.settle(
+			refusal = Sites.settle(
 				self,
 				_site_arg(args),
 				int(args.get("from", -1)),
@@ -165,13 +167,13 @@ func act(action: String, args: Dictionary = {}) -> String:
 				str(args.get("kind", Keys.SITE_RESIDENTIAL))
 			)
 		"rename":
-			return Sites.rename(self, _site_arg(args), str(args.get("name", "")))
+			refusal = Sites.rename(self, _site_arg(args), str(args.get("name", "")))
 		"build":
-			return Production.build(
+			refusal = Production.build(
 				self, _site_arg(args), str(args.get("kind", "")), int(args.get("plot", -1))
 			)
 		"connect":
-			return Logistics.connect_road(
+			refusal = Logistics.connect_road(
 				self,
 				int(args.get("a", -1)),
 				int(args.get("b", -1)),
@@ -179,49 +181,49 @@ func act(action: String, args: Dictionary = {}) -> String:
 				str(args.get("variant", ""))
 			)
 		"survey":
-			return Sites.survey(self, _site_arg(args))
+			refusal = Sites.survey(self, _site_arg(args))
 		"tutorial_begin":
-			return Tutorial.begin(self)
+			refusal = Tutorial.begin(self)
 		"tutorial_shortage":
-			return Tutorial.start_shortage(self, _site_arg(args))
+			refusal = Tutorial.start_shortage(self, _site_arg(args))
 		"recruit":
-			return Population.recruit(
+			refusal = Population.recruit(
 				self,
 				int(args.get("region", -1)),
 				str(args.get("kind", "worker")),
 				int(args.get("count", 0))
 			)
 		"enterprise":
-			return Enterprise.found(self, int(args.get("region", -1)))
+			refusal = Enterprise.found(self, int(args.get("region", -1)))
 		"enterprise_recover":
-			return Enterprise.recover(self, int(args.get("region", -1)))
+			refusal = Enterprise.recover(self, int(args.get("region", -1)))
 		"research_allocate":
-			return Research.allocate(self, str(args.get("tech", "")), int(args.get("staff", 0)))
+			refusal = Research.allocate(self, str(args.get("tech", "")), int(args.get("staff", 0)))
 		"research_reshuffle":
-			return Research.reshuffle(self, str(args.get("category", "")))
+			refusal = Research.reshuffle(self, str(args.get("category", "")))
 		"demolish":
-			return Production.demolish(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.demolish(self, int(args.get("region", -1)), int(args.get("index", -1)))
 		"company":
-			return Company.act(self, args)
+			refusal = Company.act(self, args)
 		"batch_toggle":
-			return Production.batch_toggle(self, args)
+			refusal = Production.batch_toggle(self, args)
 		"stock_target":
-			return Production.set_stock_target(self, args)
+			refusal = Production.set_stock_target(self, args)
 		"policy":
-			return _set_policy(args)
+			refusal = _set_policy(args)
 		"event_v2":
-			return EventsV2.act(self, args)
+			refusal = EventsV2.act(self, args)
 		"event":
-			return _resolve_event(str(args.get("choice", "")))
+			refusal = _resolve_event(str(args.get("choice", "")))
 		"toggle":
-			return Production.toggle(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.toggle(self, int(args.get("region", -1)), int(args.get("index", -1)))
 		"upgrade":
-			return Production.upgrade(self, int(args.get("region", -1)), int(args.get("index", -1)))
+			refusal = Production.upgrade(self, int(args.get("region", -1)), int(args.get("index", -1)))
 		"upgrade_road":
-			return Logistics.upgrade_road(self, int(args.get("road", 0)))
+			refusal = Logistics.upgrade_road(self, int(args.get("road", 0)))
 		"research_contract":
-			return Research.set_contract(self, int(args.get("staff", 0)))
-	return "未知操作"
+			refusal = Research.set_contract(self, int(args.get("staff", 0)))
+	return refusal
 
 
 ## `site` is the location argument; `region` stays accepted for older action logs and tests.
@@ -391,7 +393,7 @@ func _resolve_legacy_event(id: String, choice: String) -> String:
 				s.scientists += 4
 				s.population += 8
 				state.immigrants_total += 8
-				_log("4 名研究员与 4 名工人入住首府。")
+				_log("4 支研究团队与 4 支工程队入住首府。")
 	return ""
 
 
@@ -530,6 +532,8 @@ func summary() -> Dictionary:
 func audit() -> Array:
 	var errors: Array = []
 	var total: float = float(state.cash) + float(state.resident_cash) + float(state.enterprise_cash)
+	# Years of daily sums build up rounding in proportion to what has flowed through.
+	var money_slack: float = maxf(0.00001, float(state.external_in) * ROUNDING_SHARE)
 	if (
 		absf(
 			(
@@ -541,7 +545,7 @@ func audit() -> Array:
 				)
 			)
 		)
-		> 0.00001
+		> money_slack
 	):
 		errors.append("cash conservation")
 	var holdings: Dictionary = _stock()
@@ -581,6 +585,7 @@ func audit() -> Array:
 		if float(state.market.saturation[good]) < 0.0:
 			errors.append("negative market saturation")
 	for key: String in KEYS:
+		var goods_slack: float = maxf(0.00001, float(state.resource_sources[key]) * ROUNDING_SHARE)
 		if (
 			absf(
 				(
@@ -589,7 +594,7 @@ func audit() -> Array:
 					+ float(state.resource_sinks[key])
 				)
 			)
-			> 0.00001
+			> goods_slack
 		):
 			errors.append("material conservation " + key)
 	return errors

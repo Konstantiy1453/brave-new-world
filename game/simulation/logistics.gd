@@ -268,10 +268,15 @@ static func _waiting_on_closure(sim: RefCounted, cargo: Dictionary) -> bool:
 	return WorldGen.road_blocked(sim.state.roads[road], int(sim.state.day))
 
 
-static func incoming(sim: RefCounted, region: int, resource: String) -> float:
+## What is on its way here; with `within`, only what arrives in that many days.
+static func incoming(
+	sim: RefCounted, region: int, resource: String, within: int = -1
+) -> float:
 	var amount: float = 0.0
 	for cargo in sim.state.shipments:
-		if int(cargo.to) == region and str(cargo.resource) == resource:
+		if int(cargo.to) != region or str(cargo.resource) != resource:
+			continue
+		if within < 0 or int(cargo.remaining) <= within:
 			amount += float(cargo.amount)
 	return amount
 
@@ -559,9 +564,11 @@ static func _import(
 ) -> float:
 	# Incoming consignments count against the local target but cannot be consumed early, and
 	# what is still on the road here feeds nobody further along it. Only the warehouse can.
+	# Food a month away on a long road fills no plates this week: it does not hold up an order.
+	var horizon: int = int(sim.state.policy.food_reserve) if key == "food" else -1
 	var stock: float = float(s.stock[key])
 	var need: float = (
-		maxf(0.0, target - stock - incoming(sim, int(s.region), key))
+		maxf(0.0, target - stock - incoming(sim, int(s.region), key, horizon))
 		+ maxf(0.0, _road_demand(sim, s, key) - maxf(0.0, stock - target))
 	)
 	var price: float = float(sim.config.prices[key]) * (1.0 + float(sim.config.economy.port_fee))

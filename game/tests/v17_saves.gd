@@ -1,5 +1,6 @@
 extends SceneTree
-## Save schema 3: size, speed, exact round trip, siblings, migration of every shipped 1.6 fixture.
+## The current save schema: size, speed, exact round trip, siblings, migration of every shipped 1.6
+## fixture, and the frozen 1.7 saves that still have to load.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -101,7 +102,7 @@ func _migrate_old_fixtures() -> void:
 		check(error == "", "old fixture migrates: %s %s" % [fixture.get_file(), error])
 		if error != "":
 			continue
-		check(int(sim.state.schema) == 3, "migrated state is schema 3: " + fixture.get_file())
+		check(int(sim.state.schema) == SaveIo.SCHEMA, "migrated to the new schema: " + fixture.get_file())
 		check(sim.audit().is_empty(), "migrated state passes audit: " + fixture.get_file())
 		var path: String = "user://v17_migrated.save"
 		check(sim.save_game(path) == "", "migrated state saves: " + fixture.get_file())
@@ -134,7 +135,7 @@ func _second_world_siblings() -> void:
 	var path: String = "user://v17_second.save"
 	check(
 		Career.handover(sim, 42, "capital", "normal", path) == "",
-		"handover writes through schema 3"
+		"handover writes through the current schema"
 	)
 	check(sim.state.career.archives.size() == 1, "one archive recorded")
 	var archive: Dictionary = sim.state.career.archives[0]
@@ -207,7 +208,7 @@ func _json_export() -> void:
 	var path: String = "user://state_export_test.json"
 	check(SaveIo.export_json(sim, path) == "", "a developer can export the state as JSON")
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	check(parsed is Dictionary and int(parsed.schema) == 3, "and read it")
+	check(parsed is Dictionary and int(parsed.schema) == SaveIo.SCHEMA, "and read it")
 
 
 ## A 1.7.0 save is bound to CC-GEO-2.0: its terrain must regenerate exactly, forever.

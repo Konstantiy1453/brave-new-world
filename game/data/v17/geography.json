@@ -656,12 +656,12 @@
         6371.0,
         8282.0
       ],
-      "deposit_scale": 10.0,
+      "deposit_scale": 15.0,
       "plots": {
         "tonnes_per_plot": {
-          "ore": 24000.0,
-          "copper": 16000.0,
-          "crystal": 9600.0
+          "ore": 36000.0,
+          "copper": 24000.0,
+          "crystal": 14400.0
         },
         "max_deposit_plots": 8,
         "general_base": 30,
@@ -681,8 +681,8 @@
       },
       "validator": {
         "start_water": 0.35,
-        "start_tonnes": 64000.0,
-        "start_crystal": 24000.0,
+        "start_tonnes": 96000.0,
+        "start_crystal": 36000.0,
         "start_general_plots": 12,
         "partner_general_plots": 6,
         "partner_fertility": 0.6,

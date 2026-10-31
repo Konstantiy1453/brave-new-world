@@ -241,9 +241,12 @@ static func tick(sim) -> void:
 		if int(s.starvation) > 0:
 			economic = maxf(
 				economic,
-				minf(
-					float(cfg.starving_cap),
-					float(cfg.starving_base) + float(s.starvation) * float(cfg.starving_per_day)
+				(
+					minf(
+						float(cfg.starving_cap),
+						float(cfg.starving_base) + float(s.starvation) * float(cfg.starving_per_day)
+					)
+					* _population_weight(sim, s, cfg)
 				)
 			)
 			reason = "必要食品短缺；进口、开港、调拨、限产或申请物资"

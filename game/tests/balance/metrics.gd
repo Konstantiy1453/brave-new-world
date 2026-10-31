@@ -20,7 +20,6 @@ var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
 var _last_entry: Dictionary = {}
 var _opened_at: Dictionary = {}
-var _last_distrust: float = 0.0
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -80,13 +79,14 @@ func sample(sim: RefCounted) -> void:
 		record.population[str(day)] = _population(state)
 	if POLLUTION_CHECK_DAYS.has(day):
 		record.pollution_penalty[str(day)] = sim.Pollution.penalty(sim)
-	var distrust: float = float(state.company.distrust)
 	record.largest_distrust_rise = maxf(
-		float(record.largest_distrust_rise), distrust - _last_distrust
+		float(record.largest_distrust_rise), float(state.company.delta)
 	)
-	_last_distrust = distrust
-	if int(record.first_road_days) < 0 and not state.roads.is_empty():
-		record.first_road_days = int(state.roads[0].get("build_days", 0))
+	if int(record.first_road_days) < 0:
+		for road: Dictionary in state.roads:
+			if str(road.get("variant", "")) != "sea":
+				record.first_road_days = int(road.get("build_days", 0))
+				break
 	if state.status == "success" and int(record.award_day) < 0:
 		record.award_day = day
 		record.techs_by_award = state.research.completed.size()

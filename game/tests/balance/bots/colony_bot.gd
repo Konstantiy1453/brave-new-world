@@ -53,11 +53,15 @@ const SERVICE_PEOPLE: Dictionary = {
 const COMMERCE_PEOPLE: int = 150
 const HALL_TECH: String = "capital_planning"
 const RESHUFFLE_PERIOD: int = 90
-const IDLE_STATUSES: Array[String] = ["no_input", "idle"]
+const IDLE_STATUSES: Array[String] = ["no_input", "idle", "target_full"]
+const RECRUIT_JOBLESS_LIMIT: float = 0.15
 const HARVESTERS_PER_TOWN: int = 3
 const COMFORTABLE_NET: float = 150.0
 const DEADLINE_PRESSED: float = 0.7
 const SECOND_LAB_INCOME: float = 600.0
+const LOW_FOOD_DAYS: float = 12.0
+const PORT_PEOPLE: int = 100
+const SWAP_KINDS: Array[String] = ["apartment", "arcology"]
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -112,6 +116,7 @@ func on_day() -> void:
 	_laboratory(reserve)
 	_staff_research(reserve)
 	_second_settlement(reserve)
+	_feed_towns(reserve)
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
@@ -645,6 +650,24 @@ func _food(reserve: float) -> void:
 		act("build", {"region": best_region, "kind": best_kind})
 
 
+## One road feeds fewer than two hundred people. A town that outgrows its road, or is running
+## short, gets a port of its own; a town short of food in spite of its port grows some indoors.
+func _feed_towns(reserve: float) -> void:
+	for place: Dictionary in _places():
+		var region: int = int(place.region)
+		var short: bool = float(place.food_days) < LOW_FOOD_DAYS
+		if float(place.port_capacity) <= 0.0 and (short or int(place.population) >= PORT_PEOPLE):
+			if not _building_underway(region, "port") and _affordable(region, "port", 0.0):
+				act("build", {"region": region, "kind": "port"})
+			continue
+		if not short or not _port_full(place):
+			continue
+		for kind: String in _kinds_with_roles(["indoor_farm"], place):
+			if not _building_underway(region, kind) and _affordable(region, kind, reserve * 0.5):
+				act("build", {"region": region, "kind": kind})
+				break
+
+
 ## Out of farm land with a food goal still open: grow it under glass.
 func _greenhouse(reserve: float) -> void:
 	for place: Dictionary in _places():
@@ -687,7 +710,20 @@ func _wants_local_food() -> bool:
 	return false
 
 
+## Worked-out mines give their ground back when the town has run out of room to build.
+func _clear_spent_mines() -> void:
+	for place: Dictionary in _places():
+		var region: int = int(place.region)
+		if int(sim.Sites.free_counts(sim, region).general) > 0:
+			continue
+		for index: int in range(place.buildings.size()):
+			if str(place.buildings[index].status) == sim.Keys.B_DEPLETED:
+				act("demolish", {"region": region, "index": index})
+				break
+
+
 func _housing(reserve: float) -> void:
+	_clear_spent_mines()
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
 		var slack: int = maxi(4, int(float(place.housing) * 0.08))
@@ -700,6 +736,9 @@ func _housing(reserve: float) -> void:
 			continue
 		var full: bool = int(place.housing) <= int(place.population)
 		var spare: float = 0.0 if full else reserve * 0.5
+		if int(sim.Sites.free_counts(sim, region).general) <= 0:
+			_make_room(place, spare)
+			continue
 		for kind: String in HOUSING_KINDS:
 			var forecast: Dictionary = sim.build_forecast(region, kind)
 			if forecast.is_empty() or forecast.disabled_reason != "":
@@ -709,6 +748,32 @@ func _housing(reserve: float) -> void:
 			if _affordable(region, kind, spare):
 				act("build", {"region": region, "kind": kind})
 			break
+
+
+## No ground left: fit more beds into the old blocks, then pull one down for something taller.
+func _make_room(place: Dictionary, reserve: float) -> void:
+	var region: int = int(place.region)
+	var oldest: int = -1
+	for index: int in range(place.buildings.size()):
+		if str(place.buildings[index].kind) != "habitat":
+			continue
+		if int(place.buildings[index].remaining) > 0:
+			continue
+		oldest = index
+		var rule: Dictionary = sim.upgrade_preview(region, index)
+		if rule.is_empty():
+			continue
+		if rule.disabled_reason == "" and float(sim.state.cash) >= float(rule.cost) + reserve:
+			act("upgrade", {"region": region, "index": index})
+			return
+	for kind: String in SWAP_KINDS:
+		var spec: Dictionary = sim.config.buildings[kind]
+		if not sim._has(str(spec.get("requires_tech", ""))) or oldest < 0:
+			continue
+		if float(sim.state.cash) >= float(spec.cost) * 2.0 + reserve:
+			act("demolish", {"region": region, "index": oldest})
+			act("build", {"region": region, "kind": kind})
+			return
 
 
 ## The contract asks for another connected town and the licence is there: that comes first.
@@ -849,7 +914,7 @@ func _people_goal() -> int:
 
 ## Recruiting pays back within weeks once there is work waiting or a people goal to meet.
 func _recruit(region: int, wanted: int, reserve: float) -> bool:
-	if recruit_batch <= 0:
+	if recruit_batch <= 0 or _jobless_share() > RECRUIT_JOBLESS_LIMIT:
 		return false
 	var counts: Dictionary = _adult_counts()
 	var kind: String = "worker"
@@ -868,6 +933,15 @@ func _recruit(region: int, wanted: int, reserve: float) -> bool:
 	if float(sim.state.cash) < cost + reserve + recruit_buffer:
 		return false
 	return act("recruit", {"region": region, "kind": kind, "count": batch}) == ""
+
+
+func _jobless_share() -> float:
+	var adults: int = 0
+	var employed: int = 0
+	for place: Dictionary in sim.state.settlements:
+		adults += int(place.workers) + int(place.scientists)
+		employed += int(place.employed)
+	return 1.0 - float(employed) / maxi(1, adults)
 
 
 func _adult_counts() -> Dictionary:
@@ -1097,11 +1171,15 @@ func _upgrade_worthwhile(place: Dictionary, building: Dictionary, rule: Dictiona
 ## The hall is what the final stage asks for; the other great works wait for spare money.
 func _megaprojects(reserve: float) -> void:
 	if sim._has(HALL_TECH) and not _anywhere("capital_hall"):
-		if sim.free_workers(sim.settlement(home)) < int(sim.config.buildings.capital_hall.jobs):
-			_recruit(home, int(sim.config.buildings.capital_hall.jobs), reserve)
+		var site: int = _hall_site()
+		if site < 0:
+			_clear_ground(home)
 			return
-		if _affordable(home, "capital_hall", reserve * 0.5):
-			act("build", {"region": home, "kind": "capital_hall"})
+		if sim.free_workers(sim.settlement(site)) < int(sim.config.buildings.capital_hall.jobs):
+			_recruit(site, int(sim.config.buildings.capital_hall.jobs), reserve)
+			return
+		if _affordable(site, "capital_hall", reserve * 0.5):
+			act("build", {"region": site, "kind": "capital_hall"})
 		return
 	if str(sim.state.status) != "success" and int(sim.state.contract.stage) < 4:
 		return
@@ -1119,6 +1197,33 @@ func _megaprojects(reserve: float) -> void:
 		if _affordable(at, kind, reserve * MEGAPROJECT_RESERVE_FACTOR):
 			act("build", {"region": at, "kind": kind})
 		return
+
+
+## The hall goes up in a residential town with ground to spare, the capital if it can.
+func _hall_site() -> int:
+	var best: int = -1
+	var most: int = 0
+	for place: Dictionary in _places():
+		if str(place.kind) != sim.Keys.SITE_RESIDENTIAL:
+			continue
+		var region: int = int(place.region)
+		var free: int = int(sim.Sites.free_counts(sim, region).general)
+		if free > 0 and region == home:
+			return home
+		if free > most:
+			most = free
+			best = region
+	return best
+
+
+## Makes way for something that matters more than a factory that can stand elsewhere.
+func _clear_ground(region: int) -> void:
+	var place: Dictionary = sim.settlement(region)
+	for index: int in range(place.buildings.size()):
+		var building: Dictionary = place.buildings[index]
+		if sim.Production.role_of(sim, str(building.kind)) == "factory":
+			act("demolish", {"region": region, "index": index})
+			return
 
 
 func _anywhere(kind: String) -> bool:

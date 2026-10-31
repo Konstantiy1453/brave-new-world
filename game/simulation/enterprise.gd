@@ -20,20 +20,23 @@ static func found(sim: RefCounted, region: int) -> String:
 	var forecast: Dictionary = preview(sim, region)
 	if float(forecast.estimated_profit) < 0.0:
 		return "当地需求不足：预计每日亏损 %.1f；需要更多居民" % -float(forecast.estimated_profit)
-	if s.stock.materials < 8 or s.stock.parts < 2:
-		return "企业要向本地仓库购买 8 建材和 2 部件"
-	sim._transfer("external", "enterprise", 900.0, "enterprise.capital", false)
-	var inputs: float = 8.0 * sim.config.prices.materials + 2.0 * sim.config.prices.parts
+	var rules: Dictionary = sim.config.enterprise
+	var materials: float = float(rules.materials)
+	var parts: float = float(rules.parts)
+	if s.stock.materials < materials or s.stock.parts < parts:
+		return "企业要向本地仓库购买 %.0f 建材和 %.0f 部件" % [materials, parts]
+	sim._transfer("external", "enterprise", float(rules.capital), "enterprise.capital", false)
+	var inputs: float = materials * sim.config.prices.materials + parts * sim.config.prices.parts
 	sim._transfer("enterprise", "public", inputs, "enterprise.inputs", false)
-	sim._consume(s, "materials", 8.0)
-	sim._consume(s, "parts", 2.0)
-	sim._transfer("enterprise", "external", 260.0, "enterprise.fitout", false)
+	sim._consume(s, "materials", materials)
+	sim._consume(s, "parts", parts)
+	sim._transfer("enterprise", "external", float(rules.fitout), "enterprise.fitout", false)
 	sim.state.enterprise = {
 		"name": "远岸生活服务社",
 		"region": region,
 		"industry": "service",
 		"status": Keys.E_FITTING,
-		"remaining": 4,
+		"remaining": int(rules.days),
 		"employees": 0,
 		"profit": 0.0,
 		"sales_total": 0.0,
@@ -41,14 +44,14 @@ static func found(sim: RefCounted, region: int) -> String:
 		"tax_total": 0.0,
 		"loss_days": 0,
 		"reason": Keys.ER_FITTING,
-		"rent": 2.0,
+		"rent": float(rules.rent),
 		"profit_days": 0
 	}
-	var b: Dictionary = sim._building("service", 4)
+	var b: Dictionary = sim._building("service", int(rules.days))
 	b.owner = "private"
 	b.plot = ground
 	s.buildings.append(b)
-	sim._log("远岸生活服务社获准落地：私人实缴 900，自主装修、雇人、销售并纳税。")
+	sim._log("远岸生活服务社获准落地：私人实缴 %.0f，自主装修、雇人、销售并纳税。" % float(rules.capital))
 	return ""
 
 
@@ -57,6 +60,9 @@ static func run(sim: RefCounted) -> void:
 		return
 	var e: Dictionary = sim.state.enterprise
 	var s: Dictionary = sim.settlement(int(e.region))
+	var rules: Dictionary = sim.config.enterprise
+	var staff: int = int(rules.employees)
+	var lasts: int = int(rules.loss_days_to_close)
 	e.employees = 0
 	e.profit = 0.0
 	if e.status == Keys.E_CLOSED:
@@ -71,24 +77,26 @@ static func run(sim: RefCounted) -> void:
 			b = item
 	if b.is_empty():
 		return
-	s.jobs += 6
+	s.jobs += staff
 	if not b.enabled:
 		b.active = false
 		e.status = Keys.E_PAUSED
 		e.reason = Keys.ER_PAUSED
 		return
-	var employees: int = mini(6, maxi(0, int(s.workers) - int(s.employed_workers)))
+	var employees: int = mini(staff, maxi(0, int(s.workers) - int(s.employed_workers)))
 	var wages: float = employees * Population.worker_wage(sim)
-	var fixed: float = 3.0 + float(e.rent)
-	if float(sim.state.enterprise_cash) < wages + fixed or employees < 2:
+	var equipment: float = float(rules.equipment)
+	var fixed: float = equipment + float(e.rent)
+	var too_few: bool = employees < int(rules.min_employees)
+	if float(sim.state.enterprise_cash) < wages + fixed or too_few:
 		e.loss_days += 1
 		e.status = Keys.E_RESTRICTED
-		e.reason = Keys.ER_NO_WORKERS if employees < 2 else Keys.ER_NO_CASH
+		e.reason = Keys.ER_NO_WORKERS if too_few else Keys.ER_NO_CASH
 		b.active = false
 		b.status = Keys.B_RESTRICTED
-		if e.loss_days >= 15:
+		if e.loss_days >= lasts:
 			e.status = Keys.E_CLOSED
-			sim._log("服务社已停业：可雇用工人或现金不足持续 15 天。")
+			sim._log("服务社已停业：可雇用工程队或现金不足持续 %d 天。" % lasts)
 		return
 	e.employees = employees
 	s.employed_workers += employees
@@ -98,9 +106,12 @@ static func run(sim: RefCounted) -> void:
 	b.status = Keys.B_PRIVATE_OPEN
 	sim._transfer("enterprise", "residents", wages, "enterprise.wages", false)
 	sim._transfer("enterprise", "public", float(e.rent), "enterprise.rent", true)
-	sim._transfer("enterprise", "external", 3.0, "enterprise.upkeep", false)
+	sim._transfer("enterprise", "external", equipment, "enterprise.upkeep", false)
 	# Residents purchase useful aggregate repair / laundry / communication services.
-	var demand: float = minf(float(s.population) * 0.35, employees * 4.2)
+	var demand: float = minf(
+		float(s.population) * float(rules.demand_per_person),
+		employees * float(rules.sales_per_employee)
+	)
 	var sales: float = minf(float(sim.state.resident_cash), demand)
 	sim._transfer("residents", "enterprise", sales, "enterprise.sales", false)
 	var profit: float = sales - wages - fixed
@@ -114,25 +125,31 @@ static func run(sim: RefCounted) -> void:
 	e.profit_days = int(e.get("profit_days", 0)) + 1 if profit > 0 else 0
 	e.status = Keys.E_OPEN
 	e.reason = Keys.ER_RUNNING
-	if e.loss_days >= 15:
+	if e.loss_days >= lasts:
 		e.status = Keys.E_CLOSED
 		b.active = false
-		sim._log("服务社连续亏损 15 天，停止营业；居民购买力不足。")
+		sim._log("服务社连续亏损 %d 天，停止营业；居民购买力不足。" % lasts)
 
 
 static func preview(sim: RefCounted, region: int) -> Dictionary:
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty():
 		return {}
-	var wages: float = 6 * Population.worker_wage(sim)
-	var sales: float = minf(float(s.population) * 0.35, 25.2)
+	var rules: Dictionary = sim.config.enterprise
+	var staff: int = int(rules.employees)
+	var overhead: float = float(rules.rent) + float(rules.equipment)
+	var wages: float = staff * Population.worker_wage(sim)
+	var sales: float = minf(
+		float(s.population) * float(rules.demand_per_person),
+		staff * float(rules.sales_per_employee)
+	)
 	return {
 		"region": region,
 		"population": s.population,
 		"workers": maxi(0, int(s.workers) - int(s.employed_workers)),
 		"daily_demand": sales,
-		"daily_cost": wages + 5,
-		"estimated_profit": sales - wages - 5,
+		"daily_cost": wages + overhead,
+		"estimated_profit": sales - wages - overhead,
 		"recovery_cost": float(sim.progression.production.enterprise_recovery),
 		"reason": "居民服务需求取决于当地人口与购买力；小型前哨可能亏损，复业可迁至所选据点。"
 	}

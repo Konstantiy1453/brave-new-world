@@ -1,6 +1,7 @@
 extends SceneTree
-## Phase 5 rules: the same seed makes the same world; sites, plots and what is known about them;
-## the road network; sea routes; saves of generated worlds; a migrated 1.6 save that plays on.
+## The same seed makes the same world; sites, plots and what is known about them; real distances;
+## settlement kinds; roads under construction; the road network; islands and sea routes; saves of
+## generated worlds; a migrated 1.6 save that plays on.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -13,11 +14,15 @@ const Logistics = preload("res://simulation/logistics.gd")
 const Contract = preload("res://simulation/contract.gd")
 const Rules = preload("res://simulation/rules.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
+const Keys = preload("res://simulation/keys.gd")
 const BalancedBot = preload("res://tests/balance/bots/balanced_bot.gd")
 
 const SEED: int = 260129
 const OLD_SAVE: String = "res://data/acceptance_midgame.json"
 const SAVE_PATH: String = "user://sites_test.save"
+const EARTH_RADIUS_KM: float = 6371.0
+const EARTH_SHARES: Array[float] = [0.6, 1.0, 1.3]
+const ISLAND_SEEDS: int = 40
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -54,6 +59,24 @@ func supply(sim: RefCounted, s: Dictionary, good: String, amount: float) -> void
 	sim._produce(s, good, amount, "test")
 
 
+func grant(sim: RefCounted, tech: String) -> void:
+	sim.state.research.completed.append(tech)
+	for hand: Array in sim.state.research.offers.values():
+		hand.erase(tech)
+
+
+## Roads take months; most of these checks are about what happens once they stand.
+func finish_roads(sim: RefCounted) -> void:
+	for road: Dictionary in sim.state.roads:
+		road.ready_day = int(sim.state.day) - 1
+		road.blocked_until = int(sim.state.day) - 1
+
+
+func wait_for_arrival(sim: RefCounted, region: int) -> void:
+	while int(sim.settlement(region).arrival) > 0:
+		sim.tick()
+
+
 func run() -> void:
 	_same_seed_same_world()
 	_world_shape()
@@ -63,10 +86,13 @@ func run() -> void:
 	_knowledge()
 	_deep_and_hidden()
 	_settlement_cap()
+	_real_distances()
+	_settlement_kinds()
+	_roads_take_time()
 	_road_network()
 	_supply_chain()
 	_migration_of_workers()
-	_sea_routes()
+	_islands()
 	_routes_are_paths()
 	_save_generated_world()
 	_refuse_changed_world()
@@ -231,7 +257,7 @@ func _knowledge() -> void:
 	view = sim.site_view(far)
 	check(float(view.band) == 0.12, "after the survey the band is 12%")
 	check(sim.act("survey", {"site": far}) != "", "a surveyed site needs no second team")
-	sim.state.research.completed.append("survey")
+	grant(sim, "survey")
 	check(float(sim.site_view(far).band) == 0.0, "with survey technology the figures are exact")
 	check(sim.audit().is_empty(), "surveys pass the audit")
 
@@ -255,7 +281,7 @@ func _deep_and_hidden() -> void:
 		float(regions[with_hidden].deposits.copper) + float(regions[with_hidden].deposits.crystal)
 	)
 	fund(sim, 2000.0)
-	sim.state.research.completed.append("prospecting")
+	grant(sim, "prospecting")
 	var cost: float = sim.Sites.survey_cost(sim)
 	check(cost == float(sim.progression_geo().survey.cost) * 0.5, "prospecting halves survey cost")
 	check(sim.act("survey", {"site": with_hidden}) == "", "prospecting survey is accepted")
@@ -287,7 +313,148 @@ func _settlement_cap() -> void:
 	sim.state.contract.licences.append("third_settlement")
 	check(Contract.settlement_cap(sim) == 3, "the second licence allows a third")
 	sim.state.status = "success"
-	check(Contract.settlement_cap(sim) == 6, "the award allows six")
+	check(
+		Contract.settlement_cap(sim) == int(sim.contract_rules.settlement_cap.after_award),
+		"the award lifts the limit"
+	)
+
+
+## Planets are 0.6, 1.0 and 1.3 Earth radii, and every distance is measured on that sphere.
+func _real_distances() -> void:
+	var roads: Dictionary = Rules.read("economy").roads
+	var first_lengths: Array = []
+	for size: int in [0, 1, 2]:
+		var world: Dictionary = WorldGen2.generate(SEED, size)
+		var radius: float = float(world.radius_km)
+		check(
+			is_equal_approx(snappedf(radius / EARTH_RADIUS_KM, 0.01), EARTH_SHARES[size]),
+			"size %d is %.1f Earth radii" % [size, EARTH_SHARES[size]]
+		)
+		var found: Dictionary = Routes.find(world, 0, 1, "valley", roads)
+		if not bool(found.reachable):
+			continue
+		var from: Dictionary = world.regions[0]
+		var to: Dictionary = world.regions[1]
+		var straight: float = (
+			WorldGen.unit_point(float(from.lat), float(from.lon)).angle_to(
+				WorldGen.unit_point(float(to.lat), float(to.lon))
+			)
+			* radius
+		)
+		check(float(found.distance) >= straight * 0.97, "a road is no shorter than the great circle")
+		var spec: Dictionary = roads.valley
+		check(
+			int(found.days) >= maxi(
+				int(spec.min_days), ceili(float(found.distance) / float(spec.speed_km_per_day))
+			),
+			"travel time comes from the distance, and hills only add to it"
+		)
+		check(
+			int(found.build_days) == maxi(
+				int(spec.build_days), ceili(float(found.distance) / float(spec.build_km_per_day))
+			),
+			"building time comes from the distance"
+		)
+		first_lengths.append(float(found.distance))
+	check(not first_lengths.is_empty(), "roads were measured on real planets")
+	var flat: Dictionary = WorldGen2.generate(SEED, 1)
+	var near: Dictionary = Routes.find(flat, 0, 1, "valley", roads)
+	if bool(near.reachable):
+		check(float(near.distance) > 500.0, "sites on a real planet are hundreds of kilometres apart")
+
+
+func _settlement_kinds() -> void:
+	var sim: RefCounted = make(true)
+	var capital: Dictionary = sim.settlement(0)
+	check(str(capital.kind) == Keys.SITE_RESIDENTIAL, "the first town is where people live")
+	fund(sim, 60000.0)
+	supply(sim, capital, "materials", 300.0)
+	supply(sim, capital, "parts", 60.0)
+	supply(sim, capital, "food", 800.0)
+	var town_fare: float = sim.Sites.expedition_cash(sim, Keys.SITE_RESIDENTIAL)
+	var camp_fare: float = sim.Sites.expedition_cash(sim, Keys.SITE_FRONTIER)
+	check(camp_fare < town_fare, "a frontier post costs less to found")
+	check(
+		sim.Sites.expedition_workers(sim, Keys.SITE_FRONTIER)
+		< sim.Sites.expedition_workers(sim, Keys.SITE_RESIDENTIAL),
+		"and takes fewer crews"
+	)
+	check(sim.act("settle", {"site": 1, "kind": "nonsense"}) != "", "only the two kinds exist")
+	check(sim.act("settle", {"site": 1, "kind": Keys.SITE_FRONTIER}) == "", "a frontier post is sent")
+	wait_for_arrival(sim, 1)
+	var camp: Dictionary = sim.settlement(1)
+	check(str(camp.kind) == Keys.SITE_FRONTIER, "and stays one")
+	var buildings: Dictionary = sim.config.buildings
+	for kind: String in buildings:
+		var wants: Array = buildings[kind].get("site_kinds", [])
+		if wants.size() != 1:
+			continue
+		var place: Dictionary = camp if wants[0] == Keys.SITE_RESIDENTIAL else capital
+		var reg: Dictionary = sim.state.world.regions[int(place.region)]
+		var refused: String = sim.Production._place_refusal(place, reg, buildings[kind])
+		check(refused != "", "%s belongs to the other kind of settlement" % kind)
+	var lab_refused: String = sim.act("build", {"region": 1, "kind": "lab"})
+	check(lab_refused != "", "no laboratory in a frontier post: " + lab_refused)
+	check(sim.act("build", {"region": 1, "kind": "crew_quarters"}) == "", "a frontier camp is allowed")
+	check(sim.act("build", {"region": 0, "kind": "crew_quarters"}) != "", "but not in the town")
+	check(sim.act("build", {"region": 1, "kind": "habitat"}) != "", "town housing stays in towns")
+	camp.workers = int(camp.workers) + 40
+	camp.population = int(camp.population) + 40
+	camp.housing = int(camp.population) + 40
+	var born: int = int(camp.children)
+	for _day: int in range(90):
+		sim.Population._births(sim, camp)
+	check(int(camp.children) == born, "nobody settles down to raise a family in a frontier post")
+	camp.employed = int(camp.workers)
+	var appeal: float = sim.Population.attractiveness(sim, camp).value
+	var at_camp: float = sim.Population.arrivals_per_month(sim, camp, appeal)
+	camp.kind = Keys.SITE_RESIDENTIAL
+	var as_town: float = sim.Population.arrivals_per_month(sim, camp, appeal)
+	camp.kind = Keys.SITE_FRONTIER
+	check(at_camp < as_town, "and few come of their own accord")
+	var mine: Dictionary = sim.build_forecast(1, "mine_ore")
+	if not mine.is_empty() and mine.outputs.has("ore"):
+		var field: float = sim.Production._field_bonus(sim, camp)
+		check(field > 1.0, "frontier mines and farms work a richer field")
+	check(sim.audit().is_empty(), "settlement kinds pass the audit")
+	var path: String = "user://kinds.save"
+	check(sim.save_game(path) == "", "a frontier post is saved")
+	var loaded: RefCounted = Sim.new()
+	check(loaded.load_game(path) == "", "and loaded")
+	check(str(loaded.settlement(1).kind) == Keys.SITE_FRONTIER, "with its kind")
+
+
+func _roads_take_time() -> void:
+	var sim: RefCounted = make(true)
+	var s: Dictionary = sim.settlement(0)
+	fund(sim, 60000.0)
+	supply(sim, s, "materials", 300.0)
+	supply(sim, s, "parts", 60.0)
+	supply(sim, s, "food", 800.0)
+	check(sim.act("settle", {"site": 1}) == "", "a second town")
+	wait_for_arrival(sim, 1)
+	var cash: float = float(sim.state.cash)
+	check(sim.act("connect", {"a": 0, "b": 1, "variant": "valley"}) == "", "a road is ordered")
+	check(float(sim.state.cash) < cash, "and paid for at once")
+	var road: Dictionary = sim.state.roads[0]
+	var months: int = int(road.build_days)
+	check(months >= int(sim.config.roads.valley.build_days), "it takes its time")
+	check(WorldGen.road_building(road, int(sim.state.day)), "it counts as being built")
+	check(Logistics.largest_connected(sim) == 1, "and connects nothing yet")
+	sim._consume(sim.settlement(1), "food", float(sim.settlement(1).stock.food))
+	sim.tick()
+	check(float(road.sent_today) == 0.0, "nothing travels on it")
+	var started: int = int(sim.state.day)
+	while WorldGen.road_building(road, int(sim.state.day)):
+		sim.tick()
+	check(
+		int(sim.state.day) - started >= months - 2, "the road is finished when the date says so"
+	)
+	check(Logistics.largest_connected(sim) == 2, "then it connects the towns")
+	sim._consume(sim.settlement(1), "food", float(sim.settlement(1).stock.food))
+	sim.tick()
+	check(float(road.sent_today) > 0.0, "and carries goods")
+	check(sim.audit().is_empty(), "road building passes the audit")
 
 
 func _land_neighbors(sim: RefCounted, count: int) -> Array:
@@ -306,15 +473,17 @@ func _road_network() -> void:
 	check(sim.act("settle", {"site": 1}) == "", "the second settlement")
 	var third: int = int(others[1]) if int(others[0]) == 1 else int(others[0])
 	check(sim.act("settle", {"site": third}) == "", "the third settlement")
-	for _day: int in range(14):
-		sim.tick()
+	wait_for_arrival(sim, 1)
+	wait_for_arrival(sim, third)
 	check(Logistics.largest_connected(sim) == 1, "nothing connected without roads")
 	var first_road: String = sim.act("connect", {"a": 0, "b": 1, "variant": "valley"})
 	check(first_road == "", "a road to the second settlement: " + first_road)
 	check(sim.act("connect", {"a": 1, "b": 0}) != "", "only one road between two settlements")
+	finish_roads(sim)
 	check(Logistics.largest_connected(sim) == 2, "two connected")
 	var second_road: String = sim.act("connect", {"a": 0, "b": third, "variant": "engineered"})
 	check(second_road == "", "a road to the third: " + second_road)
+	finish_roads(sim)
 	check(Logistics.largest_connected(sim) == 3, "three connected")
 	check(sim.state.roads.size() == 2, "the network has two roads")
 	sim.state.roads[0].blocked_until = int(sim.state.day) + 20
@@ -329,8 +498,10 @@ func _road_network() -> void:
 		if int(cargo.road) == 0:
 			waiting = waiting and int(cargo.remaining) > 0
 	check(waiting, "cargo on the closed road waits")
-	sim.state.research.completed.append("paved_roads")
+	grant(sim, "paved_roads")
 	check(sim.act("upgrade_road", {"road": 1}) == "", "a chosen road can be paved")
+	for _day: int in range(int(sim.config.road_upgrade.build_days) + 1):
+		sim.tick()
 	check(bool(sim.state.roads[1].get("paved", false)), "and only that one")
 	check(not bool(sim.state.roads[0].get("paved", false)), "the other is untouched")
 
@@ -348,18 +519,18 @@ func _supply_chain() -> void:
 	var near: int = int(others[0])
 	var far: int = int(others[1])
 	check(sim.act("settle", {"site": near}) == "", "a town along the way")
-	for _day: int in range(12):
-		sim.tick()
+	wait_for_arrival(sim, near)
 	sim.act("connect", {"a": 0, "b": near, "variant": "engineered"})
+	finish_roads(sim)
 	for _day: int in range(12):
 		sim.tick()
 	check(
 		sim.act("settle", {"site": far, "from": near}) != "", "the small town cannot send a party"
 	)
 	check(sim.act("settle", {"site": far, "from": 0}) == "", "the capital can")
-	for _day: int in range(14):
-		sim.tick()
+	wait_for_arrival(sim, far)
 	sim.act("connect", {"a": near, "b": far, "variant": "engineered"})
+	finish_roads(sim)
 	var town: Dictionary = sim.settlement(far)
 	town.stock.food = 0.0
 	sim.state.resource_sinks.food += 0.0
@@ -388,10 +559,10 @@ func _migration_of_workers() -> void:
 	supply(sim, s, "parts", 60.0)
 	supply(sim, s, "food", 500.0)
 	check(sim.act("settle", {"site": 1}) == "", "a second town for the migrants")
-	for _day: int in range(12):
-		sim.tick()
+	wait_for_arrival(sim, 1)
 	var crew: int = int(sim.settlement(1).workers)
 	sim.act("connect", {"a": 0, "b": 1, "variant": "engineered"})
+	finish_roads(sim)
 	for _day: int in range(5):
 		sim.tick()
 	check(int(sim.settlement(1).workers) >= crew, "an outpost keeps its crew while it has no work")
@@ -407,47 +578,74 @@ func _migration_of_workers() -> void:
 	check(sim.audit().is_empty(), "moving people keeps the books right")
 
 
-func _coastal_sites(sim: RefCounted) -> Array:
-	var found: Array = []
-	for reg: Dictionary in sim.state.world.regions:
-		if bool(reg.coast) and not sim.state.world.regions[0].neighbors.has(int(reg.id)):
-			if int(reg.id) != 0:
-				found.append(int(reg.id))
-	return found
+## Two coastal sites the sea joins and the land does not, on the first seed that has them.
+func _island_case() -> Dictionary:
+	for seed_value: int in range(1, ISLAND_SEEDS + 1):
+		var sim: RefCounted = Sim.new()
+		sim.new_game(seed_value, "capital")
+		for home: Dictionary in sim.state.world.regions:
+			if not bool(home.coast):
+				continue
+			for other: Dictionary in sim.state.world.regions:
+				if int(other.id) <= int(home.id) or not bool(other.coast):
+					continue
+				var a: int = int(home.id)
+				var b: int = int(other.id)
+				if bool(Logistics.route_between(sim, a, b, "valley").reachable):
+					continue
+				if bool(Logistics.route_between(sim, a, b, "engineered").reachable):
+					continue
+				if bool(Logistics.route_between(sim, a, b, "sea").reachable):
+					return {"seed": seed_value, "a": a, "b": b}
+	return {}
 
 
-func _sea_routes() -> void:
-	var sim: RefCounted = make(true)
-	var s: Dictionary = sim.settlement(0)
+## An island is a fair place to start or to settle: what the land cannot reach, the sea can.
+func _islands() -> void:
+	var case: Dictionary = _island_case()
+	check(not case.is_empty(), "some coast can only be reached by sea")
+	if case.is_empty():
+		return
+	var sim: RefCounted = Sim.new()
+	sim.new_game(int(case.seed), "capital")
+	sim.state.events_v2.next_draw = 99999
+	var home: int = int(case.a)
+	var island: int = int(case.b)
+	check(sim.settle_refusal(island) == "", "landing on an island is no restricted start")
+	check(sim.act("settle", {"site": home}) == "", "the first landing")
+	sim.state.contract.licences.append("expedition")
+	sim.state.contract.licences.append("third_settlement")
 	fund(sim, 60000.0)
+	var s: Dictionary = sim.settlement(home)
 	supply(sim, s, "materials", 400.0)
 	supply(sim, s, "parts", 80.0)
 	supply(sim, s, "food", 800.0)
-	var overseas: int = -1
-	for id: Variant in _coastal_sites(sim):
-		if bool(Logistics.route_between(sim, 0, int(id), "sea").reachable):
-			overseas = int(id)
-			break
-	if overseas < 0:
-		print("SKIP sea routes: no reachable coast on this seed")
-		return
-	var refused: String = sim.act("settle", {"site": overseas})
-	check(refused != "", "overseas needs shipping: " + refused)
-	sim.state.research.completed.append("shipping")
-	var accepted: String = sim.act("settle", {"site": overseas})
-	check(accepted == "", "with shipping a party can sail: " + accepted)
+	check(not sim._has("shipping"), "no shipping technology yet")
+	var accepted: String = sim.act("settle", {"site": island})
+	check(accepted == "", "a party can sail with no technology: " + accepted)
+	wait_for_arrival(sim, island)
 	var ported: bool = false
-	for b: Dictionary in sim.settlement(overseas).buildings:
+	for b: Dictionary in sim.settlement(island).buildings:
 		ported = ported or b.kind == "port"
-	check(ported, "a landing by sea brings its own port")
-	for _day: int in range(30):
-		sim.tick()
-	var sailing: String = sim.act("connect", {"a": 0, "b": overseas, "variant": "sea"})
+	var quote: Dictionary = sim.road_quote(home, island, "sea")
+	check(str(quote.get("refusal", "")) != "" or ported, "a sea route waits for ports at both ends")
+	for place: int in [home, island]:
+		if not ported or place == home:
+			var town: Dictionary = sim.settlement(place)
+			town.buildings.append(sim._building("port", 0))
+			town.buildings.back().plot = sim.Sites.find_plot(sim, place, "port")
+			sim._refresh(town)
+	var sailing: String = sim.act("connect", {"a": home, "b": island, "variant": "sea"})
 	check(sailing == "", "a sea route between two ports: " + sailing)
-	check(str(sim.state.roads[0].variant) == "sea", "it is a sea route")
-	check(Logistics.largest_connected(sim) == 2, "sea routes connect settlements")
+	var lane: Dictionary = sim.state.roads[0]
+	check(str(lane.variant) == "sea", "it is a sea route")
+	check(int(lane.build_days) > 0, "a shipping lane takes time to open as well")
 	check(sim.act("upgrade_road", {"road": 0}) != "", "a sea route cannot be paved")
+	finish_roads(sim)
+	check(Logistics.largest_connected(sim) == 2, "sea routes connect settlements")
+	sim._consume(sim.settlement(island), "food", float(sim.settlement(island).stock.food))
 	sim.tick()
+	check(float(lane.sent_today) > 0.0 or sim.settlement(island).stock.food > 0.0, "goods cross the water")
 	check(sim.audit().is_empty(), "sea routes pass the audit")
 
 
@@ -487,7 +685,7 @@ func _save_generated_world() -> void:
 		sim.tick()
 	check(sim.save_game(SAVE_PATH) == "", "a generated world saves")
 	var header: Dictionary = SaveIo.read_header(SAVE_PATH)
-	check(int(header.get("version", 0)) == 3, "the header reads without the payload")
+	check(int(header.get("version", 0)) == SaveIo.SCHEMA, "the header reads without the payload")
 	var other: RefCounted = Sim.new()
 	var error: String = other.load_game(SAVE_PATH)
 	check(error == "", "and loads: " + error)
