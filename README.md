@@ -8,7 +8,7 @@ Godot 4.5.1，GL Compatibility，Windows x64。
 
 解压 `ColonyCharter-1.7.0-Windows-x64.zip`，把 `ColonyCharter.exe` 和 `ColonyCharter.pck` 放在同一个文件夹，双击 EXE。
 
-第一次玩请保持主菜单的「新手引导：开」。引导用一颗专用星球，走完 14 步大约 15 分钟，可以随时结束，也可以在「保存与设置」里重新开始。
+第一次玩请保持主菜单的「新手引导：开」。引导用一颗专用星球，共 14 步，可以随时结束，也可以在「保存与设置」里重新开始。
 
 ## 操作
 

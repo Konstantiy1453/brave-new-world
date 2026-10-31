@@ -132,6 +132,9 @@ static func button(
 	if b.tooltip_text != hint:
 		b.tooltip_text = hint
 	b.disabled = false
+	# A reused button may have served another panel: what callers tune starts from the default.
+	b.clip_text = false
+	b.size_flags_stretch_ratio = 1.0
 	if key != "":
 		b.name = key
 	return b

@@ -204,3 +204,49 @@ target; the site card hid the build-cost multiplier when it was small. The captu
 reward made every later save unloadable (`v17_research` now reloads a save after a milestone).
 
 No test was rewritten in this phase.
+
+## Phase 8 and release
+
+Hardware: Intel Core i9-14900HX, NVIDIA GeForce RTX 4070 Laptop GPU, Windows 11, 32 threads.
+
+| Check | Evidence | Result |
+|---|---|---|
+| All headless suites | automated test, runner | 45 of 45 PASS |
+| Window suites | source-project window, runner `-Window` | 4 of 4 PASS |
+| Balance `--full`, 950 runs with 50 random-legal fuzz runs of 720 days | balance harness | 17 of 18 rows PASS, 0 audit errors; best-bot part of Openings is a miss |
+| 200-seed world test | automated test `v17_world_stats`; balance harness | PASS |
+| Determinism: 3 replays, and 1×, 4×, 10× through the real clock against no interface | balance harness; automated test `v17_speed` | byte-identical |
+| Capture suite: 22 views × 3 resolutions × 3 text sizes = 198 images | source-project window | all written at their true size |
+| Images viewed | screenshot viewed | about 60: all 22 at 1920×1080 18 px; 1280×720 at 20 px and 16 px and 2560×1440 at 20 px for the hardest pages. Not every image |
+| Tutorial through stage 1, save, quit, relaunch, continue, reach stage 2 | exported EXE, scripted through real buttons and the real clock (`tests/exe_drive_v17.gd`, `evidence/v17/exe_drive`) | PASS, log has no errors, audit clean |
+| 1.6 save: found by settings page and menu, migrated, original file unchanged | exported EXE, scripted, in an isolated APPDATA | PASS |
+| Performance | exported EXE (`tests/perf_probe_v17.gd`, `evidence/v17/perf`) | table below |
+| Manual tutorial run in the EXE | NOT_RUN | No person has done it. The scripted run above is not a substitute for reading the text |
+| Human first-time run and all human playtests | NOT_RUN | Checklist in `PLAYTEST.md` |
+
+| Measure, day-720 save | First run, empty caches | Second run | Target |
+|---|---|---|---|
+| Save size | 47,142 bytes | same | 1.5 MB |
+| Save, median of 20 (worst) | 9.7 ms (11.4) | 9.8 ms (11.5) | 100 ms |
+| Load, median of 20 (worst) | 20.2 ms (21.7) | 18.6 ms (25.2) | 300 ms |
+| Worst frame during autosave, 12 × 45 frames | 33.8 ms | 23.1 ms | 50 ms |
+| Page open, warm, 8 pages × 8 (worst) | 23.8 ms | 17.4 ms | 100 ms |
+| Page open, first time (worst, transport) | 162 ms | 171 ms | not a target |
+| Region, cold, 8 sites: median (worst) | 768 ms (822) | 766 ms (799) | 1.0 s |
+| Worst frame during a cold region load | 42.8 ms | 42.1 ms | 50 ms |
+
+Load assumes the world is already cached on disk, which the game does on first play. With no cache, a load also regenerates the world: about 0.5 s, 1.5 s at worst (Phase 5).
+
+Problems these checks found and fixed: a settlement's action row pushed the sidebar past the window edge at every size; reused buttons kept another panel's narrow settings; finishing the world atlas stopped the frame for 340 ms on each new world; a milestone reward made later saves unloadable (Phase 7); the settings page looked for 1.6 saves in the 1.5 folder; the balanced bot's first partner could be a barren site reached cheaply.
+
+### Known issues
+
+- `v17_speed` crashed once at 37 s under the runner (signal 11, main thread, top frame `EventsV2.pause_required`, where a dictionary is allocated each call, so probably earlier heap damage). No C++ symbols. 38 repeats, 32 of them under heavy load, did not reproduce it. Cause unknown. The test then ran days with no engine frames, unlike a real game; it now gives the engine a frame per simulated day.
+- `v16_scroll_probe` timed out once (540 s) while the machine was in use by someone else, and passed in 48 s alone. A window suite needs its window to keep drawing.
+- `tools/build_v17.ps1` found no export templates in `%APPDATA%\Godot`, so it unpacks the two it needs into `build\godot_home`. Nothing outside the repository was written.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `v16_rules_tests.gd` | Departure check compares with the town's own starting population | Opening crews changed |

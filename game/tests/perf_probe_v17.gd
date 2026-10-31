@@ -34,7 +34,9 @@ static func run(g) -> void:
 		"fixture": fixture,
 		"failures": [],
 	}
+	var first_load: int = Time.get_ticks_usec()
 	var error: String = g.sim.load_game(fixture)
+	report.first_load_in_process_ms = (Time.get_ticks_usec() - first_load) / 1000.0
 	if error != "":
 		report.failures.append(fixture + ": " + error)
 	else:
@@ -82,14 +84,19 @@ static func _autosave(g) -> Dictionary:
 	var quiet: Array = await _frames(g, AUTOSAVE_FRAMES)
 	var during: Array = []
 	var finish_frames: Array = []
+	var begin: Array = []
 	for _i: int in range(AUTOSAVE_SAMPLES):
+		var start: int = Time.get_ticks_usec()
 		g._begin_autosave()
+		begin.append((Time.get_ticks_usec() - start) / 1000.0)
 		var frames: Array = await _frames(g, AUTOSAVE_FRAMES)
 		during.append(frames.max())
 		finish_frames.append(g.autosave_task < 0)
 	return {
 		"quiet_worst_frame_ms": quiet.max(),
 		"autosave_worst_frame_ms": _spread(during),
+		"worst_frame_by_sample": during,
+		"begin_ms_by_sample": begin,
 		"samples": AUTOSAVE_SAMPLES,
 		"frames_per_sample": AUTOSAVE_FRAMES,
 		"all_finished": not finish_frames.has(false),
@@ -144,6 +151,8 @@ static func _regions(g) -> Dictionary:
 	g.navigate("planet")
 	return {
 		"cold_load_ms": _spread(loads),
+		"cold_load_by_sample": loads,
+		"worst_frame_by_sample": worst,
 		"worst_frame_ms": _spread(worst),
 		"samples": loads.size(),
 	}

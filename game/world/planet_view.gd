@@ -179,21 +179,37 @@ func _atlas_sample(
 	return Geo.SeedGeo.sample_with_context(lat, lon, tile_noise, context)
 
 
+## Joins the tiles, writes the file and builds the mipmaps away from the frame: only uploading the
+## finished texture happens on the main thread.
+static func _finish_atlas_image(job: Dictionary, tiles: Array) -> void:
+	var image := Image.create(1536, 768, false, Image.FORMAT_RGBA8)
+	for result: Dictionary in tiles:
+		image.blit_rect(
+			result.image, Rect2i(0, 0, 1536, result.image.get_height()), Vector2i(0, result.row)
+		)
+	image.save_png(job.path)
+	image.generate_mipmaps()
+	job.image = image
+
+
 func _poll_atlas_job() -> void:
 	if not atlas_job.is_empty():
-		for worker in atlas_job.workers:
-			if worker.is_alive():
-				return
-		var image := Image.create(1536, 768, false, Image.FORMAT_RGBA8)
-		for worker in atlas_job.workers:
-			var result: Dictionary = worker.wait_to_finish()
-			image.blit_rect(
-				result.image, Rect2i(0, 0, 1536, result.image.get_height()), Vector2i(0, result.row)
+		if not atlas_job.has("finish_task"):
+			for worker in atlas_job.workers:
+				if worker.is_alive():
+					return
+			var tiles: Array = []
+			for worker in atlas_job.workers:
+				tiles.append(worker.wait_to_finish())
+			atlas_job.finish_task = WorkerThreadPool.add_task(
+				_finish_atlas_image.bind(atlas_job, tiles)
 			)
-		image.save_png(atlas_job.path)
+			return
+		if not WorkerThreadPool.is_task_completed(int(atlas_job.finish_task)):
+			return
+		WorkerThreadPool.wait_for_task_completion(int(atlas_job.finish_task))
 		_trim_disk_atlases(atlas_job.path)
-		image.generate_mipmaps()
-		var texture := ImageTexture.create_from_image(image)
+		var texture := ImageTexture.create_from_image(atlas_job.image)
 		if atlas_cache.size() >= 2:
 			atlas_cache.erase(atlas_cache.keys()[0])
 		atlas_cache[atlas_job.key] = texture

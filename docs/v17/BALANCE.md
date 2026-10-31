@@ -94,3 +94,51 @@ Run: **release** · 2026-10-31T13-06-47 · 445 s wall clock. Source: balance har
 - 2026-10-31T03-00-14 · phase 2 (quick): 3 targets met, 10 missed.
 - 2026-10-31T02-23-14 · phase 1 (full): 4 targets met, 11 missed.
 - 2026-10-31T02-00-23 · 1.6 baseline (full): 4 targets met, 11 missed.
+
+## Before and after
+
+| Area | Target | 1.6 | 1.7 | |
+|---|---|---|---|---|
+| Floor | rush bot not before day 90 | day 19 | day 116 | PASS |
+| Balanced award, standard | 120-180 | day 19 | day 167 | PASS |
+| Balanced award, easy | 90-150 | day 19 | day 143 | PASS |
+| Balanced award, hard | 160-230 | day 42 | day 194 | PASS |
+| Openings: medians | within 15% | 19 / 25 / 19 | 166 / 160 / 179 (12%) | PASS |
+| Openings: best bot | differs by opening | - | rush for all three at standard | **MISS** |
+| Passive bot | review ~60, fails ~150 | 87 / 137 | 60 / 150 | PASS |
+| Sloppy bot | review everywhere, fails on hard | yes | yes, 60 of 60 on hard | PASS |
+| Population | stage goal at award; 300 by 360; 600 by 720 | 78 / 80 | 431 / 980 | PASS |
+| Labour lever | wage 1.0→1.3 moves immigration 20% | no wage policy | +39% | PASS |
+| Research, balanced | 3 techs, 10-20% scientists, 15-30% spend | 0, 8%, 11% | 5, 13%, 17% | PASS |
+| Research-first | 6 techs, award in band | 0, day 30 | 8, day 172 | PASS |
+| Money | reinvest 60%; income ×2.5 from 180 to 720 | 0%, ×1.16 | 79%, ×3.37 | PASS |
+| Export mix | no good above 60% | worst 57% | worst 51% | PASS |
+| Events | 25 short, 5 chains; 1 pause per 20 days at most; 15 distinct; no early repeat | 10, 3; 1 per 60; 10; - | 28, 6; 1 per 38; 28; 0 repeats | PASS |
+| Geography, 200 seeds | sites 14-20, 20-30, 28-40; 3 pairs; 3 archetypes; land 25-45%; 2-6 continents | not measured | 15-20, 20-30, 28-40; 3; 3; 28-42%; 2-6 | PASS |
+| Road trade-off | cheaper is slower for 30-70% | - | 58% of 2,798 pairs | PASS |
+| Determinism | byte-identical at 720 days and at any speed | replays identical | replays identical; 1×, 4×, 10× identical | PASS |
+| Audits | 0 errors, with 50 fuzz runs | 0 in 950 | 0 in 950 | PASS |
+| Save size | 1.5 MB at most | 8-11 MB | 47 KB at day 720 | PASS |
+| Save, load | 100 ms, 300 ms at most | 209 ms, 242 ms | 10 ms, 19 ms | PASS |
+| Autosave | no frame over 50 ms | not measured | worst frame 34 ms | PASS |
+| Page open, warm | 100 ms at most | not measured | 24 ms at most | PASS |
+| Region, cold | 1.0 s, no frame over 50 ms | not measured | median 767 ms, worst 822 ms; worst frame 43 ms | PASS |
+| Tutorial | headless run, skip, replay | none | all pass | PASS |
+| Tutorial, human first run | - | - | NOT_RUN | NOT_RUN |
+
+### Reading the misses
+
+- **Best bot by opening** stays a miss at standard. Rush is the fastest with all three, because its job is the shortest path. Without it: balanced, balanced, research-first. At easy the best are balanced, rush, balanced; at hard rush, rush, research-first.
+- **Takeovers are not a §5.2 row but matter.** 18 of 180 balanced runs fail: 17 after the award, between days 432 and 716, one on hard before the award. Reasons: unpaid bills as mines run out, or food shortages from the same collapse; five standard runs with ¥87,000 to ¥204,000 in the bank were taken over with no money problem at all, and the one traced (seed 73939133) had most of its people out of work. The bot never hands over, so this is an upper bound, not a player forecast.
+
+### What moved the numbers in Phase 8
+
+| Change | Effect |
+|---|---|
+| Base immigration 6 → 7 a month | award median 184 → about 162 |
+| Weekly streak | research-first 201 → 182; less luck in the award day |
+| Food reaches chain ends (3 fixes) | on the quick run, money ×2.42 → ×3.24, export worst 53% → 44% |
+| Company tolerates tiny risk | no takeover for one small town |
+| Land kept for the town, starts need 12 plots | no more starts like seed 1000003, with no ground for a laboratory |
+| Deposits ×1.25, deep mining first, diversifying | income ×2.59 → ×3.37; export worst 63% → 51% |
+| Greenhouses, no barren partner | research-first's stuck seeds gone |
