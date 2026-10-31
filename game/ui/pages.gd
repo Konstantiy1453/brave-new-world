@@ -59,13 +59,14 @@ static func region_actions(g, b):
 		return
 	var line = D.row(b)
 	for entry: Array in [
-		["建设设施 +", func(): g.open_fix({"page": "build", "category": "all"}), "OpenBuild"],
-		["批量 / 库存", func(): g.open_page("manage"), "OpenManage"],
+		["建设设施", func(): g.open_fix({"page": "build", "category": "all"}), "OpenBuild"],
+		["批量库存", func(): g.open_page("manage"), "OpenManage"],
 		["进入地区", func(): g.navigate("region"), "ViewRegion"],
 	]:
 		var action = D.button(line, str(entry[0]), entry[1], "", str(entry[2]))
 		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		D.font_size(action, 15)
+		action.clip_text = true
+		D.font_size(action, 14)
 		action.custom_minimum_size = Vector2(60, 38)
 
 
@@ -96,7 +97,8 @@ static func _site_actions(g, b, known: Dictionary):
 	var line = D.row(b)
 	var look = D.button(line, "查看地表", func(): g.navigate("region"), "", "ViewRegion")
 	look.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	D.font_size(look, 15)
+	look.size_flags_stretch_ratio = 0.7
+	D.font_size(look, 14)
 	look.custom_minimum_size = Vector2(60, 38)
 	_survey_button(g, line, known)
 	var first: bool = g.sim.state.settlements.is_empty()
@@ -347,13 +349,13 @@ static func _survey_button(g, b, known: Dictionary):
 	var at: int = int(known.id)
 	var button = D.button(
 		b,
-		"%s · ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
+		"%s ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
 		func(): g.act("survey", {"site": at}),
 		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。",
 		"SurveyButton"
 	)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	D.font_size(button, 15)
+	D.font_size(button, 14)
 	button.custom_minimum_size = Vector2(60, 38)
 
 
