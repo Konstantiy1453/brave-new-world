@@ -10,7 +10,7 @@
   "opening": "capital",
   "start_site": 0,
   "partner_site": 1,
-  "first_event_day": 30,
+  "first_event_day": 120,
   "shortage": {
     "kind": "water",
     "factor": 0.15,
