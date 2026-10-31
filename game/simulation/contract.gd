@@ -318,6 +318,8 @@ static func _check_milestones(sim: RefCounted) -> void:
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)
+			var paid: float = float(sim.state.career.get("milestones_paid", 0.0))
+			sim.state.career.milestones_paid = paid + float(milestone.reward)
 			sim._log("行星里程碑达成，生涯资金增加 %.0f。" % float(milestone.reward))
 
 

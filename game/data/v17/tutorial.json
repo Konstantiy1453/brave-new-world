@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "units": {
+    "days": "game days",
+    "factor": "multiplier on the output named by kind"
+  },
+  "seed": 260129,
+  "size": 1,
+  "difficulty": "easy",
+  "opening": "capital",
+  "start_site": 0,
+  "partner_site": 1,
+  "first_event_day": 30,
+  "shortage": {"kind": "water", "factor": 0.15, "days": 30, "key": "water", "category": "utilities"},
+  "steps": [
+    {
+      "id": "look",
+      "title": "看看这颗星球",
+      "text": "按住右键拖动可以旋转星球，滚轮缩放。星球上的圆点都是可以开发的地点。",
+      "target": ["MapHint"],
+      "done": {"name": "camera_moved"}
+    },
+    {
+      "id": "cards",
+      "title": "读地点卡",
+      "text": "点击两个地点。右侧卡片会告诉你水源、耕作潜力和矿藏估算，以及修路要花多少。",
+      "target": ["RegionChooser"],
+      "done": {"name": "sites_viewed", "count": 2}
+    },
+    {
+      "id": "land",
+      "title": "建立首府",
+      "text": "这个地点矿藏丰富，水源够用，附近也有能耕作的土地。点「在此建立首府」。",
+      "target": ["SettleButton"],
+      "site": "start",
+      "done": {"name": "settlements", "count": 1}
+    },
+    {
+      "id": "income",
+      "title": "开始赚钱",
+      "text": "矿场是第一笔收入。打开建设设施，在矿床地块上各建一座铁矿和铜矿。",
+      "target": ["Build_mine_ore", "OpenBuild"],
+      "done": {"name": "buildings_queued", "prefix": "mine_", "count": 2}
+    },
+    {
+      "id": "clock",
+      "title": "让时间走起来",
+      "text": "关掉面板，按空格或点「正常」。工程要几天才能完工，这段时间可以想想下一步。",
+      "target": ["Speed_1"],
+      "done": {"name": "day", "count": 3}
+    },
+    {
+      "id": "export",
+      "title": "第一笔出口",
+      "text": "矿石到了货运站就自动卖出。盯着顶部的公共资金，它很快就会开始增长。",
+      "target": ["TopStats"],
+      "done": {"name": "exports_total"}
+    },
+    {
+      "id": "ledger",
+      "title": "读账本",
+      "text": "打开经营账本。收入和支出按类别列好了，折线告诉你现金走向，也能看到现金还够撑多久。",
+      "target": ["Nav_economy"],
+      "done": {"name": "page_opened", "page": "economy"}
+    },
+    {
+      "id": "beds",
+      "title": "给人留床位",
+      "text": "床位满了就不会有人再来。建一处模块住区；人口页的吸引力一栏会告诉你人们为什么来或不来。",
+      "target": ["Build_habitat", "OpenBuild"],
+      "done": {"name": "buildings_queued", "prefix": "habitat", "count": 1}
+    },
+    {
+      "id": "problem",
+      "title": "解决第一个问题",
+      "text": "泵站的滤芯堵了，右侧出现红字。红字就是当前的问题，旁边的「处理」会带你去解决它：再建一座净水泵站。",
+      "target": ["Fix_water", "Build_water"],
+      "enter": "shortage",
+      "done": {"name": "shortage_cleared", "shortage": "water"}
+    },
+    {
+      "id": "research",
+      "title": "开始研究",
+      "text": "建一座研究所，再到科研教育里派至少 3 名研究员去做精细勘探。合同要求有项目在研。",
+      "target": ["Tech_survey", "Nav_research"],
+      "done": {"name": "project_staffed"}
+    },
+    {
+      "id": "stage",
+      "title": "完成第一阶段",
+      "text": "打开殖民合同，看看还差什么。完成后公司会拨款，并发给你第二据点的远征许可。",
+      "target": ["Nav_contract"],
+      "done": {"name": "contract_stage", "count": 2}
+    },
+    {
+      "id": "expedition",
+      "title": "派出远征队",
+      "text": "这里土地肥沃，适合种粮。点「派遣远征队建立据点」；队伍路上要走几天。",
+      "target": ["SettleButton"],
+      "site": "partner",
+      "done": {"name": "settlements", "count": 2}
+    },
+    {
+      "id": "road",
+      "title": "比较两种路",
+      "text": "打开交通运输。河谷公路便宜但绕远，工程公路直接但养护贵，还可能落石封路。选一条建起来。",
+      "target": ["Nav_transport"],
+      "done": {"name": "route_count"}
+    },
+    {
+      "id": "farm",
+      "title": "养活大家",
+      "text": "在第二据点的农田地块上建一座农场。本地粮食比进口便宜，下一阶段合同也要求自给。这是最后一步，之后就交给你了。",
+      "target": ["Build_farm", "OpenBuild"],
+      "done": {"name": "building_active", "prefix": "farm"}
+    }
+  ],
+  "tips": [
+    {
+      "id": "first_event",
+      "title": "第一条通讯",
+      "text": "通知不会暂停时间，到期按默认方案处理。想自己决定就打开左侧的通讯事件。",
+      "when": {"name": "event_seen"}
+    },
+    {
+      "id": "first_warning",
+      "title": "公司开始关注",
+      "text": "持续的问题会让公司不信任上升。公司关系页列出了原因和整改期限，解决原因就会回落。",
+      "when": {"name": "company_warning"}
+    },
+    {
+      "id": "first_depleted",
+      "title": "矿床挖完了",
+      "text": "这块地的矿已经挖完，矿工会自动空出来。去别的矿床地块开矿，或者到新的地点建立据点。",
+      "when": {"name": "deposit_depleted"}
+    },
+    {
+      "id": "first_closure",
+      "title": "道路封闭",
+      "text": "封路期间在途货物原地等待，不会丢失。工程公路有这个风险；铺装道路能大幅降低它。",
+      "when": {"name": "road_closed"}
+    }
+  ]
+}

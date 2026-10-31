@@ -9,6 +9,7 @@ const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Sites = preload("res://simulation/sites.gd")
+const Stats = preload("res://simulation/stats.gd")
 const AUTOMATED_KINDS: Array[String] = [
 	"mine_ore", "mine_copper", "mine_crystal", "processor", "component_plant"
 ]
@@ -217,7 +218,7 @@ static func _buy_supply_train(sim: RefCounted, s: Dictionary, d: Dictionary) -> 
 		sim._transfer(
 			"public", "external", missing * _import_price(sim, key), "import.stock", false, key
 		)
-		produce(sim, s, key, missing, "外部进口")
+		produce(sim, s, key, missing, Keys.SOURCE_IMPORT)
 
 
 static func _import_price(sim: RefCounted, key: String) -> float:
@@ -536,6 +537,12 @@ static func produce(
 		return
 	s.stock[resource] += amount
 	sim.state.resource_sources[resource] += amount
+	Stats.goods(
+		sim.state,
+		resource,
+		Stats.IMPORTED if _source == Keys.SOURCE_IMPORT else Stats.PRODUCED,
+		amount
+	)
 	if _source == Keys.SOURCE_PROCESSING:
 		if not s.has("exportable"):
 			s.exportable = {"materials": 0.0, "parts": 0.0}
@@ -546,6 +553,7 @@ static func consume(sim: RefCounted, s: Dictionary, resource: String, amount: fl
 	amount = minf(maxf(0.0, amount), float(s.stock[resource]))
 	s.stock[resource] -= amount
 	sim.state.resource_sinks[resource] += amount
+	Stats.goods(sim.state, resource, Stats.CONSUMED, amount)
 	if s.has("exportable") and s.exportable.has(resource):
 		s.exportable[resource] = maxf(0.0, float(s.exportable[resource]) - amount)
 

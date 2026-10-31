@@ -96,4 +96,17 @@ One line each: decision · reason · alternative rejected.
 - The school is an event outcome (appeal for 180 days, two workers retrained), not a building · the brief adds no school building · a new building kind.
 - 山脊里的空白图 was chosen as the sixth chain over 玻璃下的第二季 · it ties to hidden deposits and prospecting, which already exist · both.
 - Finished event instances beyond 16 are dropped; `endings` and `last_opened` keep what later conditions need · save size stays bounded with repeatable events · keeping every instance.
-
+- The tutorial game holds its first event until day 30 through an ordinary `tutorial_begin` action · the first lessons should not compete with a surprise decision, and a replay stays deterministic · switching events off for the whole tutorial.
+- The scripted filter clog multiplies pump output by 0.15 · 0.2 left one pump exactly at demand, so nothing showed; at 0.15 one pump is short and two are enough · removing the existing pump.
+- The tutorial's progress lives in `settings.cfg` and replay starts a new game on the pinned planet · a tutorial state inside saves would have to be migrated and validated · resuming a half-done tutorial from a save.
+- Coach steps do not lock the interface; a step that is already satisfied moves on by itself and Back holds it until Next · the brief says never modal · blocking clicks outside the target.
+- Tips show after the tutorial or instead of it, one at a time, once per installation · a first-time player should meet each only once · per-save tips.
+- Sidebar actions moved to a pinned bar under the scrolling part · at 1080p the settle button was below the fold, and the tutorial pointed at something off screen · a shorter card.
+- Navigation buttons shrunk to 34 px so all 14 fit at 1080p · the list had grown past the panel · a second column.
+- A category filter opens at "all" from the build button and at the right category from a fix button · a filter left on from an earlier fix hid what the tutorial's next step asked for · remembering the last filter.
+- The globe's sun follows the camera, over the viewer's left shoulder · a fixed sun put the home of any bot or player not on site 0 in the dark · a brighter night side.
+- Very fast is 10×; a frame runs at most 3 days and drops the backlog · a long frame (region load, autosave) must not become a burst of days · no limit.
+- Economy page runway keeps using `summary().runway` · one number from one place; its 7-day average is the fix for bug 8 · a second calculation from the new rollups.
+- Daily rollups are `state.stats`, 90 days of money and 30 of goods, read only by pages and validated on load · rules must not depend on a display aid, and the pages add them up unchecked · a separate file next to the save.
+- Milestone rewards count as paid income in `career.milestones_paid` · they were added to the career balance alone, so any save after a milestone was refused as "分红转账不守恒" (found by the capture suite) · removing the check.
+- Capture fixtures are saves written by `tests/make_fixtures_v17.gd` with the harness bots into `data/v17/acceptance_*.save` · they follow rule changes with one command, stay under 50 KB each and the export filter already excludes them · hand-built JSON fixtures as in 1.6.

@@ -2,6 +2,7 @@ extends RefCounted
 const Keys = preload("res://simulation/keys.gd")
 const Contract = preload("res://simulation/contract.gd")
 const Population = preload("res://simulation/population.gd")
+const Stats = preload("res://simulation/stats.gd")
 
 
 ## One causal source per economic/social/environmental chain, retained stage letters.
@@ -84,6 +85,7 @@ static func social_environment(sim) -> void:
 			s.workers -= leaving
 			s.population -= leaving
 			sim.state.departed_total += leaving
+			Stats.people(sim.state, int(s.region), false, leaving)
 			sim._reconcile_jobs(s)
 			sim._log("%s：持续缺乏住房、工作或食品，%d 名工人离开星球。" % [s.name, leaving])
 

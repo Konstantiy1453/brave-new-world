@@ -85,6 +85,26 @@ const TECH_BRANCHES: Dictionary = {
 	"logistics": "物流",
 	"society": "社会",
 }
+const BUILD_CATEGORIES: Dictionary = {
+	"extraction": "矿业",
+	"food": "食品",
+	"industry": "加工",
+	"utilities": "水电与货运",
+	"people": "人口",
+	"research": "科研",
+	"great": "巨型工程",
+}
+const ROLE_HINTS: Dictionary = {
+	"mining_basin": "矿藏丰富、地势平缓，适合作为首府和出口基地。",
+	"fertile_valley": "土地肥沃，适合作为粮食据点，矿藏很少。",
+	"highland_mining": "铜和晶体多，但建设费高、耕地少，需要外来粮食。",
+	"grassland": "地形开阔、地块多，各方面都不差，适合扩张人口。",
+	"coastal_plain": "靠海、地块平整，将来可以通航。",
+	"island": "晶体往往集中在这里，但地块少，要有海运才到得了。",
+	"lake_basin": "水源充足，矿和地都还可以。",
+	"arid": "矿藏丰富但水少，要留意供水和尘暴。",
+	"cold": "矿藏不错，但耕作困难、建设费高。",
+}
 const SITE_FILTERS: Array = [
 	["all", "全部地点"],
 	["ore", "铁矿丰富"],
@@ -301,3 +321,35 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 	if key == "research.funding":
 		return "%s · %s" % [name, str(config.techs.get(detail, {}).get("name", detail))]
 	return "%s · %s" % [name, detail]
+
+
+## The shortcut beside a shortage: what to do about it and where.
+static func fix(entry: Dictionary) -> Dictionary:
+	match str(entry.get("key", "")):
+		Keys.SH_POWER:
+			return {"text": "处理", "page": "build", "category": "utilities"}
+		Keys.SH_WATER:
+			return {"text": "处理", "page": "build", "category": "utilities"}
+		Keys.SH_HOUSING:
+			return {"text": "处理", "page": "build", "category": "people"}
+		Keys.SH_STARVING:
+			return {"text": "处理", "page": "build", "category": "food"}
+		Keys.SH_DEPLETED, Keys.SH_PROCESSOR_INPUT:
+			return {"text": "处理", "page": "build", "category": "extraction"}
+		Keys.SH_NO_PORT, Keys.SH_PORT_FULL:
+			return {"text": "处理", "page": "build", "category": "utilities"}
+		Keys.SH_JOBS_WORKERS, Keys.SH_JOBS_SPECIALISTS:
+			return {"text": "处理", "page": "population"}
+		Keys.SH_POLLUTION:
+			return {"text": "处理", "page": "company"}
+	return {}
+
+
+## Text for one plot in the build dialog's plot list.
+static func plot(row: Dictionary) -> String:
+	if str(row.kind) == "deposit":
+		var depth: String = "深层 · " if bool(row.deep) else ""
+		return "%s品位 %.2f · 储量 %.0f t" % [depth, float(row.grade), float(row.reserves)]
+	if str(row.kind) == "farm":
+		return "肥力 %.0f%%" % (float(row.fertility) * 100.0)
+	return "建设用地"

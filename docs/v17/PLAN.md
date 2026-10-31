@@ -58,6 +58,7 @@ The header holds `version`, `sha256` and `raw_size` of the payload, plus `planet
 | `events_v2.gd` | Existing; cooldowns, decisions versus notices, scaled magnitudes | 6 |
 | `company.gd`, `career.gd` | Existing; aid delivery target, handover options, archive files | 1, 2, 8 |
 | `tutorial.gd` | Named completion predicates; no `eval` | 7 |
+| `stats.gd` | Daily rollups for the economy and population pages; rules never read them | 7 |
 
 ### World (`game/world/`)
 

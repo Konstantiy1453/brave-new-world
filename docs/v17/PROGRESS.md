@@ -11,8 +11,8 @@
 | 4 Research | Done (`v17-phase4`) |
 | 5 CC-GEO-2.0, sites, roads, plots | Done (`v17-phase5`) |
 | 6 Events | Done (`v17-phase6`) |
-| 7 Tutorial and UI content | Next |
-| 8 | Not started |
+| 7 Tutorial and UI content | Done (`v17-phase7`) |
+| 8 Difficulty, openings, career, performance, release | Next |
 
 ## Done
 
@@ -31,18 +31,12 @@
 
 - Phase 6: events repeat after a cooldown (120–360 days); notices never pause, decisions pause when critical or when the player asks for all to pause; money in events scales with recent income; every option checks money, goods, beds, hands, research and roads, and shows why it is disabled; 18 new short events and 3 new chains (没有目的地的客船, 零点八毫米的裂缝, 山脊里的空白图); rockfall opens its event when a road really closes; `v17_events` suite tests each new chain's endings, deferral, timeout and save/load.
 
+- Phase 7: tutorial (Appendix F) with named conditions, non-modal coach panel with outline, skip, back, replay, contextual tips, quiet opening and a scripted first shortage; daily rollups (`stats.gd`); build dialog with categories, plot choice and forecast; site card with role hints, travel options and cost multiplier; settlement panel with fix buttons, grouped buildings and pinned actions; economy page with 30-day categories, 90-day chart, runway, goods table and price trends; arrivals and departures; in-transit goods on road cards; very fast speed; new guide copy; main menu with save summary and tutorial toggle; capture suite `ui/capture_suite_v17.gd` with bot-written fixtures.
+
 ## In progress
 
 Nothing.
 
 ## Next step
 
-Phase 7: tutorial (Appendix F), predicates, coach panel, skip and replay, contextual tips; build dialog with plot choice and forecast, site card, settlement panel with fix buttons, economy page (30-day categories, 90-day chart, runway, per-good flows), population and roads panels, very fast speed, copy rewrite, main menu with save header; layouts at 3 resolutions × 3 text sizes. Tuning aids: `game/tests/balance/trace_run.gd` prints one bot's timeline.
-
-## Blockers
-
-None.
-
-## Latest harness metrics
-
-Phase 6, `--quick`, 80 runs, 0 audit errors: floor day 135; balanced award 184; openings 181 / 173 / 189; passive review 59, failure 149; population 401 / 795; research 7 techs, 13%, 18%; events 1 pause per 38 days, 29 distinct, 0 repeats, 28 short, 6 chains. Misses to tune in Phase 8: award 184 (band 120–180), research-first day 201, income ×2.42 (target ×2.5), labour lever +19% (target +20%). See `BALANCE.md`.
+Phase 8: W12 difficulty and openings, career with new procedural worlds; close the §5.2 misses; performance measures (save, load, autosave frames, page open, region frames) in the real window; capture at all sizes; `tools/build_v17.ps1`, `tools/package_v17.py`, exported EXE checks; final `--full` and 200-seed runs; determinism at speeds; `PLAYTEST.md`, Chinese `README.md`, `CHANGELOG.md`, final summary here, release identity file, tag `v1.7.0`, `delivery\v17`.

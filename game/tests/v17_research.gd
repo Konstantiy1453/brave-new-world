@@ -361,6 +361,9 @@ func _megaprojects() -> void:
 		"three megaprojects meet their milestone"
 	)
 	check(float(sim.state.career.balance) > balance, "the milestone pays out")
+	check(sim.save_game("user://milestone.save") == "", "a save after a milestone is written")
+	var reloaded: RefCounted = sim.get_script().new()
+	check(reloaded.load_game("user://milestone.save") == "", "and loads again")
 
 
 func _openings() -> void:

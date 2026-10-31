@@ -184,3 +184,23 @@ Cold load, which regenerates the world, is measured in Phase 5 against the new g
 | `v16_events_tests.gd` | Short-event loop covers the ten 1.6 events; pause checks set "all decisions pause" | New events need beds, roads or projects and have their own suite; `pump_seal` is now a minor decision |
 | `v16_ui_tests.gd`, `v17_bugs.gd` | Use the `water` chain for "an event blocks time" | Short notices no longer pause |
 
+## Phase 7
+
+| Check | Evidence | Result |
+|---|---|---|
+| Tutorial start to finish, skip, back, replay, tips once, pinned sites, scripted shortage | automated test `v17_tutorial` (headless, drives the real UI scene) | PASS, 131+ checks |
+| Rollups match the daily income, save and reload byte-identical | automated test `v17_tutorial` | PASS |
+| New build dialog, site card, settlement panel, economy, population pages | automated test `v17_tutorial`; screenshot viewed | PASS |
+| Every main page at 1920×1080 (18 px) and 1280×720 (20 px) | source-project window, `--qa-v17`; screenshot viewed | Problems below fixed |
+| All headless suites | automated test, runner | 44 of 44 PASS |
+| Window suites | automated test, runner `-Window` | 4 of 4 PASS |
+| Balance, `--quick` | balance harness | 80 runs, 0 audit errors; misses in `BALANCE.md` |
+| Manual tutorial run in the exported EXE | NOT_RUN | Phase 8 |
+| Human first-time run | NOT_RUN | Needs the user |
+
+Problems the screenshots found and fixed: the settle button was below the fold even at 1080p; navigation needed a scrollbar at
+1080p; the home site was on the globe's night side unless it was site 0; the coach panel had empty space and could cover its
+target; the site card hid the build-cost multiplier when it was small. The capture suite also found a bug no test had: a milestone
+reward made every later save unloadable (`v17_research` now reloads a save after a milestone).
+
+No test was rewritten in this phase.

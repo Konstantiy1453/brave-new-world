@@ -4,6 +4,7 @@ extends RefCounted
 
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Stats = preload("res://simulation/stats.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -33,6 +34,7 @@ static func price(sim: RefCounted, good: String) -> float:
 static func record_export(sim: RefCounted, good: String, amount: float) -> void:
 	var saturation: Dictionary = sim.state.market.saturation
 	saturation[good] = float(saturation.get(good, 0.0)) + amount
+	Stats.goods(sim.state, good, Stats.EXPORTED, amount)
 
 
 static func daily(sim: RefCounted) -> void:
@@ -55,7 +57,20 @@ static func view(sim: RefCounted) -> Array:
 					"base": float(sim.config.prices[good]),
 					"factor": factor(sim, good),
 					"saturation": float(sim.state.market.saturation.get(good, 0.0)),
+					"trend": _trend(sim, good),
 				}
 			)
 		)
 	return rows
+
+
+## -1 while exports push the price down faster than the market recovers, +1 while it recovers.
+static func _trend(sim: RefCounted, good: String) -> int:
+	var saturation: float = float(sim.state.market.saturation.get(good, 0.0))
+	if saturation < 1.0:
+		return 0
+	var goods_days: Array = sim.state.get("stats", {}).get("goods_days", [])
+	var sold: float = 0.0
+	if not goods_days.is_empty():
+		sold = float(goods_days.back().get(good, [0.0, 0.0, 0.0])[Stats.EXPORTED])
+	return -1 if sold > saturation * float(sim.market_rules.decay_per_day) else 1

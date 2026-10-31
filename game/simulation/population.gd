@@ -6,6 +6,7 @@ const Keys = preload("res://simulation/keys.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Research = preload("res://simulation/research.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Stats = preload("res://simulation/stats.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -143,6 +144,7 @@ static func _admit(sim: RefCounted, s: Dictionary, workers: int, scientists: int
 	s.scientists += scientists
 	s.population += count
 	sim.state.immigrants_total += count
+	Stats.people(sim.state, int(s.region), true, count)
 	sim._transfer(
 		"external",
 		"residents",
@@ -373,6 +375,9 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 		"scientist_price": campaign_price(sim, "scientist"),
 		"travel_days": int(sim.pop_rules.recruitment.travel_days),
 		"in_transit": _reserved_beds(sim, region),
+		"prospects": job_prospects(sim, s),
+		"arrived_30": int(_people_30(sim, "arrivals", region)),
+		"departed_30": int(_people_30(sim, "departures", region)),
 	}
 
 
@@ -381,6 +386,10 @@ static func habitat_beds(sim: RefCounted, b: Dictionary) -> int:
 	if int(b.get("level", 1)) >= int(rule.level):
 		return int(rule.housing)
 	return int(sim.config.buildings.habitat.housing)
+
+
+static func _people_30(sim: RefCounted, column: String, region: int) -> float:
+	return float(Stats.window(sim.state)[column].get(str(region), 0.0))
 
 
 static func refresh(sim: RefCounted, s: Dictionary) -> void:

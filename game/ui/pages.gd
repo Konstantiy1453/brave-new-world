@@ -2,6 +2,9 @@ extends RefCounted
 const D = preload("res://ui/design.gd")
 const WG = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
+const Keys = preload("res://simulation/keys.gd")
+const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
+const MONEY_ROWS: int = 8
 const RES = {
 	"ore": "铁矿",
 	"copper": "铜矿",
@@ -21,39 +24,97 @@ static func region(g, b):
 	var site_names: Array = []
 	for reg in g.sim.state.world.regions:
 		site_names.append(reg.name)
-	D.option(
-		b,
+	var pickers = D.row(b)
+	var chooser = D.option(
+		pickers,
 		"RegionChooser",
 		site_names,
 		g.selected,
 		func(id):
-			g.selected = id
+			g.select_region(id)
 			if g.local_view:
 				g.map.show_region(id)
 			else:
 				g.map.focus_region(id)
-			g.refresh_sidebar()
 	)
-	_site_filter(g, b)
+	var filter = _site_filter(g, pickers)
+	for picker: OptionButton in [chooser, filter]:
+		D.font_size(picker, 15)
+		picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		picker.clip_text = true
+		picker.custom_minimum_size = Vector2(60, 34)
 	var known: Dictionary = g.sim.site_view(g.selected)
-	_site_facts(g, b, known)
 	var s: Dictionary = g.settlement()
 	if s.is_empty():
-		D.label(b, "尚未开发", 18, D.GOLD)
-		_survey_button(g, b, known)
-		var first: bool = g.sim.state.settlements.is_empty()
-		D.button(
-			b,
-			"在此建立首府" if first else "派遣远征队建立据点",
-			func(): g.act("settle", {"site": g.selected}),
-			"首府需要这块大陆上还有其他可达地点；远征需要出发据点备齐人员和物资。"
-		)
-		D.button(b, "查看地区地表", func(): g.navigate("region"))
+		_site_card(g, b, known)
+	else:
+		_settlement_panel(g, b, s, known)
+
+
+## The buttons under the sidebar's scrolling part, so the next action is always on screen.
+static func region_actions(g, b):
+	var known: Dictionary = g.sim.site_view(g.selected)
+	if g.settlement().is_empty():
+		_site_actions(g, b, known)
 		return
+	var line = D.row(b)
+	for entry: Array in [
+		["建设设施 +", func(): g.open_fix({"page": "build", "category": "all"}), "OpenBuild"],
+		["批量 / 库存", func(): g.open_page("manage"), "OpenManage"],
+		["进入地区", func(): g.navigate("region"), "ViewRegion"],
+	]:
+		var action = D.button(line, str(entry[0]), entry[1], "", str(entry[2]))
+		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		D.font_size(action, 15)
+		action.custom_minimum_size = Vector2(60, 38)
+
+
+## An unsettled site: what it offers, what reaching it costs, and what it is good for.
+static func _site_card(g, b, known: Dictionary):
+	_site_facts(g, b, known)
+	var hint: String = str(Labels.ROLE_HINTS.get(known.archetype, ""))
+	if hint != "":
+		D.label(b, hint, 16, D.INK)
+	var links: Dictionary = g.sim.site_links(g.selected)
+	if not links.is_empty():
+		D.label(b, "从 %s 出发：" % links.name, 15, D.TEAL)
+		for variant: String in ["valley", "engineered", "sea"]:
+			var road: Dictionary = links.variants[variant]
+			if bool(road.reachable):
+				D.label(
+					b,
+					(
+						"%s  %d 天 · ¥ %.0f"
+						% [g.sim.config.roads[variant].name, int(road.days), float(road.cost)]
+					),
+					15,
+					D.MUTED
+				)
+
+
+static func _site_actions(g, b, known: Dictionary):
+	var line = D.row(b)
+	var look = D.button(line, "查看地表", func(): g.navigate("region"), "", "ViewRegion")
+	look.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	D.font_size(look, 15)
+	look.custom_minimum_size = Vector2(60, 38)
+	_survey_button(g, line, known)
+	var first: bool = g.sim.state.settlements.is_empty()
+	D.button(
+		b,
+		"在此建立首府" if first else "派遣远征队建立据点",
+		func(): g.act("settle", {"site": g.selected}),
+		"首府需要这块陆地上还有其他地点；远征需要出发据点备齐人员和物资。",
+		"SettleButton"
+	)
+
+
+## A settlement: key figures, then problems with a way to fix each, then its buildings.
+static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 	D.label(
 		b,
 		(
-			"人口 %d  ·  住房 %d\n就业 %d  /  劳动人口 %d\n研究员 %d  ·  未成年 %d"
+			"人口 %d  ·  床位 %d\n就业 %d / 劳动力 %d  ·  研究员 %d  ·  未成年 %d"
 			% [
 				s.population,
 				s.get("housing", 0),
@@ -65,11 +126,11 @@ static func region(g, b):
 		),
 		16
 	)
-	D.label(b, "本地食品储备  %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
+	D.label(b, "食品可吃 %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
 	D.label(
 		b,
 		(
-			"电力 %.0f / %.0f  ·  供水 %.0f / %.0f\n（可用供给 / 需求）"
+			"电力 %.0f / %.0f  ·  供水 %.0f / %.0f（供给 / 需求）"
 			% [
 				s.get("power_supply", 0),
 				s.get("power_demand", 0),
@@ -77,66 +138,124 @@ static func region(g, b):
 				s.get("water_demand", 0)
 			]
 		),
-		16,
+		15,
 		D.MUTED
 	)
-	for shortage in s.get("shortages", []):
-		D.label(b, "!  " + Labels.shortage(g.sim.config, shortage), 15, D.RED)
-	D.button(b, "建设设施  +", func(): g.open_page("build"))
-	D.button(b, "批量生产 / 库存目标", func(): g.open_page("manage"))
-	D.button(b, "进入地区 / 查看设施", func(): g.navigate("region"))
-	D.label(b, "设施状态", 14, D.TEAL)
-	for index in range(s.buildings.size()):
-		var item = s.buildings[index]
-		var active = bool(item.get("active", false))
-		D.label(
-			b,
-			(
-				"%s%s · %s"
-				% [
-					Labels.building_name(g.sim.config, item.kind),
-					" %d 级" % int(item.level) if int(item.level) > 1 else "",
-					"运营" if active else Labels.building_status(item)
-				]
-			),
-			15,
-			D.INK if active else D.MUTED
+	for shortage: Dictionary in s.get("shortages", []):
+		var line = D.row(b)
+		var text = D.label(line, "!  " + Labels.shortage(g.sim.config, shortage), 15, D.RED)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var fix: Dictionary = Labels.fix(shortage)
+		if not fix.is_empty():
+			var action = D.button(
+				line, str(fix.text), func(): g.open_fix(fix), "", "Fix_" + str(shortage.key)
+			)
+			D.font_size(action, 14)
+			action.custom_minimum_size.y = 28
+	_building_groups(g, b, s)
+	D.label(b, "地块与矿藏", 14, D.TEAL)
+	_site_facts(g, b, known)
+	if g.sim.state.research.completed.has("prospecting"):
+		_survey_button(g, b, known)
+
+
+## One line per kind of building, those with problems first; individual controls on demand.
+static func _building_groups(g, b, s: Dictionary):
+	D.label(b, "设施", 14, D.TEAL)
+	var groups: Dictionary = {}
+	for index: int in range(s.buildings.size()):
+		var item: Dictionary = s.buildings[index]
+		var kind: String = str(item.kind)
+		if not groups.has(kind):
+			groups[kind] = {"kind": kind, "rows": [], "running": 0, "problems": 0, "first": index}
+		groups[kind].rows.append(index)
+		if bool(item.get("active", false)):
+			groups[kind].running += 1
+		elif str(item.get("status", "")) in PROBLEM_STATUSES:
+			groups[kind].problems += 1
+	var ordered: Array = groups.values()
+	ordered.sort_custom(
+		func(a: Dictionary, x: Dictionary) -> bool:
+			if (int(a.problems) > 0) != (int(x.problems) > 0):
+				return int(a.problems) > 0
+			return int(a.first) < int(x.first)
+	)
+	for group: Dictionary in ordered:
+		var kind: String = group.kind
+		var open: bool = bool(g.expanded_kinds.get(kind, false))
+		var line = D.row(b)
+		var words: String = (
+			"%s ×%d · 运营 %d"
+			% [Labels.building_name(g.sim.config, kind), group.rows.size(), group.running]
 		)
-		if item.get("owner", "public") == "public":
-			var idx = index
-			var bt = D.button(
-				b,
-				"暂停此设施" if item.get("enabled", true) else "恢复此设施",
-				func(): g.act("toggle", {"region": g.selected, "index": idx})
-			)
-			D.font_size(bt, 14)
-			bt.custom_minimum_size.y = 30
-			var preview: Dictionary = g.sim.toggle_preview(int(s.region), idx)
-			bt.tooltip_text = (
-				"停用规则：不提供产能或住房。切换后住房 %s，住房缺口 %s"
-				% [
-					str(preview.get("housing_after", "—")),
-					str(preview.get("housing_shortfall", "—"))
-				]
-			)
-			var upgrade: Dictionary = g.sim.upgrade_preview(int(s.region), idx)
-			if not upgrade.is_empty() and g.sim.state.research.completed.has(upgrade.tech):
-				var raise_level = D.button(
-					b,
-					"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost)],
-					func(): g.act("upgrade", {"region": g.selected, "index": idx}),
-					str(upgrade.disabled_reason)
-				)
-				D.font_size(raise_level, 14)
-				raise_level.custom_minimum_size.y = 30
-				raise_level.disabled = str(upgrade.disabled_reason) != ""
+		if int(group.problems) > 0:
+			words += " · 问题 %d" % int(group.problems)
+		var caption = D.label(line, words, 15, D.RED if int(group.problems) > 0 else D.INK)
+		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var toggle = D.button(
+			line,
+			"收起" if open else "详情",
+			func():
+				g.expanded_kinds[kind] = not open
+				g.refresh_sidebar(),
+			"",
+			"Group_" + kind
+		)
+		D.font_size(toggle, 14)
+		toggle.custom_minimum_size.y = 28
+		if open:
+			for index: int in group.rows:
+				_building_row(g, b, s, index)
 
 
-static func _site_filter(g, b):
+static func _building_row(g, b, s: Dictionary, index: int):
+	var item: Dictionary = s.buildings[index]
+	var active: bool = bool(item.get("active", false))
+	D.label(
+		b,
+		(
+			"%s%s · %s"
+			% [
+				Labels.building_name(g.sim.config, item.kind),
+				" %d 级" % int(item.level) if int(item.level) > 1 else "",
+				"运营" if active else Labels.building_status(item)
+			]
+		),
+		15,
+		D.INK if active else D.MUTED
+	)
+	if item.get("owner", "public") != "public":
+		return
+	var bt = D.button(
+		b,
+		"暂停此设施" if item.get("enabled", true) else "恢复此设施",
+		func(): g.act("toggle", {"region": g.selected, "index": index})
+	)
+	D.font_size(bt, 14)
+	bt.custom_minimum_size.y = 30
+	var preview: Dictionary = g.sim.toggle_preview(int(s.region), index)
+	bt.tooltip_text = (
+		"停用规则：不提供产能或住房。切换后住房 %s，住房缺口 %s"
+		% [str(preview.get("housing_after", "—")), str(preview.get("housing_shortfall", "—"))]
+	)
+	var upgrade: Dictionary = g.sim.upgrade_preview(int(s.region), index)
+	if not upgrade.is_empty() and g.sim.state.research.completed.has(upgrade.tech):
+		var raise_level = D.button(
+			b,
+			"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost)],
+			func(): g.act("upgrade", {"region": g.selected, "index": index}),
+			str(upgrade.disabled_reason)
+		)
+		D.font_size(raise_level, 14)
+		raise_level.custom_minimum_size.y = 30
+		raise_level.disabled = str(upgrade.disabled_reason) != ""
+
+
+static func _site_filter(g, b) -> OptionButton:
 	var names: Array = []
 	for row: Array in Labels.SITE_FILTERS:
 		names.append(row[1])
-	D.option(
+	return D.option(
 		b,
 		"SiteFilter",
 		names,
@@ -169,11 +288,12 @@ static func _site_facts(g, b, known: Dictionary):
 	D.label(
 		b,
 		(
-			"耕作潜力  %s    水源  %s\n海拔  %d m"
+			"耕作潜力  %s    水源  %s\n海拔  %d m    建设费 ×%.2f"
 			% [
 				_share_text(known.fertility, band * 0.5),
 				_share_text(known.water, band * 0.5),
-				known.elevation
+				known.elevation,
+				float(known.development)
 			]
 		),
 		16,
@@ -210,8 +330,6 @@ static func _site_facts(g, b, known: Dictionary):
 		notes.append("干旱")
 	if float(known.risks.flood) > 0.3:
 		notes.append("易涝")
-	if float(known.development) > 1.05:
-		notes.append("建设费 ×%.2f" % float(known.development))
 	if known.neighbors.is_empty():
 		notes.append("孤立陆地：需要海运")
 	if not notes.is_empty():
@@ -226,12 +344,16 @@ static func _survey_button(g, b, known: Dictionary):
 	if int(known.survey) >= 1 and not deep:
 		return
 	var at: int = int(known.id)
-	D.button(
+	var button = D.button(
 		b,
 		"%s · ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
 		func(): g.act("survey", {"site": at}),
-		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。"
+		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。",
+		"SurveyButton"
 	)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	D.font_size(button, 15)
+	button.custom_minimum_size = Vector2(60, 38)
 
 
 static func populate(g, b, page):
@@ -459,48 +581,139 @@ static func _contract_stage(g, b, stage: Dictionary, current: int):
 
 static func build(g, b):
 	D.label(b, g.sim.state.world.regions[g.selected].name + " / 建设目录", 23, D.TEAL)
-	D.label(b, "工程消耗当前据点的实物库存。竣工后按劳力、电力、水源和原料限产；鼠标停留可查看配方。", 17, D.MUTED)
-	for key in g.sim.config.buildings:
-		var spec: Dictionary = g.sim.build_preview(g.selected, key)
-		var card = D.card(b)
-		var r = D.row(card)
-		D.icon(r, str(key).trim_prefix("mine_"), 31)
-		var text = D.col(r)
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		D.label(text, spec.name, 20)
-		D.label(
-			text,
-			(
-				"¥ %d  |  建材 %d  部件 %d  |  %d 天  |  岗位 %d  电 %.0f  水 %.0f"
-				% [
-					spec.cost,
-					spec.materials,
-					spec.parts,
-					spec.days,
-					spec.jobs,
-					spec.power,
-					spec.water
-				]
-			),
-			16,
-			D.GOLD
+	var s: Dictionary = g.settlement()
+	if s.is_empty():
+		D.label(b, "请先在这里建立据点。", 18, D.GOLD)
+		return
+	D.label(
+		b,
+		(
+			"工程消耗本地仓库的建材和部件。空闲工人 %d · 公共资金 ¥ %s · 建材 %.0f t · 部件 %.0f t"
+			% [g.sim.free_workers(s), g.money(g.sim.state.cash), s.stock.materials, s.stock.parts]
+		),
+		17,
+		D.MUTED
+	)
+	var filters = D.row(b)
+	_category_button(g, filters, "all", "全部")
+	for key: String in Labels.BUILD_CATEGORIES:
+		_category_button(g, filters, key, str(Labels.BUILD_CATEGORIES[key]))
+	for category: String in Labels.BUILD_CATEGORIES:
+		if g.build_category != "all" and g.build_category != category:
+			continue
+		D.label(b, str(Labels.BUILD_CATEGORIES[category]), 19, D.TEAL)
+		for key: String in g.sim.config.buildings:
+			if str(g.sim.config.buildings[key].get("category", "")) == category:
+				_build_card(g, b, key)
+
+
+static func _category_button(g, parent, key: String, text: String):
+	var button = D.button(
+		parent,
+		text,
+		func():
+			g.build_category = key
+			g.populate_current_page(),
+		"",
+		"Cat_" + key
+	)
+	D.font_size(button, 15)
+	button.custom_minimum_size.y = 32
+	button.add_theme_color_override("font_color", D.GOLD if g.build_category == key else D.INK)
+
+
+static func _build_card(g, b, key: String):
+	var spec: Dictionary = g.sim.build_preview(g.selected, key)
+	var choices: Array = g.sim.plot_choices(g.selected, key)
+	var plot: int = _chosen_plot(g, key, choices)
+	var forecast: Dictionary = g.sim.build_forecast(g.selected, key, plot)
+	var needed: String = str(spec.get("requires_tech", ""))
+	var locked: bool = needed != "" and not g.sim.state.research.completed.has(needed)
+	var refusal: String = str(forecast.disabled_reason)
+	var card = D.card(b)
+	var r = D.row(card)
+	D.icon(r, str(key).trim_prefix("mine_"), 31)
+	var text = D.col(r)
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	D.label(text, spec.name, 20)
+	D.label(
+		text,
+		"¥ %d · 建材 %d · 部件 %d · %d 天" % [spec.cost, spec.materials, spec.parts, spec.days],
+		16,
+		D.GOLD
+	)
+	D.label(
+		text,
+		(
+			"岗位 %d（空闲工人 %d） · 电 %.0f · 水 %.0f · 维护 ¥ %.1f/日"
+			% [
+				int(forecast.jobs),
+				int(forecast.free_workers),
+				spec.power,
+				spec.water,
+				spec.maintenance
+			]
+		),
+		15,
+		D.MUTED
+	)
+	var outcome: String = _forecast_text(forecast)
+	if outcome != "":
+		D.label(text, outcome, 15, D.TEAL)
+	var order = D.button(
+		r,
+		"需要：" + str(g.sim.config.techs[needed].name) if locked else "下达建设",
+		func(): g.act("build", {"site": g.selected, "kind": key, "plot": plot}),
+		refusal,
+		"Build_" + key
+	)
+	order.disabled = locked or refusal != ""
+	if choices.size() > 1 and str(choices[0].kind) != "general":
+		var names: Array = []
+		var picked: int = 0
+		for index: int in range(choices.size()):
+			names.append(Labels.plot(choices[index]))
+			if int(choices[index].index) == plot:
+				picked = index
+		D.option(
+			card,
+			"Plot_" + key,
+			names,
+			picked,
+			func(id):
+				g.build_plots[key] = int(choices[id].index)
+				g.populate_current_page()
 		)
-		var kind = key
-		var needed: String = str(spec.get("requires_tech", ""))
-		var locked: bool = needed != "" and not g.sim.state.research.completed.has(needed)
-		var order = D.button(
-			r,
-			"需要：" + str(g.sim.config.techs[needed].name) if locked else "下达建设",
-			func(): g.act("build", {"region": g.selected, "kind": kind}),
-			str(spec.description)
-		)
-		order.disabled = locked
-		if bool(spec.get("megaproject", false)):
-			D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 16, D.TEAL)
-		D.label(card, spec.description + "  日维护 ¥ %.1f。" % spec.maintenance, 16, D.MUTED)
-		var refusal: String = str(g.sim.build_forecast(g.selected, key).disabled_reason)
-		if refusal != "" and not locked:
-			D.label(card, refusal, 15, D.GOLD)
+	D.label(card, str(spec.description), 15, D.MUTED)
+	if bool(spec.get("megaproject", false)):
+		D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 15, D.TEAL)
+	if refusal != "" and not locked:
+		D.label(card, refusal, 15, D.GOLD)
+
+
+## The plot the player picked for this kind if it is still free, otherwise the best one.
+static func _chosen_plot(g, key: String, choices: Array) -> int:
+	if choices.is_empty():
+		return -1
+	var wanted: int = int(g.build_plots.get(key, -1))
+	for row: Dictionary in choices:
+		if int(row.index) == wanted:
+			return wanted
+	return int(choices[0].index)
+
+
+static func _forecast_text(forecast: Dictionary) -> String:
+	var parts: PackedStringArray = []
+	for good: String in forecast.outputs:
+		parts.append("%s %.1f t/日" % [RES.get(good, good), float(forecast.outputs[good])])
+	if float(forecast.revenue_per_day) != 0.0:
+		parts.append("收入 ¥ %.0f/日" % float(forecast.revenue_per_day))
+	parts.append("净 ¥ %+.0f/日" % float(forecast.net_per_day))
+	if float(forecast.payback_days) > 0.0:
+		parts.append("约 %.0f 日回本" % float(forecast.payback_days))
+	if float(forecast.reserve_days) >= 0.0:
+		parts.append("储量够挖 %.0f 日" % float(forecast.reserve_days))
+	return " · ".join(parts)
 
 
 static func economy(g, b):
@@ -513,49 +726,69 @@ static func economy(g, b):
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		D.label(c, pair[0], 15, D.MUTED)
 		D.label(c, "¥ " + g.money(pair[1]), 29, D.GOLD)
-	var net = float(state.get("operating_net", 0))
-	var runway: float = float(g.sim.summary().runway)
+	var summary: Dictionary = g.sim.summary()
+	var lasting: String = "经营净流入"
+	if float(summary.runway) >= 0.0:
+		lasting = "预计现金可维持 %.1f 天" % float(summary.runway)
+	D.label(b, "近 7 日平均净额 ¥ %+.0f/日 · %s" % [float(summary.operating_average), lasting], 19, D.TEAL)
+	if float(state.get("debt", 0)) > 0.0:
+		D.label(
+			b,
+			"到期欠款 ¥ %.0f · 已连续 %d 日" % [float(state.debt), int(state.get("grace_days", 0))],
+			17,
+			D.RED
+		)
+	var series: Dictionary = g.sim.stats_series()
+	var chart = D.card(b)
 	D.label(
-		b,
+		chart,
 		(
-			"本期公共经营净额：%+.2f / 日   ·   预计现金可维持：%s"
-			% [net, ("%.1f 天" % runway) if runway >= 0 else "经营净流入"]
+			"近 90 日  金色：现金 ¥ %s 至 ¥ %s    青色：每日净额 ¥ %+.0f 至 ¥ %+.0f"
+			% [
+				g.money(_lowest(series.cash)),
+				g.money(_highest(series.cash)),
+				_lowest(series.net),
+				_highest(series.net)
+			]
 		),
-		19,
-		D.TEAL
-	)
-	D.label(
-		b,
-		(
-			"本日经营支出 ¥ %.2f · 到期欠款 ¥ %.2f · 连续欠款 %d 日"
-			% [state.get("expense_daily", 0), state.get("debt", 0), state.get("grace_days", 0)]
-		),
-		17,
-		D.GOLD
-	)
-	var finance: float = 0.0
-	for entry in state.ledger:
-		if (
-			int(entry.day) > int(state.day) - 7
-			and not bool(entry.operating)
-			and entry.from == "external"
-			and entry.to == "public"
-		):
-			finance += float(entry.amount)
-	D.label(b, "最近7日非经营外部流入 ¥ %.2f · 援助、事件拨款与生涯注资单列，不计连盈。" % finance, 17, D.TEAL)
-	D.button(b, "查看公司审查原因、整改期限与救助义务", func(): g.open_page("company"))
-	D.label(
-		b,
-		(
-			"口径：建设投资、融资不计入持续经营；工资和消费为内部转账。公司在总督阶段按正经营结余收取 %.0f%%；援助追加分成另列。"
-			% (float(g.sim.config.contract.company_tax_rate) * 100)
-		),
-		16,
+		15,
 		D.MUTED
 	)
+	D.line_chart(
+		chart,
+		"CashChart",
+		[{"values": series.cash, "color": D.GOLD}, {"values": series.net, "color": D.TEAL}]
+	)
+	var totals: Dictionary = g.sim.stats_window(30)
+	var columns = D.row(b)
+	_money_column(g, columns, "近 30 日收入", totals.income, D.TEAL)
+	_money_column(g, columns, "近 30 日支出", totals.expense, D.GOLD)
+	if not totals.invest.is_empty() or not totals.funding.is_empty():
+		var capital = D.row(b)
+		_money_column(g, capital, "近 30 日投资（不计经营）", totals.invest, D.MUTED)
+		_money_column(g, capital, "近 30 日外来资金（不计经营）", totals.funding, D.MUTED)
+	_goods_table(b, totals.goods)
+	D.label(b, "出口价格：出口越多价格越低，停售后缓慢恢复", 20, D.TEAL)
+	for row_data: Dictionary in g.sim.market_view():
+		var arrow: String = {-1: "↓", 0: "→", 1: "↑"}[int(row_data.trend)]
+		D.label(
+			b,
+			(
+				"%s  ¥ %.1f / t  %s（基准 %.1f，%.0f%%）"
+				% [
+					RES.get(row_data.good, row_data.good),
+					row_data.price,
+					arrow,
+					row_data.base,
+					row_data.factor * 100.0
+				]
+			),
+			16,
+			D.INK if float(row_data.factor) > 0.8 else D.GOLD
+		)
 	for s in state.settlements:
 		var c = D.card(b)
-		D.label(c, s.name + " / 实际本地库存", 20)
+		D.label(c, s.name + " / 本地库存", 20)
 		var r = D.row(c)
 		for key in RES:
 			var v = D.col(r)
@@ -570,25 +803,20 @@ static func economy(g, b):
 		for shortage in s.get("shortages", []):
 			lines.append(Labels.shortage(g.sim.config, shortage))
 		D.label(c, "\n".join(lines), 16, D.RED)
-	D.label(b, "出口价格（出口越多，价格越低；每日缓慢恢复）", 20, D.TEAL)
-	for row_data: Dictionary in g.sim.market_view():
-		D.label(
-			b,
-			(
-				"%s  ¥ %.1f / t（基准 %.1f，%.0f%%）"
-				% [
-					RES.get(row_data.good, row_data.good),
-					row_data.price,
-					row_data.base,
-					row_data.factor * 100.0
-				]
-			),
-			16,
-			D.INK if float(row_data.factor) > 0.8 else D.GOLD
-		)
-	D.label(b, "最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)
+	D.button(b, "查看公司审查原因、整改期限与救助义务", func(): g.open_page("company"))
+	var detail: bool = bool(g.detailed_info)
+	D.label(b, "详情：最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)
+	D.label(
+		b,
+		(
+			"建设投资和融资不计入持续经营；工资和消费是账户间转账。总督阶段公司按正经营结余收取 %.0f%%；援助追加分成另列。"
+			% (float(g.sim.config.contract.company_tax_rate) * 100)
+		),
+		15,
+		D.MUTED
+	)
 	var ledger: Array = state.ledger
-	for i in range(ledger.size() - 1, maxi(-1, ledger.size() - (31 if g.detailed_info else 7)), -1):
+	for i in range(ledger.size() - 1, maxi(-1, ledger.size() - (31 if detail else 7)), -1):
 		var e: Dictionary = ledger[i]
 		var accounts = {"external": "外部", "public": "公共", "residents": "居民", "enterprise": "企业"}
 		D.label(
@@ -606,6 +834,64 @@ static func economy(g, b):
 			16,
 			D.MUTED
 		)
+
+
+static func _lowest(values: PackedFloat32Array) -> float:
+	var result: float = INF
+	for value: float in values:
+		result = minf(result, value)
+	return 0.0 if values.is_empty() else result
+
+
+static func _highest(values: PackedFloat32Array) -> float:
+	var result: float = -INF
+	for value: float in values:
+		result = maxf(result, value)
+	return 0.0 if values.is_empty() else result
+
+
+## Largest first; keeps the page short by folding the small ones into a total.
+static func _money_column(g, parent, title: String, amounts: Dictionary, color: Color):
+	var c = D.card(parent)
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var keys: Array = amounts.keys()
+	keys.sort_custom(
+		func(a: String, x: String) -> bool:
+			if float(amounts[a]) == float(amounts[x]):
+				return a < x
+			return float(amounts[a]) > float(amounts[x])
+	)
+	var total: float = 0.0
+	for key: String in keys:
+		total += float(amounts[key])
+	D.label(c, "%s  ¥ %s" % [title, g.money(total)], 17, color)
+	var shown: int = 0
+	var rest: float = 0.0
+	for key: String in keys:
+		if shown >= MONEY_ROWS:
+			rest += float(amounts[key])
+			continue
+		shown += 1
+		D.label(
+			c, "%s  ¥ %s" % [str(Labels.LEDGER.get(key, key)), g.money(amounts[key])], 15, D.INK
+		)
+	if rest > 0.0:
+		D.label(c, "其他  ¥ %s" % g.money(rest), 15, D.MUTED)
+
+
+static func _goods_table(b, goods: Dictionary):
+	var c = D.card(b)
+	D.label(c, "近 30 日物资流向（吨）：产出 / 消耗 / 出口 / 进口 / 陆海运输", 17, D.TEAL)
+	var table = D.grid(c, 6)
+	for heading: String in ["物资", "产出", "消耗", "出口", "进口", "运输"]:
+		D.label(table, heading, 15, D.MUTED, false)
+	for good: String in RES:
+		var row: Array = goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		var name = D.label(table, str(RES[good]), 15, D.INK, false)
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for amount: Variant in row:
+			var cell = D.label(table, "%.0f" % float(amount), 15, D.INK, false)
+			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 static func transport(g, b):
@@ -723,6 +1009,15 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		),
 		17
 	)
+	var moving: Dictionary = {}
+	for cargo: Dictionary in state.shipments:
+		if int(cargo.get("road", -1)) == int(road.id):
+			moving[cargo.resource] = float(moving.get(cargo.resource, 0.0)) + float(cargo.amount)
+	if not moving.is_empty():
+		var words: PackedStringArray = []
+		for good: String in moving:
+			words.append("%s %.0f t" % [RES.get(good, good), float(moving[good])])
+		D.label(c, "在途：" + "、".join(words), 15, D.MUTED)
 	if (
 		state.research.completed.has(paving.tech)
 		and not bool(road.get("paved", false))
@@ -876,6 +1171,19 @@ static func settings(g, b):
 	D.button(
 		b, "打开面板时暂停：开（关闭后恢复原速度）" if g.panel_pause else "打开面板时暂停：关（面板打开时时间继续）", g.toggle_panel_pause
 	)
+	D.label(b, "新手引导", 20)
+	var teaching = D.row(b)
+	D.button(teaching, "重新开始新手引导（开始一局引导专用的新游戏）", g.start_tutorial, "当前未保存的进度会丢失", "ReplayTutorial")
+	var tips_on: bool = bool(g.coach.tips_enabled)
+	D.button(
+		teaching,
+		"情境提示：开" if tips_on else "情境提示：关",
+		func():
+			g.coach.set_tips(not tips_on)
+			g.populate_current_page(),
+		"",
+		"ToggleTips"
+	)
 	D.label(b, "窗口分辨率", 20)
 	var resolutions = D.row(b)
 	for size in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]:
@@ -903,15 +1211,16 @@ static func settings(g, b):
 
 
 static func guide(_g, b):
-	D.label(b, "推荐种子 260129 · 中型 · 资本支持", 25, D.GOLD)
+	D.label(b, "怎样经营一块殖民地", 25, D.GOLD)
 	var steps = [
-		"01  勘察铁岬盆地并建立首府。登陆物资包含基础住房、水电与货运能力；检查建设面板和本地库存。",
-		"02  建设铁矿与铜矿（或晶体）建立出口现金流。空格继续，顶部选择正常或快进。预留劳动力与公用能力。",
-		"03  加工厂把铁矿与铜矿变成建材、部件。研究所雇用研究员，优先勘探或灌溉。",
-		"04  选择青溪河谷建立第二据点，建设农场。交通运输面板比较绕山和跨山，建成线路后观察在途食品。",
-		"05  在就业和供应允许时批准生活服务企业。它使用自己的投资自动经营，你决定税率和供应底线。",
-		"06  保有至少 7 天食品、足够住房与就业；公共经营连盈 12 天，完成合同后继续沙盒。",
-		"观察  成本过高时不要盲目扩张。关闭窗口不会自动恢复时间，请用空格或顶部速度按钮。食品短缺先查本地水、电、岗位和运输。"
+		"01  选址。卡片上的储量是估算，派勘察队可以缩小范围。先找矿多、水够、附近有肥沃土地的地点。",
+		"02  开矿出口。在矿床地块上建矿场，矿石到货运站自动卖出。出口越多价格越低，别只卖一种。",
+		"03  住房和工作。床位满了没人来，没工作的人多了新移民也不来。工资影响吸引力，招募来得最快。",
+		"04  研究。建研究所，把研究员集中到关键项目：5 人的速度只有 10 人的 60%。",
+		"05  第二据点。完成第一阶段后派远征队去肥沃的地方，修路相连。河谷公路便宜但绕远，工程公路直接但有落石风险。",
+		"06  自立。合同的第三阶段要人口、就业、民营企业和非矿业收入。加工厂、食品订单和科研委托都算。",
+		"07  长远。矿总会挖完。深层采掘、新地点、海运和巨型工程让殖民地继续发展。",
+		"遇到问题先看右侧红字，旁边的「处理」会带你去解决。公司关系页解释一切风险的原因。",
 	]
 	for text in steps:
 		D.label(D.card(b), text, 18)
@@ -925,6 +1234,9 @@ static func population(g, b):
 	var v: Dictionary = g.sim.population_view(int(s.region))
 	D.label(b, s.name + " / 人口与移民", 24, D.TEAL)
 	D.label(b, "吸引力 %.2f  ·  约每月 %.1f 人迁入" % [v.attractiveness, v.arrivals_per_month], 20, D.GOLD)
+	D.label(b, "近 30 日迁入 %d 人 · 离开 %d 人" % [int(v.arrived_30), int(v.departed_30)], 17)
+	if float(v.prospects) < 1.0:
+		D.label(b, "失业的人多，新移民正在减少（就业前景 %.0f%%）。" % (float(v.prospects) * 100.0), 16, D.GOLD)
 	var parts = D.card(b)
 	D.label(parts, "吸引力构成（基础 1.00）", 17, D.TEAL)
 	for key: String in v.parts:

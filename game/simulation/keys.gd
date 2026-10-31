@@ -43,3 +43,4 @@ const SH_HOUSING: String = "housing"
 const SH_POLLUTION: String = "pollution"
 
 const SOURCE_PROCESSING: String = "processing"
+const SOURCE_IMPORT: String = "import"

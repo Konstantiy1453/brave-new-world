@@ -24,6 +24,7 @@ static func ensure(sim) -> void:
 		"last_local_day": int(sim.state.day),
 		"balance": 0.0,
 		"invested": 0.0,
+		"milestones_paid": 0.0,
 		"managed": [],
 		"archives": [],
 		"history": [],
@@ -576,6 +577,7 @@ static func _validate_common(s: Dictionary) -> String:
 		)
 		if absf(actual - expected) > 0.001:
 			return "代管账户不守恒"
+	paid_total += float(c.get("milestones_paid", 0.0))
 	if absf(paid_total - float(c.balance) - float(c.invested)) > 0.001:
 		return "生涯分红转账不守恒"
 	for row in c.history:

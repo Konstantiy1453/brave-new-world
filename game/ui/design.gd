@@ -14,6 +14,7 @@ const META_SIZE: StringName = &"_ui_size"
 const META_COLOR: StringName = &"_ui_color"
 const META_FN: StringName = &"_ui_fn"
 const META_LAST: StringName = &"_ui_last"
+const LineChart = preload("res://ui/line_chart.gd")
 
 
 static func box(
@@ -214,6 +215,18 @@ static func option(
 static func _selected(index: int, n: OptionButton) -> void:
 	var fn: Callable = n.get_meta(META_FN)
 	fn.call(index)
+
+
+## A line chart: each row of `series` is {values: PackedFloat32Array, color: Color}.
+static func line_chart(parent: Node, key: String, series: Array, height: int = 150) -> Control:
+	var n: Control = _take(parent, "Control")
+	if n.get_script() != LineChart:
+		n.set_script(LineChart)
+	n.name = key
+	n.custom_minimum_size = Vector2(0, height)
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	n.call("set_series", series)
+	return n
 
 
 static func line_edit(parent: Node, key: String, text: String) -> LineEdit:

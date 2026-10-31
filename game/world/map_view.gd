@@ -1,6 +1,8 @@
 extends "res://world/planet_view.gd"
 ## Native lightweight 3D renderer: owns the camera, the view mode and input.
 
+const SUN_ROTATION: Vector3 = Vector3(-26, -46, 0)
+
 
 func _ready() -> void:
 	set_process(true)
@@ -357,6 +359,22 @@ func _update_camera(weight: float) -> void:
 	camera.position = camera_pivot + direction * smooth_distance
 	camera.look_at(camera_pivot, Vector3.UP)
 	camera.h_offset = .68 if mode == "planet" else 4.0
+	_aim_sun()
+
+
+## On the globe the sun stays over the viewer's shoulder, so the part being looked at is never in
+## the dark. The regional scene keeps its fixed sun and its long shadows.
+func _aim_sun() -> void:
+	if sun_light == null:
+		return
+	if mode != "planet":
+		sun_light.rotation_degrees = SUN_ROTATION
+		return
+	var basis: Basis = camera.global_transform.basis
+	var toward_sun: Vector3 = (basis.z + basis.x * -0.55 + basis.y * 0.5).normalized()
+	sun_light.look_at_from_position(toward_sun * 10.0, Vector3.ZERO, Vector3.UP)
+	if globe_shader != null:
+		globe_shader.set_shader_parameter("sun_direction", toward_sun)
 
 
 func _build_environment() -> void:
@@ -379,10 +397,11 @@ func _build_environment() -> void:
 	sun.name = "WarmDistantSun"
 	sun.light_color = Color("f6ecd1")
 	sun.light_energy = 1.12
-	sun.rotation_degrees = Vector3(-26, -46, 0)
+	sun.rotation_degrees = SUN_ROTATION
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 110
 	add_child(sun)
+	sun_light = sun
 	var fill := DirectionalLight3D.new()
 	fill.light_color = Color("5ba6ca")
 	fill.light_energy = .18

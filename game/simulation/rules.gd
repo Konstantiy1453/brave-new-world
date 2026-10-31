@@ -11,6 +11,7 @@ const FILES: Dictionary = {
 	"contract": "res://data/v17/contract.json",
 	"market": "res://data/v17/market.json",
 	"geography": "res://data/v17/geography.json",
+	"tutorial": "res://data/v17/tutorial.json",
 }
 const REQUIRED: Dictionary = {
 	"economy":
@@ -53,6 +54,7 @@ const REQUIRED: Dictionary = {
 		"milestones"
 	],
 	"market": ["version", "units", "decay_per_day", "depth", "floor", "scale"],
+	"tutorial": ["version", "units", "seed", "size", "difficulty", "opening", "steps", "tips"],
 	"geography":
 	[
 		"version",

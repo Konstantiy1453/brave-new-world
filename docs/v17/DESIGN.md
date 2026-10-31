@@ -128,3 +128,31 @@ A draw every 10 days picks among definitions whose conditions hold and whose coo
 | 28 short | 10 from 1.6 plus 落石封路, 报价窗口, 自发移民, 工资协商, 设备故障, 尘暴, 汛期, 寒潮, 流感季, 意外突破, 访问学者, 投资意向, 勘探修正, 流星雨, 补给船延误, 例行抽查, 学校申请, 本地物种 |
 | 6 chains | 第二条水位线, 送不到的旺季, 岩层下的值班簿, 没有目的地的客船, 零点八毫米的裂缝, 山脊里的空白图 |
 
+## Tutorial and tips (data/v17/tutorial.json)
+
+Fourteen steps from Appendix F on seed 260129, medium, easy, capital. Each step has text, target control names (the first on
+screen gets the outline), an optional site to focus, and a `done` condition. Conditions are named checks in
+`simulation/tutorial.gd`; data picks a name and arguments, nothing is evaluated. What only the interface knows (camera moved,
+sites viewed, pages opened, shortage day) is kept by the coach in `ui/tutorial_coach.gd`, not in the save.
+
+The coach is not modal. It moves to the other side of the screen if it would cover its target, and scrolls a new target into view
+once. Actions it needs go through `Sim.act()`: `tutorial_begin` holds the first event until `first_event_day`, and
+`tutorial_shortage` adds an ordinary 30-day effect on the pumps. Completion and tips are in `settings.cfg`. The four tips use the
+same named conditions and show once, after the tutorial or without it.
+
+## Statistics (simulation/stats.gd)
+
+`state.stats` keeps today's open row, 90 closed days of money by ledger key (income, expense, invest, funding) and people moved,
+and 30 days of goods flows as produced, consumed, exported, imported, shipped. Written from `_transfer`, `_public_expense`,
+`produce`, the market and logistics; closed in `tick()`. Nothing in the rules reads it. The economy page's consumption excludes
+exports, because a sale also leaves the warehouse.
+
+## Interface
+
+Main map: left navigation, right sidebar with a scrolling card and a pinned action bar, bottom mission line. Sites and settlements
+use the same sidebar: an unsettled site shows its estimates, build-cost multiplier, travel time and cost from the nearest
+settlement for each road variant and a role hint from its archetype; a settlement shows figures first, each shortage with a `Fix_`
+button (`Labels.fix` maps shortage keys to a page and category), then buildings grouped by kind with problems first.
+
+The build dialog takes a category and, for buildings that need one, a plot; `build_forecast` at that plot supplies output, revenue,
+net, payback and reserve days at current prices. Very fast speed is `time.very_fast_multiplier`.

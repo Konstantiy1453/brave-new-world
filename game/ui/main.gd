@@ -8,6 +8,9 @@ const ProgressionPages = preload("res://ui/progression_pages.gd")
 const Events = preload("res://simulation/events_v2.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Contract = preload("res://simulation/contract.gd")
+const TutorialCoach = preload("res://ui/tutorial_coach.gd")
+const Tutorial = preload("res://simulation/tutorial.gd")
+const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
@@ -19,6 +22,7 @@ var sim = Sim.new()
 var map: Node3D
 var ui: Control
 var sidebar: VBoxContainer
+var sidebar_actions: VBoxContainer
 var top_stats: Label
 var date_label: Label
 var mission: Label
@@ -30,6 +34,11 @@ var selected: int = 0
 var selected_tech: String = ""
 var site_filter: int = 0
 var announced_event: int = 0
+var build_category: String = "all"
+var build_plots: Dictionary = {}
+var expanded_kinds: Dictionary = {}
+var coach: PanelContainer
+var tutorial_on: bool = true
 var local_view: bool = false
 var paused: bool = true
 var speed: int = 1
@@ -80,6 +89,10 @@ func _ready():
 	ui.theme = D.theme()
 	layer.add_child(ui)
 	build_shell()
+	coach = TutorialCoach.new()
+	coach.setup(self)
+	ui.add_child(coach)
+	tutorial_on = not TutorialCoach.completed()
 	if map.has_signal("region_progress"):
 		map.region_progress.connect(
 			func(busy, progress):
@@ -104,6 +117,8 @@ func _ready():
 	refresh()
 	if dev_mode:
 		for a in args:
+			if a.begins_with("--qa-v17="):
+				load("res://ui/capture_suite_v17.gd").run(self, a.trim_prefix("--qa-v17="))
 			if a.begins_with("--qa-v16="):
 				load("res://ui/capture_suite_v16.gd").run(self, a.trim_prefix("--qa-v16="))
 			if a.begins_with("--qa-capture="):
@@ -137,15 +152,22 @@ func build_shell():
 		for style_name in ["normal", "hover", "pressed"]:
 			action.add_theme_stylebox_override(style_name, D.box(Color("1a3042"), D.TEAL, 5))
 	top_stats = D.label(h, "", 18, D.INK, false)
+	top_stats.name = "TopStats"
 	top_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var clockbox = D.col(h)
 	date_label = D.label(clockbox, "", 17, D.GOLD, false)
 	var controls = D.row(clockbox)
+	var time_rules: Dictionary = sim.progression.time
 	for item in [
-		["暂停", 0], ["正常", 1], ["快进", int(sim.progression.get("time", {}).get("fast_multiplier", 4))]
+		["暂停", 0],
+		["正常", 1],
+		["快进", int(time_rules.fast_multiplier)],
+		["极快", int(time_rules.very_fast_multiplier)],
 	]:
 		var val = int(item[1])
-		var b = D.button(controls, item[0], func(): set_speed(val), "空格暂停 / 恢复；每天固定步进")
+		var b = D.button(
+			controls, item[0], func(): set_speed(val), "空格暂停 / 恢复；每天固定步进", "Speed_" + str(val)
+		)
 		b.custom_minimum_size = Vector2(54, 32)
 		b.add_theme_font_size_override("font_size", 15)
 	var nav = PanelContainer.new()
@@ -159,6 +181,7 @@ func build_shell():
 	nav.add_child(nav_scroll)
 	var v = D.col(nav_scroll)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 4)
 	D.label(v, "指 挥 中 枢", 13, D.MUTED, false)
 	for entry in [
 		["球面总览", "planet"],
@@ -177,7 +200,9 @@ func build_shell():
 		["保存与设置", "save"]
 	]:
 		var key = entry[1]
-		D.button(v, entry[0], func(): navigate(key))
+		var nav_button = D.button(v, entry[0], func(): navigate(key), "", "Nav_" + key)
+		D.font_size(nav_button, 16)
+		nav_button.custom_minimum_size.y = 34
 	var right = PanelContainer.new()
 	ui.add_child(right)
 	right.anchor_left = 1
@@ -188,11 +213,14 @@ func build_shell():
 	right.offset_right = -20
 	right.offset_top = 115
 	right.offset_bottom = -116
+	var right_column = D.col(right)
 	var scroll = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	right.add_child(scroll)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_column.add_child(scroll)
 	sidebar = D.col(scroll)
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sidebar_actions = D.col(right_column)
 	var bottom = PanelContainer.new()
 	ui.add_child(bottom)
 	bottom.anchor_top = 1
@@ -229,6 +257,7 @@ func build_shell():
 	toast_label.offset_top = -145
 	toast_label.offset_bottom = -100
 	map_hint = D.label(ui, "球面总览  ·  右键旋转  ·  滚轮缩放", 14, D.MUTED, false)
+	map_hint.name = "MapHint"
 	map_hint.position = Vector2(215, 112)
 	refresh()
 
@@ -260,7 +289,13 @@ func advance_time(delta: float):
 		return
 	accumulator += delta * speed
 	var seconds_per_day: float = float(sim.progression.get("time", {}).get("seconds_per_day", 5.0))
+	var days_this_frame: int = 0
 	while accumulator >= seconds_per_day:
+		# A long frame never turns into a burst of days: the rest of the backlog is dropped.
+		days_this_frame += 1
+		if days_this_frame > MAX_DAYS_PER_FRAME:
+			accumulator = 0
+			break
 		accumulator -= seconds_per_day
 		var prior_company: String = str(sim.state.get("company", {}).get("stage", "normal"))
 		sim.tick()
@@ -282,6 +317,7 @@ func advance_time(delta: float):
 			forced_pause(true)
 			open_page("company")
 		_announce_new_event()
+		coach.on_day()
 		if event_pause_required() and not forced_page_open():
 			forced_pause(true)
 			open_page("events")
@@ -400,6 +436,7 @@ func _unhandled_input(event):
 		return
 	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		map.orbit(event.relative.x, event.relative.y)
+		coach.note_camera()
 	elif event is InputEventMouseMotion and not local_view and map.has_method("hover_region"):
 		map.hover_region(event.position)
 	if (
@@ -411,15 +448,25 @@ func _unhandled_input(event):
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			map.zoom(-1)
+			coach.note_camera()
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			map.zoom(1)
+			coach.note_camera()
 		if event.button_index == MOUSE_BUTTON_LEFT and not local_view:
 			map.pick_region(event.position)
 
 
 func select_region(id: int):
 	selected = id
+	coach.note_site(id)
 	refresh_sidebar()
+
+
+## The shortcut from a shortage line: the right page, on the right part of it.
+func open_fix(fix: Dictionary):
+	if fix.has("category"):
+		build_category = str(fix.category)
+	open_page(str(fix.page))
 
 
 func navigate(page: String):
@@ -472,7 +519,7 @@ func refresh():
 		% [sim.state.career.global_day, sim.state.day, "已暂停" if paused else str(speed) + " 倍速"]
 	)
 	var steps = ["立足：登陆、矿场、出口、科研 → 分工：第二据点、食品、加工 → 自立：人口、企业、非矿业收入 → 总督"]
-	var hint = "先签署合同，并在右侧选择登陆区域。"
+	var hint = "在地图上选一个地点，右侧卡片告诉你它适合做什么。"
 	if sim.state.status != "planning":
 		var phase = {"active": "契约考核中", "success": "总督阶段", "failed": "经营终止"}
 		hint = (
@@ -480,11 +527,11 @@ func refresh():
 			% [sim.state.get("streak", 0), phase.get(sim.state.status, sim.state.status)]
 		)
 		if sim.state.settlements.size() < 2:
-			hint += "  |  建议：矿区负责出口，河谷负责食物。"
+			hint += "  |  矿山负责出口，肥沃的土地负责粮食。"
 		elif sim.state.roads.is_empty():
-			hint += "  |  两据点尚未连接，打开交通运输。"
+			hint += "  |  据点尚未相连，打开交通运输修路。"
 		else:
-			hint += "  |  自动贸易与运输按本地库存运行。"
+			hint += "  |  贸易和运输按本地库存自动进行。"
 	if not sim.state.get("event", {}).is_empty():
 		hint = "! 待处理通讯：" + str(sim.state.event.get("title", "事件")) + "  ·  打开左侧通讯事件"
 	mission.text = steps[0] + "\n" + hint
@@ -497,6 +544,9 @@ func refresh_sidebar():
 	D.begin(sidebar)
 	Pages.region(self, sidebar)
 	D.finish(sidebar)
+	D.begin(sidebar_actions)
+	Pages.region_actions(self, sidebar_actions)
+	D.finish(sidebar_actions)
 
 
 func act(action: String, args: Dictionary = {}):
@@ -598,6 +648,8 @@ func modal(title: String, width: int = 960, closable: bool = true, key: String =
 	)
 	modal_feedback = modal_footer
 	modal_box = _page_box(key)
+	if is_instance_valid(coach) and coach.visible:
+		coach.move_to_front()
 	if panel_pause:
 		if not paused:
 			resume_on_close = true
@@ -624,7 +676,7 @@ func open_page(page: String):
 		"build": "地区工程 / 建设与生产",
 		"economy": "公共账本 / 经济与库存",
 		"research": "知识就是生产力 / 科研教育",
-		"transport": "跨区货运 / 两地分工",
+		"transport": "交通运输 / 道路与航线",
 		"enterprise": "混合经济 / 民营经营许可",
 		"population": "人口 / 吸引力与招募",
 		"contract": "殖民经营对赌协议",
@@ -635,6 +687,7 @@ func open_page(page: String):
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
+	coach.note_page(page)
 	populate_current_page()
 
 
@@ -650,7 +703,7 @@ func show_menu():
 	v.add_theme_constant_override("separation", 8)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.label(v, "一颗星球。一纸契约。\n从第一座矿场，到自己的明天。", 28, D.INK)
-	D.label(v, "你是公司的殖民外包专员。让两座据点各尽其能，建立可自负盈亏的社会，赢得总督资格。", 18, D.MUTED)
+	D.label(v, "你是公司的殖民外包专员。选址、开矿、养活大家，把几处据点连成一个能自负盈亏的社会，赢得总督资格。", 18, D.MUTED)
 	var r = D.row(v)
 	D.label(r, "星球种子", 17, D.MUTED, false)
 	seed_edit = D.line_edit(r, "SeedEdit", "260129")
@@ -678,21 +731,85 @@ func show_menu():
 		b.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 10))
 		b.add_theme_stylebox_override("pressed", D.box(Color("31565e"), D.TEAL, 10))
 		b.add_theme_stylebox_override("hover", D.box(Color("264553"), D.TEAL, 10))
-	var launch = D.button(v, "新建殖民远征  →", start_game)
+	var teach = D.button(
+		v,
+		"新手引导：开（使用引导专用星球）" if tutorial_on else "新手引导：关",
+		func():
+			tutorial_on = not tutorial_on
+			show_menu(),
+		"第一次玩建议打开。引导不会拦住你，可以随时结束。",
+		"TutorialToggle"
+	)
+	D.font_size(teach, 15)
+	var launch = D.button(v, "新建殖民远征  →", start_game, "", "NewGame")
 	launch.add_theme_stylebox_override("normal", D.box(Color("1a3042"), D.TEAL, 10))
 	var resume = D.row(v)
-	D.button(resume, "继续上次存档", func(): load_path(SAVE_MANUAL))
+	var latest: String = _latest_save()
+	var summary: String = _save_summary(latest)
+	var continue_button = D.button(
+		resume,
+		"继续 · " + summary if summary != "" else "继续上次存档",
+		func(): load_path(latest),
+		"",
+		"ContinueGame"
+	)
+	continue_button.disabled = latest == ""
 	if dev_mode:
 		D.button(resume, "读取1.6事件中段", func(): load_path("res://data/v16/acceptance_event_mid.json"))
 	D.finish(box)
 
 
+## The newer of the manual and automatic saves, or an empty string.
+func _latest_save() -> String:
+	var best: String = ""
+	var newest: int = -1
+	for path: String in [SAVE_MANUAL, SAVE_AUTO]:
+		if FileAccess.file_exists(path) and FileAccess.get_modified_time(path) > newest:
+			newest = FileAccess.get_modified_time(path)
+			best = path
+	return best
+
+
+## "planet, day, cash" read from a save's header, without touching the rest of the file.
+func _save_summary(path: String) -> String:
+	if path == "":
+		return ""
+	var header: Dictionary = SaveIo.read_header(path)
+	if header.is_empty():
+		return ""
+	return (
+		"星球 %s · 第 %d 日 · ¥ %s"
+		% [str(header.get("planet", "?")), int(header.get("day", 0)), money(header.get("cash", 0))]
+	)
+
+
 func start_game():
+	if tutorial_on:
+		start_tutorial()
+		return
 	var text = seed_edit.text
 	var seed_value: Variant = text
 	var scale_id = size_option.selected
 	difficulty = ["easy", "normal", "hard"][difficulty_option.selected]
-	sim.new_game(seed_value, advantage, scale_id, difficulty)
+	_begin_world(seed_value, advantage, scale_id, difficulty)
+	coach.stop(false)
+	open_page("contract")
+
+
+## A new game on the tutorial's own planet, with the coach panel running.
+func start_tutorial():
+	var rules: Dictionary = Tutorial.data()
+	advantage = str(rules.opening)
+	difficulty = str(rules.difficulty)
+	_begin_world(int(rules.seed), advantage, int(rules.size), difficulty)
+	sim.act("tutorial_begin")
+	_hide_overlay()
+	coach.start()
+	refresh()
+
+
+func _begin_world(seed_value: Variant, opening: String, scale_id: int, level: String):
+	sim.new_game(seed_value, opening, scale_id, level)
 	Career.capture_checkpoint(sim)
 	selected = 0
 	local_view = false
@@ -704,8 +821,11 @@ func start_game():
 	autosave_day = 0
 	last_status = "planning"
 	resume_on_close = false
+	build_category = "all"
+	build_plots = {}
+	expanded_kinds = {}
+	announced_event = 0
 	_hide_overlay()
-	open_page("contract")
 
 
 func load_path(path: String):
@@ -713,6 +833,7 @@ func load_path(path: String):
 	if not err.is_empty():
 		toast(err)
 		return
+	coach.stop(false)
 	selected = int(sim.state.settlements[0].region) if not sim.state.settlements.is_empty() else 0
 	map.setup(sim.geo)
 	map.focus_region(selected)

@@ -13,6 +13,7 @@ const DISPATCH_ORDER: Array[String] = [
 	"materials", "parts", "food", "components", "ore", "copper", "crystal"
 ]
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Stats = preload("res://simulation/stats.gd")
 const HUB_FOOD_DAYS: float = 3.0
 const HUNGRY_DAYS: float = 7.0
 const TERMINAL_MATERIALS: float = 12.0
@@ -314,6 +315,7 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			if amount <= 0.001:
 				continue
 			src.stock[resource] -= amount
+			Stats.goods(sim.state, resource, Stats.SHIPPED, amount)
 			sim._public_expense(amount * fee, "transport.fee", "external")
 			(
 				sim
@@ -485,7 +487,7 @@ static func _import(
 		sim._public_expense(amount * price, "import.food", "external")
 	else:
 		sim._transfer("public", "external", amount * price, "import.stock", false, key)
-	sim._produce(s, key, amount, "外部进口")
+	sim._produce(s, key, amount, Keys.SOURCE_IMPORT)
 	sim.state.imports_total += amount * price
 	return capacity - amount
 

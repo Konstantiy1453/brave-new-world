@@ -19,6 +19,8 @@ const Contract = preload("res://simulation/contract.gd")
 const Sites = preload("res://simulation/sites.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Market = preload("res://simulation/market.gd")
+const Stats = preload("res://simulation/stats.gd")
+const Tutorial = preload("res://simulation/tutorial.gd")
 const SAVE_VERSION: int = 3
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -125,6 +127,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Logistics.ensure_state(target)
 	Sites.ensure_state(target)
 	EventsV2.ensure_state(target)
+	Stats.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -168,6 +171,10 @@ func act(action: String, args: Dictionary = {}) -> String:
 			)
 		"survey":
 			return Sites.survey(self, _site_arg(args))
+		"tutorial_begin":
+			return Tutorial.begin(self)
+		"tutorial_shortage":
+			return Tutorial.start_shortage(self, _site_arg(args))
 		"recruit":
 			return Population.recruit(
 				self,
@@ -288,6 +295,7 @@ func tick() -> void:
 		state.operating_history.pop_front()
 	while state.ledger.size() > LEDGER_LIMIT:
 		state.ledger.pop_front()
+	Stats.close_day(state)
 	Career.tick(self)
 
 
@@ -431,9 +439,15 @@ func _transfer(
 		if to == "public":
 			state.operating_net += amount
 			state.income_daily += amount
+			Stats.money(state, "income", key, amount)
 		if from == "public":
 			state.operating_net -= amount
 			state.expense_daily += amount
+			Stats.money(state, "expense", key, amount)
+	elif from == "public":
+		Stats.money(state, "invest", key, amount)
+	elif to == "public":
+		Stats.money(state, "funding", key, amount)
 	return amount
 
 
@@ -446,6 +460,7 @@ func _public_expense(amount: float, key: String, to: String, detail: String = ""
 	if due > 0.000001:
 		state.operating_net -= due
 		state.expense_daily += due
+		Stats.money(state, "expense", key, due)
 		state.debt += due
 		state.arrears.append({"to": to, "amount": due, "key": key})
 
@@ -620,6 +635,22 @@ func build_forecast(region: int, kind: String, plot: int = -1) -> Dictionary:
 
 func site_view(site: int) -> Dictionary:
 	return Sites.view(self, site)
+
+
+func site_links(site: int) -> Dictionary:
+	return Sites.links(self, site)
+
+
+func plot_choices(site: int, kind: String) -> Array:
+	return Sites.plot_choices(self, site, kind)
+
+
+func stats_window(days: int = 30) -> Dictionary:
+	return Stats.window(state, days)
+
+
+func stats_series() -> Dictionary:
+	return Stats.series(state)
 
 
 func road_quote(a: int, b: int, variant: String) -> Dictionary:

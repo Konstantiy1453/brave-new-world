@@ -29,6 +29,7 @@ var transport_root: Node3D
 var buildings_root: Node3D
 var cloud_shell: MeshInstance3D
 var globe_shader: ShaderMaterial
+var sun_light: DirectionalLight3D
 var flat_shader: ShaderMaterial
 var noise: FastNoiseLite
 var planet_yaw: float = -.38

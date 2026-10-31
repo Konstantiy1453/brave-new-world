@@ -6,6 +6,7 @@ extends RefCounted
 
 const WorldGen = preload("res://world/world_gen.gd")
 const Keys = preload("res://simulation/keys.gd")
+const Stats = preload("res://simulation/stats.gd")
 const Production = preload("res://simulation/production.gd")
 const Research = preload("res://simulation/research.gd")
 const Company = preload("res://simulation/company.gd")
@@ -192,6 +193,9 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 	error = EventsV2.validate(candidate)
 	if error != "":
 		return error
+	error = Stats.validate(candidate)
+	if error != "":
+		return error
 	if (
 		not candidate.get("difficulty") is String
 		or not sim.progression.difficulty.has(candidate.difficulty)
@@ -292,6 +296,7 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 				"road": 0
 			}
 		],
+		"stats": {"today": {}, "days": [], "goods_days": []},
 		"roads": [_road_shape()],
 		"surveys": [{"site": 0, "days": 0}],
 		"research":

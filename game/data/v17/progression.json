@@ -102,6 +102,7 @@
   },
   "time": {
     "fast_multiplier": 4,
-    "seconds_per_day": 5
+    "seconds_per_day": 5,
+    "very_fast_multiplier": 10
   }
 }

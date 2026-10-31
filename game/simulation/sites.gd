@@ -356,6 +356,63 @@ static func on_technology(sim: RefCounted, tech: String) -> void:
 		SiteGen.refresh_deposits(reg)
 
 
+## Road options from the nearest settlement, for the site card.
+static func links(sim: RefCounted, site: int) -> Dictionary:
+	var there: Dictionary = sim.state.world.regions[site]
+	var at: Vector3 = WorldGen.unit_point(float(there.lat), float(there.lon))
+	var from: int = -1
+	var closest: float = INF
+	for s: Dictionary in sim.state.settlements:
+		var region: int = int(s.region)
+		if region == site:
+			continue
+		var reg: Dictionary = sim.state.world.regions[region]
+		var angle: float = at.angle_to(WorldGen.unit_point(float(reg.lat), float(reg.lon)))
+		if angle < closest:
+			closest = angle
+			from = region
+	if from < 0:
+		return {}
+	var variants: Dictionary = {}
+	for variant: String in ["valley", "engineered", "sea"]:
+		var road: Dictionary = Logistics.route_between(sim, from, site, variant)
+		variants[variant] = {
+			"reachable": bool(road.reachable),
+			"days": int(road.days),
+			"cost": float(road.cost),
+		}
+	return {"from": from, "name": sim.state.world.regions[from].name, "variants": variants}
+
+
+## The free plots a building could stand on, best first.
+static func plot_choices(sim: RefCounted, site: int, building_kind: String) -> Array:
+	var reg: Dictionary = sim.state.world.regions[site]
+	var s: Dictionary = sim.settlement(site)
+	var taken: Dictionary = _taken(s) if not s.is_empty() else {}
+	var rows: Array = []
+	for index: int in range(reg.plots.size()):
+		var plot: Dictionary = reg.plots[index]
+		if taken.has(index) or not plot_fits(sim, plot, building_kind):
+			continue
+		var row: Dictionary = {"index": index, "kind": plot.kind}
+		if plot.kind == "deposit":
+			row.grade = float(plot.grade)
+			row.reserves = float(plot.reserves)
+			row.deep = int(plot.depth) > 0
+			row.score = float(plot.grade)
+		elif plot.kind == "farm":
+			row.fertility = float(plot.fertility)
+			row.score = float(plot.fertility)
+		else:
+			row.score = -float(index)
+		rows.append(row)
+	rows.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return int(a.index) < int(b.index) if a.score == b.score else a.score > b.score
+	)
+	return rows
+
+
 ## What starting here looks like from orbit, for the map and for bots choosing a site.
 static func start_score(sim: RefCounted, site: int) -> float:
 	var known: Dictionary = view(sim, site)
