@@ -315,7 +315,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			)
 		b.active = b.efficiency > 0.0
 		if b.kind == "power":
-			s.power_supply += float(d.capacity) * b.efficiency
+			s.power_supply += (
+				float(d.capacity) * b.efficiency * EventsV2.modifier(sim, int(s.region), "power")
+			)
 		if b.kind == "water":
 			s.water_supply += (
 				float(d.capacity)

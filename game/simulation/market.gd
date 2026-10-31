@@ -3,6 +3,7 @@ extends RefCounted
 ## daily: price = base * clamp(1 - depth * saturation / scale, floor, 1).
 
 const Megaprojects = preload("res://simulation/megaprojects.gd")
+const EventsV2 = preload("res://simulation/events_v2.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -21,7 +22,12 @@ static func factor(sim: RefCounted, good: String) -> float:
 
 
 static func price(sim: RefCounted, good: String) -> float:
-	return float(sim.config.prices[good]) * factor(sim, good) * Megaprojects.export_factor(sim)
+	return (
+		float(sim.config.prices[good])
+		* factor(sim, good)
+		* Megaprojects.export_factor(sim)
+		* EventsV2.colony_modifier(sim, "export_price")
+	)
 
 
 static func record_export(sim: RefCounted, good: String, amount: float) -> void:

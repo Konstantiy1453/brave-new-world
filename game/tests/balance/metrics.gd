@@ -16,6 +16,7 @@ var _window_expense: float = 0.0
 var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
 var _last_entry: Dictionary = {}
+var _opened_at: Dictionary = {}
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -35,6 +36,7 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"research_share": -1.0,
 				"export_revenue": {},
 				"pausing_decisions": 0,
+				"cooldown_breaks": 0,
 				"notices": 0,
 				"company_stages": [],
 				"company_stage_days": {},
@@ -148,6 +150,7 @@ func _is_lab_cost(key: String, entry: Dictionary) -> bool:
 
 
 func _scan_events(sim: RefCounted) -> void:
+	_scan_cooldowns(sim)
 	for node: Dictionary in EventsV2.view(sim).pending:
 		var key: String = str(node.instance_id) + "/" + str(node.node)
 		if _pending_seen.has(key):
@@ -157,6 +160,23 @@ func _scan_events(sim: RefCounted) -> void:
 			record.pausing_decisions += 1
 		else:
 			record.notices += 1
+
+
+## Compares each definition's last opening with the one before it.
+func _scan_cooldowns(sim: RefCounted) -> void:
+	var rules: Dictionary = EventsV2.definitions()
+	var opened: Dictionary = sim.state.get("events_v2", {}).get("last_opened", {})
+	for id: String in opened:
+		var day: int = int(opened[id])
+		if int(_opened_at.get(id, day)) == day:
+			_opened_at[id] = day
+			continue
+		var cooldown: int = int(
+			rules.definitions[id].get("cooldown_days", rules.sampling.default_cooldown_days)
+		)
+		if day - int(_opened_at[id]) < cooldown:
+			record.cooldown_breaks += 1
+		_opened_at[id] = day
 
 
 func _scan_company(state: Dictionary) -> void:

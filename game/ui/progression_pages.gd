@@ -303,10 +303,24 @@ static func company(g, b):
 static func events(g, b):
 	var v: Dictionary = load("res://simulation/events_v2.gd").view(g.sim)
 	D.label(b, "殖民通讯 / 选择与后续", 25, D.TEAL)
+	var stop_all: bool = str(g.sim.state.policy.get("event_pause", "critical")) == "all"
+	D.label(
+		b, "通知不会暂停世界，到期按默认方案处理；关键决定会暂停。" if not stop_all else "所有决定都会暂停世界；通知到期按默认方案处理。", 17, D.MUTED
+	)
+	var pause_row = D.row(b)
+	D.label(pause_row, "决定是否暂停：", 16, D.MUTED, false)
+	D.option(
+		pause_row,
+		"EventPause",
+		["仅关键决定", "全部决定"],
+		1 if stop_all else 0,
+		func(id): g.act("policy", {"event_pause": "all" if id == 1 else "critical"})
+	)
 	D.label(b, "决定节点暂停世界；选择“稍后处理”才会继续计时。调查占用科研人员，订单按真实交付结算。", 17, D.MUTED)
 	for node in v.get("pending", []):
 		var c = D.card(b)
-		D.label(c, str(node.get("title", "通讯")), 22, D.GOLD)
+		var notice: bool = str(node.get("kind", "decision")) == "notice"
+		D.label(c, ("通知 · " if notice else "决定 · ") + str(node.get("title", "通讯")), 22, D.GOLD)
 		D.label(c, str(node.get("text", "")), 18)
 		D.label(
 			c,

@@ -5,6 +5,7 @@ extends RefCounted
 const Keys = preload("res://simulation/keys.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Research = preload("res://simulation/research.gd")
+const EventsV2 = preload("res://simulation/events_v2.gd")
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -95,6 +96,9 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 			break
 	if sim.state.get("company", {}).get("stage", "normal") in ["review", "intervention"]:
 		parts.company = float(rules.company_review)
+	var event_appeal: float = EventsV2.modifier(sim, int(s.region), "appeal") - 1.0
+	if not is_zero_approx(event_appeal):
+		parts.events = event_appeal
 	var value: float = float(rules.base)
 	for key: String in parts:
 		value += float(parts[key])

@@ -251,7 +251,7 @@ func _bug11_panel_pause(game: Node) -> void:
 	game.close_modal()
 	game.panel_pause = true
 	game.paused = false
-	Events._open(sim, "seed_crate", 0)
+	Events._open(sim, "water", 0)
 	game.panel_pause = false
 	game.advance_time(30.0)
 	check(

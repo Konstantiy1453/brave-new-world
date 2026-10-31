@@ -254,7 +254,11 @@ static func dispatch(sim: RefCounted) -> void:
 
 static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
 	var land: bool = str(r.get("variant", "valley")) != "sea"
-	return float(r.capacity) * (1.4 if land and sim._has("logistics") else 1.0)
+	return (
+		float(r.capacity)
+		* (1.4 if land and sim._has("logistics") else 1.0)
+		* EventsV2.colony_modifier(sim, "road_capacity")
+	)
 
 
 static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
@@ -417,6 +421,7 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 		var days: int = low + int(_roll(sim) * float(high - low + 1))
 		r.blocked_until = int(sim.state.day) + days
 		sim._log("工程公路落石封路，预计 %d 天后恢复；在途货物原地等待。" % days)
+		EventsV2.trigger(sim, "rockfall", int(r.a))
 
 
 static func _roll(sim: RefCounted) -> float:

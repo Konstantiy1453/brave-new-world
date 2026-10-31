@@ -10,8 +10,9 @@
 | 3 Contract, population, economy | Done (`v17-phase3`), day-720 rows await Phase 5 |
 | 4 Research | Done (`v17-phase4`) |
 | 5 CC-GEO-2.0, sites, roads, plots | Done (`v17-phase5`) |
-| 6 Events | Next |
-| 7–8 | Not started |
+| 6 Events | Done (`v17-phase6`) |
+| 7 Tutorial and UI content | Next |
+| 8 | Not started |
 
 ## Done
 
@@ -28,13 +29,15 @@
 
 - Phase 5: CC-GEO-2.0 in `game/world/geo2/` (plate-driven continents, sea-level quantile, climate with rain shadow, per-cell attributes, D8 rivers); Poisson-disk sites with archetypes, quotas, Appendix G names and a playability validator; disk geo cache; `routes.gd` A* with valley, engineered and sea routes; plots instead of the building cap; surveys with uncertainty bands; hidden and deep deposits; road network with per-road dispatch, chains and no backflow; sea expeditions; workers follow jobs along roads; 1.6 saves migrate to sites, plots and roads; region view on a height field with instanced nature, baked building models, one-plane sea and ribbon rivers; map filters, automatic labels, colony footprints, climate ring; site panel with estimates.
 
+- Phase 6: events repeat after a cooldown (120–360 days); notices never pause, decisions pause when critical or when the player asks for all to pause; money in events scales with recent income; every option checks money, goods, beds, hands, research and roads, and shows why it is disabled; 18 new short events and 3 new chains (没有目的地的客船, 零点八毫米的裂缝, 山脊里的空白图); rockfall opens its event when a road really closes; `v17_events` suite tests each new chain's endings, deferral, timeout and save/load.
+
 ## In progress
 
 Nothing.
 
 ## Next step
 
-Phase 6: repeatable event pool with cooldowns, decisions versus notices, notification feed and setting, magnitudes scaled to income, feasibility checks on every option, at least 25 short events and 5 chains (Appendix E), chain tests. Then re-tune: research-first award day, easy award band, worst-seed export mix, and the runs where a balanced colony is still taken over after the award. Tuning aids: `game/tests/balance/trace_run.gd` prints one bot's timeline.
+Phase 7: tutorial (Appendix F), predicates, coach panel, skip and replay, contextual tips; build dialog with plot choice and forecast, site card, settlement panel with fix buttons, economy page (30-day categories, 90-day chart, runway, per-good flows), population and roads panels, very fast speed, copy rewrite, main menu with save header; layouts at 3 resolutions × 3 text sizes. Tuning aids: `game/tests/balance/trace_run.gd` prints one bot's timeline.
 
 ## Blockers
 
@@ -42,4 +45,4 @@ None.
 
 ## Latest harness metrics
 
-Phase 5, `--full`, 950 runs, 0 audit errors: floor day 109; balanced award easy 153, standard 175, hard 210; openings 174 / 162 / 186; passive review 59, failure 149; sloppy fails on hard; population 374 / 839; research 5 techs, 13%, 17%; money 83%, ×3.46; labour lever +27%; geography and road trade-off (57%) pass over 200 seeds. Misses: easy award 153 (band 90–150), research-first day 195, worst-seed export mix 82%, event rows. See `BALANCE.md`.
+Phase 6, `--quick`, 80 runs, 0 audit errors: floor day 135; balanced award 184; openings 181 / 173 / 189; passive review 59, failure 149; population 401 / 795; research 7 techs, 13%, 18%; events 1 pause per 38 days, 29 distinct, 0 repeats, 28 short, 6 chains. Misses to tune in Phase 8: award 184 (band 120–180), research-first day 201, income ×2.42 (target ×2.5), labour lever +19% (target +20%). See `BALANCE.md`.

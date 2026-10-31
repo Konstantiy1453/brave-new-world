@@ -119,3 +119,12 @@ Known figures are shown as ranges around the truth: ±40% from orbit, ±12% afte
 
 One road per pair of settlements. Each road dispatches surplus to deficit on its own, construction stock first; towns pass food and construction stock on to portless towns beyond them, up to 5 hops. Workers without a job move to vacancies along open roads, at most 3 per road per day.
 
+## Events (data/v17/events.json)
+
+A draw every 10 days picks among definitions whose conditions hold and whose cooldown has passed, unless something is already waiting for an answer. Short events and chains carry `kind` (decision or notice), `critical` and `cooldown_days` (120-360). Notices never pause and take their default at the deadline. Decisions pause when critical; minor decisions pause only if the player sets "all decisions pause". Pay and reward amounts are written for a colony earning up to ¥300 a day and scale with the 30-day mean income beyond that. Options are disabled, with the reason, for lack of money, goods, beds, free workers, a running project, a closed road to clear, or anything else they need.
+
+| Count | Content |
+|---|---|
+| 28 short | 10 from 1.6 plus 落石封路, 报价窗口, 自发移民, 工资协商, 设备故障, 尘暴, 汛期, 寒潮, 流感季, 意外突破, 访问学者, 投资意向, 勘探修正, 流星雨, 补给船延误, 例行抽查, 学校申请, 本地物种 |
+| 6 chains | 第二条水位线, 送不到的旺季, 岩层下的值班簿, 没有目的地的客船, 零点八毫米的裂缝, 山脊里的空白图 |
+

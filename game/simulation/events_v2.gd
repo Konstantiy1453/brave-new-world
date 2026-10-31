@@ -1,5 +1,24 @@
 extends RefCounted
 ## Local-day, independently seeded, original event definitions. All payouts are receipts.
+## A definition can open again after its cooldown. Notices never pause; decisions pause when they
+## are critical or the player asks for every decision to pause. Money scales with recent income.
+const PRODUCTION_KINDS: Array[String] = ["mine", "farm", "processor"]
+const EFFECT_KINDS: Array[String] = [
+	"water",
+	"farm",
+	"mine",
+	"processor",
+	"port",
+	"power",
+	"all",
+	"appeal",
+	"research",
+	"export_price",
+	"road_capacity"
+]
+const PAUSE_ALL: String = "all"
+const PAUSE_CRITICAL: String = "critical"
+
 static var _definitions: Dictionary = {}
 
 
@@ -9,8 +28,25 @@ static func definitions() -> Dictionary:
 	return _definitions
 
 
+## Saves from before cooldowns: what has been seen counts as last opened when it was created.
+static func ensure_state(state: Dictionary) -> void:
+	if not state.policy.has("event_pause"):
+		state.policy.event_pause = PAUSE_CRITICAL
+	if not state.has("events_v2"):
+		return
+	var e: Dictionary = state.events_v2
+	if not e.has("last_opened"):
+		e.last_opened = {}
+		e.endings = {}
+		for inst: Dictionary in e.instances:
+			e.last_opened[inst.definition_id] = int(inst.created_day)
+			if str(inst.ending) != "":
+				e.endings[inst.definition_id] = str(inst.ending)
+
+
 static func ensure(sim) -> void:
 	if sim.state.has("events_v2"):
+		ensure_state(sim.state)
 		return
 	var seed_value: int = int(sim.state.world.seed)
 	sim.state.events_v2 = {
@@ -23,8 +59,11 @@ static func ensure(sim) -> void:
 		"history": [],
 		"effects": [],
 		"seen": [],
-		"last_tick": -1
+		"last_tick": -1,
+		"last_opened": {},
+		"endings": {},
 	}
+	ensure_state(sim.state)
 
 
 static func _rng(e: Dictionary) -> float:
@@ -71,13 +110,127 @@ static func _matches(sim, s: Dictionary, c: Dictionary) -> bool:
 	if c.has("status") and sim.state.status != c.status:
 		return false
 	if c.has("previous"):
-		var found: bool = false
-		for inst in sim.state.events_v2.instances:
-			if str(inst.definition_id) + ":" + str(inst.ending) == str(c.previous):
-				found = true
-		if not found:
+		var parts: PackedStringArray = str(c.previous).split(":")
+		if str(sim.state.events_v2.endings.get(parts[0], "")) != parts[1]:
 			return false
+	return _matches_colony(sim, s, c)
+
+
+## Conditions on the systems added since 1.6.
+static func _matches_colony(sim, s: Dictionary, c: Dictionary) -> bool:
+	if bool(c.get("trigger_only", false)):
+		return false
+	var site: Dictionary = sim.state.world.regions[int(s.region)]
+	if int(s.population) < int(c.get("population", 0)):
+		return false
+	if int(s.children) < int(c.get("children", 0)):
+		return false
+	if float(s.get("attractiveness", 1.0)) < float(c.get("attractiveness", 0.0)):
+		return false
+	if float(sim.state.imports_total) < float(c.get("imports", 0.0)):
+		return false
+	if int(sim.state.contract.stage) < int(c.get("contract_stage", 0)):
+		return false
+	if c.has("wage_below") and float(sim.state.policy.wage) >= float(c.wage_below):
+		return false
+	if c.has("employment"):
+		var adults: int = maxi(1, int(s.workers) + int(s.scientists))
+		if float(s.employed) / adults < float(c.employment):
+			return false
+	if bool(c.get("river", false)) and not bool(site.get("river", false)):
+		return false
+	if bool(c.get("arid", false)) and float(site.get("rainfall", 0.5)) >= 0.32:
+		return false
+	if bool(c.get("cold", false)) and float(site.get("temperature", 20.0)) >= 6.0:
+		return false
+	if bool(c.get("wet", false)) and float(site.get("rainfall", 0.5)) < 0.55:
+		return false
+	if bool(c.get("no_enterprise", false)) and not sim.state.enterprise.is_empty():
+		return false
+	if bool(c.get("research_active", false)) and not _project_running(sim):
+		return false
+	if bool(c.get("road", false)) and not _has_road_at(sim, int(s.region)):
+		return false
+	if bool(c.get("hidden_deposit", false)) and not _has_hidden(site):
+		return false
 	return true
+
+
+static func _project_running(sim) -> bool:
+	for project: Dictionary in sim.state.research.get("projects", {}).values():
+		if int(project.effective) > 0:
+			return true
+	return false
+
+
+static func _has_road_at(sim, region: int) -> bool:
+	for road: Dictionary in sim.state.roads:
+		if int(road.a) == region or int(road.b) == region:
+			return true
+	return false
+
+
+static func _has_hidden(site: Dictionary) -> bool:
+	for plot: Dictionary in site.get("plots", []):
+		if plot.kind == "deposit" and bool(plot.hidden):
+			return true
+	return false
+
+
+## Whether this definition makes the game stop and wait, under the player's setting.
+static func _pauses(sim, definition: Dictionary) -> bool:
+	if str(definition.get("kind", "decision")) == "notice":
+		return false
+	if bool(definition.get("critical", true)):
+		return true
+	return str(sim.state.policy.get("event_pause", PAUSE_CRITICAL)) == PAUSE_ALL
+
+
+static func _cooled(sim, id: String) -> bool:
+	var e: Dictionary = sim.state.events_v2
+	if not e.last_opened.has(id):
+		return true
+	var d: Dictionary = definitions().definitions[id]
+	var cooldown: int = int(d.get("cooldown_days", definitions().sampling.default_cooldown_days))
+	return int(sim.state.day) - int(e.last_opened[id]) >= cooldown
+
+
+static func _open_now(sim, id: String) -> bool:
+	for inst: Dictionary in sim.state.events_v2.instances:
+		if inst.definition_id == id and not inst.status in ["resolved", "cancelled"]:
+			return true
+	return false
+
+
+## Money in events keeps pace with the colony: at most a few days of recent income.
+static func money_scale(sim) -> float:
+	var rules: Dictionary = definitions().sampling
+	var history: Array = sim.state.get("operating_history", [])
+	var window: int = mini(int(rules.income_window_days), history.size())
+	if window <= 0:
+		return 1.0
+	var total: float = 0.0
+	for i: int in range(history.size() - window, history.size()):
+		total += float(history[i].income)
+	return maxf(1.0, total / window / float(rules.reference_income))
+
+
+static func _pay(sim, option: Dictionary) -> float:
+	return float(option.get("pay", 0.0)) * money_scale(sim)
+
+
+static func _reward(sim, option: Dictionary) -> float:
+	return float(option.get("reward", 0.0)) * money_scale(sim)
+
+
+## Opens a definition because something just happened, if its cooldown allows.
+static func trigger(sim, id: String, region: int) -> void:
+	if not sim.state.has("events_v2") or sim.settlement(region).is_empty():
+		return
+	if _open_now(sim, id) or not _cooled(sim, id):
+		return
+	_open(sim, id, region)
+	_sync_legacy(sim)
 
 
 static func _open(sim, definition_id: String, region: int) -> Dictionary:
@@ -102,17 +255,31 @@ static func _open(sim, definition_id: String, region: int) -> Dictionary:
 		"order": {}
 	}
 	e.instances.append(inst)
-	e.seen.append(definition_id)
+	if not e.seen.has(definition_id):
+		e.seen.append(definition_id)
+	e.last_opened[definition_id] = int(sim.state.day)
+	_prune(e)
 	_enter(sim, inst, "start")
 	if d.category == "incident":
 		e.last_negative = int(sim.state.day)
 	return inst
 
 
+## Finished instances beyond a short memory go; what chains need lives in `endings`.
+static func _prune(e: Dictionary) -> void:
+	var keep: int = int(definitions().sampling.keep_resolved_instances)
+	var resolved: int = 0
+	for index: int in range(e.instances.size() - 1, -1, -1):
+		if e.instances[index].status in ["resolved", "cancelled"]:
+			resolved += 1
+			if resolved > keep:
+				e.instances.remove_at(index)
+
+
 static func _enter(sim, inst: Dictionary, node_id: String) -> void:
 	inst.node = node_id
 	inst.status = "pending"
-	inst.pause_required = true
+	inst.pause_required = _pauses(sim, definitions().definitions[inst.definition_id])
 	inst.scheduled = {}
 	inst.deadline = int(sim.state.day) + int(_node(inst).get("deadline_days", 6))
 	inst.variables.erase("deferred_node")
@@ -129,6 +296,7 @@ static func _end(sim, inst: Dictionary, ending: String) -> void:
 	inst.ending = ending
 	inst.scheduled = {}
 	inst.variables.erase("investigation")
+	sim.state.events_v2.endings[inst.definition_id] = ending
 	sim.state.events_v2.history.append(
 		{
 			"instance_id": inst.instance_id,
@@ -156,8 +324,11 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 		return "目标据点已不存在"
 	if option.is_empty():
 		return "未知选项"
-	if float(sim.state.cash) < float(option.get("pay", 0)):
-		return "公共资金不足"
+	if float(sim.state.cash) < _pay(sim, option):
+		return "公共资金不足：需要 %.0f" % _pay(sim, option)
+	var colony_reason: String = _colony_reason(sim, s, option)
+	if colony_reason != "":
+		return colony_reason
 	for resource in option.get("goods_cost", {}):
 		if float(s.stock.get(resource, 0)) < float(option.goods_cost[resource]):
 			return "本地库存不足：" + str(resource)
@@ -176,9 +347,12 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 			return "可派遣研究员不足 %d 人" % int(option.investigate)
 	if option.has("build"):
 		var b: Dictionary = sim.build_preview(int(inst.target_region), str(option.build))
-		if int(s.arrival) > 0 or s.buildings.size() >= 24:
-			return "据点未到达或开发地块已满"
-		if float(sim.state.cash) < float(b.cost) + float(option.get("pay", 0)):
+		var refusal: String = sim.Production.build_refusal(
+			sim, int(inst.target_region), str(option.build)
+		)
+		if int(s.arrival) > 0 or refusal != "":
+			return refusal if refusal != "" else "据点未到达"
+		if float(sim.state.cash) < float(b.cost) + _pay(sim, option):
 			return "建设资金不足"
 		if float(s.stock.materials) < float(b.materials) or float(s.stock.parts) < float(b.parts):
 			return "本地建设材料不足"
@@ -192,6 +366,41 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 		if not _has_building(s, "processor") or not _has_building(s, "port"):
 			return "需要已启用的加工厂和货站"
 	return ""
+
+
+## Beds, hands, specialists and what else an option needs before it may be chosen.
+static func _colony_reason(sim, s: Dictionary, option: Dictionary) -> String:
+	var beds: int = int(option.get("beds", 0))
+	if beds > 0 and sim.Population.free_beds(sim, s) < beds:
+		return "需要 %d 张空床位，目前 %d 张" % [beds, maxi(0, sim.Population.free_beds(sim, s))]
+	var hands: int = int(option.get("workers", 0))
+	if hands > 0 and sim.free_workers(s) < hands:
+		return "需要 %d 名空闲工人，目前 %d 名" % [hands, sim.free_workers(s)]
+	var trained: int = int(option.get("train_scientists", 0))
+	if trained > 0 and int(s.workers) < trained + 8:
+		return "工人太少，无法抽调培训"
+	if float(option.get("research_points", 0.0)) > 0.0 and not _project_running(sim):
+		return "目前没有进行中的科研项目"
+	if bool(option.get("found_enterprise", false)):
+		if not sim.state.enterprise.is_empty():
+			return "已有一家民营企业"
+		if float(sim.enterprise_preview(int(s.region)).get("estimated_profit", -1.0)) < 0.0:
+			return "当地需求还撑不起服务社"
+		if float(s.stock.materials) < 8.0 or float(s.stock.parts) < 2.0:
+			return "企业要向本地仓库购买 8 建材和 2 部件"
+	if bool(option.get("clear_closure", false)) or int(option.get("shorten_closure", 0)) > 0:
+		if _closed_road(sim, int(s.region)).is_empty():
+			return "这里没有封闭中的道路"
+	return ""
+
+
+static func _closed_road(sim, region: int) -> Dictionary:
+	for road: Dictionary in sim.state.roads:
+		if int(road.a) != region and int(road.b) != region:
+			continue
+		if int(road.get("blocked_until", 0)) >= int(sim.state.day):
+			return road
+	return {}
 
 
 static func act(sim, args: Dictionary) -> String:
@@ -250,26 +459,31 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 		inst.variables.building_index = s.buildings.size() - 1
 		inst.variables.building_kind = str(option.build)
 	sim._transfer(
-		"public", "external", float(option.get("pay", 0)), "event.pay", false, str(inst.instance_id)
+		"public", "external", _pay(sim, option), "event.pay", false, str(inst.instance_id)
 	)
 	for key in option.get("goods_cost", {}):
 		sim._consume(s, str(key), float(option.goods_cost[key]))
 	if option.has("reward"):
 		sim._transfer(
-			"external", "public", float(option.reward), "event.reward", false, str(inst.instance_id)
+			"external", "public", _reward(sim, option), "event.reward", false, str(inst.instance_id)
 		)
 	for key in option.get("goods_reward", {}):
 		sim._produce(s, str(key), float(option.goods_reward[key]), "事件外部交付 · " + inst.instance_id)
 	if option.get("sell_rights", false):
 		inst.variables.rights_sold = true
+	_apply_colony(sim, s, option)
+	_forget_old_effects(sim)
 	for effect in option.get("effects", []):
 		var n: int = int(effect.duration_days)
+		var factor: float = float(effect.factor)
+		if effect.has("clinic") and sim.Population.has_clinic(s):
+			factor = float(effect.clinic)
 		sim.state.events_v2.effects.append(
 			{
 				"source": inst.instance_id,
 				"region": int(inst.target_region),
 				"kind": str(effect.kind),
-				"factor": float(effect.factor),
+				"factor": factor,
 				"start": int(sim.state.day) + 1,
 				"until": int(sim.state.day) + 1 + n if n > 0 else -1,
 				"duration_days": n,
@@ -332,11 +546,84 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 		inst.pause_required = false
 		inst.scheduled = {
 			"kind": "date",
-			"next": str(option.get("next", "")),
+			"next": _next_node(sim, option),
 			"due": int(sim.state.day) + int(option.get("delay", 1))
 		}
 	_sync_legacy(sim)
 	return ""
+
+
+## An option may lead to one of two nodes by chance; the roll comes from the events' own RNG.
+static func _next_node(sim, option: Dictionary) -> String:
+	if not option.has("alt"):
+		return str(option.get("next", ""))
+	var roll: float = _rng(sim.state.events_v2)
+	return str(option.next) if roll < float(option.chance) else str(option.alt)
+
+
+static func _forget_old_effects(sim) -> void:
+	var keep: Array = []
+	for effect: Dictionary in sim.state.events_v2.effects:
+		if int(effect.until) < 0 or int(effect.until) >= int(sim.state.day):
+			keep.append(effect)
+	sim.state.events_v2.effects = keep
+
+
+## What an option does to people, places and roads. Ledgers stay with _transfer and _produce.
+static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
+	var workers: int = int(option.get("admit_workers", 0))
+	var scientists: int = int(option.get("admit_scientists", 0))
+	if workers + scientists > 0:
+		sim.Population._admit(sim, s, workers, scientists)
+	var trained: int = int(option.get("train_scientists", 0))
+	if trained > 0:
+		s.workers = int(s.workers) - trained
+		s.scientists = int(s.scientists) + trained
+		sim._reconcile_jobs(s)
+	for good: String in option.get("lose_goods", {}):
+		sim._consume(s, good, minf(float(option.lose_goods[good]), float(s.stock[good])))
+	if option.has("set_wage"):
+		sim.state.policy.wage = float(option.set_wage)
+	if option.has("distrust"):
+		sim.state.company.distrust = clampf(
+			float(sim.state.company.distrust) + float(option.distrust), 0.0, 100.0
+		)
+	if option.has("pollution"):
+		s.pollution = clampf(float(s.get("pollution", 0.0)) + float(option.pollution), 0.0, 100.0)
+	if float(option.get("research_points", 0.0)) > 0.0:
+		sim.Research.add_progress(sim, float(option.research_points))
+	if bool(option.get("found_enterprise", false)):
+		sim.act("enterprise", {"region": int(s.region)})
+	if bool(option.get("clear_closure", false)):
+		_closed_road(sim, int(s.region)).blocked_until = int(sim.state.day) - 1
+	if int(option.get("shorten_closure", 0)) > 0:
+		var road: Dictionary = _closed_road(sim, int(s.region))
+		road.blocked_until = mini(
+			int(road.blocked_until), int(sim.state.day) + int(option.shorten_closure)
+		)
+	if int(option.get("close_roads", 0)) > 0:
+		for road: Dictionary in sim.state.roads:
+			if int(road.a) == int(s.region) or int(road.b) == int(s.region):
+				road.blocked_until = maxi(
+					int(road.get("blocked_until", 0)), int(sim.state.day) + int(option.close_roads)
+				)
+	if option.has("revise_deposits"):
+		_revise_deposits(sim, s, option.revise_deposits)
+	if bool(option.get("reveal_hidden", false)):
+		var site: Dictionary = sim.state.world.regions[int(s.region)]
+		for plot: Dictionary in site.plots:
+			if plot.kind == "deposit":
+				plot.hidden = false
+		sim.Sites.SiteGen.refresh_deposits(site)
+
+
+static func _revise_deposits(sim, s: Dictionary, band: Array) -> void:
+	var site: Dictionary = sim.state.world.regions[int(s.region)]
+	var factor: float = lerpf(float(band[0]), float(band[1]), _rng(sim.state.events_v2))
+	for plot: Dictionary in site.plots:
+		if plot.kind == "deposit" and not bool(plot.hidden):
+			plot.reserves = float(plot.reserves) * factor
+	sim.Sites.SiteGen.refresh_deposits(site)
 
 
 static func _advance_order(sim, inst: Dictionary) -> void:
@@ -426,7 +713,8 @@ static func tick(sim) -> void:
 		_advance_order(sim, inst)
 		if inst.status in ["resolved", "cancelled"]:
 			continue
-		if inst.status == "deferred" and day >= int(inst.deadline):
+		var unanswered: bool = inst.status == "pending" and not bool(inst.pause_required)
+		if (inst.status == "deferred" or unanswered) and day >= int(inst.deadline):
 			var option: Dictionary = _choice(inst, str(_node(inst).default))
 			if _reason(sim, inst, option) == "":
 				_apply(sim, inst, option, true)
@@ -484,7 +772,7 @@ static func tick(sim) -> void:
 		var total: float = 0
 		for id in definitions().definitions:
 			var d: Dictionary = definitions().definitions[id]
-			if e.seen.has(id):
+			if _open_now(sim, id) or not _cooled(sim, id):
 				continue
 			if (
 				d.category == "incident"
@@ -514,12 +802,22 @@ static func _active_effect(effect: Dictionary, day: int) -> bool:
 
 static func modifier(sim, region: int, kind: String) -> float:
 	var value: float = 1.0
+	var general: bool = kind in PRODUCTION_KINDS
 	for effect in sim.state.get("events_v2", {}).get("effects", []):
 		if (
 			int(effect.region) == region
-			and effect.kind == kind
+			and (effect.kind == kind or (general and effect.kind == "all"))
 			and _active_effect(effect, int(sim.state.day))
 		):
+			value *= float(effect.factor)
+	return value
+
+
+## Effects that reach the whole colony, whichever settlement they began in.
+static func colony_modifier(sim, kind: String) -> float:
+	var value: float = 1.0
+	for effect in sim.state.get("events_v2", {}).get("effects", []):
+		if effect.kind == kind and _active_effect(effect, int(sim.state.day)):
 			value *= float(effect.factor)
 	return value
 
@@ -541,9 +839,37 @@ static func reserved(sim, region: int, resource: String) -> float:
 static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	var parts: Array = []
 	if option.has("pay"):
-		parts.append("支出 %.0f" % float(option.pay))
+		parts.append("支出 %.0f" % _pay(sim, option))
 	if option.has("reward"):
-		parts.append("一次性收入 %.0f" % float(option.reward))
+		parts.append("一次性收入 %.0f" % _reward(sim, option))
+	if int(option.get("admit_workers", 0)) + int(option.get("admit_scientists", 0)) > 0:
+		parts.append(
+			(
+				"迁入工人 %d、研究员 %d"
+				% [int(option.get("admit_workers", 0)), int(option.get("admit_scientists", 0))]
+			)
+		)
+	if float(option.get("research_points", 0.0)) > 0.0:
+		parts.append("当前项目 +%.0f 研究量" % float(option.research_points))
+	if int(option.get("train_scientists", 0)) > 0:
+		parts.append("%d 名工人转为研究员" % int(option.train_scientists))
+	if option.has("distrust"):
+		parts.append("公司不信任 +%.0f" % float(option.distrust))
+	if option.has("pollution"):
+		parts.append("污染 +%.0f" % float(option.pollution))
+	if option.has("set_wage"):
+		parts.append("工资恢复到 %.1f 倍" % float(option.set_wage))
+	if int(option.get("close_roads", 0)) > 0:
+		parts.append("线路封闭 %d 日" % int(option.close_roads))
+	if bool(option.get("clear_closure", false)):
+		parts.append("当天恢复通车")
+	for good: String in option.get("lose_goods", {}):
+		parts.append(
+			(
+				"损失至多 %.0f %s"
+				% [float(option.lose_goods[good]), str(sim.config.resources.get(good, good))]
+			)
+		)
 	for key in option.get("goods_cost", {}):
 		parts.append(
 			"消耗 %.0f %s" % [float(option.goods_cost[key]), str(sim.config.resources.get(key, key))]
@@ -577,7 +903,17 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 		)
 	for effect in option.get("effects", []):
 		var names: Dictionary = {
-			"water": "供水", "farm": "农产", "mine": "采矿", "processor": "加工", "port": "货站吞吐"
+			"water": "供水",
+			"farm": "农产",
+			"mine": "采矿",
+			"processor": "加工",
+			"port": "货站吞吐",
+			"power": "发电",
+			"all": "全部生产",
+			"appeal": "吸引力",
+			"research": "科研速度",
+			"export_price": "出口价格",
+			"road_capacity": "道路运力",
 		}
 		parts.append(
 			(
@@ -628,6 +964,7 @@ static func view(sim) -> Dictionary:
 			"deadline": inst.deadline,
 			"remaining_days": maxi(0, int(inst.deadline) - int(sim.state.day)),
 			"pause_required": inst.pause_required,
+			"kind": str(definitions().definitions[inst.definition_id].get("kind", "decision")),
 			"target_region": inst.target_region,
 			"choices": [],
 			"scheduled": inst.scheduled.duplicate(true),
@@ -645,7 +982,7 @@ static func view(sim) -> Dictionary:
 						"label": str(option.label) + (" · " + desc if desc != "" else ""),
 						"enabled": reason == "",
 						"reason": reason,
-						"cost": float(option.get("pay", 0)),
+						"cost": _pay(sim, option),
 						"duration_days": int(option.get("effects", [{}])[0].get("duration_days", 0))
 					}
 				)
@@ -700,7 +1037,17 @@ static func view(sim) -> Dictionary:
 		if int(effect.until) < 0 or int(effect.until) > int(sim.state.day):
 			var row: Dictionary = effect.duplicate(true)
 			var names: Dictionary = {
-				"water": "供水能力", "farm": "农业产出", "mine": "采矿效率", "processor": "加工效率", "port": "货站吞吐"
+				"water": "供水能力",
+				"farm": "农业产出",
+				"mine": "采矿效率",
+				"processor": "加工效率",
+				"port": "货站吞吐",
+				"power": "发电能力",
+				"all": "全部生产",
+				"appeal": "吸引力",
+				"research": "科研速度",
+				"export_price": "出口价格",
+				"road_capacity": "道路运力",
 			}
 			row.title = str(names.get(effect.kind, effect.kind))
 			row.text = (
@@ -768,6 +1115,8 @@ static func validate(candidate: Dictionary) -> String:
 		return "事件记录超过上限"
 	if int(e.last_tick) > int(candidate.day) or int(e.next_draw) < 0:
 		return "事件调度日期无效"
+	if not e.get("last_opened", {}) is Dictionary or not e.get("endings", {}) is Dictionary:
+		return "事件冷却记录无效"
 	var seen: Dictionary = {}
 	for id in e.seen:
 		if not id is String or not definitions().definitions.has(id) or seen.has(id):
@@ -789,14 +1138,14 @@ static func validate(candidate: Dictionary) -> String:
 				return "事件实例容器无效"
 		if not inst.get("history") is Array or not inst.get("pause_required") is bool:
 			return "事件历史或暂停状态无效"
-		if (
-			ids.has(inst.instance_id)
-			or def_ids.has(inst.definition_id)
-			or not definitions().definitions.has(inst.definition_id)
-		):
+		if ids.has(inst.instance_id) or not definitions().definitions.has(inst.definition_id):
 			return "事件重复实例或未知定义"
+		var finished: bool = inst.status in ["resolved", "cancelled"]
+		if not finished and def_ids.has(inst.definition_id):
+			return "同一事件不能同时开启两次"
 		ids[inst.instance_id] = true
-		def_ids[inst.definition_id] = true
+		if not finished:
+			def_ids[inst.definition_id] = true
 		if not seen.has(inst.definition_id):
 			return "事件实例缺少出现记录"
 		var serial: int = str(inst.instance_id).get_slice(":e", 1).to_int()
@@ -811,7 +1160,7 @@ static func validate(candidate: Dictionary) -> String:
 			return "事件定义版本或节点无效"
 		if not inst.status in ["pending", "deferred", "waiting", "resolved", "cancelled"]:
 			return "事件生命周期无效"
-		if bool(inst.pause_required) != (inst.status == "pending"):
+		if bool(inst.pause_required) and inst.status != "pending":
 			return "事件暂停状态不一致"
 		if int(inst.target_region) < 0 or int(inst.target_region) >= candidate.world.regions.size():
 			return "事件目标越界"
@@ -921,12 +1270,10 @@ static func validate(candidate: Dictionary) -> String:
 				return "事件交付账不平"
 			if float(o.dispatched) > float(o.required) + 0.00001 or float(o.price) <= 0:
 				return "事件交付超出承诺"
-	if seen.size() != def_ids.size():
-		return "事件出现记录缺少实例"
 	for h in e.history:
 		if (
 			not h is Dictionary
-			or not ids.has(h.get("instance_id"))
+			or not h.get("instance_id") is String
 			or not h.get("ending") is String
 			or not _number(h.get("day"))
 			or not _number(h.get("target_region"))
@@ -946,8 +1293,8 @@ static func validate(candidate: Dictionary) -> String:
 	for effect in e.effects:
 		if (
 			not effect is Dictionary
-			or not ids.has(effect.get("source"))
-			or not effect.get("kind") in ["water", "farm", "mine", "processor", "port"]
+			or not effect.get("source") is String
+			or not effect.get("kind") in EFFECT_KINDS
 		):
 			return "事件效果来源无效"
 		for key in ["region", "factor", "start", "until", "duration_days", "maintenance"]:

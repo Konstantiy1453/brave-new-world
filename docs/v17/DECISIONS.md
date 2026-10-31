@@ -87,4 +87,13 @@ One line each: decision · reason · alternative rejected.
 - Sea landings bring a prefab port · nothing else could supply the materials for one · a bigger expedition kit.
 - Social risk floor per settlement lowered to 0.1 · with six settlements one small unhappy town drove a takeover at ¥130,000 in the bank · removing the floor.
 - Upgrades, megaprojects and the job-creation routine in bots use forecasts and can accept work that only breaks even · wages mostly return as food sales, and idle workers cost more · payback limit for everything.
+- Events draw every 10 days, not 6 · with repeatable definitions a draw nearly always finds something, and 6 days buried the player · a longer draw for notices only.
+- Money in events is the written amount up to ¥300 a day of recent income, then scales with income · keeps the 1.6 early amounts and tests while staying relevant later, about 2-5 days of income as Appendix C asks · percentages of income everywhere.
+- Existing short events became notices, except 两地的第一个集市 and 泵房里的一滴盐, which are minor decisions; every chain is a critical decision · chains have real stakes and pausing for a box of seeds does not · pausing for everything.
+- Rockfall opens only when a road actually closes, through `trigger` · a rockfall event with no closure, or a closure with no event, would each read as a bug · a random draw with its own closure.
+- "Reroute through the valley" became a short temporary detour · only one road may join a pair of settlements, so the valley road cannot be built on the spot · a second road just for the event.
+- A forward contract is modelled as +10% on all export prices for 25 days for a deposit · a fixed price per good would need its own contract system · dropping the event.
+- The school is an event outcome (appeal for 180 days, two workers retrained), not a building · the brief adds no school building · a new building kind.
+- 山脊里的空白图 was chosen as the sixth chain over 玻璃下的第二季 · it ties to hidden deposits and prospecting, which already exist · both.
+- Finished event instances beyond 16 are dropped; `endings` and `last_opened` keep what later conditions need · save size stays bounded with repeatable events · keeping every instance.
 

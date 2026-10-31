@@ -85,7 +85,7 @@ func run():
 	g.paused = true
 	g.sim.new_game(260129, "capital", 1)
 	g.sim.act("settle", {"region": 0})
-	load("res://simulation/events_v2.gd")._open(g.sim, "seed_crate", 0)
+	load("res://simulation/events_v2.gd")._open(g.sim, "water", 0)
 	g.close_modal()
 	g.paused = false
 	g.advance_time(200)

@@ -29,6 +29,7 @@ var modal_feedback: Label
 var selected: int = 0
 var selected_tech: String = ""
 var site_filter: int = 0
+var announced_event: int = 0
 var local_view: bool = false
 var paused: bool = true
 var speed: int = 1
@@ -280,6 +281,7 @@ func advance_time(delta: float):
 		):
 			forced_pause(true)
 			open_page("company")
+		_announce_new_event()
 		if event_pause_required() and not forced_page_open():
 			forced_pause(true)
 			open_page("events")
@@ -309,6 +311,21 @@ func _finish_autosave(only_if_done: bool):
 	if str(autosave_snapshot.get("result", "")) != "":
 		toast(str(autosave_snapshot.result))
 	autosave_snapshot = {}
+
+
+## Notices do not stop the game, so each one gets a line on screen when it arrives.
+func _announce_new_event() -> void:
+	var serial: int = int(sim.state.get("events_v2", {}).get("next_id", 0))
+	if serial == announced_event:
+		return
+	announced_event = serial
+	var pending: Variant = sim.state.get("event", {})
+	if (
+		pending is Dictionary
+		and not pending.is_empty()
+		and not bool(pending.get("pause_required", true))
+	):
+		toast("新通讯：" + str(pending.get("title", "")) + "（左侧通讯事件）")
 
 
 func event_pause_required() -> bool:

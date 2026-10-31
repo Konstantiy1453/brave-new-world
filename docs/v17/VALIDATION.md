@@ -167,3 +167,20 @@ Cold load, which regenerates the world, is measured in Phase 5 against the new g
 | `world_v16_region.gd`, `v16_f12_transport.gd`, `tools/review_save_nested_regressions.gd` | `state.roads[0]` | One route became a network |
 | `world_v16_ui_sync.gd` | Looks for the inactive accent in the baked mesh's surfaces | Building models are baked |
 
+## Phase 6
+
+**Balance harness.** `--quick`, 80 runs, 0 audit errors, 3/3 replays identical. Event row passes: one pausing decision per 38 days, 29 distinct definitions by day 720, no repeat inside a cooldown, 28 short definitions, 6 chains.
+
+**Misses reported against §5.2 at this phase, all small and left for the final balance in Phase 8:** balanced award 184 against 120-180; research-first day 201; income growth ×2.42 against ×2.5; labour lever +19% against +20%.
+
+**Automated test.** All suites green, including the new `v17_events`: content counts, soundness of every definition, cooldowns, notices and the pause setting, scaled money, feasibility with reasons, effects reaching their systems, the rockfall trigger, and each new chain's endings, deferral, timeout and save/load continuation.
+
+**Source-project window, screenshot viewed, exported EXE, human playtest:** NOT_RUN at this phase.
+
+### Tests rewritten
+
+| Test | Change | Why |
+|---|---|---|
+| `v16_events_tests.gd` | Short-event loop covers the ten 1.6 events; pause checks set "all decisions pause" | New events need beds, roads or projects and have their own suite; `pump_seal` is now a minor decision |
+| `v16_ui_tests.gd`, `v17_bugs.gd` | Use the `water` chain for "an event blocks time" | Short notices no longer pause |
+

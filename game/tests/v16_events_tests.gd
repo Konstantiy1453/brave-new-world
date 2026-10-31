@@ -124,11 +124,21 @@ func run_tests() -> void:
 	malformed_saves()
 
 
+## The short events of 1.6. Those added in 1.7 have their own needs: see v17_events.gd.
 func shorts() -> void:
-	for id in E.definitions().definitions:
+	for id in [
+		"seed_crate",
+		"pump_seal",
+		"canteen",
+		"workshop",
+		"freight_labels",
+		"dust",
+		"archive_grant",
+		"market_day",
+		"quiet_channel",
+		"appointment_gift"
+	]:
 		var d: Dictionary = E.definitions().definitions[id]
-		if d.type != "short":
-			continue
 		for option in d.nodes.start.choices:
 			var s = make()
 			facilities(s)
@@ -138,6 +148,9 @@ func shorts() -> void:
 			check(s.audit().is_empty(), "short money/material conservation " + id)
 	var active = make()
 	var timed = make()
+	# This event is a minor decision: it pauses when the player asks every decision to pause.
+	active.act("policy", {"event_pause": "all"})
+	timed.act("policy", {"event_pause": "all"})
 	var ia: Dictionary = opened(active, "pump_seal")
 	var it: Dictionary = opened(timed, "pump_seal")
 	check(E.view(active).pause_required, "new decision requires explicit pause")

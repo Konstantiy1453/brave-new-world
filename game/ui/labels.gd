@@ -120,6 +120,7 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 	"pollution": "污染",
 	"shortages": "水电短缺",
 	"company": "公司审查",
+	"events": "近期事件",
 }
 
 

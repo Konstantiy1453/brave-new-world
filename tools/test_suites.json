@@ -9,6 +9,7 @@
     {"name": "v17_research", "script": "res://tests/v17_research.gd", "success": "V17_RESEARCH_RESULT checks=\\d+ failures=0"},
     {"name": "v17_sites", "script": "res://tests/v17_sites.gd", "success": "V17_SITES_RESULT checks=\\d+ failures=0"},
     {"name": "v17_world_stats", "script": "res://tests/v17_world_stats.gd", "args": ["--seeds=200"], "timeout": 500, "success": "V17_WORLD_RESULT checks=\\d+ failures=0"},
+    {"name": "v17_events", "script": "res://tests/v17_events.gd", "success": "V17_EVENTS_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},
     {"name": "ui_contract", "script": "res://tests/ui_contract.gd", "success": "PASS: UI boots"},

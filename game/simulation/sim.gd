@@ -124,6 +124,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Research.ensure_state(target)
 	Logistics.ensure_state(target)
 	Sites.ensure_state(target)
+	EventsV2.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -224,6 +225,8 @@ func _set_policy(args: Dictionary) -> String:
 		float(pop_rules.wage.min),
 		float(pop_rules.wage.max)
 	)
+	if args.get("event_pause", "") in [EventsV2.PAUSE_ALL, EventsV2.PAUSE_CRITICAL]:
+		state.policy.event_pause = str(args.event_pause)
 	_log("贸易保留 %.0f 天食品，企业利润税 %.0f%%。" % [state.policy.food_reserve, state.policy.tax * 100.0])
 	return ""
 

@@ -3,6 +3,7 @@ extends RefCounted
 
 const STATUS_PASS: String = "PASS"
 const STATUS_MISS: String = "MISS"
+const EventsV2 = preload("res://simulation/events_v2.gd")
 const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
 const AWARD_BANDS: Dictionary = {
@@ -319,13 +320,31 @@ static func _event_rows(rows: Array, runs: Array) -> void:
 			intervals.append(float(run.final_day) / decisions)
 	var distinct: float = median(field(group, "distinct_events"))
 	var interval: float = median(intervals)
+	var breaks: int = _sum_field(runs, "cooldown_breaks")
+	var definitions: Dictionary = EventsV2.definitions().definitions
+	var shorts: int = 0
+	var chains: int = 0
+	for id: String in definitions:
+		if str(definitions[id].type) == "chain":
+			chains += 1
+		else:
+			shorts += 1
 	_row(
 		rows,
 		"Events",
-		"<= 1 pause per 20 days; >= 15 distinct by 720",
-		"1 per %.0f days; %.0f distinct" % [interval, distinct],
+		"<= 1 pause per 20 days; >= 15 distinct by 720; no repeat inside cooldown; 25 short, 5 chains",
+		(
+			"1 per %.0f days; %.0f distinct; %d repeats; %d short, %d chains"
+			% [interval, distinct, breaks, shorts, chains]
+		),
 		_verdict(
-			interval >= PAUSE_INTERVAL_DAYS and distinct >= DISTINCT_EVENTS,
+			(
+				interval >= PAUSE_INTERVAL_DAYS
+				and distinct >= DISTINCT_EVENTS
+				and breaks == 0
+				and shorts >= 25
+				and chains >= 5
+			),
 			not intervals.is_empty()
 		)
 	)

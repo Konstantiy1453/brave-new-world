@@ -4,6 +4,7 @@ extends RefCounted
 ## Numbers: `research` in progression.json, `techs` in economy.json.
 
 const Megaprojects = preload("res://simulation/megaprojects.gd")
+const EventsV2 = preload("res://simulation/events_v2.gd")
 const PREVIEW_STAFF: Array[int] = [5, 10, 20]
 
 
@@ -48,7 +49,9 @@ static func investigating(sim: RefCounted) -> int:
 
 
 static func _speed_factor(sim: RefCounted) -> float:
-	var factor: float = Megaprojects.research_factor(sim)
+	var factor: float = (
+		Megaprojects.research_factor(sim) * EventsV2.colony_modifier(sim, "research")
+	)
 	if sim.state.advantage == "science":
 		factor *= float(sim.progression.research.science_opening_rate)
 	return factor
@@ -270,6 +273,29 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 
 static func tick(sim: RefCounted) -> void:
 	rebalance(sim, true)
+
+
+## Windfall research goes to the project with the most work already done.
+static func add_progress(sim: RefCounted, points: float) -> void:
+	var r: Dictionary = sim.state.research
+	var best: String = ""
+	var most: float = -1.0
+	for key: String in r.projects:
+		if int(r.projects[key].effective) > 0 and float(r.projects[key].work) > most:
+			most = float(r.projects[key].work)
+			best = key
+	if best == "":
+		return
+	var project: Dictionary = r.projects[best]
+	var cost: float = float(sim.config.techs[best].cost)
+	project.work = minf(cost, float(project.work) + points)
+	if float(project.work) >= cost and not r.completed.has(best):
+		r.completed.append(best)
+		project.staff = 0
+		project.effective = 0
+		project.rate = 0.0
+		sim._log("科研完成：" + sim.config.techs[best].name)
+		sim.Sites.on_technology(sim, best)
 
 
 static func view(sim: RefCounted) -> Dictionary:
