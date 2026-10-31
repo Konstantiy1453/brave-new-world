@@ -3,6 +3,8 @@ extends RefCounted
 ## Continents are soft blobs warped by noise. Plates meet along warped Voronoi edges: where they
 ## converge a mountain belt rises, over open ocean it makes island arcs. The sea level is the
 ## height quantile that gives the seeded land fraction, measured once on the world grid.
+## CC-GEO-2.1 first draws a character from the seed (land layout, climate, relief) and builds to
+## that recipe. Without a character the numbers are those of CC-GEO-2.0, so its worlds stay as saved.
 
 const SeedGeo = preload("res://world/seed_geography.gd")
 
@@ -16,6 +18,25 @@ const HEIGHT_PER_RIDGE: float = 0.72
 const HEIGHT_PER_DETAIL: float = 0.1
 const METRES_PER_HEIGHT: float = 4300.0
 const UPWIND_DEGREES: float = 11.0
+const ICE_LATITUDE: float = 76.0
+const ICE_DEGREES_PER_C: float = 1.8
+const ICE_REFERENCE_C: float = 29.0
+const CHARACTER_SALT: int = 0x7E57
+const CC_GEO_2_0_RECIPE: Dictionary = {
+	"temperature": [25.0, 32.0],
+	"rainfall": [0.42, 0.56],
+	"elevation": [0.9, 1.25],
+	"spread": [0.82, 1.2],
+	"stretch": [1.0, 1.55],
+	"lobes": [1, 3],
+	"chains": [2, 5],
+	"max_latitude": 62.0,
+	"spacing": 1.85,
+	"lead": 1.0,
+	"cap_degrees": 0.0,
+	"warp": 0.34,
+	"broad": 0.2,
+}
 
 static var _active: Dictionary = {}
 
@@ -33,26 +54,79 @@ static func is_active(seed_value: int) -> bool:
 	return _active.has(seed_value)
 
 
+## What kind of planet a seed makes. Drawn from the seed alone, so retries keep the same character.
+static func character(seed_value: int, rules: Dictionary) -> Dictionary:
+	var types: Dictionary = rules.planet_types
+	# The tutorial teaches on a mild planet whatever the draw would have been.
+	if types.pinned.has(str(seed_value)):
+		return types.pinned[str(seed_value)]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value * 65537 + CHARACTER_SALT
+	return {
+		"layout": _weighted(rng, types.layouts),
+		"climate": _weighted(rng, types.climates),
+		"relief": _weighted(rng, types.reliefs),
+	}
+
+
+static func _weighted(rng: RandomNumberGenerator, table: Dictionary) -> String:
+	var total: float = 0.0
+	for key: String in table:
+		total += float(table[key].weight)
+	var roll: float = rng.randf_range(0.0, total)
+	for key: String in table:
+		roll -= float(table[key].weight)
+		if roll <= 0.0:
+			return key
+	return table.keys().back()
+
+
+## The numbers a world is built to.
+static func _recipe(rules: Dictionary, planet: Dictionary) -> Dictionary:
+	var recipe: Dictionary = CC_GEO_2_0_RECIPE.duplicate()
+	recipe.land = rules.land_fraction
+	recipe.continents = rules.continents
+	if planet.is_empty():
+		return recipe
+	var types: Dictionary = rules.planet_types
+	recipe.merge(types.layouts[planet.layout], true)
+	recipe.merge(types.climates[planet.climate], true)
+	recipe.merge(types.reliefs[planet.relief], true)
+	return recipe
+
+
 ## Everything drawn from the seed, before the sea level is known.
-static func build_context(seed_value: int, attempt: int, rules: Dictionary) -> Dictionary:
+static func build_context(
+	seed_value: int, attempt: int, rules: Dictionary, planet: Dictionary = {}
+) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = (seed_value * 131 + attempt) * 1000003 + 0x2C2
-	var land_range: Array = rules.land_fraction
-	var continent_range: Array = rules.continents
+	var recipe: Dictionary = _recipe(rules, planet)
+	var land_range: Array = recipe.land
+	var continent_range: Array = recipe.continents
 	var ctx: Dictionary = {
 		"seed": seed_value,
 		"attempt": attempt,
 		"target_land": rng.randf_range(float(land_range[0]), float(land_range[1])),
-		"temperature_base_c": rng.randf_range(25, 32),
-		"rainfall_base": rng.randf_range(0.42, 0.56),
+		"temperature_base_c":
+		rng.randf_range(float(recipe.temperature[0]), float(recipe.temperature[1])),
+		"rainfall_base": rng.randf_range(float(recipe.rainfall[0]), float(recipe.rainfall[1])),
 		"pressure_atm": rng.randf_range(0.88, 1.16),
 		"oxygen_fraction": rng.randf_range(0.20, 0.23),
 		"ocean_depth_m": rng.randf_range(3200, 6200),
-		"elevation_scale": rng.randf_range(0.9, 1.25),
+		"elevation_scale": rng.randf_range(float(recipe.elevation[0]), float(recipe.elevation[1])),
 		"sea_level": 0.0,
+		"warp": float(recipe.warp),
+		"broad": float(recipe.broad),
 	}
+	if not planet.is_empty():
+		ctx.character = planet
+		# Warmer planets have smaller ice caps; the hottest have none.
+		ctx.ice_latitude = (
+			ICE_LATITUDE + (float(ctx.temperature_base_c) - ICE_REFERENCE_C) * ICE_DEGREES_PER_C
+		)
 	var continent_count: int = rng.randi_range(int(continent_range[0]), int(continent_range[1]))
-	var centers: Array[Vector3] = _continent_centers(rng, continent_count, ctx.target_land)
+	var centers: Array[Vector3] = _continent_centers(rng, continent_count, ctx.target_land, recipe)
 	var blobs: Dictionary = {
 		"center": PackedVector3Array(),
 		"u": PackedVector3Array(),
@@ -62,9 +136,14 @@ static func build_context(seed_value: int, attempt: int, rules: Dictionary) -> D
 		"weight": PackedFloat64Array(),
 	}
 	var radius: float = _continent_radius(continent_count, ctx.target_land)
+	var first: bool = true
 	for center: Vector3 in centers:
-		_add_continent(rng, blobs, center, radius * rng.randf_range(0.82, 1.2))
-	for _arc: int in range(rng.randi_range(2, 5)):
+		var size: float = radius * rng.randf_range(float(recipe.spread[0]), float(recipe.spread[1]))
+		if first:
+			size *= float(recipe.lead)
+			first = false
+		_add_continent(rng, blobs, center, size, recipe)
+	for _arc: int in range(rng.randi_range(int(recipe.chains[0]), int(recipe.chains[1]))):
 		_add_island_chain(rng, blobs)
 	ctx.blob_center = blobs.center
 	ctx.blob_u = blobs.u
@@ -79,7 +158,7 @@ static func build_context(seed_value: int, attempt: int, rules: Dictionary) -> D
 
 ## Plain description of a context, for the saved generation record and the world page.
 static func describe(ctx: Dictionary) -> Dictionary:
-	return {
+	var description: Dictionary = {
 		"schema": "plates-2",
 		"attempt": int(ctx.attempt),
 		"sea_level": float(ctx.sea_level),
@@ -94,6 +173,9 @@ static func describe(ctx: Dictionary) -> Dictionary:
 		"elevation_scale": float(ctx.elevation_scale),
 		"mountain_ranges": [],
 	}
+	if ctx.has("character"):
+		description.character = ctx.character
+	return description
 
 
 static func _continent_radius(count: int, target_land: float) -> float:
@@ -102,15 +184,21 @@ static func _continent_radius(count: int, target_land: float) -> float:
 
 
 static func _continent_centers(
-	rng: RandomNumberGenerator, count: int, target_land: float
+	rng: RandomNumberGenerator, count: int, target_land: float, recipe: Dictionary
 ) -> Array[Vector3]:
 	var centers: Array[Vector3] = []
-	var spacing: float = _continent_radius(count, target_land) * 1.85
+	var spacing: float = _continent_radius(count, target_land) * float(recipe.spacing)
+	var cap: float = deg_to_rad(float(recipe.cap_degrees))
+	var axis: Vector3 = _random_point(rng, 45.0) if cap > 0.0 else Vector3.UP
 	for _index: int in range(count):
 		var best: Vector3 = Vector3.UP
 		var best_gap: float = -1.0
 		for _try: int in range(40):
-			var candidate: Vector3 = _random_point(rng, 62.0)
+			var candidate: Vector3 = (
+				_point_in_cap(rng, axis, cap)
+				if cap > 0.0
+				else _random_point(rng, float(recipe.max_latitude))
+			)
 			var gap: float = PI
 			for other: Vector3 in centers:
 				gap = minf(gap, candidate.angle_to(other))
@@ -128,6 +216,14 @@ static func _random_point(rng: RandomNumberGenerator, max_latitude: float) -> Ve
 	var limit: float = sin(deg_to_rad(max_latitude))
 	var lat: float = asin(rng.randf_range(-limit, limit))
 	return SeedGeo.unit(rad_to_deg(lat), rng.randf_range(-180.0, 180.0))
+
+
+## Uniform on the sphere's area within an angle of the axis: land gathered on one side.
+static func _point_in_cap(rng: RandomNumberGenerator, axis: Vector3, cap: float) -> Vector3:
+	var frame: Array[Vector3] = _tangent_frame(rng, axis)
+	var along: float = rng.randf_range(cos(cap), 1.0)
+	var around: Vector3 = frame[0] * sqrt(maxf(0.0, 1.0 - along * along))
+	return (axis * along + around).normalized()
 
 
 static func _tangent_frame(rng: RandomNumberGenerator, center: Vector3) -> Array[Vector3]:
@@ -150,13 +246,17 @@ static func _add_blob(
 
 
 static func _add_continent(
-	rng: RandomNumberGenerator, blobs: Dictionary, center: Vector3, radius: float
+	rng: RandomNumberGenerator,
+	blobs: Dictionary,
+	center: Vector3,
+	radius: float,
+	recipe: Dictionary
 ) -> void:
 	var frame: Array[Vector3] = _tangent_frame(rng, center)
-	var stretch: float = rng.randf_range(1.0, 1.55)
+	var stretch: float = rng.randf_range(float(recipe.stretch[0]), float(recipe.stretch[1]))
 	_add_blob(blobs, center, frame, radius * stretch, radius / stretch, 1.0)
 	# Arms and peninsulas: smaller lobes pushed out from the core.
-	for _lobe: int in range(rng.randi_range(1, 3)):
+	for _lobe: int in range(rng.randi_range(int(recipe.lobes[0]), int(recipe.lobes[1]))):
 		var angle: float = rng.randf_range(0.0, TAU)
 		var reach: float = radius * rng.randf_range(0.7, 1.15)
 		var offset: Vector3 = (frame[0] * cos(angle) + frame[1] * sin(angle)) * reach
@@ -224,13 +324,13 @@ static func _add_plates(
 
 
 ## Warped point on the sphere used for every large-scale lookup.
-static func _warp(p: Vector3, noise: FastNoiseLite) -> Vector3:
+static func _warp(p: Vector3, noise: FastNoiseLite, amount: float) -> Vector3:
 	var warp := Vector3(
 		noise.get_noise_3dv(p * 1.9 + Vector3(13, 7, -4)),
 		noise.get_noise_3dv(p * 1.9 + Vector3(-9, 3, 17)),
 		noise.get_noise_3dv(p * 1.9 + Vector3(5, -15, 8))
 	)
-	return (p + warp * 0.34).normalized()
+	return (p + warp * amount).normalized()
 
 
 static func _landmass(q: Vector3, ctx: Dictionary) -> float:
@@ -281,7 +381,7 @@ static func _ridge(q: Vector3, ctx: Dictionary) -> float:
 
 ## The value compared with the sea level, and its parts. The grid pass uses it to find the level.
 static func raw_height(p: Vector3, noise: FastNoiseLite, ctx: Dictionary) -> Dictionary:
-	var q: Vector3 = _warp(p, noise)
+	var q: Vector3 = _warp(p, noise, float(ctx.warp))
 	var ridge: float = _ridge(q, ctx)
 	if ridge > 0.0:
 		ridge *= (
@@ -292,7 +392,7 @@ static func raw_height(p: Vector3, noise: FastNoiseLite, ctx: Dictionary) -> Dic
 	var medium: float = noise.get_noise_3dv(p * 11.0 + Vector3(-4, 12, 2))
 	var fine: float = noise.get_noise_3dv(p * 37.0 + Vector3(7, -2, 9))
 	return {
-		"raw": land + broad * 0.2 + medium * 0.075 + fine * 0.024 + ridge * RAW_RIDGE,
+		"raw": land + broad * float(ctx.broad) + medium * 0.075 + fine * 0.024 + ridge * RAW_RIDGE,
 		"ridge": ridge,
 		"q": q,
 	}

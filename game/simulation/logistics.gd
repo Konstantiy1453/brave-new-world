@@ -38,7 +38,7 @@ static func ensure_state(state: Dictionary) -> void:
 
 ## The route a road between two sites would take, in the number scheme of this world.
 static func route_between(sim: RefCounted, a: int, b: int, variant: String) -> Dictionary:
-	if str(sim.geo.version) == WorldGen.VERSION or variant == "sea":
+	if WorldGen.is_generated(str(sim.geo.version)) or variant == "sea":
 		return Routes.find(sim.geo, a, b, variant, sim.config.roads)
 	var found: Dictionary = WorldGen.new().route(sim.geo, a, b, variant == "engineered")
 	found.variant = variant

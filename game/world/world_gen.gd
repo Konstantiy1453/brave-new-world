@@ -1,8 +1,9 @@
 extends RefCounted
 ## Authoritative, deterministic spherical geography. All coordinates use degrees.
-const VERSION := "CC-GEO-2.0"
+const VERSION := "CC-GEO-2.1"
+const GENERATED_VERSIONS: Array[String] = ["CC-GEO-2.0", "CC-GEO-2.1"]
 const LEGACY_VERSION := "CC-GEO-1.6"
-const SUPPORTED_VERSIONS := ["CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0"]
+const SUPPORTED_VERSIONS := ["CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0", "CC-GEO-2.1"]
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Hydrology = preload("res://world/hydrology.gd")
 const Plates = preload("res://world/geo2/plates.gd")
@@ -32,6 +33,11 @@ static var _geo_cache: Dictionary = {}
 static var use_disk_cache: bool = OS.has_feature("template")
 
 
+## Worlds from the plate generator, as opposed to the older fixed-site ones.
+static func is_generated(version: String) -> bool:
+	return version in GENERATED_VERSIONS
+
+
 static func world_compatibility_error(world: Dictionary) -> String:
 	if not world.get("version", "") in SUPPORTED_VERSIONS:
 		return "不支持的世界生成器版本；请使用原版本打开原存档"
@@ -49,16 +55,18 @@ static func road_blocked(route: Dictionary, day: int) -> bool:
 ## Derived geography for a seed. Grid data is shared read-only between games on the same seed;
 ## `regions` is a private copy because deposits change during play.
 func build(seed_input: Variant, size_id: int = 1, version: String = VERSION) -> Dictionary:
-	var modern: bool = version == VERSION
+	var modern: bool = is_generated(version)
 	var key: String = (
 		"%s|%d|%d"
-		% ["2" if modern else "1", SeedGeo.normalize_seed(seed_input), clampi(size_id, 0, 2)]
+		% [version if modern else "1", SeedGeo.normalize_seed(seed_input), clampi(size_id, 0, 2)]
 	)
 	if not _geo_cache.has(key):
 		var world: Dictionary = _read_disk(key) if modern else {}
 		if world.is_empty():
 			world = (
-				WorldGen2.generate(seed_input, size_id) if modern else generate(seed_input, size_id)
+				WorldGen2.generate(seed_input, size_id, version)
+				if modern
+				else generate(seed_input, size_id)
 			)
 			world.hash = geo_hash(world)
 			if modern:
@@ -148,8 +156,10 @@ func bind(record: Dictionary) -> Dictionary:
 			return {"error": "存档中的旧版世界数据已损坏"}
 		geo = unpacked
 	else:
-		var modern: bool = str(record.version) == VERSION
-		geo = build(int(record.seed), int(record.size), VERSION if modern else LEGACY_VERSION)
+		var modern: bool = is_generated(str(record.version))
+		geo = build(
+			int(record.seed), int(record.size), str(record.version) if modern else LEGACY_VERSION
+		)
 		if str(geo.hash) != str(record.hash):
 			return {"error": "此存档的世界与当前生成器的结果不一致，无法恢复原有地理。原存档未改动；请使用生成它的版本继续。"}
 	geo.regions = record.regions
@@ -356,7 +366,7 @@ static func gaussian(
 static func sample_geo(
 	lat: float, lon: float, noise: FastNoiseLite, version: String = LEGACY_VERSION
 ) -> Dictionary:
-	if version == VERSION:
+	if is_generated(version):
 		return Plates.sample(lat, lon, noise)
 	if version == "CC-GEO-1.4":
 		return _sample_geo_v14(lat, lon, noise)
@@ -364,13 +374,19 @@ static func sample_geo(
 
 
 static func project_coordinate(lat: float, lon: float, world: Dictionary) -> Vector2:
-	if world.get("version", "CC-GEO-1.4") in ["CC-GEO-1.4", VERSION]:
+	if (
+		world.get("version", "CC-GEO-1.4") == "CC-GEO-1.4"
+		or is_generated(str(world.get("version")))
+	):
 		return Vector2(lat, lon)
 	return SeedGeo.project(lat, lon, int(world.seed))
 
 
 static func unproject_coordinate(lat: float, lon: float, world: Dictionary) -> Vector2:
-	if world.get("version", "CC-GEO-1.4") in ["CC-GEO-1.4", VERSION]:
+	if (
+		world.get("version", "CC-GEO-1.4") == "CC-GEO-1.4"
+		or is_generated(str(world.get("version")))
+	):
 		return Vector2(lat, lon)
 	return SeedGeo.unproject(lat, lon, int(world.seed))
 

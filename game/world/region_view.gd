@@ -43,7 +43,7 @@ var road_sections: int = 0
 
 ## The town grew beside the fixed river in old worlds; in generated worlds plots avoid the rivers.
 func _town_offset() -> float:
-	if str(world.version) == Geo.VERSION:
+	if Geo.is_generated(str(world.version)):
 		return 0.0
 	return 12.0 if world.regions[selected_region].river else 0.0
 

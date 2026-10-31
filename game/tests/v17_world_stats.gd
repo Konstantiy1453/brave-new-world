@@ -8,6 +8,12 @@ const Routes = preload("res://world/routes.gd")
 const Rules = preload("res://simulation/rules.gd")
 const SiteGen = preload("res://world/geo2/site_gen.gd")
 
+const VARIETY_CHECKS: int = 4
+const MIN_TYPE_SEEDS: int = 8
+const MIN_LAND_SPREAD: float = 0.15
+const MIN_TEMPERATURE_SPREAD: float = 15.0
+const MIN_RAIN_SPREAD: float = 0.2
+
 
 func _initialize() -> void:
 	Watchdog.arm(self, 3000)
@@ -40,6 +46,46 @@ func run() -> void:
 	quit(0 if failed == 0 else 1)
 
 
+## Planets must not all come out alike: each layout and climate turns up, and the figures a player
+## sees spread widely. Thin spreads were how every planet ended up looking like the same one.
+func _variety_failures(rows: Array) -> int:
+	var failures: int = 0
+	var seen: Dictionary = {"layout": {}, "climate": {}, "relief": {}}
+	var land: Array[float] = []
+	var warmth: Array[float] = []
+	var rain: Array[float] = []
+	for row: Dictionary in rows:
+		for part: String in seen:
+			var value: String = str(row.character.get(part, ""))
+			seen[part][value] = int(seen[part].get(value, 0)) + 1
+		land.append(float(row.land))
+		warmth.append(float(row.mean_temperature))
+		rain.append(float(row.mean_rainfall))
+	var types: Dictionary = Rules.read("geography").planet_types
+	for part: String in seen:
+		for key: String in types[part + "s"]:
+			if int(seen[part].get(key, 0)) < MIN_TYPE_SEEDS:
+				failures += 1
+				print("FAIL %s %s appears on only %d seeds" % [part, key, seen[part].get(key, 0)])
+	print("planet types ", seen)
+	print(
+		(
+			"spreads: land %.2f, mean temperature %.1f C, rainfall %.2f"
+			% [land.max() - land.min(), warmth.max() - warmth.min(), rain.max() - rain.min()]
+		)
+	)
+	if land.max() - land.min() < MIN_LAND_SPREAD:
+		failures += 1
+		print("FAIL land fraction spread")
+	if warmth.max() - warmth.min() < MIN_TEMPERATURE_SPREAD:
+		failures += 1
+		print("FAIL temperature spread")
+	if rain.max() - rain.min() < MIN_RAIN_SPREAD:
+		failures += 1
+		print("FAIL rainfall spread")
+	return failures
+
+
 func _row(world: Dictionary, seed_value: int, size: int, ms: int, roads: Dictionary) -> Dictionary:
 	var archetypes: Dictionary = {}
 	var fertile: int = 0
@@ -68,6 +114,9 @@ func _row(world: Dictionary, seed_value: int, size: int, ms: int, roads: Diction
 		"carved": bool(world.generation.validation.carved),
 		"rejected": world.generation.validation.rejected.size(),
 		"best": world.regions[0].archetype,
+		"character": world.get("character", {}),
+		"mean_temperature": float(world.statistics.mean_temperature_c),
+		"mean_rainfall": float(world.statistics.mean_rainfall),
 		"best_terrain": world.regions[0].terrain,
 		"archetypes": archetypes,
 		"fertile": fertile,
@@ -267,6 +316,8 @@ func _judge(result: Dictionary, rows: Array) -> int:
 	if int(result.not_unique) > 0:
 		failed += 1
 		print("FAIL duplicate site names")
+	failed += _variety_failures(rows)
+	checks += VARIETY_CHECKS
 	var out: String = ""
 	for argument: String in OS.get_cmdline_user_args():
 		if argument.begins_with("--json="):

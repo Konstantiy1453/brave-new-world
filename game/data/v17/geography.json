@@ -286,6 +286,232 @@
     }
   },
   "deposit_scale": 1.25,
+  "planet_types": {
+    "attempts": 16,
+    "pinned": {
+      "260129": {"layout": "scattered", "climate": "temperate", "relief": "gentle"}
+    },
+    "layouts": {
+      "scattered": {
+        "name": "群陆世界",
+        "weight": 3,
+        "land": [
+          0.3,
+          0.38
+        ],
+        "continents": [
+          4,
+          6
+        ],
+        "spread": [
+          0.72,
+          1.2
+        ],
+        "warp": 0.38
+      },
+      "supercontinent": {
+        "name": "超大陆",
+        "weight": 2,
+        "land": [
+          0.36,
+          0.45
+        ],
+        "continents": [
+          2,
+          2
+        ],
+        "lead": 3.1,
+        "spread": [
+          0.45,
+          0.6
+        ],
+        "lobes": [
+          3,
+          5
+        ],
+        "chains": [
+          1,
+          3
+        ],
+        "broad": 0.16
+      },
+      "twin": {
+        "name": "双子大陆",
+        "weight": 2,
+        "land": [
+          0.33,
+          0.42
+        ],
+        "continents": [
+          2,
+          2
+        ],
+        "spacing": 3.4,
+        "spread": [
+          0.95,
+          1.1
+        ],
+        "lobes": [
+          2,
+          4
+        ],
+        "chains": [
+          1,
+          3
+        ]
+      },
+      "archipelago": {
+        "name": "群岛世界",
+        "weight": 3,
+        "land": [
+          0.25,
+          0.3
+        ],
+        "continents": [
+          4,
+          6
+        ],
+        "spread": [
+          0.5,
+          0.82
+        ],
+        "lobes": [
+          0,
+          2
+        ],
+        "chains": [
+          8,
+          14
+        ],
+        "warp": 0.46,
+        "broad": 0.28
+      },
+      "hemisphere": {
+        "name": "半球陆地",
+        "weight": 2,
+        "land": [
+          0.3,
+          0.38
+        ],
+        "continents": [
+          3,
+          4
+        ],
+        "cap_degrees": 62.0,
+        "spacing": 1.3,
+        "chains": [
+          1,
+          3
+        ]
+      },
+      "equatorial": {
+        "name": "赤道陆带",
+        "weight": 2,
+        "land": [
+          0.28,
+          0.36
+        ],
+        "continents": [
+          3,
+          5
+        ],
+        "max_latitude": 24.0,
+        "spacing": 1.5,
+        "stretch": [
+          1.5,
+          2.2
+        ]
+      }
+    },
+    "climates": {
+      "temperate": {
+        "name": "温和",
+        "weight": 4,
+        "temperature": [
+          26.0,
+          31.0
+        ],
+        "rainfall": [
+          0.44,
+          0.56
+        ]
+      },
+      "cold": {
+        "name": "寒冷",
+        "weight": 2,
+        "temperature": [
+          17.0,
+          22.0
+        ],
+        "rainfall": [
+          0.42,
+          0.54
+        ]
+      },
+      "hot": {
+        "name": "炎热",
+        "weight": 2,
+        "temperature": [
+          35.0,
+          41.0
+        ],
+        "rainfall": [
+          0.42,
+          0.54
+        ]
+      },
+      "arid": {
+        "name": "干旱",
+        "weight": 2,
+        "temperature": [
+          28.0,
+          33.0
+        ],
+        "rainfall": [
+          0.31,
+          0.38
+        ]
+      },
+      "wet": {
+        "name": "湿润",
+        "weight": 2,
+        "temperature": [
+          26.0,
+          31.0
+        ],
+        "rainfall": [
+          0.6,
+          0.7
+        ]
+      }
+    },
+    "reliefs": {
+      "gentle": {
+        "name": "地势平缓",
+        "weight": 2,
+        "elevation": [
+          0.62,
+          0.82
+        ]
+      },
+      "ordinary": {
+        "name": "",
+        "weight": 3,
+        "elevation": [
+          0.9,
+          1.25
+        ]
+      },
+      "rugged": {
+        "name": "山地崎岖",
+        "weight": 2,
+        "elevation": [
+          1.3,
+          1.6
+        ]
+      }
+    }
+  },
   "validator": {
     "start_water": 0.35,
     "start_tonnes": 8000.0,

@@ -1,12 +1,14 @@
 extends "res://world/flat_view.gd"
 ## The globe: geography atlas, clouds, water overlay, markers, routes.
 
+const ICE_LATITUDE: float = 76.0
+
 
 func _build_planet() -> void:
 	# Both global modes share this authoritative atlas: no second random map.
 	var atlas_start: int = Time.get_ticks_msec()
 	var cache_key: String = (
-		"atlas-1536-r4-seed32:"
+		"atlas-1536-r5-seed32:"
 		+ str(world.version)
 		+ ":"
 		+ str(world.seed)
@@ -39,7 +41,7 @@ func _build_planet() -> void:
 			last_atlas_cached = true
 		else:
 			var context: Dictionary = {}
-			if str(world.version) == Geo.VERSION:
+			if Geo.is_generated(str(world.version)):
 				context = Geo.Plates.context(int(world.seed))
 			elif str(world.version) != "CC-GEO-1.4":
 				context = Geo.SeedGeo.context(int(world.seed)).duplicate(true)
@@ -131,12 +133,13 @@ func _grid_preview() -> Image:
 	var width: int = int(world.grid_width)
 	var height: int = int(world.grid_height)
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
+	var ice_latitude: float = float(world.get("plates", {}).get("ice_latitude", ICE_LATITUDE))
 	for y in range(height):
 		for x in range(width):
 			var ll := Geo.cell_coordinate(y * width + x)
 			var cell: Dictionary = world.grid[y * width + x].duplicate()
 			cell.river = false  # rivers already have a persisted geometry overlay
-			var color := _geo_color(cell, ll.x, ll.y)
+			var color := _geo_color(cell, ll.x, ll.y, null, ice_latitude)
 			color.a = clampf(.5 + float(cell.height) * .45, .01, .99)
 			image.set_pixel(x, y, color)
 	return image
@@ -154,6 +157,7 @@ func _render_atlas_tile(
 	var row_start: int = height * tile / count
 	var row_end: int = height * (tile + 1) / count
 	var image := Image.create(width, row_end - row_start, false, Image.FORMAT_RGBA8)
+	var ice_latitude: float = float(context.get("ice_latitude", ICE_LATITUDE))
 	var tile_noise := FastNoiseLite.new()
 	tile_noise.seed = seed_value
 	tile_noise.frequency = 1.8
@@ -163,7 +167,7 @@ func _render_atlas_tile(
 		for x in range(width):
 			var lon: float = (float(x) + .5) * 360.0 / width - 180.0
 			var g: Dictionary = _atlas_sample(lat, lon, tile_noise, version, context)
-			var color := _geo_color(g, lat, lon, tile_noise)
+			var color := _geo_color(g, lat, lon, tile_noise, ice_latitude)
 			color.a = clampf(.5 + float(g.height) * .45, .01, .99)
 			image.set_pixel(x, y - row_start, color)
 	return {"image": image, "row": row_start}
@@ -172,7 +176,7 @@ func _render_atlas_tile(
 func _atlas_sample(
 	lat: float, lon: float, tile_noise: FastNoiseLite, version: String, context: Dictionary
 ) -> Dictionary:
-	if version == Geo.VERSION:
+	if Geo.is_generated(version):
 		return Geo.Plates.sample_with_context(lat, lon, tile_noise, context)
 	if version == "CC-GEO-1.4":
 		return Geo.sample_geo(lat, lon, tile_noise, version)
@@ -349,7 +353,7 @@ func _globe_marker(reg: Dictionary, with_label: bool) -> void:
 	_line(root, ring_points, c, .85)
 	if with_label:
 		var label := Label3D.new()
-		label.text = ("◆ " if settled else "") + str(reg.name)
+		label.text = _site_text(reg, settled)
 		label.font = label_font
 		label.font_size = 48
 		label.pixel_size = .0028

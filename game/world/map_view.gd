@@ -89,7 +89,14 @@ func _marker_signature() -> String:
 		for building: Dictionary in place.get("buildings", []):
 			if str(building.kind) == "farm":
 				farms += 1
-		settled.append([int(place.region), place.get("buildings", []).size(), farms])
+		settled.append(
+			[
+				int(place.region),
+				place.get("buildings", []).size(),
+				farms,
+				str(place.get("name", ""))
+			]
+		)
 	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
 
 

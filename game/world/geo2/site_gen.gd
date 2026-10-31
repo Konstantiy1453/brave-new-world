@@ -254,7 +254,9 @@ static func _site(
 	var rugged: float = float(cell.ruggedness)
 	return {
 		"id": id,
-		"name": _unique_name(rules, str(pick.archetype), rng, names),
+		"name": _site_name(world, rules, id, str(pick.archetype), rng, names),
+		"named": not world.has("character"),
+		"start_bias": rng.randf_range(0.75, 1.25) if world.has("character") else 1.0,
 		"lat": lat,
 		"lon": lon,
 		"canonical_lat": lat,
@@ -285,6 +287,24 @@ static func _site(
 		"survey": 0,
 		"plots": [],
 	}
+
+
+## A site of a CC-GEO-2.1 world has only a number until the player names the settlement built there.
+static func _site_name(
+	world: Dictionary,
+	rules: Dictionary,
+	id: int,
+	archetype: String,
+	rng: RandomNumberGenerator,
+	names: Dictionary
+) -> String:
+	if world.has("character"):
+		return site_number(id)
+	return _unique_name(rules, archetype, rng, names)
+
+
+static func site_number(id: int) -> String:
+	return "地点 %02d" % (id + 1)
 
 
 static func _unique_name(
@@ -603,7 +623,7 @@ static func start_value(site: Dictionary) -> float:
 	value *= 0.7 + 0.6 * float(site.water)
 	# Room to grow: a rich start on a crowded little landmass runs out of places to go.
 	value *= 0.55 + 0.09 * mini(site.neighbors.size(), 5)
-	return value / float(site.development_multiplier)
+	return value * float(site.get("start_bias", 1.0)) / float(site.development_multiplier)
 
 
 ## Site ids are positions in `regions`: swap so that the best pair is sites 0 and 1.

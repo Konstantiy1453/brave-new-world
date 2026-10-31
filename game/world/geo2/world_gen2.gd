@@ -1,5 +1,5 @@
 extends RefCounted
-## CC-GEO-2.0 world: picks the sea level for the seeded land fraction, builds the 144 x 72 grid
+## CC-GEO-2.x world: picks the sea level for the seeded land fraction, builds the 144 x 72 grid
 ## with per-cell attributes and D8 hydrology, places sites and checks that the world is playable.
 ## A world that fails is rebuilt from the next deterministic sub-seed.
 
@@ -9,27 +9,39 @@ const Hydrology = preload("res://world/hydrology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Rules = preload("res://simulation/rules.gd")
 
-const VERSION: String = "CC-GEO-2.0"
+const VERSION: String = "CC-GEO-2.1"
+## 1.7.0 saves are bound to this one: same seed, same terrain, so it must never change.
+const FROZEN_VERSION: String = "CC-GEO-2.0"
 ## Bump when the same seed would generate a different world: disk caches are keyed on it.
-const REVISION: int = 3
+const REVISION: int = 4
+const SOFTER_CLIMATE_ATTEMPT: int = 5
+const SOFTER_LAYOUT_ATTEMPT: int = 8
 const GW: int = 144
 const GH: int = 72
 const RADIUS_KM: Array[float] = [730.0, 1000.0, 1430.0]
 
 
-static func generate(seed_input: Variant, size_id: int) -> Dictionary:
+static func generate(seed_input: Variant, size_id: int, version: String = VERSION) -> Dictionary:
 	var seed_value: int = SeedGeo.normalize_seed(seed_input)
 	var size: int = clampi(size_id, 0, 2)
 	var rules: Dictionary = Rules.read("geography")
+	var planet: Dictionary = {}
+	if version != FROZEN_VERSION:
+		planet = Plates.character(seed_value, rules)
 	var noise := FastNoiseLite.new()
 	noise.seed = seed_value
 	noise.frequency = 1.8
 	noise.fractal_octaves = 4
 	var rejected: Array = []
 	var fallback: Dictionary = {}
-	for attempt: int in range(int(rules.attempts)):
-		var ctx: Dictionary = Plates.build_context(seed_value, attempt, rules)
-		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input)
+	var attempts: int = int(rules.attempts)
+	if not planet.is_empty():
+		attempts = int(rules.planet_types.attempts)
+	for attempt: int in range(attempts):
+		var ctx: Dictionary = Plates.build_context(
+			seed_value, attempt, rules, _softened(planet, attempt)
+		)
+		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
 		var count: int = int(world.statistics.continent_count)
 		if count < int(rules.continents[0]) or count > int(rules.continents[1]):
 			rejected.append({"attempt": attempt, "reason": "continents", "value": count})
@@ -44,20 +56,40 @@ static func generate(seed_input: Variant, size_id: int) -> Dictionary:
 			fallback = {"world": world, "ctx": ctx}
 	# Nothing passed. Carve a fertile basin near the best start of the first usable world.
 	if fallback.is_empty():
-		var ctx: Dictionary = Plates.build_context(seed_value, int(rules.attempts), rules)
-		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input)
+		var ctx: Dictionary = Plates.build_context(
+			seed_value, attempts, rules, _softened(planet, attempts)
+		)
+		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
 		_finish_grid(world, noise)
-		SiteGen.place(world, rules, ctx, int(rules.attempts))
+		SiteGen.place(world, rules, ctx, attempts)
 		fallback = {"world": world, "ctx": ctx}
 	SiteGen.carve_basin(fallback.world, rules)
 	var carved: Dictionary = SiteGen.validate(fallback.world, rules)
 	return _accept(fallback.world, fallback.ctx, carved, rejected, true)
 
 
+## A character that keeps failing the playability check gives way: first the climate, then the
+## layout and relief. Harsh planets stay common; unplayable ones do not ship.
+static func _softened(planet: Dictionary, attempt: int) -> Dictionary:
+	if planet.is_empty():
+		return planet
+	var softened: Dictionary = planet.duplicate()
+	if attempt >= SOFTER_CLIMATE_ATTEMPT:
+		softened.climate = "temperate"
+	if attempt >= SOFTER_LAYOUT_ATTEMPT:
+		softened.layout = "scattered"
+		softened.relief = "ordinary"
+	return softened
+
+
 static func _accept(
 	world: Dictionary, ctx: Dictionary, check: Dictionary, rejected: Array, carved: bool
 ) -> Dictionary:
 	Plates.activate(int(world.seed), ctx)
+	# The validator puts the best start first, so numbers are given out last.
+	if world.has("character"):
+		for site: Dictionary in world.regions:
+			site.name = SiteGen.site_number(int(site.id))
 	world.plates = ctx
 	world.generation = Plates.describe(ctx)
 	world.generation.mountain_ranges = _mountain_ranges(world)
@@ -72,7 +104,12 @@ static func _accept(
 
 
 static func _terrain(
-	seed_value: int, size: int, ctx: Dictionary, noise: FastNoiseLite, seed_input: Variant
+	seed_value: int,
+	size: int,
+	ctx: Dictionary,
+	noise: FastNoiseLite,
+	seed_input: Variant,
+	version: String
 ) -> Dictionary:
 	var parts: Array = []
 	parts.resize(GW * GH)
@@ -107,7 +144,7 @@ static func _terrain(
 		"seed": seed_value,
 		"seed_input": str(seed_input),
 		"seed_protocol": SeedGeo.SEED_PROTOCOL,
-		"version": VERSION,
+		"version": version,
 		"size": size,
 		"radius_km": RADIUS_KM[size],
 		"grid_width": GW,
@@ -117,9 +154,11 @@ static func _terrain(
 		"candidates": [],
 		"rivers": [],
 		"lakes": [],
-		"terrain_key": "%d|%d|%d" % [seed_value, size, int(ctx.attempt)],
+		"terrain_key": "%s|%d|%d|%d" % [version, seed_value, size, int(ctx.attempt)],
 	}
 	world.statistics = _statistics(world)
+	if ctx.has("character"):
+		world.character = ctx.character
 	return world
 
 

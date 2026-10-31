@@ -70,11 +70,24 @@ var last_region_cached: bool = false
 var terrain_unique_samples: int = 0
 
 
-func _geo_color(g: Dictionary, lat: float, lon: float, source_noise: FastNoiseLite = null) -> Color:
+## Settlements go by their names, sites still waiting for one by the kind of place they are.
+static func _site_text(reg: Dictionary, settled: bool) -> String:
+	if settled:
+		return "◆ " + str(reg.name)
+	return str(reg.name) if bool(reg.get("named", true)) else str(reg.terrain)
+
+
+func _geo_color(
+	g: Dictionary,
+	lat: float,
+	lon: float,
+	source_noise: FastNoiseLite = null,
+	ice_latitude: float = 76.0
+) -> Color:
 	var h: float = g.height
 	var active_noise: FastNoiseLite = noise if source_noise == null else source_noise
 	var value: float = active_noise.get_noise_3dv(Geo.unit_point(lat, lon) * 43.0) * .16
-	if absf(lat) > 76.0 + value * 22.0:
+	if absf(lat) > ice_latitude + value * 22.0:
 		return Color("bfced2").lightened(maxf(value * .45, 0))
 	if h <= 0:
 		var sea := Color("123e5c").lerp(Color("12324c"), clampf(-h * 7.0, 0, 1))
@@ -90,10 +103,14 @@ func _geo_color(g: Dictionary, lat: float, lon: float, source_noise: FastNoiseLi
 		c = Color("777b6d").lerp(Color("b0aa94"), (h - .27) * 3.0)
 	elif g.rainfall < .39:
 		c = Color("b9ad7d")
+	elif g.temperature > 31:
+		c = Color("a8925f") if g.rainfall < .55 else Color("3d6f55")
 	elif g.temperature > 19:
 		c = Color("47765f")
 	elif g.temperature > 3:
 		c = Color("63846b")
+	else:
+		c = Color("8f9c8e")
 	if h < .022:
 		c = c.lerp(Color("b7b58b"), .6)
 	if g.river:

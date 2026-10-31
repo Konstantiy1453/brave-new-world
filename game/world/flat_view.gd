@@ -217,7 +217,7 @@ func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
 	_sphere(holder, point, .025, _marker_material(color), 8, 4)
 	if not with_label:
 		return
-	var text: String = ("◆ " if settled else "") + str(reg.name)
+	var text: String = _site_text(reg, settled)
 	_flat_label(holder, _place_flat_label(point, text, placed), text, color, .0068, 40)
 
 
