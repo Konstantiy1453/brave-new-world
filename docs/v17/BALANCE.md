@@ -1,6 +1,6 @@
-# Colony Charter 1.7 — Balance
+# Colony Charter 1.8 — Balance
 
-Targets are §5.2 of `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md`.
+Targets are in `docs/v17/V18_BRIEF.md`.
 The results block below is rewritten by `game/tests/balance/run_balance.gd`; raw per-run
 records are in `evidence/v17/balance/<timestamp>.json`.
 

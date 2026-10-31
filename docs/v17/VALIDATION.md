@@ -295,3 +295,62 @@ World generation is slower on hard seeds: mean 0.7 s, worst 3.6 s over 200 seeds
 |---|---|---|
 | `sim_tests`, `v16_events_tests`, `v16_event_order_probe`, `v16_research_company_review`, `v17_contract_population`, `v17_tutorial` | Waits read build days from the rules; the scenario retries its farm and allows a processor until day 150 | Builds take longer |
 | `v17_world_stats` | Adds variety checks | Planets must differ |
+
+## 1.8.0
+
+Hardware as above. Evidence labels as above.
+
+| Check | Evidence | Result |
+|---|---|---|
+| All headless suites | automated test, runner | 46 of 46 PASS at the final run. `v17_speed` crashed once in the engine in an earlier full pass with the same code and passed 97 of 97 on re-runs; reported as an open issue |
+| Window suites | source-project window, runner `-Window` | 4 of 4 PASS. `v16_interaction_probe` failed once on a garbled decode under full load and passed on re-runs; reported as an open issue |
+| Balance `--full`, 480 runs with 30 fuzz runs | balance harness, `2026-11-01T03-10-20` | 20 of 22 rows PASS, 0 audit errors; 2 misses recorded in `BALANCE.md`. Five full runs before it, each for a reason in `DECISIONS.md` |
+| Every page at 3 resolutions × 2 text sizes | source-project window; screenshot viewed (1280×720 at 20 px, every page, plus 1920×1080 of the map and research pages) | No clipped controls found. Labels are fitted with wrapping |
+| Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons (`evidence/v17/exe_drive`) | PASS. It found the tutorial's first event breaking into the shortage lesson; fixed |
+| Performance | exported EXE (`evidence/v17/perf`) | as in the table below |
+| Old saves: 1.7.1, 1.7.0, 1.6 | automated test `v18_systems`, `v17_saves`, EXE drive | Load on their own worlds, keep playing with clean audits; files unchanged |
+| Protected folders | file dates | `%APPDATA%\ColonyCharter\v16` and `v17`, `build\v16`, `docs\v16`, `versions`, `tools\godot-4.5.1`, `delivery` outside `v17`, and existing evidence untouched; `%APPDATA%\Godot` not created |
+| Human playtests, manual EXE tutorial | NOT_RUN | The user tried 1.7.1 and reported what led to this version; 1.8.0 has not been played by a person |
+
+| Measure, day-2,200 save | First run, empty caches | Second run | Target |
+|---|---|---|---|
+| Save size | 58,965 bytes | same | 1.5 MB |
+| Save, median of 20 (worst) | 11.7 ms (16.8) | 11.5 ms (13.1) | 100 ms |
+| Load, median of 20 (worst) | 25.0 ms (32.0) | 24.3 ms (25.3) | 300 ms |
+| Worst frame during autosave | 33.5 ms | 18.3 ms | 50 ms |
+| Page open, warm, worst | 17.5 ms | 17.6 ms | 100 ms |
+| Region, cold, 8 sites: median (worst) | 739 ms (760) | 736 ms (761) | 1.0 s |
+| Worst frame during a cold region load | 46.7 ms | 47.9 ms | 50 ms |
+
+Problems found and fixed on the way, each by a harness run or a scripted check rather than by looking:
+
+- A port stopped importing while a month of food was on the road, so towns starved beside a working port.
+- A new outpost could not afford a farm or a port, and starved before its road was finished.
+- A technology the final stage requires could stay out of the cards for a whole run.
+- Lateness alone could block the award: small social trouble during a lateness review held up a finished charter.
+- A full frontier post counted as unrest and could end in a takeover.
+- Hard's final deadline fell before its own target band.
+- Plots stood off the edge of the region's terrain on the new planets.
+- A page whose layout changed could lose a named control, which is why `D._take_name` exists.
+- A cold region's triangle stage was one long frame; it is now spread out.
+- The site card crashed reading a route's building time on some worlds.
+
+### Tests changed for 1.8
+
+| Test | Change | Why |
+|---|---|---|
+| `v18_systems` | New: pollution curve, pollution is not distrust, outbreaks, distrust rates, old job names gone from every rule and UI file, 1.7 saves, resource table, gauge, column, settlement kind on the naming page, 1.7 save fallback in the menu | The request's new systems |
+| `v17_research` | The tree checks become pool checks (at least 100 technologies, 4 categories, all reachable, at least 30 new buildings); new checks for hands, redraws, leads, always-dealt cards and cards in saves; the page test presses a card | The tree is gone |
+| `v17_sites` | New real-distance, settlement-kind, road-construction and island tests. Existing network tests finish their roads by hand first; the sea test no longer expects a technology, and now finds a coast only the sea can reach instead of skipping when the first seed has none | Roads take months; water transport needs no research. The old sea test had been skipping silently |
+| `v17_contract_population` | Reads figures from the rule files; adds five-stage checks | Numbers live in `game/data/v17/` |
+| `v17_events` | Reads cooldowns and prices from the rule file, waits for a node instead of a fixed number of days; new deck and writing checks | Delays tripled; events can now be off |
+| `v17_tutorial` | The catalogue shows only what can be built here; the settlement's buildings are looked for in the column; 6× replaces 10× | Requested changes |
+| `v17_world_stats` | Road trade-off fails only below 30%, no longer above 70% | On real planets the cheap road is nearly always the slow one (89%), which is the trade-off working. Reported as a miss against the bar as written |
+| `v17_bugs`, `v17_saves` | Say 工程队; compare with the current schema; wait for an expedition to arrive instead of 12 days | Names, schema 4, real distances |
+| `sim_tests` | Waits for mines and expeditions by their real times; the "no materials" check turns the port off first, since a working port now buys what a site lacks; the first-island refusal becomes "a landing needs a real site"; the scripted scenario gets ¥30,000 so that it reaches its later steps | Rules changed. The script is not a plan a governor would follow, and it says so |
+| `v16_rules_tests` | Pollution checks read the planet's load, not a town's; research path uses two starter cards; the post-mining town gets 40 crews so that it can staff a farm and a food works; company paths read the rule file and run longer | Planet-wide pollution, cards, slower distrust |
+| `v16_events_tests` | Waits for nodes; the order test ships after the review, and a reduction ships before it; the first draw is no longer expected to be the water chain on day 6 | Delays and the deck |
+| `v16_event_acceptance` | A bot plays until the first chain comes up by itself, instead of waiting for one named chain by day 150 | The named chain may be off in this run's deck |
+| `v16_ui_tests`, `v16_career_boundaries`, `v16_economy_tests`, `v16_f12_transport`, `v16_research_company_review` | Last stage is 5; first draw day from the rule file; roads finished by hand where the test is about something else; a laboratory needs a residential town | Rule changes; none of the checks was weakened |
+| `exe_drive_v17` | Presses `Speed_6`, a research card; checks the column and gauge; allows 8 minutes to stage 2 | Longer stage 1 |
+| `make_fixtures_v17` | Moments moved to the new pace: midgame day 900, late day 2,200, days up to 3,300 | Pace |

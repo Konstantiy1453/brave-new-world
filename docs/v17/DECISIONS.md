@@ -165,7 +165,7 @@ One line each: decision · reason · alternative rejected.
 - Pollution is planet-wide, exponential, and out of `company.gd` entirely · the request · a capped linear penalty.
 - Crossing a pollution stage opens a scene, and these three events are in every run's deck · a run-ending problem should be told, not only shown in a figure.
 - The gauge shows the day's real change, so 0 at zero distrust · "-0.20 a day" at zero reads as a bug.
-- Research reference rate 1.8 points a day at ten teams · 40-50 technologies by a day-2,400 award; 2.4 gave 62-86, 2.0 not measured.
+- Research reference rate 2.0 points a day at ten teams, with the final stage asking for 40 technologies · 2.4 gave 62-86 technologies by the award, 1.8 fell short of the bar.
 - What the charter needs (community_admin, civic_planning, capital_planning) is always on the table, marked, and cannot be redrawn away · a required technology among 120 cards could stay out of reach for a whole run · a separate charter tree page.
 - The hall can stand in any residential settlement · the capital is usually full by then, and the goal is the building, not its address.
 - Offers are drawn from the save's own generator state and never from the simulation's · the deal must not change what later dice do, and redraws must replay.
@@ -181,3 +181,16 @@ One line each: decision · reason · alternative rejected.
 - The road trade-off row's upper bound (70%) is no longer enforced by `v17_world_stats`; on real planets the cheap road is the slow one on about 89% of pairs · that is the trade-off working, not failing · reported as a miss against the bar as written.
 - `tests/v16_rules_tests.gd` and others that hard-coded 1.7 figures now read them from the rule files · numbers live in `game/data/v17/`.
 - Bots give any town past 100 people a port · one road carries 28 t a day and feeds fewer than 190 people, and a person would see the red line; a bot has to be told.
+- The final stage asks for 2,000 people and 40 technologies · at 1,800 and 35 the median award sat at the bottom of the band, and the research row missed by a few.
+- Hard's deadlines 320, 820, 1,400, 2,000, 2,880 and goals ×1.1 · the old final deadline of 2,550 came before its own target band, and most hard runs were taken over while earning the award. Hard still has the shorter review windows, more risk, lower prices and more events.
+- Starts need 28 general plots, partners 12 · on a site with 14 the capital goal could not be met without tearing the town down.
+- Starvation is no longer the only thing weighted by share: social trouble below the tolerated rate does not block an award · a lateness review plus a hamlet's small problem held up finished charters.
+- A full frontier post is not unrest: frontier appeal -0.1 · at -0.2 a full camp fell below the departure line and could end in a takeover.
+- `wage_per_multiplier` 2.0 and base immigration 9 a month · the lever moved between +13% and +38% at lower values depending on seeds, and population fell short at year 4.
+- Pollution scale 3,600, with `sqrt(area)` in the penalty · 7,500 gave 4% if ignored, far from the bar; the square root keeps small planets from being punished twice.
+- Cleanup costs ¥5,000 for 300 load · at ¥2,000 for 500 it cost less than a road's upkeep to erase a colony's whole output.
+- Capital opening ¥32,000, science opening's research bonus 1.1 · they were 21% apart; they are still 20% apart in the release run, within noise of each other between runs. Tuning stopped here and the row is reported as a miss.
+- The tutorial's first event waits for day 120 · with builds this slow, day 30 broke into the shortage lesson.
+- The harness re-runs a lost shard once and reports it · one shard died without output, and the whole run's results were thrown away with it.
+- Stopped after six full runs · the last three moved the openings row back and forth without settling, and the rest of the bar held.
+- Three rare failures are reported, not explained · 97 further runs of the crashed suite were clean, and reading the worker-thread code found nothing shared.

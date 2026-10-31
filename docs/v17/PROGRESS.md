@@ -1,13 +1,74 @@
 # Colony Charter 1.8 — Progress
 
-## State
+## Final summary
 
-**1.8.0 in progress on branch `v17`, after a playtest of 1.7.1.** The request is in `V18_BRIEF.md`, its design in `V18_PLAN.md` and `DESIGN.md`, judgment calls in `DECISIONS.md`. All 15 points of the request are in the code. What is left: the last balance run, then build, EXE checks, package.
+**1.8.0 is built and packaged in `delivery\v17`. Of the 24 rows below, 20 pass, 3 miss and 1 is NOT_RUN.** The request is in `V18_BRIEF.md`, the design in `V18_PLAN.md` and `DESIGN.md`, judgment calls in `DECISIONS.md`. Figures are the balance harness at `evidence/v17/balance/2026-11-01T03-10-20.json` (480 runs) and the exported EXE (`evidence/v17/perf`, `evidence/v17/exe_drive`).
 
-- Rules, interface, events, tests: done; every suite passed at the last full test run, and later rule changes are rechecked before release.
-- Balance: the third full run had every award band inside its target. See `BALANCE.md`.
-- Not done yet: export, scripted EXE check, performance on the EXE, package, tag `v1.8.0`.
-- Human playtest: NOT_RUN.
+### What changed, point by point
+
+| # | Request | Result |
+|---|---|---|
+| 1 | Governor in 6-8 years on standard | Median day 2,454, 6.8 years; at 6× about 35 minutes of play |
+| 2 | Pollution no longer a distrust source; exponential | Planet-wide, out of `company.gd`; 0.5% at most in year 3, 33% by year 8 if ignored, 2.9% for a colony that deals with it |
+| 3 | Speeds | 1×, 3×, 6× |
+| 4 | 工人 → 工程队, 研究员 → 研究团队 | Every string; a test scans rule and UI files |
+| 5 | Resource table | Total and monthly change; power and water show supply and surplus, since neither is stored |
+| 6 | Distrust gauge, slower rise | Gauge beside the map with thresholds and the day's change; largest daily rise 0.52 |
+| 7 | Research by cards | 4 categories, 3 random cards (4 with a technology), pick one, send a team; redraw for money. What the charter needs is always dealt |
+| 8 | Roads take longer | Median first road 146 days; from distance |
+| 9 | Islands | Ordinary starts; sea routes with no technology, ports at both ends |
+| 10 | Building column | For the selected settlement: under way first, with date and bar |
+| 11 | Longer builds | 12-35 days basic, 45-120 advanced, 200-300 great works |
+| 12 | Events | About 30% of the pool off in each run, 45% of draw days empty, seeds share 47% of what fires; all text rewritten |
+| 13 | More technology | 122 technologies, 39 new buildings (56 in all) |
+| 14 | Two settlement types | Residential and frontier, chosen when the expedition leaves; buildings belong to one or both |
+| 15 | Real planets | 0.6, 1.0, 1.3 Earth radii; every route measured on that sphere |
+
+### The bar in `V18_BRIEF.md`
+
+| Area | Target | 1.7.1 | 1.8.0 | |
+|---|---|---|---|---|
+| Balanced award, standard | 2,160-2,880 | day 173 | day 2,454, 27 of 30 awarded | PASS |
+| Balanced award, easy | 1,800-2,520 | day 156 | day 2,343, 28 of 30 | PASS |
+| Balanced award, hard | 2,520-3,240 | day 211 | day 2,709, 27 of 30 | PASS |
+| Floor | rush never before day 1,440 | day 107 | day 2,086 | PASS |
+| Openings: medians | within 15% | 11% | 2,752 / 2,623 / 2,294, 20% from first to last | **MISS** |
+| Openings: best bot | differs by opening | yes | research-first on all three | **MISS**, same row |
+| Passive bot | review by 150-400, takeover by 400-900 | 60 / 150 | 168 / 438 | PASS |
+| Sloppy bot | review everywhere, takeover on hard | yes | yes, 30 of 30 on hard | PASS |
+| Population | 300 by year 2; 800 by year 4 | - | 385 / 946 | PASS |
+| Labour lever | wage 1.0→1.3 moves immigration 20% | +29% | +26%, from year 2 | PASS |
+| Research, balanced | 40 technologies, all categories, teams 10-20% | 5 of 20 | 40, 4, 12% | PASS |
+| Research-first | more technologies, award in band | 8, day 181 | 74, day 2,163 | PASS |
+| Technology pool | 100, 4 categories, 30 new buildings, offers differ | 20 | 122, 4, 39 | PASS |
+| Money | reinvest 60%; year 6 income 2.5× year 2 | 84%, ×3.76 | 92%, ×3.70 | PASS |
+| Export mix | no good above 60% | worst 65% | median 30%, worst 41% | PASS |
+| Pollution | under 2% through year 3; no-control 15% by year 8; no company source | - | 0.5%; 33%; test holds it | PASS |
+| Distrust | largest daily rise 0.8 | - | 0.52 | PASS |
+| Events | 60 short, 10 chains; 25% off; 1 pause per 40 days at most; 25 distinct | 28, 6 | 71, 12; 30%; 1 per 215; 53 | PASS |
+| Geography, 200 seeds | radii, site counts, 3 start pairs, islands can start | - | all hold; worst world 2.6 s | PASS |
+| Roads | first road 3-10 months | - | 146 days | PASS |
+| Road trade-off | cheaper is slower on 30-70% of pairs | 54% | 90% of 2,568 pairs | **MISS** |
+| Determinism and audits | identical at 2,880 days and any speed; 0 audit errors | yes | 3 of 3 replays; 1×, 3×, 6×; 0 errors in 480 runs | PASS |
+| Saves and speed | 1.5 MB; 100 and 300 ms; no frame over 50 ms; warm page 100 ms; cold region 1 s | yes | 59 KB; 12 and 25 ms; 34 ms; 18 ms; 739 ms, worst frame 48 ms | PASS |
+| Human playtest | - | - | NOT_RUN | NOT_RUN |
+
+### Open issues
+
+1. **Two rows miss.** The capital opening's median award is 20% later than the science opening's; research-first is the fastest on all three openings, so the best bot does not differ by opening. The road trade-off reads 90%: on real planets the cheap road is nearly always the slow one, so the row as written no longer fits, but it is reported, not redefined.
+2. **Bots still lose some games.** 3 of 30 balanced runs on standard, 2 on easy and 3 on hard are taken over before an award, usually with money in the bank; one on standard and one on hard are taken over a little after one. A person may or may not hit the same walls. Rush loses 10-50% on standard and hard.
+3. **Three rare failures that did not repeat.** Over the several hundred test and harness processes of this work: `v17_speed` crashed once in the engine (signal 11, main thread, in ordinary `refresh` code), a balance shard died once with no output, and `v16_interaction_probe` once read garbage while decoding a fixture. All three were under full load; 96 further `v17_speed` runs, the shard and the probe were clean. The same kind of crash was noted once in 1.7.0. The worker threads were reviewed and touch only their own data, so the cause is not found. The harness now re-runs a lost shard and says so.
+4. **Money late in the game.** Balanced colonies hold about ¥500,000 a year after the award, and more in some runs. Great works and upgrades are not enough of a sink.
+5. **New buildings use old models.** 39 new kinds borrow the closest existing 3D model and icon; the modelling task in `art_reserve` is separate.
+6. Of the final capture images, the 1280×720 set at 20 px was viewed; see `VALIDATION.md`.
+
+### Next three improvements
+
+1. Play it: run `PLAYTEST.md`. Bots cannot say whether six years are fun.
+2. Give frontier and residential towns more reason to differ, and late money something to buy.
+3. Replace the borrowed models and icons with the new buildings' own.
+
+**Resume here.** Branch `v17`. Read `CLAUDE.md`, then this file, then `V18_BRIEF.md`.
 
 ---
 

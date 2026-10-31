@@ -36,7 +36,7 @@ static func run(g, folder: String) -> void:
 	DirAccess.make_dir_recursive_absolute(folder)
 	g.paused = true
 	var report: Dictionary = {
-		"kind": "v1.7 source-project window; automated UI rendering, not manual play",
+		"kind": "v1.8 source-project window; automated UI rendering, not manual play",
 		"adapter": RenderingServer.get_video_adapter_name(),
 		"cpu": OS.get_processor_name(),
 		"captures": [],

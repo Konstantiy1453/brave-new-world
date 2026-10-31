@@ -235,7 +235,7 @@ Everything above describes 1.7. Where this part differs, this part holds. Figure
 
 ## Pace
 
-- Contract: five stages (foothold, division, network, self-reliance, capital). Deadlines on standard 360, 900, 1,500, 2,100 and 2,880 days. The final stage asks for a capital of 600, 1,800 people, 35 technologies, the Planetary Council Hall, and a 180-day streak with no review.
+- Contract: five stages (foothold, division, network, self-reliance, capital). Deadlines on standard 360, 900, 1,500, 2,100 and 2,880 days. The final stage asks for a capital of 600, 2,000 people, 40 technologies, the Planetary Council Hall, and a 180-day streak with no review. Hard's goals are ×1.1 and easy's ×0.8.
 - Building days: 12-35 basic, 45-120 advanced, 200-300 great works. Road building days come from distance. Speeds 1×, 3×, 6× at 5 seconds a day.
 
 ## Planets (CC-GEO-2.2)
@@ -256,15 +256,15 @@ Behaviour comes from `role`: mine, harvest, farm, indoor_farm, factory, port, po
 
 ## Research
 
-`techs.json`: 122 technologies in four categories, tiers 1-5, costs 160/340/620/1,000/1,600 points. R(10) = 1.8 points a day, R(5)/R(10) = 0.6. Each category holds a hand of three cards (four with `lab_automation`) drawn by weight from what its prerequisites allow, from `research.rng_state`, not from the simulation's own generator. A category runs one project; choosing another stands the first down with its work kept. A finished project redraws its category. A redraw of the unstarted cards costs ¥600 + ¥300 per highest tier reached. `always_dealt` names what the charter cannot be finished without: it is on the table as soon as it can be started, and it is marked. Effects are additive fractions read through `Research.bonus(sim, key)`, cached until the finished list grows.
+`techs.json`: 122 technologies in four categories, tiers 1-5, costs 160/340/620/1,000/1,600 points. R(10) = 2.0 points a day, R(5)/R(10) = 0.6. Each category holds a hand of three cards (four with `lab_automation`) drawn by weight from what its prerequisites allow, from `research.rng_state`, not from the simulation's own generator. A category runs one project; choosing another stands the first down with its work kept. A finished project redraws its category. A redraw of the unstarted cards costs ¥600 + ¥300 per highest tier reached. `always_dealt` names what the charter cannot be finished without: it is on the table as soon as it can be started, and it is marked. Effects are additive fractions read through `Research.bonus(sim, key)`, cached until the finished list grows.
 
 ## Pollution
 
-`state.pollution.load` is one number for the planet. Daily change is emission (building `pollution` × efficiency × technology) minus absorption (6 a day × surface area against Earth, technology, parks and scrubbers). The share of output lost is `strength × (e^(load / (scale × area)) − 1)`, capped; it also lowers appeal and adds a health bill. Crossing a stage opens one of three trigger-only events. `company.gd` does not read any of this.
+`state.pollution.load` is one number for the planet. Daily change is emission (building `pollution` × efficiency × technology) minus absorption (6 a day × surface area against Earth, technology, parks and scrubbers). The share of output lost is `strength × (e^(load / (scale × √area)) − 1)`, capped; it also lowers appeal and adds a health bill. Crossing a stage opens one of three trigger-only events. `company.gd` does not read any of this.
 
 ## Company
 
-Rates per day: debt 0.12 + 0.02 per day of arrears up to 0.6; starvation 0.15 + 0.03 per day up to 0.7, weighted by the town's share of the colony; missed deadline 0.3; social up to 0.28, weighted the same way. Risk at or below 0.05 is tolerated. Recovery 0.2 a day. `company.delta` is the day's real change, which the gauge shows.
+Rates per day: debt 0.12 + 0.02 per day of arrears up to 0.6; starvation 0.15 + 0.03 per day up to 0.7, weighted by the town's share of the colony; missed deadline 0.3; social up to 0.28, weighted the same way. Risk at or below 0.05 is tolerated. Recovery 0.2 a day. A review blocks the award only for debt, starvation, breached aid or social trouble above the tolerated rate, never for lateness alone. `company.delta` is the day's real change, which the gauge shows.
 
 ## Interface
 
