@@ -270,6 +270,9 @@ Hardware as above. Evidence labels as above.
 | Every page at 3 resolutions × 2 text sizes, 144 images | source-project window; screenshot viewed (32: every page at 1280×720 with 20 px text, 8 at larger sizes; plus the menu with the tutorial off) | Problems below fixed |
 | Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons | PASS, 17 and 10 steps, logs have no errors |
 | Performance | exported EXE (`evidence/v17/perf`) | as in the table below |
+| The delivered game ZIP, unpacked, then the same scripted run from there | exported EXE from `delivery\v17`, scripted (`evidence/v17/exe_drive_zip`) | PASS, 17 and 10 steps, logs have no errors |
+| Source ZIP holds no `art_reserve`, `.godot`, engine, evidence, builds or earlier deliveries | archive listing | PASS, 318 entries |
+| Protected folders | file dates | `build\v16`, `docs\v16`, `versions`, `tools\godot-4.5.1`, `delivery` outside `v17` and `evidence` outside `v17`: nothing changed today. `%APPDATA%\ColonyCharter\v16`: newest file 00:26 today, before this work began at 01:40. `%APPDATA%\ColonyCharter\v17` is the user's own play, and its listing did not change across the build. `%APPDATA%\Godot` does not exist |
 | Human playtests, manual EXE tutorial | NOT_RUN | The user tried 1.7.0 and reported what led to this version; 1.7.1 has not been played by a person |
 
 | Measure, day-720 save | First run, empty caches | Second run | Target |
