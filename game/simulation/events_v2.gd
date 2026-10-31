@@ -1,7 +1,8 @@
 extends RefCounted
 ## Local-day, independently seeded, original event definitions. All payouts are receipts.
-## A definition can open again after its cooldown. Notices never pause; decisions pause when they
-## are critical or the player asks for every decision to pause. Money scales with recent income.
+## Each run deals itself a deck: some definitions are simply not in it. A definition can open again
+## after its cooldown. Notices never pause; decisions pause when they are critical or the player
+## asks for every decision to pause. Money scales with recent income.
 const PRODUCTION_KINDS: Array[String] = ["mine", "farm", "processor"]
 const EFFECT_KINDS: Array[String] = [
 	"water",
@@ -42,6 +43,21 @@ static func ensure_state(state: Dictionary) -> void:
 			e.last_opened[inst.definition_id] = int(inst.created_day)
 			if str(inst.ending) != "":
 				e.endings[inst.definition_id] = str(inst.ending)
+	if not e.has("off"):
+		e.off = _deal_deck(e)
+
+
+## Which definitions this run will never draw. Not every story happens on every planet.
+static func _deal_deck(e: Dictionary) -> Array:
+	var rules: Dictionary = definitions()
+	var seen: Array = e.get("seen", [])
+	var off: Array = []
+	for id: String in rules.definitions:
+		var d: Dictionary = rules.definitions[id]
+		var chance: float = float(d.get("chance", rules.sampling.availability))
+		if _rng(e) >= chance and not seen.has(id):
+			off.append(id)
+	return off
 
 
 static func ensure(sim) -> void:
@@ -53,7 +69,7 @@ static func ensure(sim) -> void:
 		"version": 2,
 		"rng_state": (absi(seed_value) % 2147483646) + 1,
 		"next_id": 1,
-		"next_draw": 6,
+		"next_draw": int(definitions().sampling.first_draw_day),
 		"last_negative": -100,
 		"instances": [],
 		"history": [],
@@ -94,13 +110,8 @@ static func _matches(sim, s: Dictionary, c: Dictionary) -> bool:
 		return false
 	if c.has("building") and not _has_building(s, c.building):
 		return false
-	if c.get("mine", false):
-		var mined: bool = false
-		for kind in ["mine_ore", "mine_copper", "mine_crystal"]:
-			if _has_building(s, kind):
-				mined = true
-		if not mined:
-			return false
+	if c.get("mine", false) and not _has_mine(s):
+		return false
 	if int(s.scientists) < int(c.get("scientists", 0)):
 		return false
 	if sim.state.settlements.size() < int(c.get("settlements", 1)):
@@ -116,11 +127,26 @@ static func _matches(sim, s: Dictionary, c: Dictionary) -> bool:
 	return _matches_colony(sim, s, c)
 
 
+static func _has_mine(s: Dictionary) -> bool:
+	for b: Dictionary in s.get("buildings", []):
+		if str(b.kind).begins_with("mine_") and int(b.remaining) <= 0:
+			return true
+	return false
+
+
 ## Conditions on the systems added since 1.6.
 static func _matches_colony(sim, s: Dictionary, c: Dictionary) -> bool:
 	if bool(c.get("trigger_only", false)):
 		return false
 	var site: Dictionary = sim.state.world.regions[int(s.region)]
+	if bool(c.get("frontier", false)) and str(s.kind) != "frontier":
+		return false
+	if bool(c.get("residential", false)) and str(s.kind) != "residential":
+		return false
+	if bool(c.get("coast", false)) and not bool(site.get("coast", false)):
+		return false
+	if sim.Pollution.stage(sim) < int(c.get("pollution_stage", 0)):
+		return false
 	if int(s.population) < int(c.get("population", 0)):
 		return false
 	if int(s.children) < int(c.get("children", 0)):
@@ -165,7 +191,8 @@ static func _project_running(sim) -> bool:
 
 static func _has_road_at(sim, region: int) -> bool:
 	for road: Dictionary in sim.state.roads:
-		if int(road.a) == region or int(road.b) == region:
+		var ready: bool = int(road.get("ready_day", 0)) < int(sim.state.day)
+		if ready and (int(road.a) == region or int(road.b) == region):
 			return true
 	return false
 
@@ -346,7 +373,7 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 			if key != inst.instance_id:
 				count -= int(sim.state.research.investigations[key].staff)
 		if count < int(option.investigate):
-			return "可派遣研究员不足 %d 人" % int(option.investigate)
+			return "可派遣研究团队不足 %d 支" % int(option.investigate)
 	if option.has("build"):
 		var b: Dictionary = sim.build_preview(int(inst.target_region), str(option.build))
 		var refusal: String = sim.Production.build_refusal(
@@ -360,10 +387,10 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 			return "本地建设材料不足"
 		var free: int = sim.free_workers(s)
 		if free < int(b.jobs):
-			return "需要 %d 名工人，目前空闲 %d 名" % [int(b.jobs), free]
+			return "需要 %d 支工程队，目前空闲 %d 支" % [int(b.jobs), free]
 		var free_specialists: int = sim.free_specialists(s)
 		if free_specialists < int(b.get("specialists", 0)):
-			return "需要 %d 名专家，目前空闲 %d 名" % [int(b.get("specialists", 0)), free_specialists]
+			return "需要 %d 支研究团队，目前空闲 %d 支" % [int(b.get("specialists", 0)), free_specialists]
 	if option.has("order"):
 		if not _has_building(s, "processor") or not _has_building(s, "port"):
 			return "需要已启用的加工厂和货站"
@@ -377,10 +404,10 @@ static func _colony_reason(sim, s: Dictionary, option: Dictionary) -> String:
 		return "需要 %d 张空床位，目前 %d 张" % [beds, maxi(0, sim.Population.free_beds(sim, s))]
 	var hands: int = int(option.get("workers", 0))
 	if hands > 0 and sim.free_workers(s) < hands:
-		return "需要 %d 名空闲工人，目前 %d 名" % [hands, sim.free_workers(s)]
+		return "需要 %d 支空闲工程队，目前 %d 支" % [hands, sim.free_workers(s)]
 	var trained: int = int(option.get("train_scientists", 0))
 	if trained > 0 and int(s.workers) < trained + 8:
-		return "工人太少，无法抽调培训"
+		return "工程队太少，无法抽调培训"
 	if float(option.get("research_points", 0.0)) > 0.0 and not _project_running(sim):
 		return "目前没有进行中的科研项目"
 	if bool(option.get("found_enterprise", false)):
@@ -594,6 +621,8 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 		)
 	if option.has("pollution"):
 		sim.Pollution.add_points(sim, float(option.pollution))
+	if option.has("research_lead"):
+		sim.Research.add_lead(sim, str(option.research_lead))
 	if float(option.get("research_points", 0.0)) > 0.0:
 		sim.Research.add_progress(sim, float(option.research_points))
 	if bool(option.get("found_enterprise", false)):
@@ -774,9 +803,13 @@ static func tick(sim) -> void:
 		e.next_draw = day + _draw_interval(sim)
 		var candidates: Array = []
 		var total: float = 0
+		# Plenty of days nothing happens at all.
+		var quiet: bool = _rng(e) >= float(definitions().sampling.fire_chance)
 		for id in definitions().definitions:
+			if quiet:
+				break
 			var d: Dictionary = definitions().definitions[id]
-			if _open_now(sim, id) or not _cooled(sim, id):
+			if e.off.has(id) or _open_now(sim, id) or not _cooled(sim, id):
 				continue
 			if (
 				d.category == "incident"
@@ -855,18 +888,21 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	if int(option.get("admit_workers", 0)) + int(option.get("admit_scientists", 0)) > 0:
 		parts.append(
 			(
-				"迁入工人 %d、研究员 %d"
+				"迁入工程队 %d、研究团队 %d"
 				% [int(option.get("admit_workers", 0)), int(option.get("admit_scientists", 0))]
 			)
 		)
 	if float(option.get("research_points", 0.0)) > 0.0:
 		parts.append("当前项目 +%.0f 研究量" % float(option.research_points))
 	if int(option.get("train_scientists", 0)) > 0:
-		parts.append("%d 名工人转为研究员" % int(option.train_scientists))
+		parts.append("%d 支工程队转为研究团队" % int(option.train_scientists))
 	if option.has("distrust"):
-		parts.append("公司不信任 +%.0f" % float(option.distrust))
+		parts.append("公司不信任 %+.1f" % float(option.distrust))
 	if option.has("pollution"):
-		parts.append("污染 +%.0f" % float(option.pollution))
+		parts.append("星球污染 %+.0f" % float(option.pollution))
+	if option.has("research_lead"):
+		var lead: Dictionary = sim.config.techs.get(str(option.research_lead), {})
+		parts.append("科研候选增加「%s」" % str(lead.get("name", "")))
 	if option.has("set_wage"):
 		parts.append("工资恢复到 %.1f 倍" % float(option.set_wage))
 	if int(option.get("close_roads", 0)) > 0:
@@ -892,7 +928,7 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 			)
 		)
 	if option.has("investigate"):
-		parts.append("占用 %d 名研究员，标准 %d 日" % [int(option.investigate), int(option.work)])
+		parts.append("占用 %d 支研究团队，标准 %d 日" % [int(option.investigate), int(option.work)])
 	if option.has("build"):
 		var b: Dictionary = sim.build_preview(int(inst.target_region), str(option.build))
 		parts.append(
@@ -903,7 +939,7 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 		)
 		var place: Dictionary = sim.settlement(int(inst.target_region))
 		if not place.is_empty():
-			parts.append("需要 %d 名工人，目前空闲 %d 名" % [int(b.jobs), sim.free_workers(place)])
+			parts.append("需要 %d 支工程队，目前空闲 %d 支" % [int(b.jobs), sim.free_workers(place)])
 	if option.has("order"):
 		parts.append(
 			(
@@ -1021,7 +1057,7 @@ static func view(sim) -> Dictionary:
 			item.choices.append(
 				{
 					"id": "cancel",
-					"label": "撤回研究员并封存现场 · 已付调查费不退",
+					"label": "撤回研究团队并封存现场 · 已付调查费不退",
 					"enabled": true,
 					"reason": "",
 					"cost": 0.0,
@@ -1127,6 +1163,8 @@ static func validate(candidate: Dictionary) -> String:
 		return "事件调度日期无效"
 	if not e.get("last_opened", {}) is Dictionary or not e.get("endings", {}) is Dictionary:
 		return "事件冷却记录无效"
+	if not e.get("off", []) is Array:
+		return "事件牌堆记录无效"
 	var seen: Dictionary = {}
 	for id in e.seen:
 		if not id is String or not definitions().definitions.has(id) or seen.has(id):

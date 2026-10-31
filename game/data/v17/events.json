@@ -1,21 +1,25 @@
 {
-  "version": 3,
+  "version": 4,
   "calendar": "30日/月，360日/年",
   "units": {
     "money": "公共资金",
     "goods": "吨",
     "duration_days": "从选择后次日起的完整日数，0为持续生效",
     "cooldown_days": "days before the same definition can open again",
-    "pay": "public money at a recent income of reference_income or less; scales up with income"
+    "pay": "public money at a recent income of reference_income or less; scales up with income",
+    "chance": "share of runs in which this definition is in the deck at all"
   },
   "sampling": {
-    "interval_days": 10,
-    "negative_cooldown_days": 18,
+    "interval_days": 20,
+    "fire_chance": 0.55,
+    "first_draw_day": 30,
+    "negative_cooldown_days": 60,
     "max_waiting": 3,
-    "default_cooldown_days": 180,
+    "default_cooldown_days": 1200,
     "reference_income": 300.0,
     "income_window_days": 30,
-    "keep_resolved_instances": 16
+    "keep_resolved_instances": 16,
+    "availability": 0.65
   },
   "definitions": {
     "seed_crate": {
@@ -24,35 +28,35 @@
       "category": "opportunity",
       "weight": 2,
       "conditions": {
-        "min_day": 9,
+        "min_day": 45,
         "building": "port"
       },
       "nodes": {
         "start": {
           "title": "一箱标错的种子",
-          "text": "货站退回一批耐储种粮。原主放弃追索，清点后可以直接入库。",
+          "text": "退货单上的收件人三年前就去世了。货站主管老何把这箱耐储种粮推到你面前，箱角还沾着别的星球的红土：「没人来领，丢了可惜。你说呢？」",
           "choices": [
             {
               "id": "take",
               "label": "签收入库",
               "goods_reward": {
-                "food": 28
+                "food": 56.0
               },
               "ending": "种粮入库"
             },
             {
               "id": "decline",
-              "label": "交给过境货船",
+              "label": "交给下一班货船",
               "ending": "转交货船"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180
+      "cooldown_days": 1080
     },
     "pump_seal": {
       "version": 1,
@@ -60,31 +64,31 @@
       "category": "incident",
       "weight": 2,
       "conditions": {
-        "min_day": 12,
+        "min_day": 60,
         "building": "water"
       },
       "nodes": {
         "start": {
           "title": "泵房里的一滴盐",
-          "text": "密封件出现盐痕。更换需要部件；继续运行会有一段明确的低压期。",
+          "text": "夜班在密封圈上刮下一层白霜，舔一口是咸的。水还清着，压力表的指针却已经开始发抖。换件只要半天，只是部件得从建设库存里挤。",
           "choices": [
             {
               "id": "repair",
-              "label": "更换密封",
-              "pay": 25,
+              "label": "停机换密封",
+              "pay": 75.0,
               "goods_cost": {
-                "parts": 1
+                "parts": 2.0
               },
               "ending": "泵站修复"
             },
             {
               "id": "decline",
-              "label": "按低压规程运行",
+              "label": "按低压规程凑合运行",
               "effects": [
                 {
                   "kind": "water",
                   "factor": 0.85,
-                  "duration_days": 6,
+                  "duration_days": 18,
                   "maintenance": 0
                 }
               ],
@@ -92,12 +96,12 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "decision",
       "critical": false,
-      "cooldown_days": 150
+      "cooldown_days": 900
     },
     "canteen": {
       "version": 1,
@@ -105,25 +109,25 @@
       "category": "dilemma",
       "weight": 2,
       "conditions": {
-        "min_day": 12,
+        "min_day": 60,
         "building": "farm"
       },
       "nodes": {
         "start": {
           "title": "食堂的旧菜单",
-          "text": "厨师提出改用当地谷物，试做需要一批食品，之后可降低温室的报废损耗。",
+          "text": "食堂师傅端来一碗本地谷物煮的糊，颜色不太好看，味道居然还行。「大家吃了几个月罐头，该换换了。让我试几锅，温室里卖相差的也就不用扔了。」",
           "choices": [
             {
               "id": "trial",
-              "label": "供应试做食材",
+              "label": "拨一批食材让她试",
               "goods_cost": {
-                "food": 12
+                "food": 24.0
               },
               "effects": [
                 {
                   "kind": "farm",
                   "factor": 1.08,
-                  "duration_days": 12,
+                  "duration_days": 36,
                   "maintenance": 0
                 }
               ],
@@ -131,17 +135,17 @@
             },
             {
               "id": "decline",
-              "label": "维持现有菜单",
+              "label": "还是罐头保险",
               "ending": "菜单维持"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180
+      "cooldown_days": 1080
     },
     "workshop": {
       "version": 1,
@@ -149,26 +153,26 @@
       "category": "opportunity",
       "weight": 2,
       "conditions": {
-        "min_day": 12,
+        "min_day": 60,
         "building": "processor"
       },
       "nodes": {
         "start": {
           "title": "技工的定位夹具",
-          "text": "加工班发现一套可复用夹具方案。现在投入少量部件，接下来几日提高加工产出。",
+          "text": "加工班的小郑用一块废钢锉出了定位夹具，说能让换模时间少一半。老师傅们围着它看了一下午，没人说话，这是他们表示佩服的方式。",
           "choices": [
             {
               "id": "tool",
-              "label": "制作夹具",
-              "pay": 30,
+              "label": "拨料做一整套",
+              "pay": 90.0,
               "goods_cost": {
-                "parts": 2
+                "parts": 4.0
               },
               "effects": [
                 {
                   "kind": "processor",
                   "factor": 1.15,
-                  "duration_days": 10,
+                  "duration_days": 30,
                   "maintenance": 0
                 }
               ],
@@ -176,17 +180,17 @@
             },
             {
               "id": "decline",
-              "label": "继续现有工序",
+              "label": "先按老工序来",
               "ending": "工序保留"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180
+      "cooldown_days": 1080
     },
     "freight_labels": {
       "version": 1,
@@ -194,24 +198,24 @@
       "category": "dilemma",
       "weight": 2,
       "conditions": {
-        "min_day": 15,
+        "min_day": 75,
         "building": "port",
-        "exports": 80
+        "exports": 800.0
       },
       "nodes": {
         "start": {
           "title": "颜色不同的货签",
-          "text": "货站提议用颜色区分食品和工程货物。培训占用经费，短期提高装卸吞吐。",
+          "text": "上周有一箱种子被当成建材吊进了矿车。货站的姑娘提议：食品贴绿，工程货贴黄，再花两天培训。老搬运工撇撇嘴：「以前不也这么过来的。」",
           "choices": [
             {
               "id": "train",
-              "label": "组织培训",
-              "pay": 45,
+              "label": "组织培训，统一货签",
+              "pay": 135.0,
               "effects": [
                 {
                   "kind": "port",
                   "factor": 1.2,
-                  "duration_days": 12,
+                  "duration_days": 36,
                   "maintenance": 0
                 }
               ],
@@ -224,12 +228,12 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180
+      "cooldown_days": 1080
     },
     "dust": {
       "version": 1,
@@ -237,31 +241,31 @@
       "category": "incident",
       "weight": 2,
       "conditions": {
-        "min_day": 15,
+        "min_day": 75,
         "mine": true
       },
       "nodes": {
         "start": {
           "title": "筛网上的细灰",
-          "text": "矿区筛网积灰。可以更换滤网，或低速运行等待下次维护。",
+          "text": "矿区的筛网一到下午就糊成一块灰布，矿工们开玩笑说这是本地特产。换滤网要花钱，不换就只能放慢筛分，等下次大修。",
           "choices": [
             {
               "id": "filter",
-              "label": "更换滤网",
-              "pay": 35,
+              "label": "换一批新滤网",
+              "pay": 105.0,
               "goods_cost": {
-                "materials": 3
+                "materials": 6.0
               },
               "ending": "滤网更新"
             },
             {
               "id": "decline",
-              "label": "低速生产",
+              "label": "放慢筛分",
               "effects": [
                 {
                   "kind": "mine",
                   "factor": 0.8,
-                  "duration_days": 5,
+                  "duration_days": 15,
                   "maintenance": 0
                 }
               ],
@@ -269,12 +273,12 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 150
+      "cooldown_days": 900
     },
     "archive_grant": {
       "version": 1,
@@ -282,33 +286,33 @@
       "category": "opportunity",
       "weight": 2,
       "conditions": {
-        "min_day": 16,
+        "min_day": 80,
         "scientists": 3
       },
       "nodes": {
         "start": {
           "title": "地学站的回信",
-          "text": "外地地学站愿意购买本地匿名气候观测副本；数据不包含调查权。",
+          "text": "一封迟到了四个月的信：隔壁星系的地学站想买这里的气候记录，匿名副本就行。信末写着：「你们那儿的雨，跟我们所有的模型都不一样。」",
           "choices": [
             {
               "id": "share",
-              "label": "授权公开副本",
-              "reward": 90,
+              "label": "卖给他们一份副本",
+              "reward": 270.0,
               "ending": "气候资料公开"
             },
             {
               "id": "decline",
-              "label": "暂不共享",
+              "label": "暂不外传",
               "ending": "资料保留"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240
+      "cooldown_days": 1440
     },
     "market_day": {
       "version": 1,
@@ -316,36 +320,36 @@
       "category": "dilemma",
       "weight": 2,
       "conditions": {
-        "min_day": 20,
+        "min_day": 100,
         "settlements": 2
       },
       "nodes": {
         "start": {
           "title": "两地的第一个集市",
-          "text": "两地居民想安排一次小集市。公共食品做交通补给，外地参展商的补贴计为一次性收入。",
+          "text": "两地的居民早就互相托人捎东西了。现在有人提议办一次真正的集市：路边摆摊，孩子乱跑，外地商贩也想来凑热闹。公家出点食品招待，摊位费归公共账户。",
           "choices": [
             {
               "id": "host",
-              "label": "安排公共补给",
+              "label": "办！公家出食品",
               "goods_cost": {
-                "food": 15
+                "food": 30.0
               },
-              "reward": 75,
+              "reward": 225.0,
               "ending": "集市落幕"
             },
             {
               "id": "decline",
-              "label": "推迟集市",
+              "label": "等路再好走些",
               "ending": "集市推迟"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "decision",
       "critical": false,
-      "cooldown_days": 240
+      "cooldown_days": 1440
     },
     "quiet_channel": {
       "version": 1,
@@ -353,17 +357,17 @@
       "category": "discovery",
       "weight": 2,
       "conditions": {
-        "min_day": 15,
+        "min_day": 75,
         "previous": "water:配水协议"
       },
       "nodes": {
         "start": {
           "title": "安静的水渠",
-          "text": "节制取水后，水渠出现稳定回流。记录这次变化可以给今后的农场维护留下资料。",
+          "text": "自从节制取水，旧水渠里的回流声变了，轻得像有人翻书。农场的老周每天傍晚都去听一会儿，顺手记下水位。他问你，这些记录要不要整理成规程。",
           "choices": [
             {
               "id": "record",
-              "label": "整理回流记录",
+              "label": "整理成规程",
               "effects": [
                 {
                   "kind": "farm",
@@ -376,17 +380,18 @@
             },
             {
               "id": "decline",
-              "label": "仅保留日志",
+              "label": "他记着就好",
               "ending": "简报归档"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240
+      "cooldown_days": 1440,
+      "chance": 1.0
     },
     "appointment_gift": {
       "version": 1,
@@ -394,67 +399,68 @@
       "category": "opportunity",
       "weight": 2,
       "conditions": {
-        "min_day": 20,
+        "min_day": 100,
         "status": "success"
       },
       "nodes": {
         "start": {
           "title": "任命后的工具箱",
-          "text": "总督任命获得公开确认。旧承包商送来一箱通用维修部件，没有附加义务。",
+          "text": "总督任命的公告贴出去第二天，一位退休的老承包商拖来一只旧工具箱，扳手的手柄都磨亮了。「这颗星球上第一根管子就是用它拧的。现在它是你的了。」",
           "choices": [
             {
               "id": "take",
-              "label": "登记公共资产",
+              "label": "收下，登记成公共资产",
               "goods_reward": {
-                "parts": 4
+                "parts": 8.0
               },
               "ending": "工具箱入库"
             },
             {
               "id": "decline",
-              "label": "转赠当地学校",
+              "label": "转赠给学校",
               "ending": "工具箱转赠"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 360
+      "cooldown_days": 2160,
+      "chance": 1.0
     },
     "water": {
       "version": 1,
       "type": "chain",
       "category": "dilemma",
-      "weight": 12,
+      "weight": 4,
       "conditions": {
-        "min_day": 6,
+        "min_day": 30,
         "building": "water"
       },
       "nodes": {
         "start": {
           "title": "第二条水位线",
-          "text": "泵站下方出现新的水痕。调查可确认盐分；直接增建泵站虽快，验收时可能必须处理盐渍化。",
+          "text": "泵站下方的岩壁上多了一道新水痕，比旧的高出一掌，尝起来有点咸。老周说，这口井在告诉我们什么，只是我们还听不懂。",
           "choices": [
             {
               "id": "survey",
-              "label": "派三人实测",
-              "pay": 45,
+              "label": "派三支研究团队去实测",
+              "pay": 135.0,
               "investigate": 3,
-              "work": 5,
+              "work": 15,
               "next": "plan"
             },
             {
               "id": "build",
-              "label": "直接增建净水泵站",
+              "label": "不管了，再建一座泵站",
               "build": "water",
               "next": "inspection"
             },
             {
               "id": "conserve",
-              "label": "签署节制取水规程",
+              "label": "签节制取水规程",
               "effects": [
                 {
                   "kind": "water",
@@ -479,26 +485,26 @@
             },
             {
               "id": "decline",
-              "label": "保留现有取水规模",
+              "label": "先不动它",
               "ending": "水线封存"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "plan": {
           "title": "盐分沿着旧水线",
-          "text": "实测确认盐分集中在旧渠底。新泵站若配合分流维护，可以同时稳定供水与温室。",
+          "text": "实测的结果摊在桌上：盐分顺着一条古河道往上渗，新泵站如果配上分流，能把它挡在外面，还顺带保住温室。",
           "choices": [
             {
               "id": "build",
-              "label": "增建并纳入分流验收",
+              "label": "建泵站，把分流也做上",
               "build": "water",
               "next": "inspection"
             },
             {
               "id": "conserve",
-              "label": "只实行节制取水",
+              "label": "只节制取水",
               "effects": [
                 {
                   "kind": "water",
@@ -523,23 +529,23 @@
             },
             {
               "id": "decline",
-              "label": "封存调查结果",
+              "label": "封存报告",
               "ending": "水线封存"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "inspection": {
-          "title": "泵站竣工后的第一杯水",
-          "text": "新设施已实际竣工。验收显示高取水量会带出盐分；清渠需要支出，留下盐分则永久降低当地农场产出。",
+          "title": "新泵站的第一杯水",
+          "text": "竣工仪式上，站长给你端来第一杯水。你喝了一口，他看着你的表情，什么都明白了。高取水量把盐也带了上来。清渠要花钱，不清，地里的庄稼会记得这件事很多年。",
           "choices": [
             {
               "id": "flush",
-              "label": "清渠并维持分流",
-              "pay": 90,
+              "label": "清渠，维持分流",
+              "pay": 270.0,
               "goods_cost": {
-                "materials": 4
+                "materials": 8.0
               },
               "effects": [
                 {
@@ -559,9 +565,9 @@
             },
             {
               "id": "careful",
-              "label": "采用实测分流方案",
+              "label": "按实测方案分流",
               "requires_survey": true,
-              "pay": 35,
+              "pay": 105.0,
               "effects": [
                 {
                   "kind": "water",
@@ -580,7 +586,7 @@
             },
             {
               "id": "decline",
-              "label": "接受含盐供水",
+              "label": "能喝就行",
               "effects": [
                 {
                   "kind": "water",
@@ -599,91 +605,91 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 300
+      "cooldown_days": 99999
     },
     "industry": {
       "version": 1,
       "type": "chain",
       "category": "opportunity",
-      "weight": 9,
+      "weight": 4,
       "conditions": {
-        "min_day": 12,
+        "min_day": 60,
         "building": "processor",
-        "exports": 60
+        "exports": 600.0
       },
       "nodes": {
         "start": {
           "title": "送不到的旺季",
-          "text": "外部承包商要一批本地加工部件。货款按实际抵达结算；进口部件不能充作本地产出。需要货站余量装船，航程三日。",
+          "text": "外面的承包商急要一批本地加工的部件，货款按实际抵达结算，进口货不算数。他们的调度员在通讯里喊得嗓子都哑了：「旺季不等人！」",
           "choices": [
             {
               "id": "accept",
-              "label": "签订部件交付单",
-              "pay": 25,
+              "label": "签下这张单子",
+              "pay": 75.0,
               "order": {
                 "amount": 4,
                 "price": 62,
-                "days": 24
+                "days": 72
               },
               "next": "review"
             },
             {
               "id": "small",
-              "label": "先做小批量订单",
-              "pay": 10,
+              "label": "先做小批量试试",
+              "pay": 30.0,
               "order": {
                 "amount": 2,
                 "price": 55,
-                "days": 24
+                "days": 72
               },
               "next": "review"
             },
             {
               "id": "decline",
-              "label": "保留现货自主销售",
+              "label": "现货留着自己卖",
               "ending": "谢绝旺季"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "review": {
           "title": "码头复核单",
-          "text": "买方更新了收货安排。可按原单继续、以手续费换十日缓冲，或减少承诺但结清已经交付的货物。",
+          "text": "买方发来新的收货安排，语气比上次客气了些。可以照原单继续，花点钱换些缓冲，或者减量，结清已经交付的货。",
           "choices": [
             {
               "id": "continue",
-              "label": "按原截止日期履约",
+              "label": "按原期限干",
               "order_action": "continue"
             },
             {
               "id": "extend",
-              "label": "支付改签费延长十日",
-              "pay": 35,
+              "label": "付改签费，多要一段时间",
+              "pay": 105.0,
               "order_action": "extend"
             },
             {
               "id": "reduce",
-              "label": "协商减量并结清现有交货",
-              "pay": 20,
+              "label": "协商减量，结清现货",
+              "pay": 60.0,
               "order_action": "reduce"
             }
           ],
           "default": "continue",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "delivered": {
           "title": "带着签名的收货单",
-          "text": "买方已签收全部承诺部件，货款按每批实际到货计入当地经营收入。可建立长期操作规范，或以一次订单结束合作。",
+          "text": "最后一批部件上了船。收货单上的签名龙飞凤舞，下面多了一行小字：「下次还找你们。」装卸班的人把这张单子贴在了休息室墙上。",
           "choices": [
             {
               "id": "standard",
-              "label": "保留装卸操作规范",
+              "label": "把这套装卸办法定成规范",
               "effects": [
                 {
                   "kind": "port",
@@ -696,65 +702,65 @@
             },
             {
               "id": "decline",
-              "label": "本次订单结案",
+              "label": "一单归一单",
               "ending": "单次交付"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 300
+      "cooldown_days": 99999
     },
     "archaeology": {
       "version": 1,
       "type": "chain",
       "category": "discovery",
-      "weight": 9,
+      "weight": 4,
       "conditions": {
-        "min_day": 10,
+        "min_day": 50,
         "mine": true
       },
       "nodes": {
         "start": {
           "title": "岩层下的值班簿",
-          "text": "采掘边缘露出一间旧测候室。封存柜里有失联勘探队的值班簿；地方大学也愿意购买独家后续调查权。",
+          "text": "掘进机撞开了一间谁也不知道的旧测候室。灰尘底下摆着一本值班簿，最后一页的日期比殖民计划还早十年。地方大学的电话第二天就打来了，想买独家调查权。",
           "choices": [
             {
               "id": "survey",
-              "label": "派三人整理现场",
-              "pay": 50,
+              "label": "派三支研究团队清理现场",
+              "pay": 150.0,
               "investigate": 3,
-              "work": 7,
+              "work": 21,
               "next": "records"
             },
             {
               "id": "sell",
-              "label": "出售独家调查权",
-              "reward": 180,
+              "label": "把调查权卖给大学",
+              "reward": 540.0,
               "sell_rights": true,
               "next": "sale_report",
-              "delay": 8
+              "delay": 24
             },
             {
               "id": "decline",
-              "label": "封存入口",
+              "label": "封上入口，继续挖矿",
               "ending": "遗址封存"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "records": {
           "title": "最后一次换班",
-          "text": "记录表明队员为避免山洪主动撤离；没有神秘失踪。尚有一份矿尘筛分样本。可归档并保护测候室，或交大学接手样本分析。",
+          "text": "值班簿写得很平静：山洪要来了，全队撤离，记得关总阀。没有什么神秘的失踪，只有一群人认真地下了班。柜子里还留着一份矿尘筛分样本。",
           "choices": [
             {
               "id": "protect",
-              "label": "保护遗址并公开记录",
-              "pay": 35,
+              "label": "保护遗址，公开记录",
+              "pay": 105.0,
               "effects": [
                 {
                   "kind": "mine",
@@ -767,36 +773,36 @@
             },
             {
               "id": "sample",
-              "label": "派三人分析筛分样本",
-              "pay": 35,
+              "label": "派人分析那份样本",
+              "pay": 105.0,
               "investigate": 3,
-              "work": 5,
+              "work": 15,
               "next": "findings"
             },
             {
               "id": "sell",
-              "label": "出售后续样本调查权",
-              "reward": 240,
+              "label": "把样本卖给大学",
+              "reward": 720.0,
               "sell_rights": true,
               "next": "sale_report",
-              "delay": 8
+              "delay": 24
             },
             {
               "id": "decline",
-              "label": "结束现场工作",
+              "label": "就到这里",
               "ending": "勘探队去向查明"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "findings": {
           "title": "筛网上留下的说明",
-          "text": "样本没有新增矿藏，只提供一套更适合本地粉尘的筛分办法。采用后可提高矿场效率，测候室则留作公共档案点。",
+          "text": "样本里没有新矿，只有一张手绘的筛网图纸，边上写着「这里的粉尘比说明书上细，别信厂家」。试了一次，真的比现在用的好。",
           "choices": [
             {
               "id": "apply",
-              "label": "采用筛分办法并归档",
+              "label": "照着改工艺",
               "effects": [
                 {
                   "kind": "mine",
@@ -809,30 +815,30 @@
             },
             {
               "id": "decline",
-              "label": "保留记录暂不改工艺",
+              "label": "存档，暂时不改",
               "ending": "样本保管"
             }
           ],
           "default": "decline",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "sale_report": {
           "title": "大学的结项简报",
-          "text": "大学确认旧队已在山洪前撤离，样本进入公开展陈。后续独家调查权已经转让，本地不再领取同一研究成果。",
+          "text": "大学寄来一份印刷精美的简报：旧队员在山洪前撤离，全员平安，样本已进入公开展陈。扉页感谢了你，用的是小号字。",
           "choices": [
             {
               "id": "close",
-              "label": "收录结项简报",
+              "label": "归档",
               "ending": "调查权转让"
             }
           ],
           "default": "close",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       },
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 300
+      "cooldown_days": 99999
     },
     "rockfall": {
       "version": 1,
@@ -840,41 +846,42 @@
       "category": "incident",
       "kind": "decision",
       "critical": false,
-      "cooldown_days": 120,
+      "cooldown_days": 720,
       "weight": 2,
       "conditions": {
-        "min_day": 20,
+        "min_day": 100,
         "trigger_only": true
       },
       "nodes": {
         "start": {
           "title": "落石封路",
-          "text": "工程公路的边坡昨夜垮塌，车队停在两端。抢修队能马上开工；等塌方稳定不花钱，但在途货物要多等几天。",
+          "text": "凌晨四点，工程公路的边坡塌了。司机们在两头生起火堆，一边等一边打赌哪天能通。抢修队随时能开工，就看你肯出多少钱。",
           "choices": [
             {
               "id": "repair",
               "label": "雇抢修队当天清障",
-              "pay": 120,
+              "pay": 360.0,
               "clear_closure": true,
               "ending": "当天通车"
             },
             {
               "id": "detour",
-              "label": "临时便道限量通行",
-              "pay": 50,
+              "label": "开临时便道，限量通行",
+              "pay": 150.0,
               "shorten_closure": 2,
               "ending": "便道通行"
             },
             {
               "id": "wait",
-              "label": "等塌方稳定再清理",
+              "label": "等塌方稳定再说",
               "ending": "等待通车"
             }
           ],
           "default": "wait",
-          "deadline_days": 4
+          "deadline_days": 12
         }
-      }
+      },
+      "chance": 1.0
     },
     "price_window": {
       "version": 1,
@@ -882,26 +889,26 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180,
+      "cooldown_days": 1080,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
-        "exports": 800
+        "min_day": 200,
+        "exports": 8000.0
       },
       "nodes": {
         "start": {
           "title": "报价窗口",
-          "text": "一家远洋买家愿按固定溢价包下近期到港货物。签约要付一笔保证金，不签就继续随行就市。",
+          "text": "一个远洋买家的代表在货站转了两圈，掂了掂矿样，报了个高出市价一成的数。条件是先付保证金，窗口只开这一回。他的船明早就走。",
           "choices": [
             {
               "id": "sign",
               "label": "付保证金，锁定溢价",
-              "pay": 90,
+              "pay": 270.0,
               "effects": [
                 {
                   "kind": "export_price",
                   "factor": 1.1,
-                  "duration_days": 25,
+                  "duration_days": 75,
                   "maintenance": 0.0
                 }
               ],
@@ -914,7 +921,7 @@
             }
           ],
           "default": "market",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -924,39 +931,39 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 200,
+      "cooldown_days": 1200,
       "weight": 2,
       "conditions": {
-        "min_day": 30,
+        "min_day": 150,
         "attractiveness": 1.2
       },
       "nodes": {
         "start": {
-          "title": "自发移民",
-          "text": "邻近定居点听说这里缺人手，一支家庭队伍已经上路。他们带着积蓄，也需要床位和工作。",
+          "title": "尘土后面的车队",
+          "text": "望远镜里先看到的是扬起的尘土，然后是一列拼凑的车队。他们听说这里有活干，带着积蓄、锅碗和一只不肯下车的猫。领头的女人问：还要人吗？",
           "choices": [
             {
               "id": "accept",
-              "label": "全部接纳",
+              "label": "都留下吧",
               "beds": 12,
               "admit_workers": 12,
               "ending": "全员安顿"
             },
             {
               "id": "stages",
-              "label": "先接纳一半",
+              "label": "先留一半",
               "beds": 6,
               "admit_workers": 6,
               "ending": "分批接纳"
             },
             {
               "id": "decline",
-              "label": "婉拒，建议改道",
+              "label": "劝他们继续往前走",
               "ending": "婉拒移民"
             }
           ],
           "default": "decline",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -966,17 +973,17 @@
       "category": "dilemma",
       "kind": "decision",
       "critical": false,
-      "cooldown_days": 180,
+      "cooldown_days": 1080,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "wage_below": 1.0,
         "employment": 0.7
       },
       "nodes": {
         "start": {
-          "title": "工资协商",
-          "text": "工人代表拿着工资单和邻近定居点的报价来谈。就业很满，他们知道自己并不难找工作。",
+          "title": "摊在桌上的工资单",
+          "text": "工程队代表把工资单和隔壁定居点的招工告示一起摊在桌上，一句话没说。就业这么满，他们知道自己在这张桌子上的分量。",
           "choices": [
             {
               "id": "raise",
@@ -986,24 +993,24 @@
             },
             {
               "id": "bonus",
-              "label": "发一次性奖金",
-              "pay": 100,
+              "label": "发一笔奖金把事情摆平",
+              "pay": 300.0,
               "ending": "奖金化解"
             },
             {
               "id": "refuse",
-              "label": "拒绝，维持现状",
+              "label": "不谈",
               "effects": [
                 {
                   "kind": "mine",
                   "factor": 0.92,
-                  "duration_days": 20,
+                  "duration_days": 60,
                   "maintenance": 0.0
                 },
                 {
                   "kind": "processor",
                   "factor": 0.92,
-                  "duration_days": 20,
+                  "duration_days": 60,
                   "maintenance": 0.0
                 }
               ],
@@ -1011,7 +1018,7 @@
             }
           ],
           "default": "refuse",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1021,40 +1028,40 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 120,
+      "cooldown_days": 720,
       "weight": 2,
       "conditions": {
-        "min_day": 25,
+        "min_day": 125,
         "mine": true
       },
       "nodes": {
         "start": {
-          "title": "设备故障",
-          "text": "一台主机的轴承开始发烫。备件能换上，外包更快但更贵；也可以降速跑到下次大修。",
+          "title": "发烫的轴承",
+          "text": "主矿机的轴承开始发烫，隔着手套都能感觉到。老师傅把耳朵贴在外壳上听了一会儿：「还能跑，但我不敢保证能跑到哪天。」",
           "choices": [
             {
               "id": "parts",
-              "label": "用库存部件维修",
+              "label": "用库存部件自己修",
               "goods_cost": {
-                "parts": 3
+                "parts": 6.0
               },
               "workers": 2,
               "ending": "自行修复"
             },
             {
               "id": "cash",
-              "label": "外包维修",
-              "pay": 110,
+              "label": "请外包的人来",
+              "pay": 330.0,
               "ending": "外包修复"
             },
             {
               "id": "reduce",
-              "label": "降速运行",
+              "label": "降速，撑到大修",
               "effects": [
                 {
                   "kind": "mine",
                   "factor": 0.8,
-                  "duration_days": 15,
+                  "duration_days": 45,
                   "maintenance": 0.0
                 }
               ],
@@ -1062,7 +1069,7 @@
             }
           ],
           "default": "reduce",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1072,31 +1079,31 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 150,
+      "cooldown_days": 900,
       "weight": 2,
       "conditions": {
-        "min_day": 25,
+        "min_day": 125,
         "arid": true
       },
       "nodes": {
         "start": {
-          "title": "尘暴",
-          "text": "尘暴盖住了光伏板，发电量骤降。买燃料能撑过去，也可以主动让矿场减产，把电让给生活区。",
+          "title": "暗红色的太阳",
+          "text": "天边先是一道黄线，一小时后太阳就变成了一枚暗红的硬币。光伏板上的灰厚得能写字，生活区的灯一盏接一盏暗下去。",
           "choices": [
             {
               "id": "fuel",
-              "label": "购买燃料发电",
-              "pay": 90,
+              "label": "买燃料顶上",
+              "pay": 270.0,
               "ending": "燃料撑过"
             },
             {
               "id": "ration",
-              "label": "矿场主动减产",
+              "label": "矿场减产，把电让给生活区",
               "effects": [
                 {
                   "kind": "mine",
                   "factor": 0.85,
-                  "duration_days": 8,
+                  "duration_days": 24,
                   "maintenance": 0.0
                 }
               ],
@@ -1109,7 +1116,7 @@
                 {
                   "kind": "power",
                   "factor": 0.6,
-                  "duration_days": 8,
+                  "duration_days": 24,
                   "maintenance": 0.0
                 }
               ],
@@ -1117,7 +1124,7 @@
             }
           ],
           "default": "accept",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1127,35 +1134,35 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180,
+      "cooldown_days": 1080,
       "weight": 2,
       "conditions": {
-        "min_day": 30,
+        "min_day": 150,
         "river": true
       },
       "nodes": {
         "start": {
-          "title": "汛期",
-          "text": "上游水位连日上涨。修堤要花钱和建材；把仓库抢先搬高便宜些；什么都不做就看洪水放过多少。",
+          "title": "两米的水标",
+          "text": "上游的水标三天涨了两米，河水变得像浓茶。老人们说这条河记性很好，当年淹到哪儿，今年还要淹到哪儿。",
           "choices": [
             {
               "id": "levee",
-              "label": "抢修堤坝",
-              "pay": 130,
+              "label": "连夜抢修堤坝",
+              "pay": 390.0,
               "goods_cost": {
-                "materials": 15
+                "materials": 30.0
               },
               "ending": "堤坝保住"
             },
             {
               "id": "move",
               "label": "把库存搬到高处",
-              "pay": 40,
+              "pay": 120.0,
               "effects": [
                 {
                   "kind": "farm",
                   "factor": 0.9,
-                  "duration_days": 8,
+                  "duration_days": 24,
                   "maintenance": 0.0
                 }
               ],
@@ -1163,16 +1170,16 @@
             },
             {
               "id": "accept",
-              "label": "接受损失",
+              "label": "听天由命",
               "lose_goods": {
-                "food": 30,
-                "materials": 15
+                "food": 60.0,
+                "materials": 30.0
               },
               "effects": [
                 {
                   "kind": "farm",
                   "factor": 0.8,
-                  "duration_days": 10,
+                  "duration_days": 30,
                   "maintenance": 0.0
                 }
               ],
@@ -1180,7 +1187,7 @@
             }
           ],
           "default": "accept",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1190,26 +1197,26 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 180,
+      "cooldown_days": 1080,
       "weight": 2,
       "conditions": {
-        "min_day": 25,
+        "min_day": 125,
         "cold": true,
         "building": "farm"
       },
       "nodes": {
         "start": {
-          "title": "寒潮",
-          "text": "一股冷空气南下，温室外壁结了霜。加热可保住收成，但账单不小。",
+          "title": "霜花",
+          "text": "温室外壁一夜之间结满了霜花，很好看，里面的幼苗却开始发黑。暖气开到最大能保住收成，账单会比霜花更好看。",
           "choices": [
             {
               "id": "heat",
-              "label": "加热温室",
+              "label": "把暖气开到最大",
               "effects": [
                 {
                   "kind": "farm",
                   "factor": 1.0,
-                  "duration_days": 12,
+                  "duration_days": 36,
                   "maintenance": 8.0
                 }
               ],
@@ -1222,7 +1229,7 @@
                 {
                   "kind": "farm",
                   "factor": 0.7,
-                  "duration_days": 12,
+                  "duration_days": 36,
                   "maintenance": 0.0
                 }
               ],
@@ -1230,7 +1237,7 @@
             }
           ],
           "default": "accept",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1240,31 +1247,31 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240,
+      "cooldown_days": 1440,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "population": 150
       },
       "nodes": {
         "start": {
-          "title": "流感季",
-          "text": "医务记录里的发热病例翻了一倍。隔离安排会花钱，放任则各岗位都会缺人几天。诊所能把影响减半。",
+          "title": "医务室门口的长椅",
+          "text": "医务室门口的长椅坐满了，咳嗽声此起彼伏。有人说是上一班货船带来的，也有人说是这里的花粉。总之，明天的班次排不满了。",
           "choices": [
             {
               "id": "isolate",
               "label": "组织隔离和轮休",
-              "pay": 80,
+              "pay": 240.0,
               "ending": "隔离见效"
             },
             {
               "id": "carry_on",
-              "label": "照常上班",
+              "label": "能上班的照常上班",
               "effects": [
                 {
                   "kind": "all",
                   "factor": 0.9,
-                  "duration_days": 10,
+                  "duration_days": 30,
                   "maintenance": 0.0,
                   "clinic": 0.95
                 }
@@ -1273,7 +1280,7 @@
             }
           ],
           "default": "carry_on",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1283,34 +1290,34 @@
       "category": "discovery",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240,
+      "cooldown_days": 1440,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "scientists": 8,
         "research_active": true
       },
       "nodes": {
         "start": {
-          "title": "意外突破",
-          "text": "夜班的一组数据对上了一个搁置很久的猜想。可以把它用进眼下的项目，也可以发表，吸引同行前来。",
+          "title": "只差一个符号",
+          "text": "凌晨三点，研究所的灯还亮着。小组长盯着一组对不上的数据笑出了声：那个搁置半年的猜想，原来只差一个符号。现在要决定，先用，还是先发表？",
           "choices": [
             {
               "id": "apply",
-              "label": "用进当前项目",
-              "research_points": 15,
+              "label": "先用进手头的课题",
+              "research_points": 45.0,
               "ending": "项目提速"
             },
             {
               "id": "publish",
-              "label": "公开发表",
+              "label": "发表出去，让同行都知道",
               "beds": 2,
               "admit_scientists": 2,
               "ending": "同行来访"
             }
           ],
           "default": "apply",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1320,28 +1327,28 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240,
+      "cooldown_days": 1440,
       "weight": 2,
       "conditions": {
-        "min_day": 30,
+        "min_day": 150,
         "building": "lab"
       },
       "nodes": {
         "start": {
-          "title": "访问学者",
-          "text": "一支访问学者团队想借用研究所三周。接待要花钱，但实验室会热闹起来，也许有人愿意留下。",
+          "title": "行李比人多的学者",
+          "text": "三位学者从轨道上下来，行李比人还多。他们想借研究所三周，做一个别处做不了的实验。接待不便宜，但实验室里已经很久没人吵得这么高兴了。",
           "choices": [
             {
               "id": "host",
-              "label": "接待并开放实验室",
-              "pay": 100,
+              "label": "把实验室开放给他们",
+              "pay": 300.0,
               "beds": 1,
               "admit_scientists": 1,
               "effects": [
                 {
                   "kind": "research",
                   "factor": 1.2,
-                  "duration_days": 20,
+                  "duration_days": 60,
                   "maintenance": 0.0
                 }
               ],
@@ -1354,7 +1361,7 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1364,33 +1371,33 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 120,
+      "cooldown_days": 720,
       "weight": 2,
       "conditions": {
-        "min_day": 15,
+        "min_day": 75,
         "no_enterprise": true,
         "population": 40
       },
       "nodes": {
         "start": {
-          "title": "投资意向",
-          "text": "一位投资人想在这里开第一家生活服务社，并愿意贴一笔筹备费。条件是批准手续要快。",
+          "title": "穿得太干净的投资人",
+          "text": "一位穿得过于干净的投资人在镇上转了一圈，数了数有多少人在排队理发。他说愿意开第一家生活服务社，还贴一笔筹备费，只要手续快。",
           "choices": [
             {
               "id": "accept",
-              "label": "批准服务社并收下筹备费",
+              "label": "批准，收下筹备费",
               "found_enterprise": true,
-              "reward": 150,
+              "reward": 450.0,
               "ending": "服务社落地"
             },
             {
               "id": "decline",
-              "label": "暂不批准",
+              "label": "再看看",
               "ending": "投资人离开"
             }
           ],
           "default": "decline",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1400,20 +1407,20 @@
       "category": "discovery",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 240,
+      "cooldown_days": 1440,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "mine": true
       },
       "nodes": {
         "start": {
-          "title": "勘探修正",
-          "text": "新的钻孔数据和当初的估算对不上。可以直接按新数据改账，也可以多打几个孔再定。",
+          "title": "对不上的岩芯",
+          "text": "新钻孔的岩芯摆了一地，和当初的估算怎么也对不上。地质组长挠着头说，可能多，也可能少；要么现在就改账，要么再打几个孔。",
           "choices": [
             {
               "id": "accept",
-              "label": "按现有数据修正储量",
+              "label": "按现有数据改账",
               "revise_deposits": [
                 0.85,
                 1.25
@@ -1422,8 +1429,8 @@
             },
             {
               "id": "resurvey",
-              "label": "出钱复测",
-              "pay": 100,
+              "label": "出钱再打几个孔",
+              "pay": 300.0,
               "revise_deposits": [
                 1.0,
                 1.2
@@ -1432,7 +1439,7 @@
             }
           ],
           "default": "accept",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1442,25 +1449,25 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 360,
+      "cooldown_days": 2160,
       "weight": 1,
       "conditions": {
-        "min_day": 60
+        "min_day": 300
       },
       "nodes": {
         "start": {
-          "title": "流星雨",
-          "text": "今晚的天空格外热闹，孩子们都没睡。第二天有人在河滩捡到了发亮的碎块。",
+          "title": "还带着余温的碎块",
+          "text": "今晚的天空格外热闹，孩子们都不肯睡。第二天一早，有人在河滩捡到了还带着余温的发亮碎块。",
           "choices": [
             {
               "id": "festival",
               "label": "办一场露天晚会",
-              "pay": 30,
+              "pay": 90.0,
               "effects": [
                 {
                   "kind": "appeal",
                   "factor": 1.1,
-                  "duration_days": 20,
+                  "duration_days": 60,
                   "maintenance": 0.0
                 }
               ],
@@ -1470,13 +1477,13 @@
               "id": "collect",
               "label": "组织人手收集碎块",
               "goods_reward": {
-                "crystal": 6
+                "crystal": 12.0
               },
               "ending": "碎块入库"
             }
           ],
           "default": "collect",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1486,22 +1493,22 @@
       "category": "incident",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 150,
+      "cooldown_days": 900,
       "weight": 2,
       "conditions": {
-        "min_day": 25,
+        "min_day": 125,
         "building": "port",
-        "imports": 200
+        "imports": 1000.0
       },
       "nodes": {
         "start": {
-          "title": "补给船延误",
-          "text": "下一班补给船要晚到。付加急费可以让它改航线，否则货站这几天吞吐会明显下降。",
+          "title": "断断续续的呼叫",
+          "text": "调度室收到一条断断续续的消息：下一班补给船的主引擎出了问题。加钱能让另一条船改航线；不加钱，货站就得等。",
           "choices": [
             {
               "id": "rush",
-              "label": "支付加急费",
-              "pay": 70,
+              "label": "加钱改航线",
+              "pay": 210.0,
               "ending": "加急到港"
             },
             {
@@ -1511,7 +1518,7 @@
                 {
                   "kind": "port",
                   "factor": 0.7,
-                  "duration_days": 8,
+                  "duration_days": 24,
                   "maintenance": 0.0
                 }
               ],
@@ -1519,7 +1526,7 @@
             }
           ],
           "default": "wait",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1529,32 +1536,32 @@
       "category": "dilemma",
       "kind": "decision",
       "critical": false,
-      "cooldown_days": 240,
+      "cooldown_days": 1440,
       "weight": 2,
       "conditions": {
-        "min_day": 30,
+        "min_day": 150,
         "contract_stage": 2
       },
       "nodes": {
         "start": {
-          "title": "例行抽查",
-          "text": "公司审计处发来通知，下周抽查账目。提前整理要占用人手和经费；不准备也不违规，只是印象不会太好。",
+          "title": "客气得让人不安的通知",
+          "text": "公司审计处的通知措辞客气得让人不安：「下周将有两位同事前往贵处，了解一些情况。」账本都在，只是有些年头的单据不太好找。",
           "choices": [
             {
               "id": "prepare",
-              "label": "提前整理账目",
-              "pay": 60,
+              "label": "提前把账理清楚",
+              "pay": 180.0,
               "ending": "抽查通过"
             },
             {
               "id": "ignore",
-              "label": "不做准备",
-              "distrust": 6.0,
+              "label": "随他们查",
+              "distrust": 1.5,
               "ending": "留下记录"
             }
           ],
           "default": "ignore",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1564,23 +1571,23 @@
       "category": "opportunity",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 300,
+      "cooldown_days": 1800,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "children": 20
       },
       "nodes": {
         "start": {
-          "title": "学校申请",
-          "text": "家长联名申请办一所学校。投入不小，但有孩子的人家更愿意留下来，几年后也会有人走进研究所。",
+          "title": "错了两个字的联名信",
+          "text": "家长们联名写了一封信，字迹是孩子们帮忙誊的，错了两个字。他们想要一所真正的学校，而不是轮流在食堂后面上课。",
           "choices": [
             {
               "id": "build",
               "label": "拨款建校",
-              "pay": 200,
+              "pay": 600.0,
               "goods_cost": {
-                "materials": 15
+                "materials": 30.0
               },
               "workers": 2,
               "train_scientists": 2,
@@ -1588,7 +1595,7 @@
                 {
                   "kind": "appeal",
                   "factor": 1.1,
-                  "duration_days": 180,
+                  "duration_days": 540,
                   "maintenance": 0.0
                 }
               ],
@@ -1601,7 +1608,7 @@
             }
           ],
           "default": "postpone",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1611,27 +1618,27 @@
       "category": "dilemma",
       "kind": "notice",
       "critical": false,
-      "cooldown_days": 300,
+      "cooldown_days": 1800,
       "weight": 2,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "building": "farm",
         "wet": true
       },
       "nodes": {
         "start": {
-          "title": "本地物种",
-          "text": "农场边的林子里发现一种只在这里见过的蛙。保护要留出缓冲带；继续扩张产量更高，邻居不会高兴。",
+          "title": "会发光的小蛙",
+          "text": "农场边的林子里传来一种没人听过的叫声。第二天有人捉来一只半透明的小蛙，放在手心里还在发光。生物组说，它可能只活在这片林子里。",
           "choices": [
             {
               "id": "protect",
               "label": "留出保护缓冲带",
-              "pay": 60,
+              "pay": 180.0,
               "effects": [
                 {
                   "kind": "appeal",
                   "factor": 1.05,
-                  "duration_days": 60,
+                  "duration_days": 180,
                   "maintenance": 0.0
                 }
               ],
@@ -1639,19 +1646,19 @@
             },
             {
               "id": "expand",
-              "label": "继续扩张",
+              "label": "林子该开还是要开",
               "pollution": 10.0,
               "effects": [
                 {
                   "kind": "farm",
                   "factor": 1.08,
-                  "duration_days": 60,
+                  "duration_days": 180,
                   "maintenance": 0.0
                 },
                 {
                   "kind": "appeal",
                   "factor": 0.9,
-                  "duration_days": 30,
+                  "duration_days": 90,
                   "maintenance": 0.0
                 }
               ],
@@ -1659,7 +1666,7 @@
             }
           ],
           "default": "protect",
-          "deadline_days": 8
+          "deadline_days": 24
         }
       }
     },
@@ -1669,26 +1676,26 @@
       "category": "dilemma",
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 300,
-      "weight": 6,
+      "cooldown_days": 99999,
+      "weight": 4,
       "conditions": {
-        "min_day": 50,
+        "min_day": 250,
         "building": "port",
         "population": 60
       },
       "nodes": {
         "start": {
           "title": "没有目的地的客船",
-          "text": "一艘失去租约的客船请求靠港，船上是三十多名技工和家属。接纳他们意味着床位、口粮和工作；补给后让船离开最省事。",
+          "text": "一艘失去租约的客船请求靠港，船长的声音很疲惫。船上有三十多名技工和家属，已经在轨道上漂了四十天。接纳他们要床位、口粮和工作；给点补给让船离开最省事。",
           "choices": [
             {
               "id": "all",
-              "label": "全员接纳",
+              "label": "全部接纳",
               "beds": 20,
               "admit_workers": 18,
               "admit_scientists": 2,
               "next": "crowded",
-              "delay": 12
+              "delay": 36
             },
             {
               "id": "staged",
@@ -1696,15 +1703,15 @@
               "beds": 10,
               "admit_workers": 10,
               "next": "second_batch",
-              "delay": 15
+              "delay": 45
             },
             {
               "id": "send_on",
-              "label": "补给后请其返航",
+              "label": "补给后请他们离开",
               "goods_cost": {
-                "food": 30
+                "food": 60.0
               },
-              "reward": 150,
+              "reward": 450.0,
               "ending": "补给返航"
             },
             {
@@ -1714,7 +1721,7 @@
                 {
                   "kind": "appeal",
                   "factor": 0.9,
-                  "duration_days": 30,
+                  "duration_days": 90,
                   "maintenance": 0.0
                 }
               ],
@@ -1722,15 +1729,15 @@
             }
           ],
           "default": "decline",
-          "deadline_days": 5
+          "deadline_days": 15
         },
         "crowded": {
           "title": "挤满人的宿舍",
-          "text": "新来的人很能干，可宿舍和食堂都到了极限。加一处住区能把事情摆平；不加的话，大家只能先挤一挤。",
+          "text": "新来的人很能干，可食堂开饭要排到第三轮，宿舍走廊里也睡了人。有人开始小声抱怨，是老居民，也是新居民。",
           "choices": [
             {
               "id": "housing",
-              "label": "增建模块住区",
+              "label": "赶紧再建一处住区",
               "build": "habitat",
               "next": "settled"
             },
@@ -1741,7 +1748,7 @@
                 {
                   "kind": "appeal",
                   "factor": 0.8,
-                  "duration_days": 30,
+                  "duration_days": 90,
                   "maintenance": 0.0
                 }
               ],
@@ -1749,21 +1756,21 @@
             }
           ],
           "default": "squeeze",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "settled": {
           "title": "第一批孩子入学",
-          "text": "住区竣工，新居民也把家安了下来。他们带来的手艺已经用上了。",
+          "text": "住区竣工那天，船上来的孩子第一次和这里的孩子打了一架，第二天又一起去看挖掘机了。老船长在码头站了很久，终于把制服收了起来。",
           "choices": [
             {
               "id": "welcome",
               "label": "办一场欢迎会",
-              "pay": 30,
+              "pay": 90.0,
               "effects": [
                 {
                   "kind": "appeal",
                   "factor": 1.1,
-                  "duration_days": 30,
+                  "duration_days": 90,
                   "maintenance": 0.0
                 }
               ],
@@ -1776,15 +1783,15 @@
             }
           ],
           "default": "quiet",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "second_batch": {
           "title": "船上还有一半人",
-          "text": "第一批人已经上工。客船还泊在外面，剩下的人在等答复。",
+          "text": "第一批人已经上工了。夜里还能看见客船的舷灯，停在轨道上，一闪一闪地等着答复。",
           "choices": [
             {
               "id": "rest",
-              "label": "接纳其余的人",
+              "label": "接他们下来",
               "beds": 10,
               "admit_workers": 8,
               "admit_scientists": 2,
@@ -1794,13 +1801,13 @@
               "id": "stop",
               "label": "到此为止，补给后送走",
               "goods_cost": {
-                "food": 15
+                "food": 30.0
               },
               "ending": "只留一半"
             }
           ],
           "default": "stop",
-          "deadline_days": 6
+          "deadline_days": 18
         }
       }
     },
@@ -1810,56 +1817,56 @@
       "category": "incident",
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 300,
-      "weight": 6,
+      "cooldown_days": 99999,
+      "weight": 4,
       "conditions": {
-        "min_day": 40,
+        "min_day": 200,
         "road": true
       },
       "nodes": {
         "start": {
           "title": "零点八毫米的裂缝",
-          "text": "巡检在主桥墩上量到一条零点八毫米的裂缝。限载能保安全但会耽误运输；绕路要花钱；也可以赌它撑得住。",
+          "text": "巡检员的卡尺卡在主桥墩的一道缝上，读数零点八毫米。他量了三遍，然后把卡尺收起来，看着你。限载能保安全但耽误运输；绕行要花钱；也可以赌它撑得住。",
           "choices": [
             {
               "id": "limit",
-              "label": "限载并排期维修",
-              "pay": 60,
+              "label": "限载，排期维修",
+              "pay": 180.0,
               "effects": [
                 {
                   "kind": "road_capacity",
                   "factor": 0.5,
-                  "duration_days": 20,
+                  "duration_days": 60,
                   "maintenance": 0.0
                 }
               ],
               "next": "repaired",
-              "delay": 20
+              "delay": 60
             },
             {
               "id": "bypass",
               "label": "修一段绕行便桥",
-              "pay": 220,
+              "pay": 660.0,
               "goods_cost": {
-                "materials": 20
+                "materials": 40.0
               },
               "ending": "便桥通车"
             },
             {
               "id": "risk",
-              "label": "带风险继续跑车",
+              "label": "赌一把，继续跑车",
               "next": "risk_failed",
               "alt": "risk_held",
               "chance": 0.5,
-              "delay": 25
+              "delay": 75
             }
           ],
           "default": "risk",
-          "deadline_days": 5
+          "deadline_days": 15
         },
         "repaired": {
           "title": "限载解除",
-          "text": "桥墩加固完成，验收合格。这段时间积压的货物可以走了。",
+          "text": "加固完成，验收的卡车一辆接一辆开过去，桥纹丝不动。积压了好些天的货车在桥头排成长龙，司机们按起了喇叭。",
           "choices": [
             {
               "id": "reopen",
@@ -1868,17 +1875,17 @@
             },
             {
               "id": "inspect",
-              "label": "顺手检查全线",
-              "pay": 40,
+              "label": "顺手把全线查一遍",
+              "pay": 120.0,
               "ending": "全线复检"
             }
           ],
           "default": "reopen",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "risk_held": {
-          "title": "裂缝没有再长",
-          "text": "二十多天过去，裂缝量下来还是零点八毫米。也许只是一条收缩缝。",
+          "title": "还是零点八毫米",
+          "text": "二十多天过去，巡检员又去量了一次，还是零点八毫米。他在本子上画了个问号，又把它划掉了。也许只是一条收缩缝。",
           "choices": [
             {
               "id": "note",
@@ -1887,32 +1894,32 @@
             }
           ],
           "default": "note",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "risk_failed": {
           "title": "桥面断了一跨",
-          "text": "夜里一声闷响，桥面断了一跨。万幸没有人受伤，但线路要停很久。现在抢修的钱比当初多得多。",
+          "text": "夜里一声闷响，半个镇子都醒了。桥面断了一跨，万幸当时桥上没车。现在抢修的钱比当初多得多，而那位巡检员什么也没说，这比说什么都难受。",
           "choices": [
             {
               "id": "emergency",
-              "label": "紧急抢修",
-              "pay": 280,
+              "label": "不惜代价紧急抢修",
+              "pay": 840.0,
               "goods_cost": {
-                "materials": 15
+                "materials": 30.0
               },
-              "close_roads": 4,
+              "close_roads": 8,
               "ending": "紧急修复"
             },
             {
               "id": "slow",
               "label": "按常规工期修",
-              "pay": 120,
-              "close_roads": 15,
+              "pay": 360.0,
+              "close_roads": 30,
               "ending": "停运半月"
             }
           ],
           "default": "slow",
-          "deadline_days": 4
+          "deadline_days": 12
         }
       }
     },
@@ -1922,36 +1929,36 @@
       "category": "discovery",
       "kind": "decision",
       "critical": true,
-      "cooldown_days": 360,
-      "weight": 5,
+      "cooldown_days": 99999,
+      "weight": 4,
       "conditions": {
-        "min_day": 60,
+        "min_day": 300,
         "hidden_deposit": true,
         "scientists": 3
       },
       "nodes": {
         "start": {
           "title": "山脊里的空白图",
-          "text": "旧测绘图上有一块被人用白纸盖住的山脊。磁力读数不对劲。完整勘查最稳；直接开钻更快，也可能伤到水源；把开发权卖掉则立刻有钱。",
+          "text": "旧测绘图上有一块山脊被人用白纸盖住了，胶水都发黄了。磁力读数在那里乱跳。完整勘查最稳；直接开钻更快，也可能伤到水源；把开发权卖掉，钱今天就到账。",
           "choices": [
             {
               "id": "survey",
-              "label": "派三人完整勘查",
-              "pay": 60,
+              "label": "派三支研究团队完整勘查",
+              "pay": 180.0,
               "investigate": 3,
-              "work": 8,
+              "work": 24,
               "next": "charted"
             },
             {
               "id": "drill",
               "label": "直接开钻",
-              "pay": 80,
+              "pay": 240.0,
               "reveal_hidden": true,
               "effects": [
                 {
                   "kind": "water",
                   "factor": 0.85,
-                  "duration_days": 30,
+                  "duration_days": 90,
                   "maintenance": 0.0
                 }
               ],
@@ -1961,32 +1968,2693 @@
             {
               "id": "sell",
               "label": "把开发权卖给勘探公司",
-              "reward": 350,
+              "reward": 1050.0,
               "ending": "让渡开发权"
             }
           ],
           "default": "sell",
-          "deadline_days": 6
+          "deadline_days": 18
         },
         "charted": {
-          "title": "图上的空白被填上了",
-          "text": "矿脉走向清楚了，水源也避得开。现在可以放心开采。",
+          "title": "白纸底下",
+          "text": "揭开那张白纸，下面只有一行铅笔字：「太深，没钱。」现在你有钱了。矿脉走向清清楚楚，水源也避得开。",
           "choices": [
             {
               "id": "open",
-              "label": "公布矿脉并规划开采",
+              "label": "公布矿脉，规划开采",
               "reveal_hidden": true,
               "ending": "矿脉探明"
             },
             {
               "id": "sell",
-              "label": "带着完整图纸出售",
-              "reward": 700,
+              "label": "带着完整图纸高价出售",
+              "reward": 2100.0,
               "ending": "高价出让"
             }
           ],
           "default": "open",
-          "deadline_days": 6
+          "deadline_days": 18
+        }
+      }
+    },
+    "first_birth": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 150,
+        "residential": true,
+        "population": 60
+      },
+      "nodes": {
+        "start": {
+          "title": "第一个在这里出生的孩子",
+          "text": "凌晨四点，医务室传来一声响亮的哭声。这颗星球的档案里第一次有了「出生地：本地」这一栏。孩子的父亲是矿上的，他问能不能用这里的名字给孩子取名。",
+          "choices": [
+            {
+              "id": "party",
+              "label": "全镇一起庆祝",
+              "ending": "全镇庆祝",
+              "pay": 60,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "quiet",
+              "label": "在档案里郑重记上一笔",
+              "ending": "记入档案"
+            }
+          ],
+          "default": "quiet",
+          "deadline_days": 24
+        }
+      }
+    },
+    "stray_drone": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 120
+      },
+      "nodes": {
+        "start": {
+          "title": "迷路的测绘无人机",
+          "text": "一架没有编号的测绘无人机一头栽进了菜地，电池还有三成。里面存着不知哪家公司拍的地形图。失主不明，物归原主也许能拿点酬谢，拆了也能当备件。",
+          "choices": [
+            {
+              "id": "return",
+              "label": "通知失主领回",
+              "ending": "归还无人机",
+              "reward": 180
+            },
+            {
+              "id": "strip",
+              "label": "拆了当备件",
+              "ending": "拆成备件",
+              "goods_reward": {
+                "parts": 8
+              }
+            }
+          ],
+          "default": "strip",
+          "deadline_days": 24
+        }
+      }
+    },
+    "night_shift_song": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 300,
+        "mine": true
+      },
+      "nodes": {
+        "start": {
+          "title": "夜班的歌",
+          "text": "夜班不知从哪天起开始唱歌，调子荒腔走板，歌词在骂公司，但声音传到生活区，老人们说听着踏实。工头来问，要不要管。",
+          "choices": [
+            {
+              "id": "allow",
+              "label": "随他们唱，再发点夜宵",
+              "ending": "夜班的歌",
+              "pay": 40,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.08,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "ban",
+              "label": "夜班就该安静干活",
+              "ending": "禁唱令",
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 1.05,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.95,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "allow",
+          "deadline_days": 24
+        }
+      }
+    },
+    "water_thief": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 400,
+        "building": "water"
+      },
+      "nodes": {
+        "start": {
+          "title": "半夜的水表",
+          "text": "水表每天半夜都多走一截。蹲守了三晚，抓到的是个给自家小菜园偷偷接水管的老太太，手里还攥着一把葱。她说：「种了一辈子地，到这儿连棵葱都吃不上。」",
+          "choices": [
+            {
+              "id": "garden",
+              "label": "给居民划一块公共菜园",
+              "ending": "公共菜园",
+              "pay": 90,
+              "goods_reward": {
+                "food": 20
+              },
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.06,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "fine",
+              "label": "按规定罚款",
+              "ending": "照章办事",
+              "reward": 30,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.96,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "fine",
+          "deadline_days": 24
+        }
+      }
+    },
+    "tool_theft": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 500,
+        "population": 100
+      },
+      "nodes": {
+        "start": {
+          "title": "少了一箱扳手",
+          "text": "仓库盘点少了一箱扳手。过了两天，有人在废料堆后面发现一辆自己焊的小推车，轮子还挺圆。焊工小刘脸红了：他想拉着女儿去河边。",
+          "choices": [
+            {
+              "id": "forgive",
+              "label": "推车留下，扳手还回来",
+              "ending": "小推车",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.04,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "workshop",
+              "label": "干脆开一间职工手工坊",
+              "ending": "手工坊",
+              "pay": 120,
+              "effects": [
+                {
+                  "kind": "processor",
+                  "factor": 1.06,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "forgive",
+          "deadline_days": 24
+        }
+      }
+    },
+    "cook_strike": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 700,
+        "population": 200
+      },
+      "nodes": {
+        "start": {
+          "title": "食堂贴出的告示",
+          "text": "食堂门口贴了张告示：「今日无午饭，师傅们在开会。」开会的内容是三年没涨的补贴和一台修了又坏的大锅。排队的工程队看着告示，开始议论自己的补贴。",
+          "choices": [
+            {
+              "id": "pot",
+              "label": "换锅，再加点补贴",
+              "ending": "新锅上任",
+              "pay": 160,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.05,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "hold",
+              "label": "这种事不能开头",
+              "ending": "午饭风波",
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 0.95,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.92,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "hold",
+          "deadline_days": 24
+        }
+      }
+    },
+    "first_rain": {
+      "version": 1,
+      "type": "short",
+      "category": "discovery",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 200,
+        "arid": true
+      },
+      "nodes": {
+        "start": {
+          "title": "第一场雨",
+          "text": "这片荒原上空第一次下了能算雨的雨。工程队全跑了出来，站在泥地里仰着脸，矿机没人管了。气象组说这是偶然现象，没人理他们。",
+          "choices": [
+            {
+              "id": "holiday",
+              "label": "放半天假",
+              "ending": "雨中假期",
+              "pay": 30,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "collect",
+              "label": "赶紧把所有水箱都接上",
+              "ending": "接满水箱",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.2,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "collect",
+          "deadline_days": 24
+        }
+      }
+    },
+    "old_map_seller": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 600,
+        "hidden_deposit": true
+      },
+      "nodes": {
+        "start": {
+          "title": "卖旧地图的人",
+          "text": "一个瘦老头在货站卖旧地图，一张一张摊在木箱上。其中一张的山脊画法很眼熟，标注是手写的。他开价不低，理由是「我年轻时差点死在那儿」。",
+          "choices": [
+            {
+              "id": "buy",
+              "label": "买下这张图",
+              "ending": "旧图有料",
+              "pay": 200,
+              "reveal_hidden": true
+            },
+            {
+              "id": "pass",
+              "label": "听听故事就好",
+              "ending": "老头的故事"
+            }
+          ],
+          "default": "pass",
+          "deadline_days": 24
+        }
+      }
+    },
+    "borrowed_engineer": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 450,
+        "research_active": true
+      },
+      "nodes": {
+        "start": {
+          "title": "借调来的工程师",
+          "text": "公司在轨道站有位工程师闲了下来，愿意下来待一阵。她不太爱说话，但第一天就指出了研究所通风系统里的三处错误，顺便纠正了一个实验设计。",
+          "choices": [
+            {
+              "id": "host",
+              "label": "管吃管住，请她多留几周",
+              "ending": "借调工程师",
+              "pay": 150,
+              "research_points": 45
+            },
+            {
+              "id": "thanks",
+              "label": "心领了",
+              "ending": "婉拒借调"
+            }
+          ],
+          "default": "thanks",
+          "deadline_days": 24
+        }
+      }
+    },
+    "frozen_pipes": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 300,
+        "cold": true,
+        "building": "water"
+      },
+      "nodes": {
+        "start": {
+          "title": "冻裂的水管",
+          "text": "早上六点，主水管爆了，在街上冻成一条闪亮的冰河。孩子们开心坏了，水厂的人没有。抢修要动用部件，不修就只能轮流供水。",
+          "choices": [
+            {
+              "id": "fix",
+              "label": "全线抢修，再包上保温层",
+              "ending": "保温包裹",
+              "pay": 120,
+              "goods_cost": {
+                "parts": 4
+              }
+            },
+            {
+              "id": "ration",
+              "label": "轮流供水",
+              "ending": "轮流供水",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 0.75,
+                  "duration_days": 25,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "ration",
+          "deadline_days": 24
+        }
+      }
+    },
+    "spring_tide": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 400,
+        "coast": true
+      },
+      "nodes": {
+        "start": {
+          "title": "大潮",
+          "text": "两颗卫星今年排到了一条线上。海水比预报高了一米半，已经漫上了码头的第一层台阶。潮水表上的数字还在涨。",
+          "choices": [
+            {
+              "id": "wall",
+              "label": "连夜垒沙袋，把货物搬走",
+              "ending": "挡住大潮",
+              "pay": 100,
+              "goods_cost": {
+                "materials": 12
+              }
+            },
+            {
+              "id": "wait",
+              "label": "潮总会退的",
+              "ending": "大潮过境",
+              "lose_goods": {
+                "food": 30,
+                "materials": 15
+              },
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.8,
+                  "duration_days": 20,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "wait",
+          "deadline_days": 24
+        }
+      }
+    },
+    "sea_fog": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 500,
+        "coast": true,
+        "building": "port"
+      },
+      "nodes": {
+        "start": {
+          "title": "海雾封港",
+          "text": "雾从海面上爬上来，到中午还没散，塔吊司机说他看不见自己的手。雷达导航能让货站继续干活，但要租，按天算。",
+          "choices": [
+            {
+              "id": "radar",
+              "label": "租雷达导航",
+              "ending": "雷达穿雾",
+              "pay": 90
+            },
+            {
+              "id": "wait",
+              "label": "等雾散",
+              "ending": "雾中停工",
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.6,
+                  "duration_days": 15,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "wait",
+          "deadline_days": 24
+        }
+      }
+    },
+    "deep_shadow": {
+      "version": 1,
+      "type": "short",
+      "category": "discovery",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 700,
+        "coast": true
+      },
+      "nodes": {
+        "start": {
+          "title": "水下的影子",
+          "text": "货船的声呐在近海扫到一片很大的影子，缓慢移动，不像礁石。生物组一夜没睡，第二天带回一桶水，里面全是肥美的浮游生物。这片海比想象的富饶得多。",
+          "choices": [
+            {
+              "id": "study",
+              "label": "资助近海调查",
+              "ending": "近海调查",
+              "pay": 180,
+              "research_lead": "aquaculture"
+            },
+            {
+              "id": "watch",
+              "label": "只是远远看着",
+              "ending": "远观"
+            }
+          ],
+          "default": "watch",
+          "deadline_days": 24
+        }
+      }
+    },
+    "bunk_fight": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 350,
+        "frontier": true
+      },
+      "nodes": {
+        "start": {
+          "title": "工棚里的一架",
+          "text": "为了一副扑克和一句关于家乡的玩笑，工棚里打起来了，两个人进了医务室。工头说，这地方太闷，三个月没见过一个陌生人。",
+          "choices": [
+            {
+              "id": "rec",
+              "label": "建个娱乐室，发点假",
+              "ending": "娱乐室",
+              "pay": 140,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "punish",
+              "label": "扣工资，以儆效尤",
+              "ending": "杀鸡儆猴",
+              "reward": 40,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.9,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "punish",
+          "deadline_days": 24
+        }
+      }
+    },
+    "homesick_letters": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 600,
+        "frontier": true,
+        "road": true
+      },
+      "nodes": {
+        "start": {
+          "title": "一麻袋家信",
+          "text": "邮车半年来一次，这次卸下一麻袋信。读完信的那天晚上，工棚里特别安静。第二天有三支工程队递了调回城里的申请。",
+          "choices": [
+            {
+              "id": "rotate",
+              "label": "安排轮换休假",
+              "ending": "轮换休假",
+              "pay": 120,
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.97,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 1.12,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "deny",
+              "label": "合同写得很清楚",
+              "ending": "申请驳回",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.92,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "deny",
+          "deadline_days": 24
+        }
+      }
+    },
+    "backpack_prospector": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 800,
+        "frontier": true,
+        "hidden_deposit": true
+      },
+      "nodes": {
+        "start": {
+          "title": "背包探矿者",
+          "text": "一个晒得像皮革的女人走进营地，背包里全是石头。她不要工资，只要一张地方矿权证的副本和一罐真正的咖啡。她指着地图说：「这底下有东西，我闻得出来。」",
+          "choices": [
+            {
+              "id": "hire",
+              "label": "给她咖啡和副本",
+              "ending": "背包探矿者",
+              "pay": 150,
+              "reveal_hidden": true
+            },
+            {
+              "id": "polite",
+              "label": "请她吃顿饭送走",
+              "ending": "一顿便饭",
+              "goods_cost": {
+                "food": 4
+              }
+            }
+          ],
+          "default": "polite",
+          "deadline_days": 24
+        }
+      }
+    },
+    "dry_well": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "building": "water"
+      },
+      "nodes": {
+        "start": {
+          "title": "突然变浅的井",
+          "text": "老井的水位一周掉了三米。地质组说是地下水层在调整，也可能只是今年少雨。挖深一点能解决问题，也可能挖到盐水。",
+          "choices": [
+            {
+              "id": "deepen",
+              "label": "挖深",
+              "ending": "深挖见水",
+              "pay": 140,
+              "goods_cost": {
+                "materials": 10
+              },
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 1.1,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "save",
+              "label": "全镇节水",
+              "ending": "节水令",
+              "effects": [
+                {
+                  "kind": "water",
+                  "factor": 0.85,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "farm",
+                  "factor": 0.95,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "save",
+          "deadline_days": 24
+        }
+      }
+    },
+    "leaf_rust": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 500,
+        "building": "farm"
+      },
+      "nodes": {
+        "start": {
+          "title": "叶子上的锈斑",
+          "text": "最东边那排作物的叶子背面长出了锈色的小点，第二天扩散了一垄。农技员把叶子装进信封寄去轨道站化验，回信要两周。烧掉整片最安全，也最心疼。",
+          "choices": [
+            {
+              "id": "treat",
+              "label": "买药，全部喷一遍",
+              "ending": "药到病除",
+              "pay": 130
+            },
+            {
+              "id": "burn",
+              "label": "烧掉这一片",
+              "ending": "忍痛焚田",
+              "lose_goods": {
+                "food": 25
+              },
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 0.95,
+                  "duration_days": 15,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "wait",
+              "label": "等化验结果",
+              "ending": "锈病蔓延",
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 0.75,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "wait",
+          "deadline_days": 24
+        }
+      }
+    },
+    "bumper_harvest": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 400,
+        "building": "farm"
+      },
+      "nodes": {
+        "start": {
+          "title": "压弯枝头",
+          "text": "今年的收成好得离谱，仓库管理员开始把粮袋码到走廊上。农场想请大家吃顿好的，货站想趁机多卖一点。",
+          "choices": [
+            {
+              "id": "feast",
+              "label": "全民大宴一场",
+              "ending": "丰收宴",
+              "goods_cost": {
+                "food": 25
+              },
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "store",
+              "label": "入库，留着过冬",
+              "ending": "丰收入库",
+              "goods_reward": {
+                "food": 50
+              }
+            }
+          ],
+          "default": "store",
+          "deadline_days": 24
+        }
+      }
+    },
+    "insect_cloud": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1000,
+        "building": "farm",
+        "wet": true
+      },
+      "nodes": {
+        "start": {
+          "title": "飞虫云",
+          "text": "傍晚的天边有一朵不太对劲的云，它在转弯。半小时后，它落在了温室上，声音像下雨。防虫网只够遮住一半，熏蒸要花大钱。",
+          "choices": [
+            {
+              "id": "fumigate",
+              "label": "全面熏蒸",
+              "ending": "熏蒸驱虫",
+              "pay": 200
+            },
+            {
+              "id": "nets",
+              "label": "保住最好的一半",
+              "ending": "半数保全",
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 0.8,
+                  "duration_days": 25,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "nets",
+          "deadline_days": 24
+        }
+      }
+    },
+    "blackout_night": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 600,
+        "population": 150
+      },
+      "nodes": {
+        "start": {
+          "title": "跳闸的夜晚",
+          "text": "晚上八点整，全镇的灯灭了。十秒钟后，孩子们开始欢呼；十分钟后，医务室的备用电源开始报警。电工说主配电盘已经超载很久了，只是大家没注意。",
+          "choices": [
+            {
+              "id": "rewire",
+              "label": "连夜改线路",
+              "ending": "线路改造",
+              "pay": 150,
+              "goods_cost": {
+                "parts": 5
+              },
+              "effects": [
+                {
+                  "kind": "power",
+                  "factor": 1.05,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "patch",
+              "label": "先合闸，分时用电",
+              "ending": "分时用电",
+              "effects": [
+                {
+                  "kind": "power",
+                  "factor": 0.85,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "patch",
+          "deadline_days": 24
+        }
+      }
+    },
+    "lab_smoke": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 700,
+        "building": "lab"
+      },
+      "nodes": {
+        "start": {
+          "title": "实验室的烟",
+          "text": "二楼的窗户冒出一股紫色的烟，整层楼的人抱着笔记本冲了出来。所幸没人受伤，只是一台离心机成了雕塑。所长站在楼下，表情比烟还复杂。",
+          "choices": [
+            {
+              "id": "rebuild",
+              "label": "换新设备，补上安全培训",
+              "ending": "实验室整修",
+              "pay": 170
+            },
+            {
+              "id": "make_do",
+              "label": "先凑合用旁边那台",
+              "ending": "凑合实验",
+              "effects": [
+                {
+                  "kind": "research",
+                  "factor": 0.85,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "make_do",
+          "deadline_days": 24
+        }
+      }
+    },
+    "rival_offer": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "scientists": 10
+      },
+      "nodes": {
+        "start": {
+          "title": "挖角的邮件",
+          "text": "研究所好几个人的信箱同时收到了一封邮件，来自隔壁星区的竞争公司，薪水是这里的两倍，还包搬家。茶水间突然安静了。",
+          "choices": [
+            {
+              "id": "retain",
+              "label": "发留任奖金，给他们项目自主权",
+              "ending": "留任奖金",
+              "pay": 240,
+              "effects": [
+                {
+                  "kind": "research",
+                  "factor": 1.08,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "ignore",
+              "label": "想走的留不住",
+              "ending": "人心浮动",
+              "effects": [
+                {
+                  "kind": "research",
+                  "factor": 0.88,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "ignore",
+          "deadline_days": 24
+        }
+      }
+    },
+    "patent_sale": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 800,
+        "research_active": true
+      },
+      "nodes": {
+        "start": {
+          "title": "一份过期的专利",
+          "text": "一家破产的矿业公司正在拍卖专利，大部分是废纸，但其中一份的摘要让总工程师坐直了身子。价钱不高，也可能是因为别人都看不懂。",
+          "choices": [
+            {
+              "id": "buy",
+              "label": "买下来研究",
+              "ending": "专利入手",
+              "pay": 220,
+              "research_points": 60
+            },
+            {
+              "id": "skip",
+              "label": "不买",
+              "ending": "错过拍卖"
+            }
+          ],
+          "default": "skip",
+          "deadline_days": 24
+        }
+      }
+    },
+    "exchange_programme": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1100,
+        "scientists": 8
+      },
+      "nodes": {
+        "start": {
+          "title": "学术交换",
+          "text": "隔壁星区的大学提议交换两名研究者，为期一年。他们送来的人据说很厉害，也据说很难相处。",
+          "choices": [
+            {
+              "id": "accept",
+              "label": "欢迎来吵架",
+              "ending": "学术交换",
+              "pay": 120,
+              "beds": 2,
+              "admit_scientists": 2
+            },
+            {
+              "id": "decline",
+              "label": "现在腾不出位置",
+              "ending": "暂不交换"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 24
+        }
+      }
+    },
+    "vp_visit": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1100,
+        "contract_stage": 3
+      },
+      "nodes": {
+        "start": {
+          "title": "副总裁要来",
+          "text": "公司的副总裁要来视察，秘书发来一份长达十二页的接待要求，包括「不得在其视线范围内出现裸露管线」。总工程师看完，默默把它翻到了背面。",
+          "choices": [
+            {
+              "id": "grand",
+              "label": "按规格接待，把镇子刷一遍",
+              "ending": "隆重接待",
+              "pay": 320,
+              "distrust": -5.0
+            },
+            {
+              "id": "honest",
+              "label": "该什么样就什么样",
+              "ending": "原样接待",
+              "distrust": 1.0,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.05,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "honest",
+          "deadline_days": 24
+        }
+      }
+    },
+    "new_tax_letter": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1300,
+        "contract_stage": 3
+      },
+      "nodes": {
+        "start": {
+          "title": "公司的新税单",
+          "text": "公司总部寄来一份补充条款，要求为三年前的一批设备补缴关税。法务说可以争，争赢了不用付，争输了要付滞纳金。律师费按小时算，他们很有耐心。",
+          "choices": [
+            {
+              "id": "pay",
+              "label": "认了，付钱",
+              "ending": "补缴关税",
+              "pay": 260
+            },
+            {
+              "id": "fight",
+              "label": "争下去",
+              "ending": "税单之争",
+              "pay": 90,
+              "distrust": 1.0
+            }
+          ],
+          "default": "pay",
+          "deadline_days": 24
+        }
+      }
+    },
+    "loan_officer": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "population": 200
+      },
+      "nodes": {
+        "start": {
+          "title": "星际银行的信贷员",
+          "text": "信贷员说话很轻，名片很厚。银行愿意给一笔周转资金，只要接下来一年每天付点手续费。他环顾四周，说这个镇子「很有潜力」，听起来像在估价。",
+          "choices": [
+            {
+              "id": "borrow",
+              "label": "收下这笔钱",
+              "ending": "银行贷款",
+              "reward": 400,
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 1.0,
+                  "duration_days": 240,
+                  "maintenance": 4.0
+                }
+              ]
+            },
+            {
+              "id": "refuse",
+              "label": "请他喝杯水",
+              "ending": "谢绝贷款"
+            }
+          ],
+          "default": "refuse",
+          "deadline_days": 24
+        }
+      }
+    },
+    "first_tourists": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1400,
+        "population": 400
+      },
+      "nodes": {
+        "start": {
+          "title": "第一批观光客",
+          "text": "一艘小游轮靠了港，下来几十个穿着鲜艳的人，对着矿坑拍个不停。一位女士问，这里的「原生态工业风」是怎么设计出来的。工程队不知道该不该笑。",
+          "choices": [
+            {
+              "id": "guide",
+              "label": "组织导览，收门票",
+              "ending": "观光收入",
+              "reward": 300,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.04,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "ignore",
+              "label": "别挡着矿车就行",
+              "ending": "观光客走了"
+            }
+          ],
+          "default": "ignore",
+          "deadline_days": 24
+        }
+      }
+    },
+    "newspaper": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1000,
+        "population": 300
+      },
+      "nodes": {
+        "start": {
+          "title": "《矿灯报》创刊",
+          "text": "印刷厂的老师傅和两个高中生办了份报纸，头版是食堂涨价，副刊是一首写矿灯的诗。第一期就卖完了。他们来问能不能拿到一点公共补贴。",
+          "choices": [
+            {
+              "id": "fund",
+              "label": "资助一年",
+              "ending": "矿灯报",
+              "pay": 110,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.08,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "free",
+              "label": "恭喜，但这是你们的事",
+              "ending": "自负盈亏"
+            }
+          ],
+          "default": "free",
+          "deadline_days": 24
+        }
+      }
+    },
+    "council_election": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1600,
+        "contract_stage": 3,
+        "population": 500
+      },
+      "nodes": {
+        "start": {
+          "title": "第一次选举",
+          "text": "居民们自己印了选票，要选一个社区议事会。公司条款里没有这一项，也没说不行。你的助手问：要不要承认它？",
+          "choices": [
+            {
+              "id": "recognise",
+              "label": "承认议事会，把部分事务交出去",
+              "ending": "议事会成立",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.15,
+                  "duration_days": 360,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "advisory",
+              "label": "只当作咨询机构",
+              "ending": "咨询议事会",
+              "pay": 60,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.05,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "refuse",
+              "label": "合同里没这一条",
+              "ending": "不予承认",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.85,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "advisory",
+          "deadline_days": 24
+        }
+      }
+    },
+    "two_town_wedding": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 700,
+        "settlements": 2,
+        "road": true
+      },
+      "nodes": {
+        "start": {
+          "title": "两地的婚礼",
+          "text": "矿区的电工和农区的会计要结婚了，新郎家在公路这头，新娘家在那头。两边都想办，车队已经在路上拉起了彩带，司机说今天不收运费。",
+          "choices": [
+            {
+              "id": "gift",
+              "label": "公家送一份礼",
+              "ending": "两地婚礼",
+              "goods_cost": {
+                "food": 12
+              },
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.08,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "attend",
+              "label": "到场喝杯酒",
+              "ending": "喝杯喜酒"
+            }
+          ],
+          "default": "attend",
+          "deadline_days": 24
+        }
+      }
+    },
+    "road_thieves": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "road": true
+      },
+      "nodes": {
+        "start": {
+          "title": "路上的失窃",
+          "text": "连着三趟车少了货，封条完好，货少了。司机们开始结伴走，晚上不敢停车。调度员怀疑是线路中段那个废弃中转站。",
+          "choices": [
+            {
+              "id": "patrol",
+              "label": "派巡逻队",
+              "ending": "巡逻护路",
+              "pay": 130
+            },
+            {
+              "id": "slow",
+              "label": "车队编组慢慢走",
+              "ending": "编组通行",
+              "effects": [
+                {
+                  "kind": "road_capacity",
+                  "factor": 0.8,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "slow",
+          "deadline_days": 24
+        }
+      }
+    },
+    "road_opening": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 300,
+        "road": true
+      },
+      "nodes": {
+        "start": {
+          "title": "通车典礼",
+          "text": "工程队提议给新路办个仪式：第一辆车由修路时伤了腿的老陈来开。他说不用，开着他的破皮卡就来了，车斗里装满了从另一头带来的土特产。",
+          "choices": [
+            {
+              "id": "ceremony",
+              "label": "全线放假半天",
+              "ending": "通车典礼",
+              "pay": 50,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.08,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "road_capacity",
+                  "factor": 0.9,
+                  "duration_days": 5,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "plain",
+              "label": "照常通车",
+              "ending": "照常通车"
+            }
+          ],
+          "default": "plain",
+          "deadline_days": 24
+        }
+      }
+    },
+    "mine_collapse": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 2400,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "mine": true
+      },
+      "nodes": {
+        "start": {
+          "title": "三号巷道",
+          "text": "三号巷道顶板塌了一段，里面有人。矿灯还亮着，敲击声也还在。救援队说能救，但要停掉整片矿区的作业，抽走所有能动的机器。",
+          "choices": [
+            {
+              "id": "rescue",
+              "label": "全部停工救人",
+              "ending": "全员获救",
+              "pay": 180,
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.7,
+                  "duration_days": 20,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "partial",
+              "label": "保留主巷道作业，分组救援",
+              "ending": "艰难救援",
+              "pay": 100,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.85,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "rescue",
+          "deadline_days": 24
+        }
+      }
+    },
+    "gas_pocket": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1000,
+        "frontier": true,
+        "mine": true
+      },
+      "nodes": {
+        "start": {
+          "title": "瓦斯读数",
+          "text": "新巷道的瓦斯读数比昨天高了一倍。老矿工把一只本地小虫装进笼子带下去，说比仪器准。通风改造要钱，放慢掘进要时间。",
+          "choices": [
+            {
+              "id": "vent",
+              "label": "改造通风",
+              "ending": "通风改造",
+              "pay": 170,
+              "goods_cost": {
+                "parts": 5
+              }
+            },
+            {
+              "id": "slow",
+              "label": "放慢掘进",
+              "ending": "缓慢掘进",
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.8,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "slow",
+          "deadline_days": 24
+        }
+      }
+    },
+    "singing_crystal": {
+      "version": 1,
+      "type": "short",
+      "category": "discovery",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 900,
+        "building": "mine_crystal"
+      },
+      "nodes": {
+        "start": {
+          "title": "会唱歌的晶体",
+          "text": "新开的晶脉里挖出一块晶体，通电以后会发出很低的嗡鸣，隔着三道门都能听见。研究所想要它做实验，货站说这种异形晶体有收藏家高价收。",
+          "choices": [
+            {
+              "id": "study",
+              "label": "送去研究所",
+              "ending": "晶体实验",
+              "research_points": 60
+            },
+            {
+              "id": "sell",
+              "label": "卖给收藏家",
+              "ending": "高价出售",
+              "reward": 350
+            }
+          ],
+          "default": "sell",
+          "deadline_days": 24
+        }
+      }
+    },
+    "first_retiree": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1800,
+        "residential": true,
+        "population": 400
+      },
+      "nodes": {
+        "start": {
+          "title": "第一个退休的人",
+          "text": "老陈今天交了矿灯。合同上没写退休这回事，因为写合同的人没想过有人会在这里待这么久。他问，他能不能留下来，在河边种点东西。",
+          "choices": [
+            {
+              "id": "pension",
+              "label": "设立养老金和居住权",
+              "ending": "养老制度",
+              "pay": 200,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 360,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "land",
+              "label": "给他一小块地",
+              "ending": "河边小屋",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.03,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "land",
+          "deadline_days": 24
+        }
+      }
+    },
+    "founders_monument": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1500,
+        "contract_stage": 4
+      },
+      "nodes": {
+        "start": {
+          "title": "着陆点的石头",
+          "text": "有人在第一次着陆的地方立了块石头，上面刻了所有登陆者的名字，还有一个写错了。没人批准这件事，但每个周末都有人去献花。",
+          "choices": [
+            {
+              "id": "monument",
+              "label": "拨款修成纪念广场",
+              "ending": "纪念广场",
+              "pay": 260,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.1,
+                  "duration_days": 240,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": "就让它是块石头",
+              "ending": "一块石头",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.03,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "leave",
+          "deadline_days": 24
+        }
+      }
+    },
+    "filter_salesman": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "notice",
+      "critical": false,
+      "cooldown_days": 1500,
+      "weight": 2,
+      "conditions": {
+        "min_day": 1200,
+        "pollution_stage": 1
+      },
+      "nodes": {
+        "start": {
+          "title": "卖净化塔的人",
+          "text": "一位推销员提着样品来到你的办公室，样品是一小瓶灰。「这是从你们家窗台上刮的。」他把瓶子放下，然后打开了价目表。",
+          "choices": [
+            {
+              "id": "license",
+              "label": "买下技术方案",
+              "ending": "净化方案",
+              "pay": 250,
+              "research_lead": "scrubbing"
+            },
+            {
+              "id": "out",
+              "label": "请他出去",
+              "ending": "推销员离开"
+            }
+          ],
+          "default": "out",
+          "deadline_days": 24
+        }
+      }
+    },
+    "smog_season": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 720,
+      "weight": 1,
+      "conditions": {
+        "min_day": 300,
+        "trigger_only": true
+      },
+      "nodes": {
+        "start": {
+          "title": "灰色的早晨",
+          "text": "今天早上太阳没有出来，或者说出来了，但看不见。晾在外面的衣服收回来是灰的。医务室开始接到咳嗽的孩子。第一次有人问：我们是不是做得太多了？",
+          "choices": [
+            {
+              "id": "cleanup",
+              "label": "拨款治理，错峰生产",
+              "ending": "错峰治理",
+              "pay": 300,
+              "pollution": -15.0,
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.95,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "carry_on",
+              "label": "天总会晴的",
+              "ending": "灰色的日子",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.92,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "carry_on",
+          "deadline_days": 24
+        }
+      },
+      "chance": 1.0
+    },
+    "acid_rain": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 720,
+      "weight": 1,
+      "conditions": {
+        "min_day": 300,
+        "trigger_only": true
+      },
+      "nodes": {
+        "start": {
+          "title": "咬人的雨",
+          "text": "这场雨落在皮肤上有点刺痛。三天后，温室顶棚开始发白，田里的叶子卷了边。农技员把试纸举给你看，颜色深得不像话。",
+          "choices": [
+            {
+              "id": "treat",
+              "label": "石灰中和，全面治理",
+              "ending": "中和治理",
+              "pay": 600,
+              "goods_cost": {
+                "materials": 30
+              },
+              "pollution": -30.0
+            },
+            {
+              "id": "endure",
+              "label": "收成差就差点吧",
+              "ending": "酸雨之年",
+              "effects": [
+                {
+                  "kind": "farm",
+                  "factor": 0.8,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.9,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "endure",
+          "deadline_days": 24
+        }
+      },
+      "chance": 1.0
+    },
+    "dead_bay": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 720,
+      "weight": 1,
+      "conditions": {
+        "min_day": 300,
+        "trigger_only": true
+      },
+      "nodes": {
+        "start": {
+          "title": "死湾",
+          "text": "下游的海湾开始发臭。死鱼铺满了滩涂，孩子们不再去那里玩了。这件事已经上了隔壁星区的新闻，配图很难看。不用公司开口，你也知道这意味着什么。",
+          "choices": [
+            {
+              "id": "restore",
+              "label": "停产清污，不惜代价",
+              "ending": "海湾修复",
+              "pay": 1200,
+              "pollution": -60.0,
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 0.92,
+                  "duration_days": 45,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "hide",
+              "label": "把滩涂围起来",
+              "ending": "围起来的海湾",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.8,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "export_price",
+                  "factor": 0.95,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "hide",
+          "deadline_days": 24
+        }
+      },
+      "chance": 1.0
+    },
+    "silent_probe": {
+      "version": 1,
+      "type": "chain",
+      "category": "discovery",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 900,
+        "scientists": 5,
+        "research_active": true
+      },
+      "nodes": {
+        "start": {
+          "title": "轨道上的旧探测器",
+          "text": "货运站的雷达抓到一个没有登记的回波。一架不知哪个年代的探测器还绕着这颗星球转，太阳能板破了一半，却还在一分钟一次地向空无一物的地方发信号。",
+          "choices": [
+            {
+              "id": "recover",
+              "label": "派飞船把它带回来",
+              "pay": 240,
+              "next": "decoded",
+              "delay": 45
+            },
+            {
+              "id": "listen",
+              "label": "只截收它的信号",
+              "pay": 60,
+              "next": "noise",
+              "alt": "decoded",
+              "chance": 0.5,
+              "delay": 30
+            },
+            {
+              "id": "leave",
+              "label": "让它继续转",
+              "ending": "仍在轨道上"
+            }
+          ],
+          "default": "leave",
+          "deadline_days": 18
+        },
+        "decoded": {
+          "title": "八十年前的地质图",
+          "text": "存储器还能读。里面是八十年前的全球地质扫描，分辨率比公司给的那份还高。这份数据为什么从没进过档案，档案室的人也说不上来。",
+          "choices": [
+            {
+              "id": "archive",
+              "label": "公开给所有人用",
+              "ending": "地图公开",
+              "research_points": 90,
+              "reveal_hidden": true
+            },
+            {
+              "id": "sell",
+              "label": "卖给勘探公司",
+              "ending": "地图售出",
+              "reward": 800
+            }
+          ],
+          "default": "archive",
+          "deadline_days": 18
+        },
+        "noise": {
+          "title": "只有噪声",
+          "text": "截收了一个月，得到的只有噪声和一段反复出现的短码。通讯组的小姑娘坚持说那是一首歌的节奏。也许吧。",
+          "choices": [
+            {
+              "id": "note",
+              "label": "把录音放进档案",
+              "ending": "一段短码",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.03,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "note",
+          "deadline_days": 18
+        }
+      }
+    },
+    "strike": {
+      "version": 1,
+      "type": "chain",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 1100,
+        "population": 250,
+        "employment": 0.6
+      },
+      "nodes": {
+        "start": {
+          "title": "矿灯都灭了",
+          "text": "下午两点，矿区的灯一盏一盏灭了。没有人喊口号，几百人只是把矿灯摆在调度室门口，摆成一片，然后回了家。他们要谈工时、安全和那笔拖了很久的补贴。",
+          "choices": [
+            {
+              "id": "talk",
+              "label": "坐下来谈",
+              "pay": 200,
+              "next": "table",
+              "delay": 15
+            },
+            {
+              "id": "wait",
+              "label": "等他们自己回来",
+              "next": "hardened",
+              "alt": "returned",
+              "chance": 0.6,
+              "delay": 20,
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 0.8,
+                  "duration_days": 20,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "wait",
+          "deadline_days": 18
+        },
+        "table": {
+          "title": "谈判桌",
+          "text": "工程队代表是个说话很慢的女人，她带来一本记录，每一次事故都写着日期。谈了三天，她说：钱可以少一点，但安全员要由我们选。",
+          "choices": [
+            {
+              "id": "agree",
+              "label": "答应她",
+              "ending": "劳资协议",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.15,
+                  "duration_days": 360,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "mine",
+                  "factor": 1.03,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "money",
+              "label": "只给钱，人还是公司派",
+              "ending": "只谈钱",
+              "pay": 400,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.03,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "agree",
+          "deadline_days": 18
+        },
+        "hardened": {
+          "title": "僵持",
+          "text": "二十天了。食堂开始限量，孩子们不再问爸爸什么时候上班。隔壁定居点来了招工的车，就停在镇口，车门开着。",
+          "choices": [
+            {
+              "id": "concede",
+              "label": "全部答应",
+              "ending": "全部让步",
+              "pay": 500,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.05,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "hold",
+              "label": "不让步",
+              "ending": "硬扛到底",
+              "distrust": 2.0,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.8,
+                  "duration_days": 240,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "all",
+                  "factor": 0.9,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "concede",
+          "deadline_days": 18
+        },
+        "returned": {
+          "title": "灯又亮了",
+          "text": "第二十天早上，有人先拿走了自己的矿灯，然后是第二个。没有人赢，也没有人提这件事。只是食堂里，大家坐得比以前开了。",
+          "choices": [
+            {
+              "id": "gesture",
+              "label": "发一笔复工奖金",
+              "ending": "复工奖金",
+              "pay": 150,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.05,
+                  "duration_days": 90,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "nothing",
+              "label": "什么也不说",
+              "ending": "沉默复工",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.95,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "nothing",
+          "deadline_days": 18
+        }
+      }
+    },
+    "fever": {
+      "version": 1,
+      "type": "chain",
+      "category": "incident",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 1000,
+        "population": 200
+      },
+      "nodes": {
+        "start": {
+          "title": "不明发热",
+          "text": "医务室一周内接了三十多例高烧，症状不像任何一本手册上写的。第一个病人是在新开的矿洞里干活的。医生把门关上，问你要不要封锁那片区域。",
+          "choices": [
+            {
+              "id": "quarantine",
+              "label": "封锁矿洞，全镇测温",
+              "pay": 200,
+              "next": "source",
+              "delay": 20,
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.85,
+                  "duration_days": 20,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "watch",
+              "label": "先观察，别吓着大家",
+              "next": "spreading",
+              "alt": "faded",
+              "chance": 0.5,
+              "delay": 15
+            }
+          ],
+          "default": "watch",
+          "deadline_days": 18
+        },
+        "source": {
+          "title": "洞壁上的霉",
+          "text": "研究组在洞壁上找到一种本地霉菌，孢子轻得能跟着通风管走遍全镇。好消息是它怕高温，坏消息是全镇的通风管都得拆开。",
+          "choices": [
+            {
+              "id": "rebuild",
+              "label": "全面清洗通风系统",
+              "ending": "霉菌清除",
+              "pay": 350,
+              "goods_cost": {
+                "parts": 6
+              },
+              "research_points": 45
+            },
+            {
+              "id": "seal",
+              "label": "只把那个矿洞封死",
+              "ending": "封死矿洞",
+              "effects": [
+                {
+                  "kind": "mine",
+                  "factor": 0.92,
+                  "duration_days": 240,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "rebuild",
+          "deadline_days": 18
+        },
+        "spreading": {
+          "title": "长椅不够了",
+          "text": "走廊里也躺满了人。邻近据点开始拒收这边的货车。医生三天没合眼，她说：现在再封，也许还来得及。",
+          "choices": [
+            {
+              "id": "emergency",
+              "label": "请求公司紧急医疗支援",
+              "ending": "紧急支援",
+              "pay": 500,
+              "distrust": 1.5
+            },
+            {
+              "id": "endure",
+              "label": "靠自己撑过去",
+              "ending": "艰难的一个月",
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 0.75,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.8,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "endure",
+          "deadline_days": 18
+        },
+        "faded": {
+          "title": "退了",
+          "text": "病例开始减少，就像开始时一样突然。没有人知道为什么。医生把这批病历单独放进了一个柜子，贴上标签：待查。",
+          "choices": [
+            {
+              "id": "file",
+              "label": "归档，给医务室添点设备",
+              "ending": "归档待查",
+              "pay": 80
+            },
+            {
+              "id": "forget",
+              "label": "过去就过去了",
+              "ending": "悄然过去"
+            }
+          ],
+          "default": "forget",
+          "deadline_days": 18
+        }
+      }
+    },
+    "ledger_hole": {
+      "version": 1,
+      "type": "chain",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 1300,
+        "building": "port",
+        "exports": 100000
+      },
+      "nodes": {
+        "start": {
+          "title": "货站的暗账",
+          "text": "审计时发现货站有一批货走了两遍账，金额不大，但很有规律。顺藤摸瓜查到的人你认识：货站主管老何，那个第一天就帮你卸货的人。",
+          "choices": [
+            {
+              "id": "investigate",
+              "label": "悄悄查清楚",
+              "pay": 120,
+              "next": "found",
+              "delay": 20
+            },
+            {
+              "id": "confront",
+              "label": "直接找他谈",
+              "next": "confession",
+              "delay": 3
+            },
+            {
+              "id": "ignore",
+              "label": "这点钱，算了",
+              "ending": "睁一只眼",
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.97,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "ignore",
+          "deadline_days": 18
+        },
+        "found": {
+          "title": "不止他一个",
+          "text": "账查清了。老何只是最小的一环，上面连着公司派驻的一位协调员，钱最后流向了轨道站的一个空壳账户。报上去，公司会很难堪，也会记得是谁让他们难堪的。",
+          "choices": [
+            {
+              "id": "report",
+              "label": "如实上报",
+              "ending": "如实上报",
+              "reward": 600,
+              "distrust": 2.0
+            },
+            {
+              "id": "quiet",
+              "label": "私下解决，把钱追回来",
+              "ending": "私下解决",
+              "reward": 300
+            }
+          ],
+          "default": "quiet",
+          "deadline_days": 18
+        },
+        "confession": {
+          "title": "老何的解释",
+          "text": "老何没有否认。他从抽屉里拿出一沓单据：那些钱大部分进了工伤家属的账户，因为公司的抚恤金从来不够。他问你，打算怎么办。",
+          "choices": [
+            {
+              "id": "fund",
+              "label": "设一笔正式的抚恤基金",
+              "ending": "抚恤基金",
+              "pay": 300,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.12,
+                  "duration_days": 360,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "dismiss",
+              "label": "规矩就是规矩，请他走人",
+              "ending": "老何离开",
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.92,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.92,
+                  "duration_days": 120,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "fund",
+          "deadline_days": 18
+        }
+      }
+    },
+    "second_ship": {
+      "version": 1,
+      "type": "chain",
+      "category": "opportunity",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 1500,
+        "contract_stage": 3,
+        "building": "port"
+      },
+      "nodes": {
+        "start": {
+          "title": "第二艘殖民船",
+          "text": "公司来电：一艘原本去别处的殖民船需要改航，船上一百多人已经冬眠了六年。他们可以来这里，但要在两个月内准备好床位和岗位。公司会付一笔安置费。",
+          "choices": [
+            {
+              "id": "accept",
+              "label": "接下来",
+              "reward": 800,
+              "next": "landing",
+              "delay": 60
+            },
+            {
+              "id": "decline",
+              "label": "现在接不住",
+              "ending": "殖民船改航"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 18
+        },
+        "landing": {
+          "title": "苏醒的人们",
+          "text": "他们一批批走下舷梯，眯着眼睛看这里的太阳，手里还攥着六年前的行李牌。有个孩子问：这就是地球吗？没有人知道该怎么回答。",
+          "choices": [
+            {
+              "id": "all",
+              "label": "全部安置",
+              "ending": "殖民船抵达",
+              "beds": 40,
+              "admit_workers": 34,
+              "admit_scientists": 6,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.95,
+                  "duration_days": 60,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "half",
+              "label": "只能接收一半",
+              "ending": "半船人",
+              "beds": 20,
+              "admit_workers": 18,
+              "admit_scientists": 2,
+              "distrust": 1.0
+            }
+          ],
+          "default": "half",
+          "deadline_days": 18
+        }
+      }
+    },
+    "capital_debate": {
+      "version": 1,
+      "type": "chain",
+      "category": "dilemma",
+      "kind": "decision",
+      "critical": true,
+      "cooldown_days": 99999,
+      "weight": 3,
+      "conditions": {
+        "min_day": 1800,
+        "contract_stage": 4,
+        "settlements": 3
+      },
+      "nodes": {
+        "start": {
+          "title": "谁才是首府",
+          "text": "第二座城的议事会发来一封措辞礼貌的长信：既然要申请总督资格，为什么首府一定要在矿坑旁边？他们附上了一张漂亮的规划图。首府这边的人听说后，当场把信念了出来，语气不太礼貌。",
+          "choices": [
+            {
+              "id": "hold",
+              "label": "首府就是首府，但给他们一笔发展资金",
+              "ending": "维持现状",
+              "pay": 400,
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 1.03,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "share",
+              "label": "把一部分公司事务分过去",
+              "next": "shared",
+              "delay": 30
+            },
+            {
+              "id": "ignore",
+              "label": "不回信",
+              "ending": "不予回复",
+              "effects": [
+                {
+                  "kind": "appeal",
+                  "factor": 0.93,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "ignore",
+          "deadline_days": 18
+        },
+        "shared": {
+          "title": "分权之后",
+          "text": "几个部门搬了过去，两边的人都不太满意，这大概说明事情办得还算公平。公路上的车比以前多了。",
+          "choices": [
+            {
+              "id": "celebrate",
+              "label": "修一条更好的路庆祝",
+              "ending": "两城之路",
+              "pay": 300,
+              "effects": [
+                {
+                  "kind": "road_capacity",
+                  "factor": 1.15,
+                  "duration_days": 360,
+                  "maintenance": 0.0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 1.06,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            },
+            {
+              "id": "done",
+              "label": "就这样吧",
+              "ending": "两城并立",
+              "effects": [
+                {
+                  "kind": "road_capacity",
+                  "factor": 1.05,
+                  "duration_days": 180,
+                  "maintenance": 0.0
+                }
+              ]
+            }
+          ],
+          "default": "done",
+          "deadline_days": 18
         }
       }
     }

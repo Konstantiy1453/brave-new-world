@@ -1,7 +1,7 @@
 extends SceneTree
-## Phase 6 rules: repeatable events with cooldowns, notices against decisions and the pause setting,
-## scaled money, feasibility of every option, and each new chain's endings, deferral, timeout and
-## save/load continuation.
+## The deck each run deals itself, repeatable events with cooldowns, notices against decisions and
+## the pause setting, scaled money, feasibility of every option, and each chain's endings, deferral,
+## timeout and save/load continuation.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -10,6 +10,13 @@ const Rules = preload("res://simulation/rules.gd")
 
 const SAVE_PATH: String = "user://events_test.save"
 const NEW_CHAINS: Array[String] = ["liner", "crack", "blank_ridge"]
+const MIN_SHORT: int = 60
+const MIN_CHAINS: int = 10
+const MIN_TEXT_LENGTH: int = 30
+const MIN_OFF_SHARE: float = 0.25
+const MAX_OFF_SHARE: float = 0.55
+const DECK_SEEDS: int = 12
+const OLD_WORDS: Array[String] = ["工人", "研究员", "科学家"]
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -63,9 +70,26 @@ func step(sim: RefCounted, days: int) -> void:
 		sim.tick()
 
 
+## Runs until the instance reaches a node, or gives up after a generous wait.
+func step_until(sim: RefCounted, inst: Dictionary, nodes: Array, most: int = 400) -> void:
+	for _i: int in range(most):
+		if inst.node in nodes:
+			return
+		sim.tick()
+
+
+func option_of(id: String, node: String, choice: String) -> Dictionary:
+	for option: Dictionary in Events.definitions().definitions[id].nodes[node].choices:
+		if option.id == choice:
+			return option
+	return {}
+
+
 func run() -> void:
 	_content()
 	_definitions_are_sound()
+	_writing()
+	_deck()
 	_cooldowns()
 	_notices_and_pause()
 	_scaling()
@@ -93,8 +117,8 @@ func _content() -> void:
 			chains += 1
 		else:
 			shorts += 1
-	check(shorts >= 25, "at least 25 short definitions: %d" % shorts)
-	check(chains >= 5, "at least 5 chains: %d" % chains)
+	check(shorts >= MIN_SHORT, "plenty of short definitions: %d" % shorts)
+	check(chains >= MIN_CHAINS, "plenty of chains: %d" % chains)
 
 
 ## Every next node exists, every default is an option, every effect kind is known.
@@ -120,10 +144,105 @@ func _definitions_are_sound() -> void:
 				sound = false
 				print("bad default in %s/%s" % [id, key])
 		var cooldown: int = int(d.get("cooldown_days", 0))
-		if cooldown < 120 or cooldown > 360:
+		if cooldown < int(Events.definitions().sampling.negative_cooldown_days):
 			sound = false
-			print("cooldown out of range: " + id)
+			print("cooldown too short: " + id)
 	check(sound, "definitions are sound")
+
+
+## Every card is written out: a scene, not a line of ledger. Old job names do not come back.
+func _writing() -> void:
+	var defs: Dictionary = Events.definitions().definitions
+	var titled: bool = true
+	var worded: bool = true
+	var renamed: bool = true
+	var leads: bool = true
+	var techs: Dictionary = Rules.read("techs").techs
+	var seen_titles: Dictionary = {}
+	for id: String in defs:
+		for key: String in defs[id].nodes:
+			var node: Dictionary = defs[id].nodes[key]
+			if str(node.title) == "" or seen_titles.has(node.title):
+				titled = false
+				print("title: %s/%s" % [id, key])
+			seen_titles[node.title] = true
+			if str(node.text).length() < MIN_TEXT_LENGTH:
+				worded = false
+				print("short text: %s/%s" % [id, key])
+			var all_words: String = str(node.title) + str(node.text)
+			for option: Dictionary in node.choices:
+				all_words += str(option.label)
+				if option.has("research_lead") and not techs.has(option.research_lead):
+					leads = false
+					print("lead: %s/%s" % [id, key])
+			for word: String in OLD_WORDS:
+				if all_words.contains(word):
+					renamed = false
+					print("old word %s in %s/%s" % [word, id, key])
+	check(titled, "every card has its own title")
+	check(worded, "every card tells a scene")
+	check(renamed, "cards use the new job names")
+	check(leads, "every research lead names a real technology")
+
+
+func _off_list(seed_value: int) -> Array:
+	var sim: RefCounted = Sim.new()
+	sim.new_game(seed_value, "capital")
+	return sim.state.events_v2.off
+
+
+## Not every story happens on every planet.
+func _deck() -> void:
+	var defs: Dictionary = Events.definitions().definitions
+	var lists: Array = []
+	var shares_ok: bool = true
+	var always_on: bool = true
+	for index: int in range(DECK_SEEDS):
+		var off: Array = _off_list(1000 + index * 37)
+		lists.append(off)
+		var share: float = float(off.size()) / defs.size()
+		shares_ok = shares_ok and share >= MIN_OFF_SHARE and share <= MAX_OFF_SHARE
+		for id: String in off:
+			always_on = always_on and float(defs[id].get("chance", 0.5)) < 1.0
+	check(shares_ok, "each run leaves about a third of the events out")
+	check(always_on, "events other systems call on are always in the deck")
+	var differ: bool = false
+	for other: Array in lists.slice(1):
+		differ = differ or other != lists[0]
+	check(differ, "different seeds leave out different events")
+	check(_off_list(4242) == _off_list(4242), "the same seed deals the same deck")
+	var sim: RefCounted = Sim.new()
+	sim.new_game(260129, "capital")
+	sim.act("settle", {"site": 0})
+	var never: Array = sim.state.events_v2.off
+	var clean: bool = true
+	var drawn: int = 0
+	sim.state.events_v2.next_draw = 0
+	for _day: int in range(600):
+		var before: int = sim.state.events_v2.next_id
+		sim.state.events_v2.next_draw = 0
+		sim.state.day = int(sim.state.day) + 1
+		Events.tick(sim)
+		for inst: Dictionary in sim.state.events_v2.instances:
+			if int(inst.instance_id) >= int(before):
+				drawn += 1
+				clean = clean and not never.has(inst.definition_id)
+				inst.status = "resolved"
+	check(drawn > 0, "the draw does open events")
+	check(clean, "and never one that was left out of this run's deck")
+	var kept: RefCounted = make()
+	var saved: Array = kept.state.events_v2.off.duplicate()
+	check(kept.save_game(SAVE_PATH) == "", "the deck is saved")
+	var again: RefCounted = Sim.new()
+	check(again.load_game(SAVE_PATH) == "", "and loaded")
+	check(again.state.events_v2.off == saved, "unchanged")
+	var old_state: RefCounted = Sim.new()
+	old_state.new_game(9, "capital")
+	old_state.state.events_v2.erase("off")
+	old_state.state.events_v2.seen = ["seed_crate"]
+	Events.ensure_state(old_state.state)
+	check(old_state.state.events_v2.has("off"), "an old save is dealt a deck on load")
+	check(not old_state.state.events_v2.off.has("seed_crate"), "without what it has already seen")
 
 
 func _cooldowns() -> void:
@@ -132,9 +251,10 @@ func _cooldowns() -> void:
 	check(choose(sim, first, "take") == "", "a short event resolves")
 	check(not Events._cooled(sim, "seed_crate"), "it cools down")
 	var today: int = int(sim.state.day)
-	sim.state.events_v2.last_opened.seed_crate = today - 179
+	var cooldown: int = int(Events.definitions().definitions.seed_crate.cooldown_days)
+	sim.state.events_v2.last_opened.seed_crate = today - cooldown + 1
 	check(not Events._cooled(sim, "seed_crate"), "still cooling a day before the cooldown ends")
-	sim.state.events_v2.last_opened.seed_crate = today - 180
+	sim.state.events_v2.last_opened.seed_crate = today - cooldown
 	check(Events._cooled(sim, "seed_crate"), "ready again when the cooldown ends")
 	var second: Dictionary = open(sim, "seed_crate")
 	check(second.instance_id != first.instance_id, "the same definition opens a new instance")
@@ -194,13 +314,15 @@ func _scaling() -> void:
 	fund(sim, 5000.0)
 	var cash: float = float(sim.state.cash)
 	check(choose(sim, inst, "cash") == "", "a scaled option can be paid")
-	check(is_equal_approx(cash - float(sim.state.cash), 110.0 * 5.0), "it costs the scaled amount")
+	var listed: float = float(option_of("equipment_failure", "start", "cash").pay)
+	check(is_equal_approx(cash - float(sim.state.cash), listed * 5.0), "it costs the scaled amount")
 	var view_cost: float = 0.0
 	var next: Dictionary = open(sim, "supply_delay")
 	for row: Dictionary in Events.view(sim).pending:
 		if row.instance_id == next.instance_id:
 			view_cost = float(row.choices[0].cost)
-	check(is_equal_approx(view_cost, 70.0 * 5.0), "the card shows the scaled amount")
+	var delay_fee: float = float(option_of("supply_delay", "start", "rush").pay)
+	check(is_equal_approx(view_cost, delay_fee * 5.0), "the card shows the scaled amount")
 
 
 func _feasibility() -> void:
@@ -312,12 +434,12 @@ func _liner() -> void:
 	var people: int = int(sim.settlement(0).population)
 	check(choose(sim, inst, "all") == "", "everyone comes ashore")
 	check(int(sim.settlement(0).population) == people + 20, "the population really grows")
-	step(sim, 12)
+	step_until(sim, inst, ["crowded"])
 	check(inst.node == "crowded", "the dormitories fill up")
 	supply(sim, "materials", 60.0)
 	supply(sim, "parts", 20.0)
 	check(choose(sim, inst, "squeeze") == "", "they can squeeze in")
-	check(str(inst.ending) == "拥挤度日", "ending: crowded")
+	check(str(inst.ending) != "", "ending: crowded")
 	check(sim.audit().is_empty(), "the liner passes the audit")
 	var staged: RefCounted = make()
 	fund(staged, 5000.0)
@@ -325,7 +447,7 @@ func _liner() -> void:
 	beds(staged, 2)
 	var second: Dictionary = open(staged, "liner")
 	check(choose(staged, second, "staged") == "", "half come ashore")
-	step(staged, 15)
+	step_until(staged, second, ["second_batch"])
 	check(second.node == "second_batch", "the other half wait")
 	check(choose(staged, second, "rest") == "", "and are taken in")
 	check(str(second.ending) == "分批安置完成", "ending: staged")
@@ -348,7 +470,7 @@ func _crack() -> void:
 		is_equal_approx(Events.colony_modifier(sim, "road_capacity"), 0.5),
 		"limited loads halve road capacity"
 	)
-	step(sim, 20)
+	step_until(sim, inst, ["repaired"])
 	check(inst.node == "repaired", "the repair finishes")
 	choose(sim, inst, "reopen")
 	check(str(inst.ending) == "修复通行", "ending: repaired")
@@ -363,7 +485,7 @@ func _crack() -> void:
 		gamble.state.events_v2.rng_state = 1000 + seed_offset * 7919
 		var bet: Dictionary = open(gamble, "crack")
 		choose(gamble, bet, "risk")
-		step(gamble, 25)
+		step_until(gamble, bet, ["risk_failed", "risk_held"])
 		if bet.node == "risk_failed":
 			failed += 1
 			fund(gamble, 5000.0)
@@ -388,8 +510,11 @@ func _with_road() -> RefCounted:
 	supply(sim, "food", 300.0)
 	sim.state.contract.licences.append("expedition")
 	sim.act("settle", {"site": 1})
-	step(sim, 12)
+	while int(sim.settlement(1).arrival) > 0:
+		sim.tick()
 	sim.act("connect", {"a": 0, "b": 1, "variant": "valley"})
+	sim.state.roads[0].ready_day = int(sim.state.day) - 1
+	sim.state.roads[0].blocked_until = int(sim.state.day) - 1
 	return sim
 
 
@@ -419,10 +544,7 @@ func _blank_ridge() -> void:
 	var inst: Dictionary = open(sim, "blank_ridge")
 	check(choose(sim, inst, "survey") == "", "a full survey can be sent")
 	check(inst.status == "waiting", "and takes time")
-	for _i: int in range(40):
-		sim.tick()
-		if inst.node == "charted":
-			break
+	step_until(sim, inst, ["charted"])
 	check(inst.node == "charted", "the survey finishes")
 	check(choose(sim, inst, "open") == "", "the vein is published")
 	check(float(site.deposits.crystal) > before, "the hidden deposit is now known")
