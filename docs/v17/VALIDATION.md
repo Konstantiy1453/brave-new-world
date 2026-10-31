@@ -267,20 +267,20 @@ Hardware as above. Evidence labels as above.
 | A 1.7.0 save (CC-GEO-2.0) loads, keeps its names, plays and saves again, even after 2.1 worlds of the same seed | automated test `v17_saves` | PASS |
 | Naming: dialog, cancel, Enter, odd text, limit, blank, rename, save and load, map and lists | automated test `v17_tutorial` | PASS |
 | Building list, seed box, tutorial lock, menu's planet preview matches the planet | automated test `v17_tutorial` | PASS |
-| New pages at 3 resolutions × 2 text sizes, 144 images | source-project window; screenshot viewed (about 20) | Problems below fixed |
-| Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons | PASS, log has no errors |
+| Every page at 3 resolutions × 2 text sizes, 144 images | source-project window; screenshot viewed (32: every page at 1280×720 with 20 px text, 8 at larger sizes; plus the menu with the tutorial off) | Problems below fixed |
+| Tutorial through stage 1, save, relaunch, continue, stage 2, 1.6 save | exported EXE, scripted through real buttons | PASS, 17 and 10 steps, logs have no errors |
 | Performance | exported EXE (`evidence/v17/perf`) | as in the table below |
 | Human playtests, manual EXE tutorial | NOT_RUN | The user tried 1.7.0 and reported what led to this version; 1.7.1 has not been played by a person |
 
 | Measure, day-720 save | First run, empty caches | Second run | Target |
 |---|---|---|---|
 | Save size | 47,219 bytes | same | 1.5 MB |
-| Save, median of 20 (worst) | 9.7 ms (10.9) | 9.6 ms (14.1) | 100 ms |
-| Load, median of 20 (worst) | 19.5 ms (23.7) | 18.0 ms (19.2) | 300 ms |
-| Worst frame during autosave | 33.7 ms | 17.7 ms | 50 ms |
-| Page open, warm, worst | 17.6 ms | 17.5 ms | 100 ms |
-| Region, cold, 8 sites: median (worst) | 767 ms (826) | 766 ms (799) | 1.0 s |
-| Worst frame during a cold region load | 43.4 ms | 42.8 ms | 50 ms |
+| Save, median of 20 (worst) | 10.0 ms (14.2) | 9.9 ms (10.9) | 100 ms |
+| Load, median of 20 (worst) | 19.6 ms (20.8) | 19.4 ms (20.4) | 300 ms |
+| Worst frame during autosave | 20.1 ms | 17.6 ms | 50 ms |
+| Page open, warm, worst | 17.8 ms | 17.4 ms | 100 ms |
+| Region, cold, 8 sites: median (worst) | 766 ms (826) | 767 ms (802) | 1.0 s |
+| Worst frame during a cold region load | 42.9 ms | 44.9 ms | 50 ms |
 
 Problems found and fixed on the way: new games ignored the seed with the tutorial on, and the seed box defaulted to the tutorial's seed; the route cache mixed the two generators; site numbers did not match ids after the validator reordered sites; the balanced bot's new mines undid the non-mining goal; the menu overflowed at the largest text; the site chooser cut off the terrain; an island's card showed a heading with no routes under it.
 

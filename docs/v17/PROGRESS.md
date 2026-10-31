@@ -39,10 +39,10 @@
 | Determinism | byte-identical at 720 days and at any speed | replays identical | replays identical; 1×, 4×, 10× identical | PASS |
 | Audits | 0 errors, with 50 fuzz runs | 0 in 950 | 0 in 950 | PASS |
 | Save size | 1.5 MB at most | 8-11 MB | 47 KB at day 720 | PASS |
-| Save, load | 100 ms, 300 ms at most | 209 ms, 242 ms | 10 ms, 19 ms | PASS |
-| Autosave | no frame over 50 ms | not measured | worst frame 34 ms | PASS |
+| Save, load | 100 ms, 300 ms at most | 209 ms, 242 ms | 10 ms, 20 ms | PASS |
+| Autosave | no frame over 50 ms | not measured | worst frame 20 ms | PASS |
 | Page open, warm | 100 ms at most | not measured | 18 ms at most | PASS |
-| Region, cold | 1.0 s, no frame over 50 ms | not measured | median 767 ms, worst 826 ms; worst frame 43 ms | PASS |
+| Region, cold | 1.0 s, no frame over 50 ms | not measured | median 766 ms, worst 826 ms; worst frame 45 ms | PASS |
 | Tutorial | headless run, skip, replay | none | all pass | PASS |
 | Tutorial, human first run | - | - | NOT_RUN | NOT_RUN |
 
@@ -56,7 +56,7 @@
 4. **Generating a world** takes about 0.7 s and up to 3.6 s on the hardest seeds, now that difficult planets may need more attempts. Every new game pays this once. A load pays it only if the cache folder was deleted, and then it is above the 300 ms target; the game keeps that folder.
 5. **Planet types.** A draw that gives no playable world softens, so archipelagos and arid planets turn up less often than their weights say, and on 32 of 200 seeds the planet is milder than the menu's forecast. The menu therefore says 多半是, and the toast at the start and the world page show the real type. `v17_world_stats` keeps every type present and fails if fewer than 75% of seeds keep their draw.
 6. **NOT_RUN:** human playtests, and a manual tutorial run in the EXE. The EXE run was scripted through its real buttons. `docs/v17/PLAYTEST.md` has a 30-45 minute checklist.
-7. Of the capture images, about 80 were viewed; the rest were only checked to exist at the right size.
+7. Of the final 144 capture images, 32 were viewed: every page at 1280×720 with 20 px text, the tightest case, and 8 at larger sizes. The rest were written without errors but not looked at.
 
 ### Next three improvements
 

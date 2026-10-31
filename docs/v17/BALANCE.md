@@ -120,10 +120,10 @@ Run: **v1.7.1** · 2026-10-31T17-13-30 · 562 s wall clock. Source: balance harn
 | Determinism | byte-identical at 720 days and at any speed | replays identical | replays identical; 1×, 4×, 10× identical | PASS |
 | Audits | 0 errors, with 50 fuzz runs | 0 in 950 | 0 in 950 | PASS |
 | Save size | 1.5 MB at most | 8-11 MB | 47 KB at day 720 | PASS |
-| Save, load | 100 ms, 300 ms at most | 209 ms, 242 ms | 10 ms, 19 ms | PASS |
-| Autosave | no frame over 50 ms | not measured | worst frame 34 ms | PASS |
+| Save, load | 100 ms, 300 ms at most | 209 ms, 242 ms | 10 ms, 20 ms | PASS |
+| Autosave | no frame over 50 ms | not measured | worst frame 20 ms | PASS |
 | Page open, warm | 100 ms at most | not measured | 18 ms at most | PASS |
-| Region, cold | 1.0 s, no frame over 50 ms | not measured | median 767 ms, worst 826 ms; worst frame 43 ms | PASS |
+| Region, cold | 1.0 s, no frame over 50 ms | not measured | median 766 ms, worst 826 ms; worst frame 45 ms | PASS |
 | Tutorial | headless run, skip, replay | none | all pass | PASS |
 | Tutorial, human first run | - | - | NOT_RUN | NOT_RUN |
 
@@ -152,12 +152,18 @@ All three appeared with the slower builds of 1.7.1. 1.7.0 passed them and missed
 
 ### What moved the numbers in 1.7.1
 
-| Change | Effect |
-|---|---|
-| Build times about doubled | award on standard 167 → 174-184 in quick runs, before retuning |
-| Base immigration 7 → 7.5 a month | a few days back |
-| Goal-related buildings at 8-10 days, not 10-12 (lab, port, processor, foodworks, clinic) | a few days back |
-| Science opening ¥4,800 → ¥5,300 | openings within 11% |
-| Paid research ¥40 → ¥50 a point | research-first 184 → 181 |
-| Easy starts with 1.4× cash; streak and processing goals scale with difficulty | easy 157 → 156 |
-| Bots keep a margin over the non-mining goal, build processors at any mining town | no more new mines undoing the goal |
+The changes: build times about doubled, with the buildings the goals run through (lab, port, processor, foodworks, clinic) at 8-10 days; base immigration 7 → 7.5 a month (in by pace2); science opening ¥4,800 → ¥5,300; easy starts with 1.4× cash, not 1.25×, and streak and processing goals scale with difficulty (in by pace6); paid research ¥40 → ¥50 a point (pace7); the bots keep a margin over the non-mining goal and build processors at any mining town. A market trial went in at pace5 and pace7 and came out again, because it made the export worst case worse.
+
+| Run | Mode | Standard | Easy | Hard | Research-first | Worst export share |
+|---|---|---|---|---|---|---|
+| 1.7.0 | full | 167 | 143 | 194 | 172 | 51% |
+| pace1 | quick | 174 | - | - | 194 | 62% |
+| pace2 | quick | 179 | - | - | 186 | 44% |
+| pace3 | quick | 184 | - | - | 187 | 56% |
+| pace4 | full | 174 | 157 | 205 | 182 | 64% |
+| pace5 | full | 171 | 157 | 207 | 182 | 79% |
+| pace6 | full | 173 | 157 | 211 | 184 | 65% |
+| pace7 | full | 173 | 155 | 211 | 182 | 75% |
+| v1.7.1 | full | 173 | 156 | 211 | 181 | 65% |
+
+Quick runs play standard only, 15 runs, so they do not compare directly with full ones. Each run changed several things, so no single number here belongs to a single change.
