@@ -1,0 +1,2 @@
+c7d6f93d5346bcd1d178ce8d98daea07ed5beef891b91a28be7971010960ce03  01_Code_Gameplay_1.8.0_20261106.zip
+894c1b547c4db2e5f9ab47faa8e460e9b4cc96ff9a0a67b98d95df60a42da1fd  02_Model_Integration_20Assets_20261106.zip

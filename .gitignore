@@ -20,3 +20,6 @@ art_reserve/
 *.bak
 *.tmp
 __pycache__/
+
+# Local handoff archives and restore/portable probes
+/handoff/

@@ -1,80 +1,95 @@
-# 殖民契约 · COLONY CHARTER 1.8.0
+# 勇敢新世界 · Colony Charter
 
-单机殖民经营游戏。你是公司的殖民外包专员：选址、开矿、养活大家，把几处据点连成一个能自负盈亏的社会，赢得总督资格，再去下一颗星球。离线、免费、无内购。
+单颗行星殖民经营游戏，当前可玩原型 **1.8.0**，使用 Godot **4.5.1** / GDScript / GL Compatibility，面向 Windows x64。项目按离线单机、免费、无内购的方向开发。
 
-Godot 4.5.1，GL Compatibility，Windows x64。
+本仓库提供可继续编辑的源码、玩法配置、测试与指定历史输入。完整离线工具、可运行版和 20 项模型资产通过 **[Releases](https://github.com/Konstantiy1453/brave-new-world/releases)** 提供。游戏基线为 `af752d255c49bff477a5e884237d99f887cfad0c`，交接资料日期为 **2026-11-06**。
 
-## 开始
+## 从 Git clone 开始开发
 
-解压 `ColonyCharter-1.8.0-Windows-x64.zip`，把 `ColonyCharter.exe` 和 `ColonyCharter.pck` 放在同一个文件夹，双击 EXE。
-
-第一次玩请保持主菜单的「新手引导：开」。引导用一颗专用星球，共 14 步，可以随时结束，也可以在「保存与设置」里重新开始。想自己选种子、大小、难度和开局，先把引导关掉，或者点「换个种子」。
-
-## 操作
-
-| 操作 | 按键 |
-|---|---|
-| 旋转星球或地区 | 按住右键拖动 |
-| 缩放 | 滚轮 |
-| 平移地区或平铺地图 | 按住中键拖动（平铺地图也可用右键） |
-| 选择地点 | 左键点击标记，或用右侧下拉框 |
-| 暂停 / 继续 | 空格 |
-| 手动存档 | Ctrl+S |
-| 截图 | F12 |
-| 关闭面板 | Esc |
-
-## 核心规则
-
-- **合同分五个阶段，一局 6 到 8 年。** 立足（出口、食品、研究）、分工（第二据点、本地粮食、加工）、网络（边疆据点、人口、技术）、自立（就业、住房、民营企业、非矿业收入）、首府（一座大城市和行星议会大厦）。每阶段有奖励和新据点许可。错过期限不会立刻结束游戏，但公司的不信任会上升。
-- **公司的流程。** 不信任累积后依次是关注、审查、有条件介入、接管。地图旁边的表显示现在的水平和每天的变化，点它能看到每一条原因和期限，解决原因就会回落。
-- **三个账户。** 公共、居民、企业分开记账。建设和融资不算经营；工资和消费是账户间转账。顶部的表是全殖民地的家底：总量，后面是每月变化。电和水不能储存，显示的是供给和盈余。
-- **每颗星球都不一样，而且有真实的大小。** 半径是地球的 0.6、1.0、1.3 倍，距离按球面实算。种子决定陆地布局、气候和地势，主菜单会预告它多半是什么星球。候选地点只有编号，建立据点时由你起名。
-- **两种据点。** 居住据点让人安家，有住宅、学校、研究所；边疆据点便宜、产量高，专门挖矿种地，但人们不会在那里定居。建筑分属不同的据点类型。靠海的地点也能开航线，海岛和大陆一样可以开局。
-- **矿会挖完，地会用完。** 地块有品位和储量，轨道数据只是估算，勘察后才准。出口越多价格越低，别只卖一种。废矿拆掉后地块能再用。
-- **人是有原因地来和走。** 吸引力列出每一项原因。床位满了没人来，失业的人多了新移民也不来。工资影响吸引力，招募来得最快但越招越贵。一条路只能养活不到两百人，大一点的据点要有货运站或自己的粮食。
-- **一切都要时间。** 普通建筑 12 到 35 天，高级建筑 45 到 120 天，巨型工程 200 到 300 天，路要修 3 到 10 个月。选中据点时左边一栏能看到每项工程的完工日期和进度。
-- **研究是挑课题。** 工业、农业、建设、社会四个方向，每个方向随机给出几张课题，挑一张，派研究团队。5 支团队的速度只有 10 支的 60%。候选不合意可以花钱重新调研。标着「总督资格必需」的课题不会被洗掉。
-- **污染后发制人。** 前几年几乎看不出，后期按指数恶化：减产、赶人、闹出事来。它不算公司的不信任，但净化塔、清洁技术和出资治理都得提前想好。
-- **路各有利弊。** 河谷公路便宜但绕远，工程公路直接但养护贵，还可能落石封路。封路时货物原地等待，不会丢。
-- **事件不是每局都一样。** 每局大约三分之一的事件不会出现，大多数不会让游戏暂停。
-- **总督之后。** 可以继续经营，或把星球交给代管，分红进入生涯资金，再选种子、大小、开局和难度去下一颗星球。
-
-遇到问题先看右侧红字，旁边的「处理」按钮会带你去解决。「行动指南」有更短的说明。
-
-## 存档
-
-存档在 `%APPDATA%\ColonyCharter\v18`：手动档 `manual.save`、自动档 `autosave.save`（每 10 个游戏日）。写入失败不会破坏旧档，还有 `.bak` 备份。
-
-1.7 的存档还在 `%APPDATA%\ColonyCharter\v17`，可以继续读，保留原来的星球和地名，原文件不会被改动。1.6 和 1.5 的存档也可以读：主菜单在没有新存档时会用「继续」读最新的旧档，或到「保存与设置」选择。旧存档继续玩时用新规则，所以合同变长了，节奏也会变。
-
-## 回到旧版本
-
-1.7.1 的代码在 git 标签 `v1.7.1`，1.6 的程序在 `build\v16\`，发行包在 `delivery\`，代码在 git 标签 `v1.6.0`。旧版本的存档 1.8 不会改动。新版本的存档旧版本读不了。
-
-## 已知限制
-
-- **还没有真人试玩过。** 数值是用自动机器人调的，不代表真人的感受。试玩清单是压缩包里的 `PLAYTEST.md`。
-- 机器人在标准难度下约一成的局拿不到总督资格，通常不是缺钱，而是某一项目标迟迟够不上。真人可能遇到，也可能遇不到。
-- 两项指标超标：资本储备开局比科研合作开局慢约 20%（目标 15% 内），研究优先打法在三种开局下都最快。「便宜的路更慢」的比例是 90%，星球变成真实大小之后这一项已经不太适用。详情在源码包的 `docs/v17/BALANCE.md`。
-- 后期钱会花不完：一年后手里常有几十万，巨型工程和升级还不够花。
-- 新增的 39 种建筑暂时借用已有建筑的模型和图标。
-- 引擎偶尔崩溃：开发期间几百次进程运行里出现过 3 次异常（其中一次是引擎崩溃），都没能复现，也没找到原因。自动存档每 10 个游戏日一次，最多丢这么多进度。
-- 只支持 Windows x64。没有多人模式，也不模拟单个居民。
-- 旧存档保留旧地图，没有新地图的河流和气候细节。
-
-## 源码
-
-工程在 `game/`，入口 `game/project.godot`。规则数值在 `game/data/v17/*.json`，模拟在 `game/simulation/`，界面在 `game/ui/`，地图在 `game/world/`。
+安装 Git、Git LFS，以及用于部分打包/校验工具的 Python 3。在仓库页面复制 Clone URL，然后运行：
 
 ```powershell
-# 全部测试（每个套件独立进程）
-powershell -ExecutionPolicy Bypass -File tools\run_tests.ps1
-# 平衡测试（--quick 约 2 分钟，--full 约 10 分钟）
-$env:APPDATA = 'D:\勇敢新世界\evidence\v17\userdata_tests'
-& tools\godot-4.5.1\Godot_v4.5.1-stable_win64_console.exe --headless --path game --script res://tests/balance/run_balance.gd -- --quick --label=note
-# 打包（在没有改过 APPDATA 的窗口运行）
-powershell -ExecutionPolicy Bypass -File tools\build_v17.ps1
-python tools\package_v17.py
+git lfs install
+git clone https://github.com/Konstantiy1453/brave-new-world.git ColonyCharter
+cd ColonyCharter
+git lfs pull
+git lfs fsck
 ```
 
-设计说明、平衡结果和验证记录在 `docs/v17/`，更新内容在 `CHANGELOG.md`。
+字体、PNG 和 `acceptance_*.json` 使用 LFS。正常 clone 后，它们应是实际资源文件。完整恢复需要 Git 内容与 LFS 实体都下载成功。
+
+从 [Release Assets](https://github.com/Konstantiy1453/brave-new-world/releases) 下载 `01_Code_Gameplay_1.8.0_20261106.zip` 并解压。将包内以下目录复制到 clone 根目录的对应位置：
+
+| 主包解压目录内的来源 | clone 根目录内的目标 | 用途 |
+|---|---|---|
+| `project/tools/godot-4.5.1/` | `tools/godot-4.5.1/` | Godot 编辑器和控制台启动器 |
+| `project/build/godot_home/` | `build/godot_home/` | Windows x64 导出模板 |
+
+运行 `tools/godot-4.5.1/Godot_v4.5.1-stable_win64.exe`，导入 **`game/project.godot`**，等待资源导入完成后按 **F5** 运行。也可在仓库根目录启动编辑器：
+
+```powershell
+& .\tools\godot-4.5.1\Godot_v4.5.1-stable_win64.exe --editor --path .\game
+```
+
+**clone 的根目录就是工程仓库根；ZIP 中的工程则位于 `project/`。** 只按上表补入工具和模板，避免用整个 `project/` 覆盖正在开发的 clone。完整目录映射见 [交接资料入口](docs/handoff/20261106/README.md)。
+
+## 测试与 Windows 构建
+
+在 clone 根目录的新 PowerShell 窗口执行以下选定回归：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/run_tests.ps1 -Only v17_bugs,v17_saves,v18_systems,ui_contract
+```
+
+测试脚本会在本仓库 `evidence/v17/` 下创建隔离用户目录和日志。四套测试之外，默认全套中七个旧审查辅助脚本仍写死原 D 盘输出路径；跨目录工作时先修复对应辅助脚本，再安排默认全套。详细范围见 [原交接说明](docs/handoff/20261106/START_HERE.md)。
+
+构建前确认上表的模板目录已经复制完整，然后另开一个 PowerShell 窗口运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/build_v17.ps1
+```
+
+输出为 `build/v17/ColonyCharter.exe` 与 `ColonyCharter.pck`，两者运行时保持同目录。脚本名保留 v17，实际构建当前 **1.8.0** 工程。模板位于 `build/godot_home/Godot/export_templates/4.5.1.stable/`。从 Python 启动 Windows PowerShell 5.1 时，模块环境要求见交接验证记录中的首次失败与 r2 处理。
+
+## 源码与接手入口
+
+| 路径 | 内容 |
+|---|---|
+| `game/simulation/` | 模拟规则、经营系统、保存与迁移 |
+| `game/ui/`、`game/world/` | 页面、地图和当前程序化建筑 |
+| `game/data/v17/` | 当前玩法配置与验收存档 |
+| `game/tests/`、`tools/` | 测试、导出与打包脚本 |
+| `docs/v17/` | 当前规则、设计、进度和验收记录 |
+| `docs/reviews/2026-11-02-content-readiness-audit.md` | 内容与接手优先级审查 |
+| `docs/superpowers/plans/` | 后续 v18/v19 玩法和模型接入计划 |
+| `docs/handoff/20261106/` | 原交接说明、资产状态、清单与来源证据 |
+
+开发测试还使用仓库中的 `saves/ui_day50.json`、`evidence/v16/world_seed_red.json`、`evidence/v1_4/acceptance_midgame.json`、`versions/v1_5_before_v1_6_20261030_125059/game/world/map_view.gd`。它们是明确纳入的历史输入，需保留路径。其他运行输出继续由 `.gitignore` 排除。
+
+原根目录说明保存在 [HISTORICAL_README_1.8.md](docs/HISTORICAL_README_1.8.md)，其中旧版本路径按历史语境阅读。后续 v18/v19 文档是开发计划，当前运行版本仍为 1.8.0。
+
+## 下载完整交接包与模型
+
+| Release 附件 | 内容 |
+|---|---|
+| `01_Code_Gameplay_1.8.0_20261106.zip` | 完整开发快照、Godot、Windows 模板、可玩发行版、证据、Git bundle 与离线 LFS 对象 |
+| `02_Model_Integration_20Assets_20261106.zip` | 20 项 MAX/FBX 资产、实际依赖贴图、预览及检查记录 |
+
+两 ZIP 解压到同一个父目录，合并成 `BraveNewWorld_Handoff_20261106/`，打开其中的 `START_HERE.html`。试玩使用 `playable/ColonyCharter.exe`；模型浏览使用 `MODEL_GALLERY.html`。在合并后的顶层运行 `python VERIFY_PACKAGE.py --require-art` 复核两份包。
+
+模型状态为 **12 项原正式白名单资产 + 8 项续建候选**。20 项高模尚未接入当前游戏。`CC_ARCOLOGY_HP_v002` 的材质/经营视图检查保持 `NOT_RUN`，100px 预览缺失；状态见 [模型接入说明](docs/handoff/20261106/MODEL_INTEGRATION.md) 和 [资产索引](docs/handoff/20261106/HANDOFF_ASSET_INDEX.json)。制作运行资产、游戏接入、视觉和性能验收是后续工作。
+
+GitHub 自动生成的 Source code ZIP/tar.gz 覆盖源码快照；完整离线工具和模型使用上述两个具名附件。
+
+## 验证记录与文件身份
+
+[2026-11-06 验证记录](docs/handoff/20261106/VALIDATION_20261106.md) 保存了同机换目录导入、三套合计 **238 项检查**、另列 UI 断言、Windows 导出、headless 启动以及 Git/LFS 离线恢复的执行结果。新导出 EXE/PCK 当时与原 1.8.0 发行版哈希一致。本次源码发布准备做来源哈希、Git 差异和 LFS 完整性检查，未重新运行这些游戏测试。
+
+朋友电脑运行、完整真人试玩、窗口图形帧时间与新模型接入效果仍待相应验收。历史报告与本次静态发布检查分别保留其证据日期和范围。
+
+```text
+c7d6f93d5346bcd1d178ce8d98daea07ed5beef891b91a28be7971010960ce03  01_Code_Gameplay_1.8.0_20261106.zip
+894c1b547c4db2e5f9ab47faa8e460e9b4cc96ff9a0a67b98d95df60a42da1fd  02_Model_Integration_20Assets_20261106.zip
+```
+
+第三方引擎许可见 [GODOT_LICENSE.txt](docs/GODOT_LICENSE.txt) 与 [GODOT_COPYRIGHT.txt](docs/GODOT_COPYRIGHT.txt)，字体许可见 [OFL.txt](game/assets/fonts/OFL.txt)，素材说明见 [ASSETS.md](docs/ASSETS.md)。项目源码及原创资产的后续授权由项目所有者决定。

@@ -1,0 +1,77 @@
+{
+	"cases": [
+		{
+			"effective": -2147483648,
+			"generation_hash": "819bde154aeabd431d620047fb48a88a66f836c8e1d1791c9b7c1970ecc338e6",
+			"grid_hash": "d3545152eaef900ce710ebbedaad0320caa7442f26966fac2970855604147641",
+			"input": "-2147483648",
+			"mismatch": 0,
+			"regions_hash": "682878dc5f656e50ed1feb969031968b33f24f5c9568cc844abd540513ac58b8"
+		},
+		{
+			"effective": 2147483647,
+			"generation_hash": "ef10b0b25ae715b20d2bd24147156f63ad2c817859b0c743bfcf2524b6bfb74d",
+			"grid_hash": "cccb2eb179c114f1fca6a0599ec784cb6777edfb3435129d1a6cc5e43b7f278a",
+			"input": "2147483647",
+			"mismatch": 0,
+			"regions_hash": "378c5abebc09b024d622b9ff2d3bdbfe4528237364cfc799b31abe64da47e887"
+		},
+		{
+			"effective": 260129,
+			"generation_hash": "ade5af9348d84bcbf330d1cc78b14b4d23ffdfcb1df9fb9d4515c62c06ff79fc",
+			"grid_hash": "cf66aad976ad4708f35bee5197eec7f09549d023f6086881da0544d4f6830b05",
+			"input": "260129",
+			"mismatch": 0,
+			"regions_hash": "1d009f10e3b2d2097deabf6fca5d5bd9e4454001bf52c92264903a5531a4f401"
+		},
+		{
+			"effective": 2147483648,
+			"generation_hash": "9d814cb076cf003b18bc459df1b5a4a220e86896bc6dc5125674d261044476fd",
+			"grid_hash": "926adc3abcc3413cd729dc5e79eab7fb6eca25fb8a0df8c3c656dc1bb2bdb9ee",
+			"input": "2147483648",
+			"mismatch": 34,
+			"regions_hash": "7462dced129dfc0f2d47aaa942311bc1fa21df954396a36f0749d005fb9793a7"
+		},
+		{
+			"effective": 4294967297,
+			"generation_hash": "02e828b82ba8e87e15d33f3de144a1ec893265190529feeccc0b40a074988582",
+			"grid_hash": "9dc57cd86a750724c525d762682438469d3c77b0811ed5022b85c0fa51b978cb",
+			"input": "4294967297",
+			"mismatch": 33,
+			"regions_hash": "bd9ee41bcb55237c944b622e75aee3a4b6c9e7468450cb92ceedf35507e934f6"
+		},
+		{
+			"effective": -9223372036854775807,
+			"generation_hash": "e3e16d7623df5e312acff465b6c4fc7764bc4d2479748306c435c543f673bdfd",
+			"grid_hash": "2853047db2a4db78e27757503cc557d87e590d8d92f1ba8c36bf6390cd0cf245",
+			"input": "-9223372036854775807",
+			"mismatch": 35,
+			"regions_hash": "f638a8cf2c69a378f0b7fd620b20c95f484249ecaebb117ee10469b431b19502"
+		},
+		{
+			"effective": 9223372036854775807,
+			"generation_hash": "08bb5e279dddc351d7cdab17fcdcd2d43d6ab8744e4c4ab2384d58ec5c69ce82",
+			"grid_hash": "758ef69e307fe6521fd43606d0e875b3973f3caa12f9a16480fc6d2b36dd8d43",
+			"input": "9223372036854775807",
+			"mismatch": 39,
+			"regions_hash": "e9a6ee8675487564fd453b57c9820f270aec78167469167ab0b7fe59bf188757"
+		}
+	],
+	"engine": {
+		"build": "official",
+		"hash": "f62fdbde15035c5576dad93e586201f4d41ef0cb",
+		"hex": 263425,
+		"major": 4,
+		"minor": 5,
+		"patch": 1,
+		"status": "stable",
+		"string": "4.5.1-stable (official)",
+		"timestamp": 0
+	},
+	"failures": [
+		"2147483648 mismatch=34",
+		"4294967297 mismatch=33",
+		"-9223372036854775807 mismatch=35",
+		"9223372036854775807 mismatch=39"
+	]
+}

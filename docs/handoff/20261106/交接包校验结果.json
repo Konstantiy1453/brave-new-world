@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "date": "2026-11-06",
+  "archives": [
+    {
+      "package": "MAIN",
+      "path": "D:\\勇敢新世界\\handoff\\20261106\\01_Code_Gameplay_1.8.0_20261106.zip",
+      "bytes": 303948327,
+      "sha256": "c7d6f93d5346bcd1d178ce8d98daea07ed5beef891b91a28be7971010960ce03",
+      "files": 552,
+      "uncompressed_bytes": 746556714,
+      "all_entries_crc_and_sha256_verified": true,
+      "seconds": 16.94,
+      "delivery_path": "D:\\勇敢新世界\\handoff\\20261106\\发送给朋友\\01_Code_Gameplay_1.8.0_20261106.zip"
+    },
+    {
+      "package": "ART",
+      "path": "D:\\勇敢新世界\\handoff\\20261106\\02_Model_Integration_20Assets_20261106.zip",
+      "bytes": 463798641,
+      "sha256": "894c1b547c4db2e5f9ab47faa8e460e9b4cc96ff9a0a67b98d95df60a42da1fd",
+      "files": 291,
+      "uncompressed_bytes": 613078099,
+      "all_entries_crc_and_sha256_verified": true,
+      "seconds": 13.11,
+      "delivery_path": "D:\\勇敢新世界\\handoff\\20261106\\发送给朋友\\02_Model_Integration_20Assets_20261106.zip"
+    }
+  ],
+  "extracted_top": "D:\\勇敢新世界\\evidence\\v17\\handoff_20261106\\final_extracted\\BraveNewWorld_Handoff_20261106",
+  "verification_exit_code": 0,
+  "verification_stdout": "MAIN: checked 551 manifest entries\nART: checked 290 manifest entries\nPASS: 841 files checked\n",
+  "verification_stderr": "",
+  "html_structure_and_links": [
+    {
+      "file": "START_HERE.html",
+      "references": 1,
+      "missing": [],
+      "h1": 0,
+      "h2": 14
+    },
+    {
+      "file": "VALIDATION_20261106.html",
+      "references": 0,
+      "missing": [],
+      "h1": 1,
+      "h2": 5
+    },
+    {
+      "file": "MODEL_INTEGRATION.html",
+      "references": 3,
+      "missing": [],
+      "h1": 1,
+      "h2": 5
+    },
+    {
+      "file": "MODEL_GALLERY.html",
+      "references": 349,
+      "missing": [],
+      "h1": 1,
+      "h2": 20
+    }
+  ],
+  "visual_browser_review": "NOT_RUN",
+  "send_directory": "D:\\勇敢新世界\\handoff\\20261106\\发送给朋友"
+}

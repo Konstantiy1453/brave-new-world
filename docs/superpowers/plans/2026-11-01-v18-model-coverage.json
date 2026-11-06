@@ -1,0 +1,1417 @@
+{
+  "as_of": "2026-11-01",
+  "version": "1.8.0",
+  "commit": "af752d255c49bff477a5e884237d99f887cfad0c",
+  "evidence_scope": "static source and existing file inspection; selected saved images viewed; no fresh game run or Max reopen",
+  "public_building_count": 56,
+  "new_since_v171_count": 39,
+  "model_field_count": 41,
+  "nonself_alias_count": 40,
+  "legacy_pack": "art_reserve/max_highpoly_20261031",
+  "future_output_directory": "D:\\勇敢新世界\\art_reserve\\max_highpoly_v18_supplement_20261101",
+  "source_receipts": [
+    {
+      "path": "game/project.godot",
+      "sha256": "5125c8883df5f998820e19c02a4c60262ac46c6e9571adfc0487c288c29007ab"
+    },
+    {
+      "path": "game/data/v17/economy.json",
+      "sha256": "7ea38dcb318e17c93590dad4c8efb54bc06acaad59f282a1370c9d6ec474775c"
+    },
+    {
+      "path": "game/data/v17/progression.json",
+      "sha256": "f60a12f62ee98404af202aeea22fd985591d58f5918e89df444768399590f754"
+    },
+    {
+      "path": "game/data/v17/geography.json",
+      "sha256": "37c3b1e6fac9c6e05458a6f15be820cd696e14d997ed0593082b0deef307edd6"
+    },
+    {
+      "path": "game/world/building_models.gd",
+      "sha256": "d6f3f2010679f62a2df50a5b451f3fb7d5a9920876c328b9d6d6f7b5312637eb"
+    },
+    {
+      "path": "game/world/region_view.gd",
+      "sha256": "bebcfe18df4286a6a9b525cb8507b8d9e15dfc563bce9021f459dddbc7ce2879"
+    },
+    {
+      "path": "game/world/geo2/world_gen2.gd",
+      "sha256": "fcd93e558d6bc649805c3cb6bb0be3829a9f9ffcaa38d6f32beed82d46c95699"
+    },
+    {
+      "path": "art_reserve/max_highpoly_20261031/00_brief/DELIVERY_TARGET_IDS.json",
+      "sha256": "121ac4adf47461519b9dfbd38ef4e048c1c173e95c13131ea1eadcef56882c2f"
+    }
+  ],
+  "buildings": [
+    {
+      "game_building_id": "habitat",
+      "name": "模块住区",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "提供 45 张床位。床位满了就不会有人再来。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "住房",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "保留模块住宅主体，接入另行处理",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "apartment",
+      "name": "公寓楼",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "apartments",
+      "scope_note": "提供 120 张床位，比模块住区省地。",
+      "priority": "P0",
+      "action": "改型",
+      "model_family": "住房",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "增加中高层体量与楼层秩序",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "arcology",
+      "name": "生态穹顶城",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "arcology_design",
+      "scope_note": "提供 360 张床位，自带绿地，所在据点吸引力 +0.1。",
+      "priority": "P0",
+      "action": "新建",
+      "model_family": "穹顶城",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002",
+        "CC_ENVIRONMENT_HP_v002"
+      ],
+      "modeling_note": "穹顶结构与内部高密度建筑绿地",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "crew_quarters",
+      "name": "工棚营地",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "边疆据点的简易住所，提供 30 张床位。",
+      "priority": "P0",
+      "action": "改型",
+      "model_family": "边疆生活",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "单层简易工棚与集中生活服务",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "frontier_lodge",
+      "name": "边疆宿舍楼",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "frontier_lodges",
+      "scope_note": "提供 80 张床位，让常驻工程队住得像样一点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "边疆生活",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "常驻宿舍和作业配套",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "power",
+      "name": "光伏储能站",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "power",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "提供 32 电力；需 2 支工程队维护。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "光伏",
+      "source_asset_ids": [
+        "CC_POWER_HP_v002"
+      ],
+      "modeling_note": "现有光伏储能主体",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "wind_farm",
+      "name": "风电场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "power",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "wind_power",
+      "scope_note": "提供 46 电力，比光伏便宜一半的占地。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "能源",
+      "source_asset_ids": [
+        "CC_POWER_HP_v002"
+      ],
+      "modeling_note": "风机叶片塔架和变电组件",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "geothermal",
+      "name": "地热电站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "power",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "geothermal_power",
+      "scope_note": "提供 95 电力。只能建在地形崎岖的地点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "能源",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003",
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "井口热交换和汽轮设备",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "fission",
+      "name": "裂变电站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "power",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "fission_power",
+      "scope_note": "提供 210 电力，产生少量污染。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "能源",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "围护厂房冷却和受控作业区",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "fusion",
+      "name": "聚变电站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "power",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "fusion_power",
+      "scope_note": "提供 560 电力，没有污染。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "能源",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "独立聚变核心厂房与配套",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "water",
+      "name": "净水泵站",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "water",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "供水随地区水源变化；季节性干旱会降低容量。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "水务",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "现有净水主体",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "deep_well",
+      "name": "深层水井",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "water",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "deep_wells",
+      "scope_note": "提供约 68 供水，几乎不看地面水源。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "水务",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003",
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "井口泵房与输水接口",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "desalination",
+      "name": "海水淡化厂",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "water",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": true,
+      "requires_tech": "desalination_tech",
+      "scope_note": "提供 140 供水。只能建在沿海地点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "沿海水务",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "海水取水端与淡化处理列",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "atmospheric_water",
+      "name": "大气集水站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "water",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "atmospheric_harvest",
+      "scope_note": "提供 55 供水，哪里都能建，耗电不少。",
+      "priority": "P2",
+      "action": "新建",
+      "model_family": "水务",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "冷凝集水阵列",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "port",
+      "name": "轨道货运站",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "port",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "每日共用 90 吨进出口吞吐，贸易另收 4% 港务费。首府免费配备一座。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "轨道货运",
+      "source_asset_ids": [
+        "CC_LOGISTICS_HP_v002"
+      ],
+      "modeling_note": "保留仓储补独立起降与货运接口",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "depot",
+      "name": "区域物流中心",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "port",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "freight_yards",
+      "scope_note": "连到这里的道路运力 +30%。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "区域物流",
+      "source_asset_ids": [
+        "CC_LOGISTICS_HP_v002"
+      ],
+      "modeling_note": "现有仓库吊机堆场适配",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "scrubber",
+      "name": "污染净化塔",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "processor",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "scrubbing",
+      "scope_note": "每天为星球吸收 2.5 单位污染。",
+      "priority": "P0",
+      "action": "新建",
+      "model_family": "污染治理",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "净化过滤吸附塔独立轮廓",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_ore",
+      "name": "轻型铁矿场",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "mine_ore",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "无需科研解锁。有限铁矿储量，品位影响日产。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "轻型矿业",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "轻型井架与铁矿料件",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_copper",
+      "name": "轻型铜矿场",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "mine_copper",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "无需科研解锁。铜价较高，部署和运营成本也更高。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "轻型矿业",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "铜矿料及处理附件差异",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_crystal",
+      "name": "晶体采掘站",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "mine_crystal",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "无需科研解锁。有限晶体矿；高地部署成本提高。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "轻型矿业",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "晶体料及处理附件差异",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_ore_heavy",
+      "name": "重型铁矿场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_ore",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "heavy_machinery",
+      "scope_note": "大型机械露天开采，日产 30 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "重型露天矿",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002",
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "台阶采场大型装载和破碎",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_copper_heavy",
+      "name": "重型铜矿场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_copper",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "heavy_machinery",
+      "scope_note": "大型机械露天开采，日产 18 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "重型露天矿",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002",
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "复用重型母版补铜矿处理",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_crystal_heavy",
+      "name": "重型晶体矿井",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_crystal",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "heavy_machinery",
+      "scope_note": "深入晶脉的竖井，日产 10.5 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "重型竖井",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "深井提升和晶体分选",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_ore_auto",
+      "name": "自动铁矿钻场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_ore",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "auto_drilling",
+      "scope_note": "只要 6 支工程队看守，日产 24 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "自动钻场",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "钻机阵列封闭控制单元",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_copper_auto",
+      "name": "自动铜矿钻场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_copper",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "auto_drilling",
+      "scope_note": "只要 6 支工程队看守，日产 14 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "自动钻场",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "自动母版加铜矿附件",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "mine_crystal_auto",
+      "name": "自动晶体钻场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "mine_crystal",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "auto_drilling",
+      "scope_note": "只要 6 支工程队看守，日产 8.5 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "自动钻场",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002"
+      ],
+      "modeling_note": "自动母版加晶体附件",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "tailings_plant",
+      "name": "尾矿回收站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "processor",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "tailings_recovery",
+      "scope_note": "从旧矿渣里再榨一遍：每日 4 吨铁矿、1.5 吨铜矿。不消耗矿床。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "回收",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "回收处理线与尾矿料堆",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "sea_copper",
+      "name": "海水提铜站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "water",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": true,
+      "requires_tech": "seawater_extraction",
+      "scope_note": "从海水里提取铜，每日 5 吨，不消耗矿床。只能建在沿海的边疆据点。",
+      "priority": "P2",
+      "action": "新建",
+      "model_family": "沿海提取",
+      "source_asset_ids": [
+        "CC_WATER_HP_v003",
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "海水提取设备与岸端接口",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "crystal_vat",
+      "name": "晶体培育槽",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "lab",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "crystal_growth",
+      "scope_note": "在槽里长出工业晶体，每日 1.8 吨，不消耗矿床。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "培养",
+      "source_asset_ids": [
+        "CC_RESEARCH_HP_v002",
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "可见晶体培养槽和控制设备",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "farm",
+      "name": "温室农场",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "肥力和气候决定产量；土地越肥产量越高。粮食可以跨区供给。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "温室",
+      "source_asset_ids": [
+        "CC_GREENHOUSE_HP_v003"
+      ],
+      "modeling_note": "普通温室主体",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "field_station",
+      "name": "大田农业站",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "mechanized_farming",
+      "scope_note": "机械化大田，满肥力日产 62 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "大田",
+      "source_asset_ids": [
+        "CC_GREENHOUSE_HP_v003",
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "田块粮仓农机棚",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "ranch",
+      "name": "牧场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "livestock",
+      "scope_note": "贫瘠的地也能放牧，几乎不用水，日产约 24 吨。只能建在边疆据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "牧场",
+      "source_asset_ids": [
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "围栏畜舍饲料设施，不强加动物动画",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "hydroponic_farm",
+      "name": "水培温室",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "hydroponics",
+      "scope_note": "产量不受土壤影响；耗电高。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "水培",
+      "source_asset_ids": [
+        "CC_GREENHOUSE_HP_v003",
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "循环供液与种植架，现映射绕过专用分支",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "aquafarm",
+      "name": "近海养殖场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "frontier"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": true,
+      "requires_tech": "aquaculture",
+      "scope_note": "日产 46 吨。只能建在沿海的边疆据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "近海养殖",
+      "source_asset_ids": [
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "网箱浮台服务栈桥",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "vertical_farm",
+      "name": "垂直农场",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "farm",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "vertical_farming",
+      "scope_note": "占一块地的高楼，日产 72 吨。只能建在居住据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "垂直农业",
+      "source_asset_ids": [
+        "CC_GREENHOUSE_HP_v003",
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "高层种植设施与服务核心",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "protein_plant",
+      "name": "合成蛋白厂",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "processor",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "synthetic_protein",
+      "scope_note": "不用土地和阳光，日产 110 吨。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "食品工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "反应发酵与卫生处理设备",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "foodworks",
+      "name": "食品出口加工坊",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "foodworks",
+      "current_render_kind": "programmatic_generic_fallback",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "adaptation",
+      "scope_note": "作物适配解锁；消耗 6 食品及 6 吨港口吞吐，向轨道补给采购局交付加工食品；外部付款 78/日，受供给与岗位限制。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "食品工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_LOGISTICS_HP_v002"
+      ],
+      "modeling_note": "包装出货；当前程序通用fallback",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "processor",
+      "name": "复合加工厂",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "processor",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "每日消耗 3 铁矿与 1 铜矿，产出 2.4 建材与 1.2 部件；减少建设进口，也可出口。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "基础工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "现有加工主体",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "smelter",
+      "name": "合金冶炼厂",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "processor",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "alloy_smelting",
+      "scope_note": "每日消耗 4 铁矿与 1.5 铜矿，产出 2 吨合金。污染不小。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "冶炼",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "冶炼炉冷却与原料处理",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "component_plant",
+      "name": "电子元件厂",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "component_plant",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "electronics",
+      "scope_note": "每日消耗 0.8 部件和 0.6 晶体，产出 1.2 吨高价值电子元件。只能建在居住据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "洁净工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "洁净厂房设备与物流分流母版",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "machine_works",
+      "name": "精密机械厂",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "component_plant",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "precision_machinery",
+      "scope_note": "每日消耗 1 合金和 0.5 电子元件，产出 1 吨精密机械。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "精密工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005"
+      ],
+      "modeling_note": "机械装配加工和成品出货",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "pharma_plant",
+      "name": "生物制药厂",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "component_plant",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "biopharma",
+      "scope_note": "每日消耗 8 食品和 0.2 晶体，产出 1.6 吨药品。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "生物工业",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "无菌生产与封闭处理设备",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "lab",
+      "name": "教学研究所",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "lab",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": null,
+      "scope_note": "提供 10 个科研席位和 2 个项目实验台。研究团队按项目分配，停用不丢研究量。每月培训 1 支工程队。",
+      "priority": "保留",
+      "action": "复用候选",
+      "model_family": "基础科研",
+      "source_asset_ids": [
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "现有教学研究所",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "institute",
+      "name": "研究院",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "lab",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "research_institutes",
+      "scope_note": "提供 20 个科研席位和 3 个项目实验台。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "科研升级",
+      "source_asset_ids": [
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "扩展实验楼仪器院落",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "clinic",
+      "name": "社区诊所",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "clinic",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "medicine",
+      "scope_note": "吸引力 +0.3，离开减半，出生 ×1.5。只能建在居住据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "医疗",
+      "source_asset_ids": [
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "小型诊疗入口服务区",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "park",
+      "name": "生态公园",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "green_spaces",
+      "scope_note": "吸引力 +0.15，也能吸收一点污染。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "公共空间",
+      "source_asset_ids": [
+        "CC_ENVIRONMENT_HP_v002",
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "modeling_note": "步道绿地和景观设施",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "school",
+      "name": "中等学校",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "lab",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "school_system",
+      "scope_note": "吸引力 +0.1，本据点培训研究团队的速度翻倍。只能建在居住据点。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "教育",
+      "source_asset_ids": [
+        "CC_RESEARCH_HP_v002",
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "教学与活动空间",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "culture_center",
+      "name": "文化中心",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "civic_culture",
+      "scope_note": "吸引力 +0.25。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "文化",
+      "source_asset_ids": [
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "活动厅与公共前场",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "hospital",
+      "name": "综合医院",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "hospital_care",
+      "scope_note": "吸引力 +0.3，出生 ×1.3，离开再减半。只能建在居住据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "医疗",
+      "source_asset_ids": [
+        "CC_CIVIC_HP_v001",
+        "CC_HOUSING_HP_v002"
+      ],
+      "modeling_note": "门急诊与住院层次",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "civic_center",
+      "name": "市政中心",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "civic_planning",
+      "scope_note": "吸引力 +0.1，行政费 -10%。每个居住据点一座。",
+      "priority": "P1",
+      "action": "改型",
+      "model_family": "行政",
+      "source_asset_ids": [
+        "CC_COMMAND_HP_v001",
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "市政服务入口与公共前场",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "commerce",
+      "name": "商业街区",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "habitat",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "commerce_law",
+      "scope_note": "居民在这里花钱：每天最多服务 150 人，每人 ¥0.2 进入公共账户。只能建在居住据点。",
+      "priority": "P2",
+      "action": "改型",
+      "model_family": "商业",
+      "source_asset_ids": [
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "可组合街区；当前别名绕过商业分支",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "data_center",
+      "name": "数据中心",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "lab",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "data_services",
+      "scope_note": "向星外出售算力，每天收入 ¥280。只能建在居住据点。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "数据服务",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "模块机房冷却与配电",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "university",
+      "name": "行星大学",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "university",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "university",
+      "scope_note": "全部科研速度 ×1.25；更多研究团队愿意迁入。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "大学",
+      "source_asset_ids": [
+        "CC_RESEARCH_HP_v002"
+      ],
+      "modeling_note": "多楼校园与公共核心",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "lift_port",
+      "name": "轨道升降港",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "lift_port",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "lift_port",
+      "scope_note": "本据点货运吞吐 ×3；全部出口价格 +10%。",
+      "priority": "P0",
+      "action": "新建",
+      "model_family": "升降港",
+      "source_asset_ids": [
+        "CC_LOGISTICS_HP_v002"
+      ],
+      "modeling_note": "锚定基座运输核心与系缆接口",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "climate_regulator",
+      "name": "气候调节站",
+      "new_since_v171": false,
+      "site_kinds": [
+        "residential",
+        "frontier"
+      ],
+      "current_model_key": "climate_regulator",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "climate",
+      "scope_note": "周边地区气温 +3°C，降水 +10%；地球上可见。",
+      "priority": "P1",
+      "action": "新建",
+      "model_family": "气候工程",
+      "source_asset_ids": [
+        "CC_INDUSTRY_HP_v005",
+        "CC_WATER_HP_v003"
+      ],
+      "modeling_note": "调节阵列并与净化塔区分",
+      "completion_status": "planning_only_not_newly_modeled"
+    },
+    {
+      "game_building_id": "capital_hall",
+      "name": "行星议会大厦",
+      "new_since_v171": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "current_model_key": "university",
+      "current_render_kind": "programmatic_explicit",
+      "definition_source": "game/data/v17/economy.json",
+      "requires_coast": false,
+      "requires_tech": "capital_planning",
+      "scope_note": "所在据点吸引力 +0.4。总督资格要求首府有一座。",
+      "priority": "P0",
+      "action": "新建",
+      "model_family": "首府议会",
+      "source_asset_ids": [
+        "CC_COMMAND_HP_v001",
+        "CC_CIVIC_HP_v001"
+      ],
+      "modeling_note": "议事主体行政翼和公共前场",
+      "completion_status": "planning_only_not_newly_modeled"
+    }
+  ],
+  "supplementary_assets": [
+    {
+      "asset": "service",
+      "priority": "P2",
+      "state": "runtime_enterprise_building",
+      "source_asset_ids": [
+        "CC_CIVIC_HP_v001"
+      ],
+      "action": "复用候选",
+      "note": "不计入56项公共建筑"
+    },
+    {
+      "asset": "harbor_quay_kit",
+      "priority": "P0",
+      "state": "mechanic_exists_visual_hook_not_connected",
+      "source_asset_ids": [
+        "CC_LOGISTICS_HP_v002",
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "action": "新建岸端组件",
+      "note": "不是独立harbour建筑ID"
+    },
+    {
+      "asset": "civil_cargo_ship",
+      "priority": "P0",
+      "state": "sea_transport_visual_candidate",
+      "source_asset_ids": [],
+      "action": "新建",
+      "note": "先静态高模；不增加舰队/造船玩法"
+    },
+    {
+      "asset": "construction_kit",
+      "priority": "P0",
+      "state": "existing_generic_frame",
+      "source_asset_ids": [
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "action": "补组件",
+      "note": "按小中大占地复用，不强制56套多阶段模型"
+    },
+    {
+      "asset": "roads_bridges_closure",
+      "priority": "P1",
+      "state": "existing_procedural_roads",
+      "source_asset_ids": [
+        "CC_INFRASTRUCTURE_HP_v002"
+      ],
+      "action": "查库后补件",
+      "note": "模块化；不做固定整条路线"
+    },
+    {
+      "asset": "mineral_depleted_plot_kit",
+      "priority": "P1",
+      "state": "plots_exist_depleted_model_not_connected",
+      "source_asset_ids": [
+        "CC_MINING_HP_v002",
+        "CC_ENVIRONMENT_HP_v002"
+      ],
+      "action": "补组件",
+      "note": "露头矿料封井；不能揭示隐藏矿床"
+    },
+    {
+      "asset": "survey_lander",
+      "priority": "P2",
+      "state": "existing_programmatic_model",
+      "source_asset_ids": [],
+      "action": "新建高模候选",
+      "note": "原有勘测着陆器，不是新增载具玩法"
+    },
+    {
+      "asset": "settlement_basic_pods",
+      "priority": "P1",
+      "state": "existing_capacity_based_model",
+      "source_asset_ids": [
+        "CC_HOUSING_HP_v002"
+      ],
+      "action": "改型",
+      "note": "登陆生活舱，与边疆生活件一起制作"
+    },
+    {
+      "asset": "climate_environment_variants",
+      "priority": "P2",
+      "state": "procedural_world_with_reusable_props",
+      "source_asset_ids": [
+        "CC_ENVIRONMENT_HP_v002"
+      ],
+      "action": "少量改型",
+      "note": "旧GEO1.6固定星球不直接覆盖新GEO2.2"
+    }
+  ]
+}

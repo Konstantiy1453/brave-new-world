@@ -1,0 +1,2763 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "package": "MAIN",
+  "note": "Manifest excludes itself. ZIP checksum is supplied separately.",
+  "files": [
+    {
+      "path": "history/BUNDLE_VERIFY.txt",
+      "bytes": 1164,
+      "sha256": "444262b51856e508bd962295c8127b9b5a86465fbba657ed44f4b3ace07a5312"
+    },
+    {
+      "path": "history/ColonyCharter.bundle",
+      "bytes": 2434455,
+      "sha256": "17726815bfe5554ae0d358e62a1d4895803c30bf7c315b5a78746c16c66dc887"
+    },
+    {
+      "path": "history/lfs_objects/04/47/0447fcaa5e878cdd39d58ad6d77b4a064ff6501e239dc43ebbf4e02ff05102a5",
+      "bytes": 8383526,
+      "sha256": "0447fcaa5e878cdd39d58ad6d77b4a064ff6501e239dc43ebbf4e02ff05102a5"
+    },
+    {
+      "path": "history/lfs_objects/0e/32/0e326de9e4d2df82a9faefda146c6fe03bdf8576fc58d0dc9e47385a1efe6f76",
+      "bytes": 6968127,
+      "sha256": "0e326de9e4d2df82a9faefda146c6fe03bdf8576fc58d0dc9e47385a1efe6f76"
+    },
+    {
+      "path": "history/lfs_objects/1c/0c/1c0c4e9d6c830bd967a4fa528f9927be3e1567ebe81cc5f5355451c6eaa1eb18",
+      "bytes": 2244469,
+      "sha256": "1c0c4e9d6c830bd967a4fa528f9927be3e1567ebe81cc5f5355451c6eaa1eb18"
+    },
+    {
+      "path": "history/lfs_objects/1c/ef/1cefa4da0910f7a388cc6d9fa8bc9ab4e5ef9a0b770fc8fc62606977b782f023",
+      "bytes": 1213659,
+      "sha256": "1cefa4da0910f7a388cc6d9fa8bc9ab4e5ef9a0b770fc8fc62606977b782f023"
+    },
+    {
+      "path": "history/lfs_objects/28/af/28af0a557dba398f056a1796aedf2de534db6a99df4943e9d3f3f6e5b4f72699",
+      "bytes": 8377528,
+      "sha256": "28af0a557dba398f056a1796aedf2de534db6a99df4943e9d3f3f6e5b4f72699"
+    },
+    {
+      "path": "history/lfs_objects/36/4c/364c61687b2d5af38e279a57d2ac2de6fe4f647fea7cc93abf45c95b4b584ef3",
+      "bytes": 2225502,
+      "sha256": "364c61687b2d5af38e279a57d2ac2de6fe4f647fea7cc93abf45c95b4b584ef3"
+    },
+    {
+      "path": "history/lfs_objects/39/db/39db7c33c997a0265aa42d06b321e789935994ae4d6d86e230cd281a532b3869",
+      "bytes": 6869784,
+      "sha256": "39db7c33c997a0265aa42d06b321e789935994ae4d6d86e230cd281a532b3869"
+    },
+    {
+      "path": "history/lfs_objects/3b/da/3bda26f517bc0d11c92dfedee005f67f028469aff0cd5c563676d6b257b1e281",
+      "bytes": 8394355,
+      "sha256": "3bda26f517bc0d11c92dfedee005f67f028469aff0cd5c563676d6b257b1e281"
+    },
+    {
+      "path": "history/lfs_objects/53/c4/53c4ff939160692e6bbb0638f321da9e302a8da042706a19cd1de9479d6b7883",
+      "bytes": 1033256,
+      "sha256": "53c4ff939160692e6bbb0638f321da9e302a8da042706a19cd1de9479d6b7883"
+    },
+    {
+      "path": "history/lfs_objects/5c/38/5c38e2d961a9c0e9db69998951a974ed3f785d6e2f7ba2c9d68dd2f0450c1011",
+      "bytes": 6786544,
+      "sha256": "5c38e2d961a9c0e9db69998951a974ed3f785d6e2f7ba2c9d68dd2f0450c1011"
+    },
+    {
+      "path": "history/lfs_objects/63/f3/63f3001f7779bb9fc93163c1a498d905c119c9a94e60ab57a5a8d0c5444c011b",
+      "bytes": 2110027,
+      "sha256": "63f3001f7779bb9fc93163c1a498d905c119c9a94e60ab57a5a8d0c5444c011b"
+    },
+    {
+      "path": "history/lfs_objects/6c/1a/6c1a7d753b6f46167856004923741988e7bdba37ef5306b86b8bb27fd745b824",
+      "bytes": 1221610,
+      "sha256": "6c1a7d753b6f46167856004923741988e7bdba37ef5306b86b8bb27fd745b824"
+    },
+    {
+      "path": "history/lfs_objects/76/31/763146584cf0710223441356b4395e279021b0806c196614377a7a0174ae074a",
+      "bytes": 17773244,
+      "sha256": "763146584cf0710223441356b4395e279021b0806c196614377a7a0174ae074a"
+    },
+    {
+      "path": "history/lfs_objects/7e/35/7e357eabf225236245ec379ce0493883118c1820cc6723f5f86c462181ed1676",
+      "bytes": 6930737,
+      "sha256": "7e357eabf225236245ec379ce0493883118c1820cc6723f5f86c462181ed1676"
+    },
+    {
+      "path": "history/lfs_objects/b6/24/b6244a7dc0e834b01138d704640ccf5c069b151fa7b7c7c0f954af095400667d",
+      "bytes": 10589644,
+      "sha256": "b6244a7dc0e834b01138d704640ccf5c069b151fa7b7c7c0f954af095400667d"
+    },
+    {
+      "path": "history/lfs_objects/cf/7d/cf7d8ed9b7a7c9488ec30d9c78b09b0c327e4b0e718ef0fab6ea7ce29fd16826",
+      "bytes": 1740245,
+      "sha256": "cf7d8ed9b7a7c9488ec30d9c78b09b0c327e4b0e718ef0fab6ea7ce29fd16826"
+    },
+    {
+      "path": "history/lfs_objects/eb/23/eb233e729eda3ad16ec6248ff8eb67c6dd1d6886a221ccb164a1eef6355afde8",
+      "bytes": 11152248,
+      "sha256": "eb233e729eda3ad16ec6248ff8eb67c6dd1d6886a221ccb164a1eef6355afde8"
+    },
+    {
+      "path": "history/LFS_OBJECTS.json",
+      "bytes": 6100,
+      "sha256": "08c50b3726db5652bec9de97226a4580faad907004a43c4ac8c0973fca66342e"
+    },
+    {
+      "path": "playable/CHANGELOG.md",
+      "bytes": 8260,
+      "sha256": "a1121209aafb64dc04554174366e1beff1234e740b1aacae725689cda8942057"
+    },
+    {
+      "path": "playable/ColonyCharter.exe",
+      "bytes": 96725504,
+      "sha256": "78ccc576e8f8bffd7ef6ad6f36ebd72a41e609a1052225a55b3407c96ea84065"
+    },
+    {
+      "path": "playable/ColonyCharter.pck",
+      "bytes": 14222340,
+      "sha256": "614ff8b9e6bcb57aba18c71a8289e2a4cc11a2748b56c37a003db855ad5d41be"
+    },
+    {
+      "path": "playable/GODOT_COPYRIGHT.txt",
+      "bytes": 97253,
+      "sha256": "2039020f520ebd55592070ede2ef38dfbc28a6550140008da004143872789e5d"
+    },
+    {
+      "path": "playable/GODOT_LICENSE.txt",
+      "bytes": 1149,
+      "sha256": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80"
+    },
+    {
+      "path": "playable/OFL.txt",
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    {
+      "path": "playable/PLAYTEST.md",
+      "bytes": 3747,
+      "sha256": "016443bf23f43d68769f64d55c6bc3e35611898ffbd1f4952d576c0af43c6529"
+    },
+    {
+      "path": "playable/RELEASE_IDENTITY.json",
+      "bytes": 840,
+      "sha256": "f01ce8ed50ecb84846c73799844d33f4ca03a96e8833c8dc4191cbc80eced3d2"
+    },
+    {
+      "path": "playable/中文说明.md",
+      "bytes": 7056,
+      "sha256": "6092ce3846ce85332c130f8f3179a5350c301e4abe3921cca3c73cf5a4e195fe"
+    },
+    {
+      "path": "project/.gitattributes",
+      "bytes": 155,
+      "sha256": "2f66261b88782f0398624071980987e9cf8cea467c981280b3e3bfb07e724ae7"
+    },
+    {
+      "path": "project/.gitignore",
+      "bytes": 374,
+      "sha256": "63d88c05d31fdfd29798e11e021db99f27b1a9355a8be7329d3e0f9ac5350298"
+    },
+    {
+      "path": "project/build/godot_home/Godot/export_templates/4.5.1.stable/version.txt",
+      "bytes": 13,
+      "sha256": "5382abe0a6be4fcce63cb24a92d3f0cffec78645418cb87c9608784cdf26b97e"
+    },
+    {
+      "path": "project/build/godot_home/Godot/export_templates/4.5.1.stable/windows_debug_x86_64.exe",
+      "bytes": 94544384,
+      "sha256": "30a3e5433e3858660e5d948f309b76dafe5542f753ae4341de725b313cc16a43"
+    },
+    {
+      "path": "project/build/godot_home/Godot/export_templates/4.5.1.stable/windows_release_x86_64.exe",
+      "bytes": 96725504,
+      "sha256": "78ccc576e8f8bffd7ef6ad6f36ebd72a41e609a1052225a55b3407c96ea84065"
+    },
+    {
+      "path": "project/CHANGELOG.md",
+      "bytes": 8260,
+      "sha256": "a1121209aafb64dc04554174366e1beff1234e740b1aacae725689cda8942057"
+    },
+    {
+      "path": "project/CLAUDE.md",
+      "bytes": 4612,
+      "sha256": "8b62aa4330d33f5f4230ce42fa589914dcab30074101ab7aaa2ac0a18ee7ab0e"
+    },
+    {
+      "path": "project/DEMO_AGENT_PROMPT.txt",
+      "bytes": 21471,
+      "sha256": "96f3310d8ef4c202eab195f2ad0cb7e24e471257cf78cbf7379a5242768ee1f1"
+    },
+    {
+      "path": "project/docs/ASSETS.md",
+      "bytes": 10310,
+      "sha256": "7e70c4eb43e4658023c85841c742a167a7ef5b6413fcece7aa06390364c699a5"
+    },
+    {
+      "path": "project/docs/AUDIT_20261030.md",
+      "bytes": 32549,
+      "sha256": "cb05d40007941884044c74e685be6e9f6c14e11a50d8c43591e699017b2f9d14"
+    },
+    {
+      "path": "project/docs/ENVIRONMENT.md",
+      "bytes": 3329,
+      "sha256": "5fbc59e8dedec419fe05ba0e770c77399f226392512022bc9c993057beafbf76"
+    },
+    {
+      "path": "project/docs/evidence/asset_manifest.json",
+      "bytes": 4626,
+      "sha256": "b9127dc6442a06d4f7ed6d6af4fa4992fab117610b15219430ab83ac057447a9"
+    },
+    {
+      "path": "project/docs/evidence/asset_render.log",
+      "bytes": 146,
+      "sha256": "fa1d4f5040b044401d6b5a86a25711341cdda5f11226d8e16b5079effc95897f"
+    },
+    {
+      "path": "project/docs/evidence/coast_v15_review.json",
+      "bytes": 358,
+      "sha256": "17e6377b77f3e961b18c953732fad30b9aedcd068f31019c09fffc19e2ef5770"
+    },
+    {
+      "path": "project/docs/evidence/enterprise_capacity_review.json",
+      "bytes": 235,
+      "sha256": "f6c9c7709d0370546e6d9c18f6116405f5dd809a4de48108753087cc61194d4a"
+    },
+    {
+      "path": "project/docs/evidence/enterprise_capacity_review_before_fix.json",
+      "bytes": 181,
+      "sha256": "9270f81ecbda856762ef4657c3faaee1d8d32a31bee6cef8fa0f8593c9d0f70f"
+    },
+    {
+      "path": "project/docs/evidence/flat_import.log",
+      "bytes": 1633,
+      "sha256": "7beca5b647bcae7156eed39ed611d2b128b683020f6bbe474d959f89ca2f4db4"
+    },
+    {
+      "path": "project/docs/evidence/flat_import_v15.log",
+      "bytes": 2427,
+      "sha256": "10b9015dd225cf835a3b1cea46ea22a1751a9c1aba0ea773627efb2d7c7f03a0"
+    },
+    {
+      "path": "project/docs/evidence/flat_map_v15_manifest.json",
+      "bytes": 2572,
+      "sha256": "8f3d287c0a1c2262b72562dbe105b941f9ca7b1e537bf3d67cdb45a51923ea70"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_cold_260129.json",
+      "bytes": 639,
+      "sha256": "cba5208276ab79aca6d251e465da137b11e8edef88bdc42507c54cf61b582eda"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_cold_260129.log",
+      "bytes": 1008,
+      "sha256": "37b1b6ba3dc8bbe6cec53e06e2cdb947d70850966af460fefd2d48a1d895cbfd"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_cold_260130.log",
+      "bytes": 1008,
+      "sha256": "e1bd3803c555aa78ebadfe6032d8823ebfe1cd6160c02ef7b46f796039b39266"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_fit_v15.log",
+      "bytes": 908,
+      "sha256": "7733a24e5533c53a8bcaea0e8c64bcc5f081840897698113c5b21130bc1c5d78"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_serial_atlas_v15.json",
+      "bytes": 274,
+      "sha256": "515644c4007a76d1894bf10135adecb61629bb35c9c8251bc5fbd679bfbb8d96"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_serial_atlas_v15.log",
+      "bytes": 852,
+      "sha256": "cbfc71dd30312dff65635299b6ec6530ab286e1590880a30184862c2f8296f4a"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_test.json",
+      "bytes": 667,
+      "sha256": "744cfd7f02175d5cc87578cf9e81b64a2bcdaaf21e4b746fda274d6d97ac328a"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_test.log",
+      "bytes": 517,
+      "sha256": "c7009497a14532b5ba256f4c54110a085743e6fa62080cb945198b18a8858157"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_test_260130.json",
+      "bytes": 639,
+      "sha256": "16c92735241372090c477fb258b4f8fcb032ae6f666539a6f0911f20a3c0d748"
+    },
+    {
+      "path": "project/docs/evidence/flat_render_test_v15.log",
+      "bytes": 908,
+      "sha256": "b6bbeec3b5bd74aaa173d5f129c9b726cb71fd04d04109502083cd164ab8c152"
+    },
+    {
+      "path": "project/docs/evidence/font_metadata.json",
+      "bytes": 721,
+      "sha256": "114a4a797a0ccb27bd73d242f6423b8455f19268403c07113b60d4a05785d551"
+    },
+    {
+      "path": "project/docs/evidence/hydrology_receipt.json",
+      "bytes": 1262,
+      "sha256": "499969d6c6e26f12596f1bbdc885410f5060efa3aafb89b3efafa8f2ea177f3a"
+    },
+    {
+      "path": "project/docs/evidence/hydrology_sweep.json",
+      "bytes": 2772,
+      "sha256": "efe27535109c4ae8f62974e78344888095f019c184e9657a5b72a6f4f0bd822a"
+    },
+    {
+      "path": "project/docs/evidence/hydrology_sweep.log",
+      "bytes": 100,
+      "sha256": "f307c291d4a16bb7d1f24fb668b630a6c26a8d8c43e899e9b110038671ddf68d"
+    },
+    {
+      "path": "project/docs/evidence/hydrology_tests.json",
+      "bytes": 1852,
+      "sha256": "c7fda88f6a38a515807f4a75cabb379a30b49c729ece5402722f954ccc85a54c"
+    },
+    {
+      "path": "project/docs/evidence/hydrology_tests.log",
+      "bytes": 1437,
+      "sha256": "d989da8d4483dec188eea1d8309ea441e3dfb28b2cba543780f935c1f8edbf7b"
+    },
+    {
+      "path": "project/docs/evidence/icon_atlas.png",
+      "bytes": 27726,
+      "sha256": "671b976dd4d7916406da5cf1cf04b48eea8a0fc5d6421ad81aedb35ccecb8923"
+    },
+    {
+      "path": "project/docs/evidence/island_start_review.json",
+      "bytes": 479,
+      "sha256": "5843ed1d71c4c4346e460d7d5d8dacddb626a055acc347683bb109d56a72519c"
+    },
+    {
+      "path": "project/docs/evidence/island_start_review_before_fix.json",
+      "bytes": 590,
+      "sha256": "3751a492e87876a059874bc18f85c9dfc044114e2fa25cc4e943e5ee4c57e3c9"
+    },
+    {
+      "path": "project/docs/evidence/outpost_jobs_review.json",
+      "bytes": 159,
+      "sha256": "511f1daa51a91e07a65bd22a3646c77f883f247bdceae8fdabb55c9b11c64a47"
+    },
+    {
+      "path": "project/docs/evidence/outpost_jobs_review_before_fix.json",
+      "bytes": 252,
+      "sha256": "c2923f3b247af1dc18bf600adf36cf4c104db4f48476ff7d07818c483482629b"
+    },
+    {
+      "path": "project/docs/evidence/population_boundary_review.json",
+      "bytes": 630,
+      "sha256": "ff7748d0a72ea5b799257cec44ebe9e7fb65871ba1e6bdec443f323f1f7fe888"
+    },
+    {
+      "path": "project/docs/evidence/portrait_prompts.json",
+      "bytes": 4266,
+      "sha256": "6bb22f218830d101febdc22bcba09c1951393c715f36ff31014176f86bea2c1e"
+    },
+    {
+      "path": "project/docs/evidence/review_enterprise_capacity_after_fix.log",
+      "bytes": 296,
+      "sha256": "dc1ddfef41ed4b0f77249da7c9b778cf33e3f379ca6e615d3a7c732f131a3eac"
+    },
+    {
+      "path": "project/docs/evidence/review_initial.md",
+      "bytes": 4275,
+      "sha256": "9cb107156918b798a5290de8bac6cf241381ef24e4b2f6e969f635d5d5ee96aa"
+    },
+    {
+      "path": "project/docs/evidence/review_island_after_fix.log",
+      "bytes": 461,
+      "sha256": "2537e6818d270ec413a019e3ba69dfbf5dfb4304256b4ec703675a2c24e5faaa"
+    },
+    {
+      "path": "project/docs/evidence/review_outpost_jobs_after_fix.log",
+      "bytes": 196,
+      "sha256": "e3001804d05e0ba05ace206c267f94f9305408b4aa4de716d4f9b8d52e28769c"
+    },
+    {
+      "path": "project/docs/evidence/review_pre_delivery.md",
+      "bytes": 3756,
+      "sha256": "ec26f4955af7312d3b66773fcb0c1445eb509c08e3f99c8720784f0262332648"
+    },
+    {
+      "path": "project/docs/evidence/review_sim_after_fix.log",
+      "bytes": 497,
+      "sha256": "a47f2616eb6adc30f4449a4a5fa4af59c50d0b5f8e34437d152f1c9a3df2db4b"
+    },
+    {
+      "path": "project/docs/evidence/save_guard_review.json",
+      "bytes": 1114,
+      "sha256": "4c9e0b6e56c207aeea39e42fa661a2cb4302ce0cf45ff48fc286f017e65e014d"
+    },
+    {
+      "path": "project/docs/evidence/save_guard_review.log",
+      "bytes": 1329,
+      "sha256": "b2a4491f09d5d51ebf8355b1b80448b5f8fafc193f557a7194f26921eb3235d2"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_regressions.json",
+      "bytes": 2476,
+      "sha256": "d0533c168686b31f40baf2aaaba4aeaf521a489c4b7d446da2c1f2570c95913b"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_regressions.log",
+      "bytes": 2100,
+      "sha256": "848085f0d294ee27fecb394c6cd960f9ea1a4b2b806405843dc74cbea2920d43"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_regressions_v15.log",
+      "bytes": 2100,
+      "sha256": "848085f0d294ee27fecb394c6cd960f9ea1a4b2b806405843dc74cbea2920d43"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_type_review.json",
+      "bytes": 171,
+      "sha256": "f9582d16f01aa34dfb8b3c58858972cb4b3961b8e192861d4eb2c39013714692"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_type_review.log",
+      "bytes": 238,
+      "sha256": "913189ce26a2e09fe64a6ae8a7b578b5de21c75763cddcb70059a035f5be2db0"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_type_review_before_fix.json",
+      "bytes": 129,
+      "sha256": "b3f5d0eb14b928d5e423b6cee107ecaa23d702166d403c05b840bc6adde6e91b"
+    },
+    {
+      "path": "project/docs/evidence/save_nested_type_review_before_fix.log",
+      "bytes": 900,
+      "sha256": "f853f3f888876cdde6649a7b8438d6662d03a34ca33864ee971b478b7471be3d"
+    },
+    {
+      "path": "project/docs/evidence/seed_context_extract_comparison.json",
+      "bytes": 1858,
+      "sha256": "8355b006e6b89f9085634cd6ddbb9ccd6b5a3f17fda77c4891df55cc5d675a7e"
+    },
+    {
+      "path": "project/docs/evidence/seed_diversity_before_context_extract.json",
+      "bytes": 58974,
+      "sha256": "6eab4e1d9587f2acf4299e7cca210f7499ae5b73319449bc633ad501f2311e4c"
+    },
+    {
+      "path": "project/docs/evidence/seed_diversity_v15.json",
+      "bytes": 58974,
+      "sha256": "6eab4e1d9587f2acf4299e7cca210f7499ae5b73319449bc633ad501f2311e4c"
+    },
+    {
+      "path": "project/docs/evidence/sim_tests_final.log",
+      "bytes": 4628,
+      "sha256": "3b906fea5a439e4c681268c2af92cc13f6c13a6ebbe5c442343af1dd163f2caf"
+    },
+    {
+      "path": "project/docs/evidence/simulation_review_probe.json",
+      "bytes": 587,
+      "sha256": "50012eb6c0b064f9599f4651aaf2986417dece51da454a82fbfa831f3f5e0f5c"
+    },
+    {
+      "path": "project/docs/evidence/simulation_review_probe_before_fix.json",
+      "bytes": 739,
+      "sha256": "e5769edf5f059cef5da6147fc941e917ad75cbdbe6ec602bb391165fcbabc3a5"
+    },
+    {
+      "path": "project/docs/evidence/static_font_instance.json",
+      "bytes": 1215,
+      "sha256": "15b1ce7b73ffec277e70b43e69ea0bc52fabbaad82501bc8c0433f6a2e8d9012"
+    },
+    {
+      "path": "project/docs/evidence/toolchain_hashes.json",
+      "bytes": 1867,
+      "sha256": "dd44de33afe4309bbbe4b0c833dfe19bb5aa0788e84f1fdaf0c50210086a02f0"
+    },
+    {
+      "path": "project/docs/evidence/visual_release_manifest.json",
+      "bytes": 8353,
+      "sha256": "a95ec9804cc580dd9d024ba7bff3f37e8977d43e929f31f130ab45155f40dc8d"
+    },
+    {
+      "path": "project/docs/evidence/visual_v1_5_manifest.json",
+      "bytes": 20023,
+      "sha256": "c41a4ca4db8b00f4b25617c5d03067a6149b8364c87cc73afb8a536745ed9ba8"
+    },
+    {
+      "path": "project/docs/evidence/world_flat_v15_fixture.png",
+      "bytes": 653949,
+      "sha256": "6cea14904134b7c1d2132aca16a90680f617a69b1d81f84a66bc44a88751f1ef"
+    },
+    {
+      "path": "project/docs/evidence/world_flat_v15_fixture_260130.png",
+      "bytes": 659512,
+      "sha256": "aee9ed02890f8659ed5cf5678a3fb3e9971cf7f359ae17f0cb960b91b7ebbe6d"
+    },
+    {
+      "path": "project/docs/evidence/world_flat_zoom_v15_fixture.png",
+      "bytes": 857792,
+      "sha256": "eebd98a25b500fe49a4a654548f0030800a994d7ba8643110e69417a0d0f24b8"
+    },
+    {
+      "path": "project/docs/evidence/world_flat_zoom_v15_fixture_260130.png",
+      "bytes": 882148,
+      "sha256": "a576395a5964d6c15e1252025a0dcbbea0f6aa2a3728f4bcb149d3f3ae69a876"
+    },
+    {
+      "path": "project/docs/evidence/world_mining_fixture.png",
+      "bytes": 656857,
+      "sha256": "6e550bc08ca5db2471e54f6e7664bab7cea4bdf996d7d74db435f2e6ba6a255c"
+    },
+    {
+      "path": "project/docs/evidence/world_planet_fixture.png",
+      "bytes": 540778,
+      "sha256": "6d86d81af07b38760e5dedde8914a095b59452b6ec61526e992656c83bedff17"
+    },
+    {
+      "path": "project/docs/evidence/world_planet_v15_fixture.png",
+      "bytes": 697060,
+      "sha256": "bc8741d1d7ddc07cd0b195aec5a12643ca2962be757c6ac58e9ff6ce6b61ea28"
+    },
+    {
+      "path": "project/docs/evidence/world_planet_v15_fixture_260130.png",
+      "bytes": 379187,
+      "sha256": "63b111cd1d9fd4dcad3a8c26339ad760dd9d82874f63c45d77687b485c99f5b6"
+    },
+    {
+      "path": "project/docs/evidence/world_region_v15_fixture.png",
+      "bytes": 607597,
+      "sha256": "9b4e226dee2612fbf4ea38247ff6d0452f286c338a14ce0c113d73e7a6f238c0"
+    },
+    {
+      "path": "project/docs/evidence/world_region_v15_fixture_260130.png",
+      "bytes": 579327,
+      "sha256": "4a22435436118a95d24610f9195caab94fb3eac8bb043d82091078f6db091a5f"
+    },
+    {
+      "path": "project/docs/evidence/world_render.log",
+      "bytes": 403,
+      "sha256": "cb83e2099415f5ed7ee8eea00ed8736c6e197f72350f6acf7083202cd4d83186"
+    },
+    {
+      "path": "project/docs/evidence/world_review_probe.json",
+      "bytes": 15975,
+      "sha256": "4e88253632d23a90283f85e64439210df0f37396950d93a1f0dd332ff699d635"
+    },
+    {
+      "path": "project/docs/evidence/world_review_probe_CC-GEO-1.4.json",
+      "bytes": 17451,
+      "sha256": "80cfa10f5157eb6697b1ce9096f986f63820d2edbcb58859c43cf1ff30d5939a"
+    },
+    {
+      "path": "project/docs/evidence/world_support_independent.log",
+      "bytes": 104,
+      "sha256": "d85fe3e3323e9293246fd33d64ddbcad61d8bbe36c01b1c22c3c564cfba7b73b"
+    },
+    {
+      "path": "project/docs/evidence/world_v15_river_gap_fail.json",
+      "bytes": 25071,
+      "sha256": "914a28807ea051f7f42209519e89bbebc5516da4f6850f6e96336077f39462e3"
+    },
+    {
+      "path": "project/docs/evidence/world_valley_fixture.png",
+      "bytes": 726538,
+      "sha256": "50f0c41c1297892e15a4cc6952b8dfb171f075f28febb469e4aaad535c108108"
+    },
+    {
+      "path": "project/docs/FLAT_MAP_V15_QA.md",
+      "bytes": 5413,
+      "sha256": "5dff55c2363973e16bc23b484dd317a4ea6db40691825c855931f8acf88a3f1e"
+    },
+    {
+      "path": "project/docs/GODOT_COPYRIGHT.txt",
+      "bytes": 97253,
+      "sha256": "2039020f520ebd55592070ede2ef38dfbc28a6550140008da004143872789e5d"
+    },
+    {
+      "path": "project/docs/GODOT_LICENSE.txt",
+      "bytes": 1149,
+      "sha256": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80"
+    },
+    {
+      "path": "project/docs/HYDROLOGY_REPORT.md",
+      "bytes": 4743,
+      "sha256": "a41bdec20036e40cff65a89bea823e2cd83465f097935e2d6d6b54eaa096affd"
+    },
+    {
+      "path": "project/docs/IMPLEMENTATION.md",
+      "bytes": 4335,
+      "sha256": "9c3697bfc00af4d11a39f0d0a9f448de79448eb8bc9433c405d5e0ec13bbe5f1"
+    },
+    {
+      "path": "project/docs/PROGRESS.md",
+      "bytes": 3534,
+      "sha256": "a26cf90eae6c7763872c06a261c6cd4a567f8f3d94821b93b7e6c0cc0e84cedd"
+    },
+    {
+      "path": "project/docs/REPRODUCTION.md",
+      "bytes": 13553,
+      "sha256": "5028b5ac23f450194a7e975a6733db8a0ed864d25d7cab5f3a96a323e3d4f1a2"
+    },
+    {
+      "path": "project/docs/REQUIREMENT_MATRIX.md",
+      "bytes": 6707,
+      "sha256": "1d7c3340cf1ef1bb6f4913876e95e57d23481aabce40bfda6310ffe0c2dcace8"
+    },
+    {
+      "path": "project/docs/REVIEW.md",
+      "bytes": 5379,
+      "sha256": "d6f8470744d01fbbcd71af06d4dd6da40c851dd82d2aaaeaee5808c1fe2d217c"
+    },
+    {
+      "path": "project/docs/reviews/2026-11-02-content-readiness-audit.md",
+      "bytes": 11442,
+      "sha256": "9845fad6fc504b58e509f87fbedc1fa5a2020f3c92c03faf4024da98e0b983b9"
+    },
+    {
+      "path": "project/docs/SEED_DIVERSITY.md",
+      "bytes": 1792,
+      "sha256": "132f4132e69b3aff04ac830abf58389d8561427910d4b2c7140e86664c2f329b"
+    },
+    {
+      "path": "project/docs/SIM_REPORT.md",
+      "bytes": 6696,
+      "sha256": "e1e7ff708c890bd24a7dd03f946c3c9bb429f88f59ee135212a6c54e2e0b7705"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-10-30-next-demo-agent-instructions.md",
+      "bytes": 39222,
+      "sha256": "7e8976fa3f376ccafb4f4c7ff014ed744b4d7d2668c24822056f00d4141f1b85"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-10-30-v16-execution.md",
+      "bytes": 4105,
+      "sha256": "5135231e24cf66716eb8c77d5bcf75044c54c9b2ec8d3ba59ec45e364c704726"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md",
+      "bytes": 56972,
+      "sha256": "892b1674af4eac96c0da581eb5eb822630c488be8e87db67ad6726dab409805b"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-11-01-v18-model-coverage.json",
+      "bytes": 49027,
+      "sha256": "9ed7bd50ea078ade9ff72590a2b30a4137515291974a9a143fe224caba8b1782"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-11-01-v18-model-supplement.md",
+      "bytes": 19278,
+      "sha256": "a726033af0825b396924666aedfadd6f2ea4e1d6e0ff5993405b0823977e2f76"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-11-01-v19-images/converted_models_closeup.jpg",
+      "bytes": 109795,
+      "sha256": "8f074601bd736349717f891da36c0bde2168906ea412895e1ad0c9c059cf7e3c"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-11-01-v19-images/region_models_before_after.jpg",
+      "bytes": 322299,
+      "sha256": "b699ae1ab376fd74a09de4deb09036945af67c8ab1ac282a6e557c02065a9c0e"
+    },
+    {
+      "path": "project/docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md",
+      "bytes": 64137,
+      "sha256": "05cb64773bbec54a446f2a73ffa38a5d910fedc03ed53e8e9c46a03b777dd72f"
+    },
+    {
+      "path": "project/docs/v16/BALANCE.md",
+      "bytes": 5233,
+      "sha256": "e165060ad0e0283dcc4aa9d0894456d7713c1800d8ce059d22d6abe7c7d2c44a"
+    },
+    {
+      "path": "project/docs/v16/CAREER.md",
+      "bytes": 2468,
+      "sha256": "3c86e0bd0c1fef75e969efa575618702a6eabb665cf1889e4385f8c32aa84929"
+    },
+    {
+      "path": "project/docs/v16/ECONOMY.md",
+      "bytes": 9584,
+      "sha256": "f9e0a972f351608d609978426dbae158b1ca596c8dbc30c7f532f66c0eeb3417"
+    },
+    {
+      "path": "project/docs/v16/EVENTS.md",
+      "bytes": 8720,
+      "sha256": "d6deb51a4db698db0e44c389828dc749cbbc070ae4e29092b7fb006977e38493"
+    },
+    {
+      "path": "project/docs/v16/REQUIREMENTS.md",
+      "bytes": 20947,
+      "sha256": "98df31aa99d4a1dc81463ac8deaa1824134451db532a1bc041a71af763a0b273"
+    },
+    {
+      "path": "project/docs/v16/UI_PERF.md",
+      "bytes": 5479,
+      "sha256": "5db418a6351a750f00ca93782e0e45569e4bc9f53d8b1a81d22ffa37b8c85a7c"
+    },
+    {
+      "path": "project/docs/v16/UI_PERF_LATEST.md",
+      "bytes": 5657,
+      "sha256": "aa24782c98f5620776876c6efa34a89733acbe803cd6972d12b21542db3137d7"
+    },
+    {
+      "path": "project/docs/v16/VALIDATION.md",
+      "bytes": 8177,
+      "sha256": "21ce9142f137cc5085afbc2ed101873b2981369e66cb9188d2d3d627df215182"
+    },
+    {
+      "path": "project/docs/v16/VISUAL.md",
+      "bytes": 4815,
+      "sha256": "e2f91c7ba369d0775a6a4bf6a388e08c659267d72fa13e96284282bae06f0957"
+    },
+    {
+      "path": "project/docs/v16/VISUAL_RELEASE.md",
+      "bytes": 8700,
+      "sha256": "e8dcabccec689e4c82ccc5f0c7626c79e0af1b16bcd02ef301523722deec3a8f"
+    },
+    {
+      "path": "project/docs/v16/WORLD.md",
+      "bytes": 8924,
+      "sha256": "80fc9d8ecdeabe14801fbb08580f28bd2cddd5434d33cd56bcc583d666f6e924"
+    },
+    {
+      "path": "project/docs/v17/BALANCE.md",
+      "bytes": 13938,
+      "sha256": "9fccbcc570d0c559e1990262dff0d9a04f86463c71d551e3f8f75b253afec82c"
+    },
+    {
+      "path": "project/docs/v17/DECISIONS.md",
+      "bytes": 33805,
+      "sha256": "03c133d2ef1c82043ba4964af7bd1c14a76bee476aea5f8e08dff07ee8a86cf7"
+    },
+    {
+      "path": "project/docs/v17/DESIGN.md",
+      "bytes": 23152,
+      "sha256": "2deed6d80fe1369359ab4d203b95a2bc4003d1eb26f4445547369c4e1d894054"
+    },
+    {
+      "path": "project/docs/v17/PLAN.md",
+      "bytes": 8656,
+      "sha256": "bdda00501d6e0941a80fbccf1dbe6fbbfcd1223d3383df7df1b28df96a19995d"
+    },
+    {
+      "path": "project/docs/v17/PLAYTEST.md",
+      "bytes": 3747,
+      "sha256": "016443bf23f43d68769f64d55c6bc3e35611898ffbd1f4952d576c0af43c6529"
+    },
+    {
+      "path": "project/docs/v17/PROGRESS.md",
+      "bytes": 17899,
+      "sha256": "7a2a2db8456b5f9de3874d6d7fd2a0766bf21fedc1a63f481f01b687747721fc"
+    },
+    {
+      "path": "project/docs/v17/V18_BRIEF.md",
+      "bytes": 7468,
+      "sha256": "87fac919a462257a8084a00d74f661db0651a4c943acc594336c967390f6ebfb"
+    },
+    {
+      "path": "project/docs/v17/V18_PLAN.md",
+      "bytes": 6161,
+      "sha256": "1e549270bc0a8ec078a473e9e0591448e3c6cf7f1a3dc28e982ceb0c32c51dd7"
+    },
+    {
+      "path": "project/docs/v17/VALIDATION.md",
+      "bytes": 30040,
+      "sha256": "889c02b79a2cfa702ab04dd2261f07522a0f3b11a2b575faabf11d6958b7119c"
+    },
+    {
+      "path": "project/docs/VALIDATION.md",
+      "bytes": 15573,
+      "sha256": "8b3073f1b7391bd58bb5e8744461f0cdc1e48e151591572a41438e37e68b478c"
+    },
+    {
+      "path": "project/docs/VALIDATION_V1_4.md",
+      "bytes": 10547,
+      "sha256": "a6b91b646877388e1548b25e622cef0768c1f99e873526f2037fc287e36bef95"
+    },
+    {
+      "path": "project/docs/VISUAL_QA.md",
+      "bytes": 6962,
+      "sha256": "f84ac4f73274621387c8e2e76787af72f38af8ff393286dffdde25446125eaea"
+    },
+    {
+      "path": "project/docs/VISUAL_RELEASE_QA.md",
+      "bytes": 6296,
+      "sha256": "b902a676f899553726e6e856783c56e4c2be7ba5e2469f0bbc0ffaca7dbc3094"
+    },
+    {
+      "path": "project/docs/VISUAL_V1_5_QA.md",
+      "bytes": 7261,
+      "sha256": "96c4e9a8441a90aef85e0e41b115a11f57f0076d24dcf5806608cee0173cc096"
+    },
+    {
+      "path": "project/docs/WORLD_REPORT.md",
+      "bytes": 5506,
+      "sha256": "c650e8b2a59e74acdcdee6dbc1773e012c3a1c5fd0dbe0ef42343b909255dbb7"
+    },
+    {
+      "path": "project/docs/world_self_test.json",
+      "bytes": 79118,
+      "sha256": "0380718e2e221fed06622bd23944710e88519f36f3cc851d488601ebb7a74b80"
+    },
+    {
+      "path": "project/evidence/v16/world_seed_red.json",
+      "bytes": 2820,
+      "sha256": "f0d63143e53728d9d88c445baedebfc30dcf7f89a147e5971c800d9b3ecce56b"
+    },
+    {
+      "path": "project/evidence/v17/balance/2026-11-01T03-10-20.json",
+      "bytes": 800598,
+      "sha256": "6f591399d2d45b9f584fe312eb0b55b1ff898f9c23b048401df219436d250be2"
+    },
+    {
+      "path": "project/evidence/v17/perf/exe_first_run/perf_report.json",
+      "bytes": 2607,
+      "sha256": "d7abf118a0da79adb7496b610a397c3f08b7502f6b333ab1f510892058363328"
+    },
+    {
+      "path": "project/evidence/v17/perf/exe_second_run/perf_report.json",
+      "bytes": 2602,
+      "sha256": "2c243bf4fdf1906de99d2a07b0c831a9d40e594db68a6465ebe787ff8b0eaecc"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/HARNESS_NOTE.txt",
+      "bytes": 364,
+      "sha256": "11c1b3f5c90a46fdf875318f8856760cb9b3060ea24bf1d072bcd021c206f75c"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/import.log",
+      "bytes": 12686,
+      "sha256": "ef33e58a2cfa2928355b9060ae02f492207cba9a38de0414d26face1c2915fd4"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/import_result.json",
+      "bytes": 726,
+      "sha256": "0c501e9e08bcd2a83b9063aa4c2c524c841daae9ccaa75f8700ef89b32473f2d"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/run_review.py",
+      "bytes": 5081,
+      "sha256": "cdd3aac0eaefb3c28a1af523b8df719c12d907ed2814441f4781b26a53d946bf"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/source_manifest.json",
+      "bytes": 33385,
+      "sha256": "c2e95936607531c7df05afd5d1b088caa3b3a541b3f34b0a554196d2a2edea92"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/summary.json",
+      "bytes": 6796,
+      "sha256": "7ca061e6d9cba791bb4671ba3b74f6de7f697b23bb4871af5920d43b4ed7fc95"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_contract_population.log",
+      "bytes": 5463,
+      "sha256": "91acf218e8d5210b7370bc7d30332a9f249f5f6dc3ca0f52c7be6dc9a9b637b1"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_contract_population_result.json",
+      "bytes": 1005,
+      "sha256": "7265f78b3fdec99e4a400924796fd1360d80c03220034ae74d9f9a75e5b90f5d"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_events.log",
+      "bytes": 5240,
+      "sha256": "777d29273e82d95d0cbfcd409e8c8e6d86a0842c964083fdb68d524c585be538"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_events_result.json",
+      "bytes": 952,
+      "sha256": "8bf0d3998095ba87c3de19e14ef481b03dec7e62fee175fdad0b6cfa6ed928fc"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_research.log",
+      "bytes": 5642,
+      "sha256": "fba0124cac13e09717f48e303ed5c4556303fefb922e79035d6f37d2a5e8c51d"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_research_result.json",
+      "bytes": 961,
+      "sha256": "902cae5acf891bbe513c4f8c2156b0692978748eea91490a67eacdf2af94ef8e"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_saves.log",
+      "bytes": 5158,
+      "sha256": "1eccb8c27c9e939d7adccb51860d057f366a5d758cdcdaa290eb2392e4112c3e"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_saves_result.json",
+      "bytes": 946,
+      "sha256": "4eb3045ec35a36d9be95484e78bf632f06f567b653e162ad9990b3229aa57f6f"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_tutorial.log",
+      "bytes": 10119,
+      "sha256": "777e1a71e3a87b390b7818c5535731a50e92a51ae9725bdd12caa2efb48f0ac2"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v17_tutorial_result.json",
+      "bytes": 962,
+      "sha256": "8ed632c24e091d47e7c976cefce62dd66d99ea6e8bf37b5a3887cd5dc03fa86a"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v18_systems.log",
+      "bytes": 3462,
+      "sha256": "5717a34e15fc51c20a428690c273e8965373ccef69d1d34bfd0440952392e359"
+    },
+    {
+      "path": "project/evidence/v17/readiness_review_20261102_r2/v18_systems_result.json",
+      "bytes": 954,
+      "sha256": "9d7fc13702bb70beddd74901f27f08879ecf5fc1de3a4f173bd2451535acd0d4"
+    },
+    {
+      "path": "project/evidence/v1_4/acceptance_midgame.json",
+      "bytes": 3979432,
+      "sha256": "272da163ea1d692d734b96f45e5fb3540a997cd8fd0a793c609f9583dabdf20c"
+    },
+    {
+      "path": "project/game/assets/fonts/main.ttf",
+      "bytes": 17773244,
+      "sha256": "763146584cf0710223441356b4395e279021b0806c196614377a7a0174ae074a"
+    },
+    {
+      "path": "project/game/assets/fonts/main.ttf.import",
+      "bytes": 750,
+      "sha256": "f7354cd6a9eb8645ae4180809a675f9d5d2991d0391ebf852dcebbcd843eda60"
+    },
+    {
+      "path": "project/game/assets/fonts/main_medium.ttf",
+      "bytes": 10589644,
+      "sha256": "b6244a7dc0e834b01138d704640ccf5c069b151fa7b7c7c0f954af095400667d"
+    },
+    {
+      "path": "project/game/assets/fonts/main_medium.ttf.import",
+      "bytes": 771,
+      "sha256": "660ffde733d05ce67d4bc0c069ae4a92a22df7b6451a2a5f4cb655d946268e2e"
+    },
+    {
+      "path": "project/game/assets/fonts/OFL.txt",
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    {
+      "path": "project/game/assets/generated/world_atlas_d0139459574cf5351f59c4a47e4409eef99bd1bd7481d8dc7eae051297abbe9d.png",
+      "bytes": 1740245,
+      "sha256": "cf7d8ed9b7a7c9488ec30d9c78b09b0c327e4b0e718ef0fab6ea7ce29fd16826"
+    },
+    {
+      "path": "project/game/assets/generated/world_atlas_d0139459574cf5351f59c4a47e4409eef99bd1bd7481d8dc7eae051297abbe9d.png.import",
+      "bytes": 1149,
+      "sha256": "1ebae1c3cb1e3054abd794d531dd2785d33fc9e298f20b209c2ea7613091b2b8"
+    },
+    {
+      "path": "project/game/assets/icons/components.svg",
+      "bytes": 389,
+      "sha256": "840d35c5280fa68a6e1c95136a97d48fc60e36deb3d3e979eac2238f8a2cd2bf"
+    },
+    {
+      "path": "project/game/assets/icons/components.svg.import",
+      "bytes": 1044,
+      "sha256": "6c02339518b49f0c5011e52ee1dbbb08a319d0286ca42bf1a38af04aa8bfe94d"
+    },
+    {
+      "path": "project/game/assets/icons/copper.svg",
+      "bytes": 308,
+      "sha256": "b4ef891d62345c8fe4d147f29e2bb61c9820aed62ef88efde7e1e1073af2c7bf"
+    },
+    {
+      "path": "project/game/assets/icons/copper.svg.import",
+      "bytes": 1032,
+      "sha256": "bd54e397b55ec26be3360823f322ac5e1dc49065083db22d746a9f150b25db1b"
+    },
+    {
+      "path": "project/game/assets/icons/crystal.svg",
+      "bytes": 302,
+      "sha256": "d7f4946c210110c114ad256efab37c725ecd44067c789f646f204548e6424453"
+    },
+    {
+      "path": "project/game/assets/icons/crystal.svg.import",
+      "bytes": 1034,
+      "sha256": "ea7afb741b76dd0603648efae7ad9e04fb884330bde26d3c40217ed4cbcabffc"
+    },
+    {
+      "path": "project/game/assets/icons/farm.svg",
+      "bytes": 313,
+      "sha256": "285d70e161ba8e10a6c79063f4620be2f4a386bbf96d97e74e2d61633a33a81a"
+    },
+    {
+      "path": "project/game/assets/icons/farm.svg.import",
+      "bytes": 1026,
+      "sha256": "ad3f903d6d61570956a4ab7fae8e7fb700c8a1f66cc357fc9333a0c9d66f6242"
+    },
+    {
+      "path": "project/game/assets/icons/food.svg",
+      "bytes": 353,
+      "sha256": "a765e8fd34294b3d82615abaf182acc5c05107aec7ed56eba344e3be06c2381a"
+    },
+    {
+      "path": "project/game/assets/icons/food.svg.import",
+      "bytes": 1026,
+      "sha256": "5db90df530b879371b459072a5d5734d243eff7a0cd4edda134a6c5d4611e6b4"
+    },
+    {
+      "path": "project/game/assets/icons/habitat.svg",
+      "bytes": 305,
+      "sha256": "a12aefc23dc199f45392ac2f2884af8a29bda5ed9cd039612512def93cce18e6"
+    },
+    {
+      "path": "project/game/assets/icons/habitat.svg.import",
+      "bytes": 1035,
+      "sha256": "a4822c9666ddbba7885faecadd636a67445ad8746e68d5848a65dd52f17e6926"
+    },
+    {
+      "path": "project/game/assets/icons/lab.svg",
+      "bytes": 368,
+      "sha256": "7e0c3a30af43e08181a2328d0f4244bf177da689eef5aca9dc4c3f867ef3cdba"
+    },
+    {
+      "path": "project/game/assets/icons/lab.svg.import",
+      "bytes": 1022,
+      "sha256": "2dfc3a2dde3ddde6a7f2e8670e4de41290193a94fff535653ffb2ece95684ad9"
+    },
+    {
+      "path": "project/game/assets/icons/materials.svg",
+      "bytes": 314,
+      "sha256": "a7923a78708a92173534ea27314cc39843b4bc50ded869bf37970c67604ee4ad"
+    },
+    {
+      "path": "project/game/assets/icons/materials.svg.import",
+      "bytes": 1040,
+      "sha256": "107a1b4d602c3a944a11f2a30498cd8ab9e6631027d2751c73e62d721972389b"
+    },
+    {
+      "path": "project/game/assets/icons/ore.svg",
+      "bytes": 294,
+      "sha256": "3545c8b5aaccdc89fb87241badcd685814ae960b494b796c4b222b6e2433163d"
+    },
+    {
+      "path": "project/game/assets/icons/ore.svg.import",
+      "bytes": 1022,
+      "sha256": "7fe023b60e751ff0c731bb8f5b5205acf44237ba09ec10ac13dc392eec5632a6"
+    },
+    {
+      "path": "project/game/assets/icons/parts.svg",
+      "bytes": 315,
+      "sha256": "d4f1bc0509c425503893464dd5ea6e3445989ec5ffd6a87cea7f2835fba8ad41"
+    },
+    {
+      "path": "project/game/assets/icons/parts.svg.import",
+      "bytes": 1029,
+      "sha256": "dcdfcbb81731f6a98ed950594d09f9be30e99446f9afbfbd80d6a0e38e57a872"
+    },
+    {
+      "path": "project/game/assets/icons/port.svg",
+      "bytes": 328,
+      "sha256": "d2a1633ee6ae3fc7ccc26c65cb3500b9ed95c405b5552f8564360588c7f61d82"
+    },
+    {
+      "path": "project/game/assets/icons/port.svg.import",
+      "bytes": 1026,
+      "sha256": "9361a5d972865db6c8f312c779626fb9139732a11b38da3a388a6f6a8d017a6f"
+    },
+    {
+      "path": "project/game/assets/icons/power.svg",
+      "bytes": 268,
+      "sha256": "d488521f33ff19dde55576315eb92ba4ec21c399dad9e3cefd7c1f637dc2d4b4"
+    },
+    {
+      "path": "project/game/assets/icons/power.svg.import",
+      "bytes": 1029,
+      "sha256": "b851cfbbd549e9b8ae197f611f4de50d4d84c4ca66ffe067b67ef9f367cb9bd9"
+    },
+    {
+      "path": "project/game/assets/icons/processor.svg",
+      "bytes": 298,
+      "sha256": "0f9d833289144802de3dc0cb957fc913016ded0e6da1609a801f5f19e6b309b6"
+    },
+    {
+      "path": "project/game/assets/icons/processor.svg.import",
+      "bytes": 1041,
+      "sha256": "b42a8a2a85229ff6a101fb630d14bd4e6a3c3f16efb188b3178cc67bc09d7b34"
+    },
+    {
+      "path": "project/game/assets/icons/warning.svg",
+      "bytes": 288,
+      "sha256": "b3553414a2d6217752b1224b0edb3f465d774c97df987b295062e51c9d82a76c"
+    },
+    {
+      "path": "project/game/assets/icons/warning.svg.import",
+      "bytes": 1035,
+      "sha256": "784aa509340a6b843001dcbfe98774e8f997d0eeb04739bd538334a97c2354ff"
+    },
+    {
+      "path": "project/game/assets/icons/water.svg",
+      "bytes": 319,
+      "sha256": "a6c42784614b8b7651ef949fedd9673baf7f11b8350b50f0eaa21faa81cb4f2f"
+    },
+    {
+      "path": "project/game/assets/icons/water.svg.import",
+      "bytes": 1029,
+      "sha256": "2c4d67e7a6643fb1abed11af6211460f0e9a410b3ad2587a588c74ab751d2674"
+    },
+    {
+      "path": "project/game/assets/portraits/engineer.png",
+      "bytes": 2225502,
+      "sha256": "364c61687b2d5af38e279a57d2ac2de6fe4f647fea7cc93abf45c95b4b584ef3"
+    },
+    {
+      "path": "project/game/assets/portraits/engineer.png.import",
+      "bytes": 945,
+      "sha256": "05d7850843b443e05552ead8c7f477ced10a81ee030373a6ad72c76b81fb40b8"
+    },
+    {
+      "path": "project/game/assets/portraits/liaison.png",
+      "bytes": 2110027,
+      "sha256": "63f3001f7779bb9fc93163c1a498d905c119c9a94e60ab57a5a8d0c5444c011b"
+    },
+    {
+      "path": "project/game/assets/portraits/liaison.png.import",
+      "bytes": 942,
+      "sha256": "8d37a2375efba3a53f88cfa59fc5ac7b63087d2e94aa12a9b8f0d97868c212bc"
+    },
+    {
+      "path": "project/game/assets/portraits/scientist.png",
+      "bytes": 2244469,
+      "sha256": "1c0c4e9d6c830bd967a4fa528f9927be3e1567ebe81cc5f5355451c6eaa1eb18"
+    },
+    {
+      "path": "project/game/assets/portraits/scientist.png.import",
+      "bytes": 948,
+      "sha256": "3af51803187b4346902871cea8fcc2cec776a6000816ce7c02c31ffd9018d251"
+    },
+    {
+      "path": "project/game/data/acceptance_midgame.json",
+      "bytes": 6869784,
+      "sha256": "39db7c33c997a0265aa42d06b321e789935994ae4d6d86e230cd281a532b3869"
+    },
+    {
+      "path": "project/game/data/acceptance_midgame.json.bak",
+      "bytes": 6163939,
+      "sha256": "56918a5d16032b14c63789bd2b4e04ef5311971f7ffbfc98b6c729ef8ac20c55"
+    },
+    {
+      "path": "project/game/data/acceptance_success.json",
+      "bytes": 6968127,
+      "sha256": "0e326de9e4d2df82a9faefda146c6fe03bdf8576fc58d0dc9e47385a1efe6f76"
+    },
+    {
+      "path": "project/game/data/acceptance_success.json.bak",
+      "bytes": 6262274,
+      "sha256": "1ddca1dfe32c36cc28d89e90034ca8b827f2f747acf6c6b1d5451dfb87423d65"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_crisis.json",
+      "bytes": 8377528,
+      "sha256": "28af0a557dba398f056a1796aedf2de534db6a99df4943e9d3f3f6e5b4f72699"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_crisis.json.bak",
+      "bytes": 8377528,
+      "sha256": "28af0a557dba398f056a1796aedf2de534db6a99df4943e9d3f3f6e5b4f72699"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_event_mid.json",
+      "bytes": 6786544,
+      "sha256": "5c38e2d961a9c0e9db69998951a974ed3f785d6e2f7ba2c9d68dd2f0450c1011"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_event_mid.json.bak",
+      "bytes": 6786544,
+      "sha256": "5c38e2d961a9c0e9db69998951a974ed3f785d6e2f7ba2c9d68dd2f0450c1011"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_governor.json",
+      "bytes": 8394355,
+      "sha256": "3bda26f517bc0d11c92dfedee005f67f028469aff0cd5c563676d6b257b1e281"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_governor.json.bak",
+      "bytes": 8394355,
+      "sha256": "3bda26f517bc0d11c92dfedee005f67f028469aff0cd5c563676d6b257b1e281"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_pre_award.json",
+      "bytes": 8383526,
+      "sha256": "0447fcaa5e878cdd39d58ad6d77b4a064ff6501e239dc43ebbf4e02ff05102a5"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_pre_award.json.bak",
+      "bytes": 8383526,
+      "sha256": "0447fcaa5e878cdd39d58ad6d77b4a064ff6501e239dc43ebbf4e02ff05102a5"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_research.json",
+      "bytes": 6930737,
+      "sha256": "7e357eabf225236245ec379ce0493883118c1820cc6723f5f86c462181ed1676"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_second_dividend.json",
+      "bytes": 11152248,
+      "sha256": "eb233e729eda3ad16ec6248ff8eb67c6dd1d6886a221ccb164a1eef6355afde8"
+    },
+    {
+      "path": "project/game/data/v16/acceptance_second_dividend.json.bak",
+      "bytes": 11152248,
+      "sha256": "eb233e729eda3ad16ec6248ff8eb67c6dd1d6886a221ccb164a1eef6355afde8"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_crisis.save",
+      "bytes": 34004,
+      "sha256": "f602ea9e64c5d8d141fbb816360ea0a21aa4f096b069e80fb402903c38ff3703"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_crisis.save.bak",
+      "bytes": 34004,
+      "sha256": "f602ea9e64c5d8d141fbb816360ea0a21aa4f096b069e80fb402903c38ff3703"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_early.save",
+      "bytes": 25517,
+      "sha256": "c19d359346fa654539d38e58f0b1604d4de81317b236a3662b0dad6fb4770d32"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_early.save.bak",
+      "bytes": 25517,
+      "sha256": "c19d359346fa654539d38e58f0b1604d4de81317b236a3662b0dad6fb4770d32"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_event.save",
+      "bytes": 34608,
+      "sha256": "ded4213b68dc88bbf34044058b4100bcb69cf5ef59ad29b331c2c036689b75e1"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_event.save.bak",
+      "bytes": 34608,
+      "sha256": "ded4213b68dc88bbf34044058b4100bcb69cf5ef59ad29b331c2c036689b75e1"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_geo20.save",
+      "bytes": 38942,
+      "sha256": "12fd9c8d73f6eefa6964e1a7d12a8c87ccf22387dd53c57ccff2a4a0a72d9dad"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_geo21.save",
+      "bytes": 37775,
+      "sha256": "0e46b82582dadb7439ea698db2b281761d7d2076ae8479980e602e4ed7125f10"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_governor.save",
+      "bytes": 59625,
+      "sha256": "485894da35f47c54fb6ebd46c7d0df92e1029809bddc9f6a8616f726323bb50f"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_governor.save.bak",
+      "bytes": 59049,
+      "sha256": "398ebfd94b03679c11a82f318f8c06db48f09b08c54bb94adac71c34751e4fb1"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_late.save",
+      "bytes": 58965,
+      "sha256": "9bb7afc46078f2c788c7a881b01d03b28c2fedacb7ce304a60d0a0ab3b753e30"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_late.save.bak",
+      "bytes": 56973,
+      "sha256": "126571a73dc83f00a7d4278b0df3eda22700bf232a71615312b6686abc40bc85"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_midgame.save",
+      "bytes": 44051,
+      "sha256": "5e393f0c798deec16425894ba9a9eaf4f55c039aa78b3feb2cca30b80bfbbee3"
+    },
+    {
+      "path": "project/game/data/v17/acceptance_midgame.save.bak",
+      "bytes": 44051,
+      "sha256": "5e393f0c798deec16425894ba9a9eaf4f55c039aa78b3feb2cca30b80bfbbee3"
+    },
+    {
+      "path": "project/game/data/v17/career.json",
+      "bytes": 331,
+      "sha256": "48e0860d2d9a4b50cc9de13dcb2ffe591b97eb4d1ea561ffa5ab585f7a64cb05"
+    },
+    {
+      "path": "project/game/data/v17/contract.json",
+      "bytes": 2789,
+      "sha256": "ae6754bc5be42c962151e4b79ae92e22c1aa17285c5d0128d0d10a3c1f7a8175"
+    },
+    {
+      "path": "project/game/data/v17/economy.json",
+      "bytes": 38645,
+      "sha256": "7ea38dcb318e17c93590dad4c8efb54bc06acaad59f282a1370c9d6ec474775c"
+    },
+    {
+      "path": "project/game/data/v17/events.json",
+      "bytes": 138179,
+      "sha256": "43578016b6221a904ce78caab7f2334776691117ec2ff82e2022b58947e9ead3"
+    },
+    {
+      "path": "project/game/data/v17/geography.json",
+      "bytes": 11928,
+      "sha256": "37c3b1e6fac9c6e05458a6f15be820cd696e14d997ed0593082b0deef307edd6"
+    },
+    {
+      "path": "project/game/data/v17/market.json",
+      "bytes": 450,
+      "sha256": "e3fdfbc414898a5ac8ca52b14a604e1926504278210eef8a9db9127aa5cedfba"
+    },
+    {
+      "path": "project/game/data/v17/population.json",
+      "bytes": 1490,
+      "sha256": "75f2b9ffd9941062dd1608cc67d743ac61a1394929692ed1ce9abd95c2ad3743"
+    },
+    {
+      "path": "project/game/data/v17/progression.json",
+      "bytes": 3176,
+      "sha256": "f60a12f62ee98404af202aeea22fd985591d58f5918e89df444768399590f754"
+    },
+    {
+      "path": "project/game/data/v17/techs.json",
+      "bytes": 48909,
+      "sha256": "dac5e7c74e98d37e0ca7ee0c0c6a9bf0b1b7279bc6813679e1af07c121766357"
+    },
+    {
+      "path": "project/game/data/v17/tutorial.json",
+      "bytes": 6863,
+      "sha256": "5681d0920fa4bc5e9a78d4854d38d0860dd623a25a1e8b1f249868d770d95062"
+    },
+    {
+      "path": "project/game/export_presets.cfg",
+      "bytes": 791,
+      "sha256": "93ecf91c0d4042e302e7ae9bb76b9b14d560a16d4ea3f81b54ce2f3b0b196cf1"
+    },
+    {
+      "path": "project/game/main.tscn",
+      "bytes": 161,
+      "sha256": "97fa243e3ac02103454282636364353b1853464dc6c2325cb961170d2be8ffa4"
+    },
+    {
+      "path": "project/game/project.godot",
+      "bytes": 808,
+      "sha256": "5125c8883df5f998820e19c02a4c60262ac46c6e9571adfc0487c288c29007ab"
+    },
+    {
+      "path": "project/game/simulation/career.gd",
+      "bytes": 20739,
+      "sha256": "8123d6dbbcf75dccf2c4e1b948ea60443534a4aebc8cb83f0820898a11d989ba"
+    },
+    {
+      "path": "project/game/simulation/career.gd.uid",
+      "bytes": 20,
+      "sha256": "086800aac421e7ad104333c7d7c74597783fd65b70e7a5803bbc7e2821322829"
+    },
+    {
+      "path": "project/game/simulation/company.gd",
+      "bytes": 14859,
+      "sha256": "e47a93a7715cc1127bef5c28a768c82aa06e271e54f8538973c50757406e3499"
+    },
+    {
+      "path": "project/game/simulation/company.gd.uid",
+      "bytes": 20,
+      "sha256": "6306beff1113efa42433c247bd3078ce5eaec0843b2166be97e82a83006f6a9d"
+    },
+    {
+      "path": "project/game/simulation/contract.gd",
+      "bytes": 13011,
+      "sha256": "1da6fcd4cc158c5fe7932867c09cd91df0a5809ba45eb453e3aa2772e267045b"
+    },
+    {
+      "path": "project/game/simulation/contract.gd.uid",
+      "bytes": 20,
+      "sha256": "40b32fc0f3526311c78640369f35b140c4bcb62bfc78d29fbde35cdc34e1fcc0"
+    },
+    {
+      "path": "project/game/simulation/enterprise.gd",
+      "bytes": 7232,
+      "sha256": "127a365afda84d52c3b036ebc7206aebd1321b709fd2c9cc2a03f87a5e874b92"
+    },
+    {
+      "path": "project/game/simulation/enterprise.gd.uid",
+      "bytes": 19,
+      "sha256": "f1cb6769955d7c3da91486b3a53ae9920ea008d9b210dec8161bba4f3006a4af"
+    },
+    {
+      "path": "project/game/simulation/events_v2.gd",
+      "bytes": 48630,
+      "sha256": "c4ee5f2966a106e8f1e9b54ea7824b6d273aee7fe024cc22edfba57e0034d7c3"
+    },
+    {
+      "path": "project/game/simulation/events_v2.gd.uid",
+      "bytes": 20,
+      "sha256": "72c33c94d244aa708d0a80ac85b9b54aea1dc3de359123be248a604b99aab23e"
+    },
+    {
+      "path": "project/game/simulation/keys.gd",
+      "bytes": 1786,
+      "sha256": "ac278cf91af1cdce985a1e5c8835d65030ba285e3c3329a318e47fade69c53e2"
+    },
+    {
+      "path": "project/game/simulation/keys.gd.uid",
+      "bytes": 20,
+      "sha256": "737c5ccb856b676966c00830580e45c33c4de7b2cdb3fd37b598c9a2806d37b6"
+    },
+    {
+      "path": "project/game/simulation/logistics.gd",
+      "bytes": 24907,
+      "sha256": "02aeb7b8a113777615f71720a66e36ab9ba5f7f4d5b5d217fb655a25db1c481e"
+    },
+    {
+      "path": "project/game/simulation/logistics.gd.uid",
+      "bytes": 19,
+      "sha256": "89760afc53e10757fc09ca43a3f58fe45df486f15239e05464fd235c094fc0f5"
+    },
+    {
+      "path": "project/game/simulation/market.gd",
+      "bytes": 2909,
+      "sha256": "09ec36dd7d2741dd4ba4c119a6df2386c6bf29297516abe2c419d8fe5c8cc99e"
+    },
+    {
+      "path": "project/game/simulation/market.gd.uid",
+      "bytes": 19,
+      "sha256": "5d93f169bf04b4051db09e7ff9596890e29a0ba67492bd4daa47c2177583d5c1"
+    },
+    {
+      "path": "project/game/simulation/megaprojects.gd",
+      "bytes": 2622,
+      "sha256": "56e3911a43244dc4a27fb0a68e955a2de9c9ac173121d1c707750f297cf535dd"
+    },
+    {
+      "path": "project/game/simulation/megaprojects.gd.uid",
+      "bytes": 19,
+      "sha256": "16bd02f2bb68523e60f25dc4553a955566e1f54892177d20706f16aa557321e5"
+    },
+    {
+      "path": "project/game/simulation/pollution.gd",
+      "bytes": 5313,
+      "sha256": "6801ffc2d2b677481c0c722fd6b722b96e0cb6f9c9d46f187f2c766e171e4589"
+    },
+    {
+      "path": "project/game/simulation/pollution.gd.uid",
+      "bytes": 18,
+      "sha256": "b800be8b9c821f467f7781754a07dc8aa9ea93c85c0603dd25e745932c5cc500"
+    },
+    {
+      "path": "project/game/simulation/population.gd",
+      "bytes": 17342,
+      "sha256": "3a9279de1619327db31b41cd1162fb65c56662703881ce5fda25bce9b965f680"
+    },
+    {
+      "path": "project/game/simulation/population.gd.uid",
+      "bytes": 20,
+      "sha256": "787d52f71d4ee6b2f7e9020f8e8ab06e80aa855c74ab7084b8d9d11263efbf54"
+    },
+    {
+      "path": "project/game/simulation/production.gd",
+      "bytes": 32584,
+      "sha256": "9075936e2f8ed997b9f1ce6610ddc791b249def1e045c4f2929d216e925bb2d0"
+    },
+    {
+      "path": "project/game/simulation/production.gd.uid",
+      "bytes": 19,
+      "sha256": "1bdb09730dcd2b31791464289f18f4e7d133a13a162cd8364faaffa8c04b5f52"
+    },
+    {
+      "path": "project/game/simulation/research.gd",
+      "bytes": 22758,
+      "sha256": "a6e3a37b51eb53433c0aa29f778968561db17609218483b7d0179f1902535522"
+    },
+    {
+      "path": "project/game/simulation/research.gd.uid",
+      "bytes": 20,
+      "sha256": "726b8bb38bb81c603b493c229b86b73d983c6b21462c02d2c5c09a695b0ac207"
+    },
+    {
+      "path": "project/game/simulation/rules.gd",
+      "bytes": 2889,
+      "sha256": "76288f3f95f18778076494a8363451854897cebdda48c766f6d9fe74c9fcaf90"
+    },
+    {
+      "path": "project/game/simulation/rules.gd.uid",
+      "bytes": 19,
+      "sha256": "3b8e2ef7be6508df66487b038251b47f885278f12b11de762c1f778edec47ea2"
+    },
+    {
+      "path": "project/game/simulation/save_io.gd",
+      "bytes": 19746,
+      "sha256": "e8e5ce6f095f6f355b4d9144897cd89aebbbeac8271793cbba986e3e348aa771"
+    },
+    {
+      "path": "project/game/simulation/save_io.gd.uid",
+      "bytes": 20,
+      "sha256": "4e91118d24e31ea74591f1d27fd17fd0cac5bceb03e0e1473ac500c9fdfd06c3"
+    },
+    {
+      "path": "project/game/simulation/save_migration.gd",
+      "bytes": 18030,
+      "sha256": "0c9f06b66a62c5f17a9e44ecfe08f704d5396134d1ac3b86d9951fbefcada5d3"
+    },
+    {
+      "path": "project/game/simulation/save_migration.gd.uid",
+      "bytes": 19,
+      "sha256": "d59c2ab61b185581fdf381a24987f4555ca51e019c5e17a7a429fca900c28135"
+    },
+    {
+      "path": "project/game/simulation/sim.gd",
+      "bytes": 25272,
+      "sha256": "0566ae5655f32a754a35e7a6a679d50ef55fca059dc472ab748b3b8fc6902c25"
+    },
+    {
+      "path": "project/game/simulation/sim.gd.uid",
+      "bytes": 20,
+      "sha256": "f71e76a997c7226484528a58a3aad83c01ba28dc41ba513368cb161174a94d89"
+    },
+    {
+      "path": "project/game/simulation/sites.gd",
+      "bytes": 28285,
+      "sha256": "5ecdacdf9a71bcfda82b000d2627c108661c74760b26656efae10c16203e760d"
+    },
+    {
+      "path": "project/game/simulation/sites.gd.uid",
+      "bytes": 20,
+      "sha256": "6dff028baf765121cda99ae5bc4099c53193e8f755a6519a0f89af055767fc51"
+    },
+    {
+      "path": "project/game/simulation/stats.gd",
+      "bytes": 5538,
+      "sha256": "71f9a0d0b9cb4e138cac7574f9f0a665577ebe0da58e96cf11dace2236214610"
+    },
+    {
+      "path": "project/game/simulation/stats.gd.uid",
+      "bytes": 19,
+      "sha256": "576ff684c627e6ec2bfc4cee2fef3a8d4b2015345032b1e452f579fb7664a590"
+    },
+    {
+      "path": "project/game/simulation/tutorial.gd",
+      "bytes": 4293,
+      "sha256": "e679e11c063d6fa198b9f4994397f3706eb19b3d561b19fde61902ffa3fbe07a"
+    },
+    {
+      "path": "project/game/simulation/tutorial.gd.uid",
+      "bytes": 20,
+      "sha256": "9dbb5674f8ec91adda4d88e0214c47d6f9254f71679556774d0baffc7a2fe4b8"
+    },
+    {
+      "path": "project/game/tests/balance/bots/balanced_bot.gd",
+      "bytes": 456,
+      "sha256": "baaf817f8018b89314b746050c5dd73b5ed53544259ef69ee1263c46a5ba96ef"
+    },
+    {
+      "path": "project/game/tests/balance/bots/balanced_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "a5fa513929ea8638379795b7d716c08948dd60cd379dff683acce37b294b83ce"
+    },
+    {
+      "path": "project/game/tests/balance/bots/bot.gd",
+      "bytes": 2707,
+      "sha256": "cb1b0560339791dfa40e58ad6dda058260cae9a2ac8df4237a421b446596165a"
+    },
+    {
+      "path": "project/game/tests/balance/bots/bot.gd.uid",
+      "bytes": 20,
+      "sha256": "24d13d04b51dec98402b65609c0b34e685542d6737d2eeb89ef72ea05d20b875"
+    },
+    {
+      "path": "project/game/tests/balance/bots/colony_bot.gd",
+      "bytes": 50854,
+      "sha256": "03d5f955d5dcc1a78ad23f272be8d0117b380110c4add9a9e5b66329d61622d1"
+    },
+    {
+      "path": "project/game/tests/balance/bots/colony_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "d37150c22bffd999445bdfe3024ec11029a401fdc21612e26755ed64ee1d9099"
+    },
+    {
+      "path": "project/game/tests/balance/bots/passive_bot.gd",
+      "bytes": 202,
+      "sha256": "df17f418895d71a772758140859debd95d6b3def4bfe0ef6b0654033c1327afc"
+    },
+    {
+      "path": "project/game/tests/balance/bots/passive_bot.gd.uid",
+      "bytes": 19,
+      "sha256": "bdfe2230cef17cc9bed709125e28c1bc722a4dab161f57e3390d5dcdb556ec44"
+    },
+    {
+      "path": "project/game/tests/balance/bots/random_legal_bot.gd",
+      "bytes": 2646,
+      "sha256": "f608fd92b4adf0a950b5448a9934fba9db137ecedbfefaca2b363f1f0d90cc34"
+    },
+    {
+      "path": "project/game/tests/balance/bots/random_legal_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "41a7c6f7d343faffb9ca225c2285dc9bea5f9ed4ea851717d8d880cdbc6dcb48"
+    },
+    {
+      "path": "project/game/tests/balance/bots/research_first_bot.gd",
+      "bytes": 644,
+      "sha256": "60e746065fde517199271d97ca30d5ee2f1c85ee993957c7c8a418553ec9ed08"
+    },
+    {
+      "path": "project/game/tests/balance/bots/research_first_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "aaec1c6f4fc67d422b0c992ec5d93df65b5da780c28647f68a6bc10aa3c24a91"
+    },
+    {
+      "path": "project/game/tests/balance/bots/rush_bot.gd",
+      "bytes": 513,
+      "sha256": "2da43fea562f3d8ad40014b4bbd1126b44d782a03edd7067eb0efde7ef2c7eb8"
+    },
+    {
+      "path": "project/game/tests/balance/bots/rush_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "ba06403e7d47418028d0fc91bb980b2e5736a8438f9e943bc14bf3e45c1d875c"
+    },
+    {
+      "path": "project/game/tests/balance/bots/sloppy_bot.gd",
+      "bytes": 369,
+      "sha256": "b0cbfe5aa0d4acfce38bb34d7a99b827af2967a00e6fcea7004eff6ffb557e35"
+    },
+    {
+      "path": "project/game/tests/balance/bots/sloppy_bot.gd.uid",
+      "bytes": 20,
+      "sha256": "f9ed5867da1506950fc883cea43f601dcbe3846cb31c6a42292d8379b222ef23"
+    },
+    {
+      "path": "project/game/tests/balance/metrics.gd",
+      "bytes": 7606,
+      "sha256": "ebe3ef6879d0742ce93b86faa58ca61b54a20dbad92cd12ea69364b48af35b1c"
+    },
+    {
+      "path": "project/game/tests/balance/metrics.gd.uid",
+      "bytes": 20,
+      "sha256": "c70089c12b5b82dd980fa5dbd2e34076ce4d8c4574e8a879ba1fb269c4fe1189"
+    },
+    {
+      "path": "project/game/tests/balance/run_balance.gd",
+      "bytes": 14306,
+      "sha256": "f5a2a02d33d946e3035fa6792545c8b6c88ff8e5297aa8bb9f61c04fb92153d6"
+    },
+    {
+      "path": "project/game/tests/balance/run_balance.gd.uid",
+      "bytes": 20,
+      "sha256": "24f9c5b1c274c70a8bb22c94ab5d24f6bd3783e39920a53060943081351bf8cd"
+    },
+    {
+      "path": "project/game/tests/balance/summary.gd",
+      "bytes": 19717,
+      "sha256": "7d0f4888463067989019e6bf3784f3cccde27b30f69a9fd1b28fff1b9ea864c2"
+    },
+    {
+      "path": "project/game/tests/balance/summary.gd.uid",
+      "bytes": 19,
+      "sha256": "a43480a1c482baf177302ed08f57bcf08c77b1b7ce2155f880869fec426b0047"
+    },
+    {
+      "path": "project/game/tests/balance/trace_run.gd",
+      "bytes": 5344,
+      "sha256": "66403b4a93be3fb8a245d616ebe814fc610d599fbfa6d2123a3bb1a53b05c7df"
+    },
+    {
+      "path": "project/game/tests/balance/trace_run.gd.uid",
+      "bytes": 20,
+      "sha256": "852fb0e8ce77d72e0eca0b774782ab3dc8dd60202e4d63693b072cb78d7590ce"
+    },
+    {
+      "path": "project/game/tests/exe_drive_v17.gd",
+      "bytes": 9816,
+      "sha256": "749e37dbd2be532bcb0f9bf7a86003a7d7b309f3c30b6ae4e1698eac897ad9ec"
+    },
+    {
+      "path": "project/game/tests/exe_drive_v17.gd.uid",
+      "bytes": 19,
+      "sha256": "676e53a86ea4e7bc581e01ead6517ac7c4034ee7f04fe6d3074363c4092ddd1d"
+    },
+    {
+      "path": "project/game/tests/hydrology_sweep.gd",
+      "bytes": 1994,
+      "sha256": "786e90c12b400bbb655d1336cbb3987079de179d8890b8fe6b0de62226a733d1"
+    },
+    {
+      "path": "project/game/tests/hydrology_sweep.gd.uid",
+      "bytes": 19,
+      "sha256": "04b99b91ef0b75550b466489b60be1884ff4036356e9d1c7c5249d0a45b775fb"
+    },
+    {
+      "path": "project/game/tests/hydrology_test.gd",
+      "bytes": 3425,
+      "sha256": "588c72ede7cf38b4853e3508e3ab4164ecd1e43f24549e15d30ae6a65eaf6d3c"
+    },
+    {
+      "path": "project/game/tests/hydrology_test.gd.uid",
+      "bytes": 19,
+      "sha256": "185e54a9d18ab41f6fd067e17cee11696a85e685b1b97870bb66adcd7c880a84"
+    },
+    {
+      "path": "project/game/tests/interaction_perf_probe.gd",
+      "bytes": 1979,
+      "sha256": "fd92243b8114f7002054016d00d30cbff958e2605ec9625d19694ebc750102b2"
+    },
+    {
+      "path": "project/game/tests/interaction_perf_probe.gd.uid",
+      "bytes": 20,
+      "sha256": "34c6ec2f232f05b92c5e761b230b1f1268fe92ed2cbd296c2af284fabb68fae1"
+    },
+    {
+      "path": "project/game/tests/make_fixtures_v17.gd",
+      "bytes": 2375,
+      "sha256": "0acdd15e39f7fdc0bebfab4055e45f7c800b4dba34daa14d0ba70bc13fef7b01"
+    },
+    {
+      "path": "project/game/tests/make_fixtures_v17.gd.uid",
+      "bytes": 20,
+      "sha256": "e5606b9abaaae10e3edae7189558b72a41bd247bf6ae02b9fd5b154776636842"
+    },
+    {
+      "path": "project/game/tests/perf_probe_v17.gd",
+      "bytes": 5931,
+      "sha256": "12d381b0c7721a245773ce1625a6fb26325ccddf082b86eb08990be7b9b7e0b4"
+    },
+    {
+      "path": "project/game/tests/perf_probe_v17.gd.uid",
+      "bytes": 19,
+      "sha256": "b900f49a76466bb3f949dcfe73aa20db82bfd80dfd669f32c572c5916445a1b9"
+    },
+    {
+      "path": "project/game/tests/sim_tests.gd",
+      "bytes": 15049,
+      "sha256": "1a7f415dbee031d6e9f36244e69c2042e88789ede0bbc25455000fa125b079b1"
+    },
+    {
+      "path": "project/game/tests/sim_tests.gd.uid",
+      "bytes": 20,
+      "sha256": "bb10ed69e7312cce76e85d40ead8ccba273afdda7a972ed4292bbc891b909b54"
+    },
+    {
+      "path": "project/game/tests/support/save_fixture.gd",
+      "bytes": 519,
+      "sha256": "bc26bb67d359dda050a8fe6edb7562aab59a61956b885711df3118dc0bd681a4"
+    },
+    {
+      "path": "project/game/tests/support/save_fixture.gd.uid",
+      "bytes": 20,
+      "sha256": "16c3e19212511e64dd01d30c0780d76b7308fb12660a07994a41e7d173968db4"
+    },
+    {
+      "path": "project/game/tests/support/watchdog.gd",
+      "bytes": 781,
+      "sha256": "052845b39a573162f030998156387c09c3a7bd633e5995f0849aae00bc71dff6"
+    },
+    {
+      "path": "project/game/tests/support/watchdog.gd.uid",
+      "bytes": 19,
+      "sha256": "d1cd93dcc4a06f504fbe68955ba1fe7f8b2ae410c81c62a7cff65961aa085dc9"
+    },
+    {
+      "path": "project/game/tests/ui_contract.gd",
+      "bytes": 2016,
+      "sha256": "b059df875e4029690a82da8691ebdaef51ac34d62d9aa09aefe8c943888be5a0"
+    },
+    {
+      "path": "project/game/tests/ui_contract.gd.uid",
+      "bytes": 20,
+      "sha256": "0832d6a4bc7938f993fba5d7bb499539f62368821febab452fd90caf340f4dcc"
+    },
+    {
+      "path": "project/game/tests/v16_career_boundaries.gd",
+      "bytes": 4313,
+      "sha256": "276d559803453350f37809b5c79fc794a6ac554c11a72e839c500bc1f1028ef3"
+    },
+    {
+      "path": "project/game/tests/v16_career_boundaries.gd.uid",
+      "bytes": 20,
+      "sha256": "bc7eb918e7dcd714d4fff67e577dc5a889ce3dc949f9693aa71b88a4df62361c"
+    },
+    {
+      "path": "project/game/tests/v16_career_review.gd",
+      "bytes": 4120,
+      "sha256": "690955a305071d425687504cff60bec33702c3ca7bcb4737d574c663edd03ac7"
+    },
+    {
+      "path": "project/game/tests/v16_career_review.gd.uid",
+      "bytes": 20,
+      "sha256": "bc6de46bc4a21cfb77ba75a21c7b1da47299723ebf94efbd7923f5515bfb99e5"
+    },
+    {
+      "path": "project/game/tests/v16_career_tests.gd",
+      "bytes": 3868,
+      "sha256": "07c719f17156d0102b3bf6db9f0ca1f9969d578c6f9dfc4f71248be7d2dae717"
+    },
+    {
+      "path": "project/game/tests/v16_career_tests.gd.uid",
+      "bytes": 20,
+      "sha256": "2cc05d692d9c8f70320de7a7e589559c66b5228f09b65a8fc78a93eb7b499d62"
+    },
+    {
+      "path": "project/game/tests/v16_economy_tests.gd",
+      "bytes": 2528,
+      "sha256": "49b39bdc135a02740f94603c2e1b8d013b08856af46477e951187a2e4b8cda2a"
+    },
+    {
+      "path": "project/game/tests/v16_economy_tests.gd.uid",
+      "bytes": 20,
+      "sha256": "23fd6ceda38180fc4a2ee99ae34bf994e1232bd0cbf59839e20dfc863bb10c00"
+    },
+    {
+      "path": "project/game/tests/v16_event_acceptance.gd",
+      "bytes": 3136,
+      "sha256": "88d5ea4ccfab185d8056c1c9319e06da244625bb8e935217ee74df5765d763cf"
+    },
+    {
+      "path": "project/game/tests/v16_event_acceptance.gd.uid",
+      "bytes": 20,
+      "sha256": "5c60f4f8c0b209bc91679268f3bd27c9fc73a8061aa958ccde82bc002ec843e2"
+    },
+    {
+      "path": "project/game/tests/v16_event_history_probe.gd",
+      "bytes": 557,
+      "sha256": "b9e6f9cbdceda8983b989341fe5d496937484e35f9a5043210f4843bf2deec5f"
+    },
+    {
+      "path": "project/game/tests/v16_event_history_probe.gd.uid",
+      "bytes": 19,
+      "sha256": "6818e0560099da3bd02288d5178d2e51affb99d284f6c77e64c49213b8d8f7b3"
+    },
+    {
+      "path": "project/game/tests/v16_event_order_probe.gd",
+      "bytes": 1608,
+      "sha256": "fd38672bf9e523dbf2a1f31991b4c0b07f955dce1b86f581541bb14e864f9daa"
+    },
+    {
+      "path": "project/game/tests/v16_event_order_probe.gd.uid",
+      "bytes": 20,
+      "sha256": "b55ed5fefb40a117d747333565501edd02542ccfd832c43edca0551973468962"
+    },
+    {
+      "path": "project/game/tests/v16_events_tests.gd",
+      "bytes": 21316,
+      "sha256": "89e060062d145e87cac3e25ecb47338331f22c403634f798a2c0850feb353871"
+    },
+    {
+      "path": "project/game/tests/v16_events_tests.gd.uid",
+      "bytes": 19,
+      "sha256": "56ef435e751fc04b3f26af4f5df6686af07dfff8df090432ceca25f07c1db50c"
+    },
+    {
+      "path": "project/game/tests/v16_f12_transport.gd",
+      "bytes": 4029,
+      "sha256": "e33674f40368b3a01f9cbee204b04f906cb9391c6e7a0d5f3e65de5846c5a86e"
+    },
+    {
+      "path": "project/game/tests/v16_f12_transport.gd.uid",
+      "bytes": 20,
+      "sha256": "c4486ff4fcd00376db82d49e0c635ab713a204b32d9f72ba086bde62cbe5c2a0"
+    },
+    {
+      "path": "project/game/tests/v16_flow.gd",
+      "bytes": 7430,
+      "sha256": "f806c04be219dfcfb60d0524af51fdadf397bf6e469cb992aa33250fc7f9d160"
+    },
+    {
+      "path": "project/game/tests/v16_flow.gd.uid",
+      "bytes": 20,
+      "sha256": "de305b41ac4668130f5f32375521888c5cccfcc5c436c2f6fb3f81839e98f48b"
+    },
+    {
+      "path": "project/game/tests/v16_interaction_probe.gd",
+      "bytes": 8418,
+      "sha256": "e439a2b4d4633a833fc41af23cd856b3ea14afad55ff738579a6c0f7b2cfa80f"
+    },
+    {
+      "path": "project/game/tests/v16_interaction_probe.gd.uid",
+      "bytes": 20,
+      "sha256": "ca0adb32482a10b95588c566509481d8a878d2ff91ec4750e8ce981067400e10"
+    },
+    {
+      "path": "project/game/tests/v16_manage_target_review.gd",
+      "bytes": 3713,
+      "sha256": "a69fe8ff54c561a1efef4225e5457f9101ef45c0eb5586c535abd2f4cd62b3f3"
+    },
+    {
+      "path": "project/game/tests/v16_manage_target_review.gd.uid",
+      "bytes": 20,
+      "sha256": "a42c488b96e7e5264e5425842a3cb56ddf7e3ba0671394768211b628a64c9a74"
+    },
+    {
+      "path": "project/game/tests/v16_managed_balance.gd",
+      "bytes": 2161,
+      "sha256": "7cff511c59b1687bfdf4e551f9180284dc7a2b07637d1c7c6097bc618a12b776"
+    },
+    {
+      "path": "project/game/tests/v16_managed_balance.gd.uid",
+      "bytes": 19,
+      "sha256": "d00a7f9946732db6dc95bd2e562ee7c4f1afe316a03eec44f3641cd6601feece"
+    },
+    {
+      "path": "project/game/tests/v16_research_company_review.gd",
+      "bytes": 4872,
+      "sha256": "4de5b8d8ba25dee882a785f71d1c82bc1a7bcd21f3d1cea6f7fa453662db4d79"
+    },
+    {
+      "path": "project/game/tests/v16_research_company_review.gd.uid",
+      "bytes": 20,
+      "sha256": "79c3b1ef8771a816bbc1b98b994e1d48e50f6a7d7e10b0b8c4c68bf72d9343c4"
+    },
+    {
+      "path": "project/game/tests/v16_research_diag.gd",
+      "bytes": 718,
+      "sha256": "021eaa28923a926c09cc12d67b2ee22ca3c134ebcb74c6a6fea00fdc2733c239"
+    },
+    {
+      "path": "project/game/tests/v16_research_diag.gd.uid",
+      "bytes": 20,
+      "sha256": "75289d120cf4023100dd46a2307f02f743094d44b9e9550825ed92b7077776d9"
+    },
+    {
+      "path": "project/game/tests/v16_research_priority.gd",
+      "bytes": 1716,
+      "sha256": "f8d6e9b7bc10add492e46bec87d30446ac43bbcbe7c2b9e84e8d7cec1d0a95f1"
+    },
+    {
+      "path": "project/game/tests/v16_research_priority.gd.uid",
+      "bytes": 19,
+      "sha256": "f4c356b14c258593910c9137c5deb643d92c2270479669345bbd84719594f6f7"
+    },
+    {
+      "path": "project/game/tests/v16_rules_tests.gd",
+      "bytes": 9652,
+      "sha256": "5820436673183ccc2d8a58b8e1f1c4ed38bbf0d31ea684febc0fa2175b682db3"
+    },
+    {
+      "path": "project/game/tests/v16_rules_tests.gd.uid",
+      "bytes": 20,
+      "sha256": "97a59608f34cc4a0cbd62452c3ca1df81a1435b0f3277688c7a53c143a24ccf3"
+    },
+    {
+      "path": "project/game/tests/v16_scroll_probe.gd",
+      "bytes": 3120,
+      "sha256": "6390f6e9ce214c5683d7fb4c3231791f7efa65f0297aae949394733aa88e0f47"
+    },
+    {
+      "path": "project/game/tests/v16_scroll_probe.gd.uid",
+      "bytes": 19,
+      "sha256": "b966772f3d081b69a1afcb564e2d2060bc432d0226492c11bec935b1820058a3"
+    },
+    {
+      "path": "project/game/tests/v16_spinbox_precision_probe.gd",
+      "bytes": 665,
+      "sha256": "414c4124b189eff1e5d001aeb754d51a334ce4098b282cfe6439ab881ed53d77"
+    },
+    {
+      "path": "project/game/tests/v16_spinbox_precision_probe.gd.uid",
+      "bytes": 19,
+      "sha256": "b1853a449e2a6f1b1ac5e7ec8cdacb0ad825e67a69430c0aa06335fcbf9bb59c"
+    },
+    {
+      "path": "project/game/tests/v16_ui_tests.gd",
+      "bytes": 4166,
+      "sha256": "bc3f8e8a3cce90f07fcecb38b279fb57bcf4ff934ee3997e84798343c9df0ac3"
+    },
+    {
+      "path": "project/game/tests/v16_ui_tests.gd.uid",
+      "bytes": 20,
+      "sha256": "671b08f13a64425996abf8cb42a0ea4927755971537beacd65988eedbb75ad29"
+    },
+    {
+      "path": "project/game/tests/v17_bugs.gd",
+      "bytes": 10640,
+      "sha256": "6e750ece20ac67ef206ededb8ed8f3834fe885a73096a54bfa440ab21d1ebfe2"
+    },
+    {
+      "path": "project/game/tests/v17_bugs.gd.uid",
+      "bytes": 20,
+      "sha256": "0157583a58f368a59ba2bcb3b697abc4a0a21a432df4ab81376a15885da23854"
+    },
+    {
+      "path": "project/game/tests/v17_contract_population.gd",
+      "bytes": 20814,
+      "sha256": "391ef7e305f97c663861699ff8cd048681a784684aaca4e3e916bf3142cbb9e9"
+    },
+    {
+      "path": "project/game/tests/v17_contract_population.gd.uid",
+      "bytes": 20,
+      "sha256": "2d5d3bb147629d55e29a3598fcf24ebd4c7ddc707a708179b87faef64a9abf55"
+    },
+    {
+      "path": "project/game/tests/v17_events.gd",
+      "bytes": 24198,
+      "sha256": "051f6567cf2d4e32db906c105ef0d14e60bb4c3ec10d3e06e41fa07cc483c9cc"
+    },
+    {
+      "path": "project/game/tests/v17_events.gd.uid",
+      "bytes": 20,
+      "sha256": "a790fe894ececda43c3b4d59a957200e3846ff1975541a336c1ed39c07d0e50a"
+    },
+    {
+      "path": "project/game/tests/v17_findings_16.gd",
+      "bytes": 9071,
+      "sha256": "61f668d4284bda993b01f9ee723814501370ac55dcb28daf5576dd8cc814b66b"
+    },
+    {
+      "path": "project/game/tests/v17_findings_16.gd.uid",
+      "bytes": 19,
+      "sha256": "b6f39d999f55877a9cb2df013c2819cf71d214b61c608c133c46fe4f850104e4"
+    },
+    {
+      "path": "project/game/tests/v17_research.gd",
+      "bytes": 25734,
+      "sha256": "e218800390475acb7e138c4fc67f887eb2d034687ad73e0d8dbfa90af90cb00a"
+    },
+    {
+      "path": "project/game/tests/v17_research.gd.uid",
+      "bytes": 19,
+      "sha256": "ae39d4560ba970f3cc3c254dbc811c91c9a1cb18411efd34d355ce64dd694023"
+    },
+    {
+      "path": "project/game/tests/v17_saves.gd",
+      "bytes": 9592,
+      "sha256": "91ca4d97dabd4642e43bf4246a6fba7fd86b04b3328ec1c891c597bbccfd2731"
+    },
+    {
+      "path": "project/game/tests/v17_saves.gd.uid",
+      "bytes": 20,
+      "sha256": "1e3a707c71af23469fbf79f9d763ce7513599521a8b30b5e9cab0f0c8e91986e"
+    },
+    {
+      "path": "project/game/tests/v17_sites.gd",
+      "bytes": 31438,
+      "sha256": "a8640d81d89c0976e92173507b35ccc1b13058587af360457ee537f0dd5e5bae"
+    },
+    {
+      "path": "project/game/tests/v17_sites.gd.uid",
+      "bytes": 20,
+      "sha256": "de688721daddbe143dfe0cbb9acc645500b108eaef7076ab89f1e6250a9a49db"
+    },
+    {
+      "path": "project/game/tests/v17_speed.gd",
+      "bytes": 3209,
+      "sha256": "1eba6d78aa0646f065bdfe9eff151ce0a0619a143a81edbd4a969237a01b4f65"
+    },
+    {
+      "path": "project/game/tests/v17_speed.gd.uid",
+      "bytes": 19,
+      "sha256": "2dab6b7e914e4c42f744bb39fcc0875808b1d3c005726c27729ea92266ae9c92"
+    },
+    {
+      "path": "project/game/tests/v17_tutorial.gd",
+      "bytes": 28525,
+      "sha256": "905543a19fff889ee922fdc138e8f4e8f03d4ed9dfa476089c89e43a855e09a3"
+    },
+    {
+      "path": "project/game/tests/v17_tutorial.gd.uid",
+      "bytes": 20,
+      "sha256": "92cef14aee8ad4df3599b1c70cd3309b2a868ec8418c682f825c2266424b7d39"
+    },
+    {
+      "path": "project/game/tests/v17_world_stats.gd",
+      "bytes": 12002,
+      "sha256": "fc036acc9a63155c626ee46e0d128bc81250b79364e383a0c4127562895a6c7a"
+    },
+    {
+      "path": "project/game/tests/v17_world_stats.gd.uid",
+      "bytes": 20,
+      "sha256": "6ee84ae30007ccec80779fa56f7e796839a1af4fb48bf2f71737aceeb610d428"
+    },
+    {
+      "path": "project/game/tests/v18_systems.gd",
+      "bytes": 14507,
+      "sha256": "4d889ea1ea77393ea0d4746232d0fe08a4710985e136bdbf31d1b4a0af92112a"
+    },
+    {
+      "path": "project/game/tests/v18_systems.gd.uid",
+      "bytes": 19,
+      "sha256": "f598af286ac042da997c166f71cf8c05a0442de2dcf541252a243c8cfca3c38f"
+    },
+    {
+      "path": "project/game/tests/world_v16_legacy_load.gd",
+      "bytes": 2528,
+      "sha256": "6f77659b7fd9713d6fecc0fa593b7bfe3de06954b84c34776bf391ebd4d6f7fe"
+    },
+    {
+      "path": "project/game/tests/world_v16_legacy_load.gd.uid",
+      "bytes": 20,
+      "sha256": "976fec30b90af15b58d505db2ed52bb47553302293020c8279d11d9e5eae9bef"
+    },
+    {
+      "path": "project/game/tests/world_v16_region.gd",
+      "bytes": 4667,
+      "sha256": "b33773a390f11a8ffddb4a83a3f33b9746349252c6c9efb2f1a95523809897d4"
+    },
+    {
+      "path": "project/game/tests/world_v16_region.gd.uid",
+      "bytes": 20,
+      "sha256": "ff0691f505ca7ad6f61dc5b262dbc52a437ac43d660c05678758393b0dec5805"
+    },
+    {
+      "path": "project/game/tests/world_v16_seed.gd",
+      "bytes": 5110,
+      "sha256": "a97ef84cfd9dd6aa973f72e06e2d65b7f19d538871bf12c8896ec1658f841ba3"
+    },
+    {
+      "path": "project/game/tests/world_v16_seed.gd.uid",
+      "bytes": 20,
+      "sha256": "1fa7090ad3a6bd580cec5cd64527645767fb024313f246bf51e5877b8898b2b9"
+    },
+    {
+      "path": "project/game/tests/world_v16_terrain_identity.gd",
+      "bytes": 2177,
+      "sha256": "497da230625002c6350be2e35f76ac1f354bbb4c8ef4e91841456b41384877a9"
+    },
+    {
+      "path": "project/game/tests/world_v16_terrain_identity.gd.uid",
+      "bytes": 20,
+      "sha256": "eedcf9c219709aa13bac11ab074d111f0395760b01286f9dcd9a37c1b7191863"
+    },
+    {
+      "path": "project/game/tests/world_v16_ui_sync.gd",
+      "bytes": 2318,
+      "sha256": "986b6a75aabdb58fda34a54448908d1c09a3bfb1e9a16b478e7f244013b9f59f"
+    },
+    {
+      "path": "project/game/tests/world_v16_ui_sync.gd.uid",
+      "bytes": 20,
+      "sha256": "b2a9d08979a887a3b4515f155ab935a4a352f54037da8450fc913d5749b95ba2"
+    },
+    {
+      "path": "project/game/tests/world_v16_visual.gd",
+      "bytes": 4053,
+      "sha256": "4fa17552e6b838c21f43641c18d36918cc190ce1e03b1ae5853b77fedd961d4f"
+    },
+    {
+      "path": "project/game/tests/world_v16_visual.gd.uid",
+      "bytes": 20,
+      "sha256": "3c4dc146fab41d1d13da7cd7f908fa14a982fb6a5efdc80e9075756ac0e92fe8"
+    },
+    {
+      "path": "project/game/tests/world_v17_seam.gd",
+      "bytes": 2841,
+      "sha256": "8b265073f88e26987f99862cca9e4e8134a2039de1890416fc2083255a9f36f7"
+    },
+    {
+      "path": "project/game/tests/world_v17_seam.gd.uid",
+      "bytes": 20,
+      "sha256": "534d399531226aa096b2c01154d72b8c2b108b3783fcfc94f760187accf1d553"
+    },
+    {
+      "path": "project/game/ui/capture_suite.gd",
+      "bytes": 3052,
+      "sha256": "59871578f7a088b4d0c1ea23d7d7bbe25644f4309407c06e5a79534a2bb71ee7"
+    },
+    {
+      "path": "project/game/ui/capture_suite.gd.uid",
+      "bytes": 20,
+      "sha256": "44eddeb3023ed0dc2a4060700aeb3ca2c82e3b99ecc0b358894f43ed724da2dd"
+    },
+    {
+      "path": "project/game/ui/capture_suite_v16.gd",
+      "bytes": 4351,
+      "sha256": "8dd36e668dc76f7138b8279d51c5fcb3499407b65263fbca76c886351bacad11"
+    },
+    {
+      "path": "project/game/ui/capture_suite_v16.gd.uid",
+      "bytes": 19,
+      "sha256": "8677eefdc14869ad3f296c1e040db573f31026295419affb04b63828a6d16849"
+    },
+    {
+      "path": "project/game/ui/capture_suite_v17.gd",
+      "bytes": 6290,
+      "sha256": "01ba49f1618423c8deeb1ee0f90ba0e4e2d7e7c29fe2261bc222fd5d75a4efc3"
+    },
+    {
+      "path": "project/game/ui/capture_suite_v17.gd.uid",
+      "bytes": 20,
+      "sha256": "f54ea7c9f570eeaf320d53b70a83b8f4e0f3eaf82daad1f1713edff75d629bd1"
+    },
+    {
+      "path": "project/game/ui/design.gd",
+      "bytes": 10200,
+      "sha256": "6296e24a5c09fd5a2884fd2248b2c5973f45e83f23068d9e49d2ec17ce3a897f"
+    },
+    {
+      "path": "project/game/ui/design.gd.uid",
+      "bytes": 19,
+      "sha256": "266ddbd601c0ba4a34bfa0fc274ad5755e6fa0f3cf4126e4cf924e7d49c3cace"
+    },
+    {
+      "path": "project/game/ui/distrust_gauge.gd",
+      "bytes": 5330,
+      "sha256": "f3835bc6ffe0276aac4f3d1d8922e0bf8b5207aa303f6b222c7127a22f717144"
+    },
+    {
+      "path": "project/game/ui/distrust_gauge.gd.uid",
+      "bytes": 19,
+      "sha256": "e82e2b6579a699297bf0e6081f514f544e91480f8e19d2c5b63ee8ad70e4515e"
+    },
+    {
+      "path": "project/game/ui/labels.gd",
+      "bytes": 16390,
+      "sha256": "ae939d91398116cc2d51e9e6f404638d17641f5f5aa2f13f1109d4837e977c66"
+    },
+    {
+      "path": "project/game/ui/labels.gd.uid",
+      "bytes": 19,
+      "sha256": "79eec50a533c39bf891d779de381200df98abab279448c856d4693d5258c7db1"
+    },
+    {
+      "path": "project/game/ui/line_chart.gd",
+      "bytes": 1283,
+      "sha256": "f6d2b6d1938229ace4e88d2e2e052beb06d8e1a235af61c89b41bbd632789c74"
+    },
+    {
+      "path": "project/game/ui/line_chart.gd.uid",
+      "bytes": 19,
+      "sha256": "3913b32a30bbfea03a32fe6aed813a36c5910a18c72756baf35a0be74c516fd2"
+    },
+    {
+      "path": "project/game/ui/main.gd",
+      "bytes": 42799,
+      "sha256": "37159046efa6abef9c09516ecef0f3056ba88c4b08cafb1619d649998aec1076"
+    },
+    {
+      "path": "project/game/ui/main.gd.uid",
+      "bytes": 20,
+      "sha256": "b6e5e50c9347ec773bcc5eac79db8f9ad12f77bcd5ec3d5f714954cbd3bccede"
+    },
+    {
+      "path": "project/game/ui/pages.gd",
+      "bytes": 56622,
+      "sha256": "019a8eb5f69a59081c7673d98f560b34c14f5d540406eec138623e008ea3eca6"
+    },
+    {
+      "path": "project/game/ui/pages.gd.uid",
+      "bytes": 19,
+      "sha256": "fc840d0960de153b99b933c6f91fd5e77440e8779d0723727955fcb89405b5fd"
+    },
+    {
+      "path": "project/game/ui/progression_pages.gd",
+      "bytes": 18944,
+      "sha256": "886cea85156fbb1d013f5e079b769f6360277f50c52095c1b8deee47cb5dfc52"
+    },
+    {
+      "path": "project/game/ui/progression_pages.gd.uid",
+      "bytes": 19,
+      "sha256": "69c97ce90ccdc0c8e5375076d6b12c92bcf72917948e95ee1ea608562a58e179"
+    },
+    {
+      "path": "project/game/ui/tutorial_coach.gd",
+      "bytes": 8644,
+      "sha256": "f22e7b3ef78f28baf69ca5f2c3ce21209b1b81c986a71876ea687e0cb7481256"
+    },
+    {
+      "path": "project/game/ui/tutorial_coach.gd.uid",
+      "bytes": 19,
+      "sha256": "a7f00bf7679bb4c3091806a378accd6db021b72e77ae8aca3ff9d1d8f5e39108"
+    },
+    {
+      "path": "project/game/world/building_models.gd",
+      "bytes": 13691,
+      "sha256": "d6f3f2010679f62a2df50a5b451f3fb7d5a9920876c328b9d6d6f7b5312637eb"
+    },
+    {
+      "path": "project/game/world/building_models.gd.uid",
+      "bytes": 20,
+      "sha256": "b17d6718e9b48c0b4ecadf8dd2333bc9744eb7222957ca76da3034415379fb41"
+    },
+    {
+      "path": "project/game/world/coast_review.gd",
+      "bytes": 2786,
+      "sha256": "d35eb934164a0efcdb44dca67746b10482906e4a9da21d30b461958094c3bf1f"
+    },
+    {
+      "path": "project/game/world/coast_review.gd.uid",
+      "bytes": 20,
+      "sha256": "b58fadf74bb8f5da62d7900070ddf183fbb507f49f233ef938cf8042b679c238"
+    },
+    {
+      "path": "project/game/world/diversity_report.gd",
+      "bytes": 4044,
+      "sha256": "5dcef0d5c0e0a8214f369a1bc5cc6c481c879b703dca8f45054172fb728f8214"
+    },
+    {
+      "path": "project/game/world/diversity_report.gd.uid",
+      "bytes": 20,
+      "sha256": "78ae520ebe331c0194fc870eadb1785acc47fbcbccc2df64beab5a95a836c0ac"
+    },
+    {
+      "path": "project/game/world/flat_render_test.gd",
+      "bytes": 4903,
+      "sha256": "99d065c641b7520d675d56e4d9a2a3f44e7f0824cf46659f3814fae44ade0c3c"
+    },
+    {
+      "path": "project/game/world/flat_render_test.gd.uid",
+      "bytes": 19,
+      "sha256": "96de52ef8e0f72c660164a51d7de8e0a8b7ba0e17708c80a729f77df1dc9402d"
+    },
+    {
+      "path": "project/game/world/flat_view.gd",
+      "bytes": 15918,
+      "sha256": "654d478740fb353dc0054c0bed25565f7322830c684a9409b9328021633e9136"
+    },
+    {
+      "path": "project/game/world/flat_view.gd.uid",
+      "bytes": 20,
+      "sha256": "73420f69d6e63e26f7a473e27e2b5695da2bdfba68cf938e24433faa2d24b82e"
+    },
+    {
+      "path": "project/game/world/geo2/plates.gd",
+      "bytes": 17897,
+      "sha256": "d72ad863e7c487019eb3c0313646127be0a7f3291eb0e5e6f95e16eed9942b26"
+    },
+    {
+      "path": "project/game/world/geo2/plates.gd.uid",
+      "bytes": 20,
+      "sha256": "512d543f1b845b05bf9447e45c0b8424a8629c682d45a1d468ddd0d28fcc7a33"
+    },
+    {
+      "path": "project/game/world/geo2/site_gen.gd",
+      "bytes": 26534,
+      "sha256": "a80011cfea00c3f0da2ec375026a8c33d5414f4bef4a30bf59220e03ee82b453"
+    },
+    {
+      "path": "project/game/world/geo2/site_gen.gd.uid",
+      "bytes": 20,
+      "sha256": "2a64092ab8f44e36502617321e231a02fa85f09a9aa61c996887c18298364c8d"
+    },
+    {
+      "path": "project/game/world/geo2/world_gen2.gd",
+      "bytes": 13811,
+      "sha256": "fcd93e558d6bc649805c3cb6bb0be3829a9f9ffcaa38d6f32beed82d46c95699"
+    },
+    {
+      "path": "project/game/world/geo2/world_gen2.gd.uid",
+      "bytes": 20,
+      "sha256": "4be833391b7f82e953be9606df36c6ac89ec37974ed3e69301409911c831903d"
+    },
+    {
+      "path": "project/game/world/hydrology.gd",
+      "bytes": 10577,
+      "sha256": "0b514dcfa5528164478a48b6fde712295ee552ca4c9c292e1d0e044b0719d4b4"
+    },
+    {
+      "path": "project/game/world/hydrology.gd.uid",
+      "bytes": 20,
+      "sha256": "81b57ae35b96e68d6c206816f033ea75d466e7e755d6ba8dfe656117f87e498f"
+    },
+    {
+      "path": "project/game/world/map_base.gd",
+      "bytes": 3832,
+      "sha256": "2e59177a984638ed2929190ab813f5e2dfc844cd7fbf8458ce65b2f2a5e4386b"
+    },
+    {
+      "path": "project/game/world/map_base.gd.uid",
+      "bytes": 20,
+      "sha256": "44d796755d7dc2f8ea7e8427b67e7915c42ca8bf95bc7b0ebaff366b27598c3d"
+    },
+    {
+      "path": "project/game/world/map_view.gd",
+      "bytes": 13869,
+      "sha256": "326ac557abfc82454893fc478697c6dcb30bb11a8ec9451aa9252c5611b11a15"
+    },
+    {
+      "path": "project/game/world/map_view.gd.uid",
+      "bytes": 20,
+      "sha256": "9d159c0d4c66c7750b54e7bdff22c91080c107f548e1f5636c977ab31cc75a8b"
+    },
+    {
+      "path": "project/game/world/planet_view.gd",
+      "bytes": 16639,
+      "sha256": "b14650bf8c66ea9dffe8b932501327063724bcbf9f51234fb7f18b6331f830a1"
+    },
+    {
+      "path": "project/game/world/planet_view.gd.uid",
+      "bytes": 20,
+      "sha256": "297fd76008470cbc0a73b13fcdffae06b83ce3a8d9d37ba72ad50bfba959e386"
+    },
+    {
+      "path": "project/game/world/region_view.gd",
+      "bytes": 33132,
+      "sha256": "bebcfe18df4286a6a9b525cb8507b8d9e15dfc563bce9021f459dddbc7ce2879"
+    },
+    {
+      "path": "project/game/world/region_view.gd.uid",
+      "bytes": 20,
+      "sha256": "801d91e9fe2e6d3489a956b12638ab3e17ab98715253e3a5a701c75ba60c5df2"
+    },
+    {
+      "path": "project/game/world/render_test.gd",
+      "bytes": 1576,
+      "sha256": "ad1151f6e18072cdde7f1c99b19ad3272c23b88d0085208451a87649de87814f"
+    },
+    {
+      "path": "project/game/world/render_test.gd.uid",
+      "bytes": 20,
+      "sha256": "34cc31b4398ef21a744933beb8dfa1687212154c418a2ea259cd32a2702148b1"
+    },
+    {
+      "path": "project/game/world/routes.gd",
+      "bytes": 10356,
+      "sha256": "31d7dd6a29f11ef8d8892192422c0b9b7f1ae29f034dd37d589de54bbf85bc2b"
+    },
+    {
+      "path": "project/game/world/routes.gd.uid",
+      "bytes": 20,
+      "sha256": "2ce0c642e7bcc11a7b2bd2f8cbc75989fc05ddd2c0861a0ba0ec5b89f1d86b1c"
+    },
+    {
+      "path": "project/game/world/seed_geography.gd",
+      "bytes": 10862,
+      "sha256": "330083a0375bed9d86220d1885f101c4c9b7f8ab7985ce9409ccaa3ebb535e3b"
+    },
+    {
+      "path": "project/game/world/seed_geography.gd.uid",
+      "bytes": 19,
+      "sha256": "1911baf40bbf31de6aef74a63debff711580c21177cbd2a40fae6a8b4dcd58a5"
+    },
+    {
+      "path": "project/game/world/self_test.gd",
+      "bytes": 3071,
+      "sha256": "0ea7e00ce47dd43bd9959c2c5d23bbb5b8d5fab01a2b001c2243141d15ce4ab6"
+    },
+    {
+      "path": "project/game/world/self_test.gd.uid",
+      "bytes": 19,
+      "sha256": "e7caa12f06df2b0d32eeea7d39ca15757dd0add5770ad6583678c79c36c43253"
+    },
+    {
+      "path": "project/game/world/support_test.gd",
+      "bytes": 2106,
+      "sha256": "2bd42a20d570de46e0ed19141ae21cd552ac877a098bb5d4578721c5a29c7fab"
+    },
+    {
+      "path": "project/game/world/support_test.gd.uid",
+      "bytes": 19,
+      "sha256": "e6736401d93df9d3fd00b4cc1eeb006a7f2081655cc1587f94eab4896b786bbc"
+    },
+    {
+      "path": "project/game/world/world_gen.gd",
+      "bytes": 20350,
+      "sha256": "c468b7ee53ffbcd0fc077e33d579b82963110203be561315aecd4183db030f58"
+    },
+    {
+      "path": "project/game/world/world_gen.gd.uid",
+      "bytes": 20,
+      "sha256": "a51e712e7319f5f2ba41ad4deb8aa4df853f02ef110852752f26f33bc1f818fd"
+    },
+    {
+      "path": "project/gdlintrc",
+      "bytes": 1330,
+      "sha256": "61847e41b4d23d50ea63d8845ce17262f5034cc7fcf16a038d1f7ef63f8e9cb9"
+    },
+    {
+      "path": "project/README.md",
+      "bytes": 7056,
+      "sha256": "6092ce3846ce85332c130f8f3179a5350c301e4abe3921cca3c73cf5a4e195fe"
+    },
+    {
+      "path": "project/saves/ui_day50.json",
+      "bytes": 1650792,
+      "sha256": "ead1a4b9c323701596e9d1b751eecc3ec0d278d23a7ab5b75df871f2981ca7cb"
+    },
+    {
+      "path": "project/tools/build.ps1",
+      "bytes": 946,
+      "sha256": "e869c7c90278afee747698c2f22902975b0eeaeab1ae40d1324f91ea6bfb6714"
+    },
+    {
+      "path": "project/tools/build_v16.ps1",
+      "bytes": 985,
+      "sha256": "69bde9cd037d5de233ad78e5d43033a263cf58853220025e411171a7d2a09333"
+    },
+    {
+      "path": "project/tools/build_v17.ps1",
+      "bytes": 2632,
+      "sha256": "24f602080f00bde2059f658eb48efc1d4d9b1be988502131dc9b350fd79f8c41"
+    },
+    {
+      "path": "project/tools/compare_balance.py",
+      "bytes": 1557,
+      "sha256": "87beba2e60692bbd1373530dad2555df7602c36d6deb72f2d6dc058909798a97"
+    },
+    {
+      "path": "project/tools/create_icons.py",
+      "bytes": 2522,
+      "sha256": "aaf87810581a5fd205c3f1e0ef96b58707e7efea5e2f2c31c1db0e55f45d1b7f"
+    },
+    {
+      "path": "project/tools/godot-4.5.1/Godot_v4.5.1-stable_win64.exe",
+      "bytes": 163358216,
+      "sha256": "a829242096d640007de9fa93ea923d0f666d13d6a3b472a0231c820be6dc7627"
+    },
+    {
+      "path": "project/tools/godot-4.5.1/Godot_v4.5.1-stable_win64_console.exe",
+      "bytes": 197640,
+      "sha256": "f0336c8b2ae039d39767a64c416f01b1b49d95d8dde87724012874dd4be1c1a8"
+    },
+    {
+      "path": "project/tools/godot-SHA512-SUMS.txt",
+      "bytes": 4965,
+      "sha256": "3e330c660b0d6dc21e57508ae34ba0f77d66007173ea3d9e99adc7af37a6d4c7"
+    },
+    {
+      "path": "project/tools/package.ps1",
+      "bytes": 13296,
+      "sha256": "430826210b1730a86642c9351793c26a479bd2f2f2e3d625c633e0ea6bb5ba12"
+    },
+    {
+      "path": "project/tools/package_v16.py",
+      "bytes": 3306,
+      "sha256": "70455722fd886e0572119138b11ee814fbfd5caa6be44662cbf8ddf56eb22f3b"
+    },
+    {
+      "path": "project/tools/package_v17.py",
+      "bytes": 5160,
+      "sha256": "6aea3ce8801272ca8cc6f06464fc1dcb7ee17f803409ce676907d70aaf855e1e"
+    },
+    {
+      "path": "project/tools/review_enterprise_capacity.gd",
+      "bytes": 1158,
+      "sha256": "3d0d4619ff6cd508184ca012745368866ce8d2b0430ca43fa7b82b70ad187181"
+    },
+    {
+      "path": "project/tools/review_island.gd",
+      "bytes": 788,
+      "sha256": "9fbd3cb4543680c2382470592b5fbf870e1a9f22a6c63a932cb73050c38b8835"
+    },
+    {
+      "path": "project/tools/review_outpost_jobs.gd",
+      "bytes": 1077,
+      "sha256": "181606719d44ec15d426fa948d13f8e43e21465abe14e9dd40debc9d96f802e5"
+    },
+    {
+      "path": "project/tools/review_save_guards.gd",
+      "bytes": 3160,
+      "sha256": "986f09e498aa523cabe60d70ac3dbeea7eaea5a094fcb0b5b5d62f34822e7d93"
+    },
+    {
+      "path": "project/tools/review_save_nested_regressions.gd",
+      "bytes": 3132,
+      "sha256": "261fd78eff6d7ff410404107381675555b552e3bcd8e03181a41699dd077de76"
+    },
+    {
+      "path": "project/tools/review_save_nested_type.gd",
+      "bytes": 992,
+      "sha256": "095246f8f84a3644a9cfb3f9543c9f56946328e998f8f3fdf8e2a4959d31e318"
+    },
+    {
+      "path": "project/tools/review_sim.gd",
+      "bytes": 2219,
+      "sha256": "5a62d90260b485a13ce5508ab0ad087113351ea653ac12216984aaac72d7eaa8"
+    },
+    {
+      "path": "project/tools/review_world.gd",
+      "bytes": 2257,
+      "sha256": "496daf71e2a167624d8ba7aa38b9597eb811d47c7ccf7ffb62ba240b9f36872f"
+    },
+    {
+      "path": "project/tools/run_tests.ps1",
+      "bytes": 6799,
+      "sha256": "2f02d539f0670afaa0b9a77adedfc96bcbe68529e275301e488e8a7e0b179719"
+    },
+    {
+      "path": "project/tools/test_suites.json",
+      "bytes": 5798,
+      "sha256": "03bdad699b561473b5e44575cc687998856f2f430a01adffc3a6c5efea72ecbb"
+    },
+    {
+      "path": "project/tools/verify_asset_render.gd",
+      "bytes": 965,
+      "sha256": "219775dec33f59c8c51d8dd2ed135ff76042a26e6869330d2371c624c029fa78"
+    },
+    {
+      "path": "project/versions/v1_5_before_v1_6_20261030_125059/game/world/map_view.gd",
+      "bytes": 59522,
+      "sha256": "0cfbee65341f3e02ea6a08726bcde03571fc59ffb486661f5e79b51337779fdf"
+    },
+    {
+      "path": "SOURCE_RECEIPTS_MAIN.json",
+      "bytes": 141204,
+      "sha256": "7f446d4227fb1ba9b2c1b73c2c8c810b270ee9a5a55d9e48fe72a5bf2d0447a9"
+    },
+    {
+      "path": "START_HERE.html",
+      "bytes": 41177,
+      "sha256": "d44007139c9fb049c4f6c8d4d68849b6694a83bf02f7894378619a0070c74900"
+    },
+    {
+      "path": "START_HERE.md",
+      "bytes": 36038,
+      "sha256": "84772b9d2c1349215a87837f03ee98f3767bcdd813e37b77a767bc320e6b9d16"
+    },
+    {
+      "path": "VALIDATION_20261106.html",
+      "bytes": 7636,
+      "sha256": "06b1bd95fc3bc76590438dd3e966e2c0c40c2d3acb51bb12c958cd80758e741a"
+    },
+    {
+      "path": "VALIDATION_20261106.md",
+      "bytes": 4866,
+      "sha256": "1f7c4edf41c069e3e142a4f88aa5761138cb3926985aca1266608202a08e57e9"
+    },
+    {
+      "path": "verification/archive_handoff.py",
+      "bytes": 2673,
+      "sha256": "32f8d6597508eb9370bfc2f010e30ef522ffbeeb087c9cb09660b584d50555ee"
+    },
+    {
+      "path": "verification/art_build_handoff.py",
+      "bytes": 26629,
+      "sha256": "4b5063c5f384284f152325ce8ba027273039466ad943480f68f0f5ba7a5b1ab2"
+    },
+    {
+      "path": "verification/art_verification_receipt.json",
+      "bytes": 3302,
+      "sha256": "a27d8f5602ff990248f9376ad727197e1ec7aaed7c6db7688677e51fc8d955fe"
+    },
+    {
+      "path": "verification/art_verify_handoff.py",
+      "bytes": 8309,
+      "sha256": "7c4c616b8c7958a2b6c2c349b15c92834c867dc077cebaae4895195a1f4f76c3"
+    },
+    {
+      "path": "verification/four_suites/summary.json",
+      "bytes": 1151,
+      "sha256": "bd8c880c193178fca2e6356b2a08f6a96ce13af19cf2fb24e8459d347f2a3fb5"
+    },
+    {
+      "path": "verification/four_suites/ui_contract.log",
+      "bytes": 251,
+      "sha256": "b83d8d84ac29de5678bca72b5d4cf9b7f583d7296d3a68ba72394fac35eb73b5"
+    },
+    {
+      "path": "verification/four_suites/v17_bugs.log",
+      "bytes": 2219,
+      "sha256": "3032b4421bdbaa9041f61248afb38d8bbc3e778b04310875842eeb504a91160d"
+    },
+    {
+      "path": "verification/four_suites/v17_saves.json",
+      "bytes": 964,
+      "sha256": "8058e39d28a928e8d77fca481df07d3dc5faf47acf449ab9f8ff6146f2c9a32f"
+    },
+    {
+      "path": "verification/four_suites/v17_saves.log",
+      "bytes": 5158,
+      "sha256": "1eccb8c27c9e939d7adccb51860d057f366a5d758cdcdaa290eb2392e4112c3e"
+    },
+    {
+      "path": "verification/four_suites/v18_systems.log",
+      "bytes": 3462,
+      "sha256": "c15d6807a6f1be8f7966e422efe80fb227d6aaadad1a97024675eb5293802553"
+    },
+    {
+      "path": "verification/history_restore_result.json",
+      "bytes": 2595,
+      "sha256": "6375255fc07e33076f06fe37752b8e06cc6ab62a8ce13903d1c9c45e09a2c892"
+    },
+    {
+      "path": "verification/portable_build.log",
+      "bytes": 15938,
+      "sha256": "c7ff53824842c075d3fda4775c6e234d976643c229cb157a4223553ceb4a64fc"
+    },
+    {
+      "path": "verification/portable_build_r2.log",
+      "bytes": 15860,
+      "sha256": "a37b267ace4ce6d59c8f0b00829d3b3c08c64e761c4ce62f0bc9326f722fba1d"
+    },
+    {
+      "path": "verification/portable_build_r2_result.json",
+      "bytes": 921,
+      "sha256": "08860e73e2173c7e5b61e2f32365067433434a2bd94fcee6dc50c5602d015f45"
+    },
+    {
+      "path": "verification/portable_build_result.json",
+      "bytes": 710,
+      "sha256": "98972424a0c384b01cfbfefc897eb76f99303f6e41d5c1feff0dded2d9f56a92"
+    },
+    {
+      "path": "verification/portable_import.log",
+      "bytes": 12686,
+      "sha256": "ef33e58a2cfa2928355b9060ae02f492207cba9a38de0414d26face1c2915fd4"
+    },
+    {
+      "path": "verification/portable_import_result.json",
+      "bytes": 810,
+      "sha256": "14303550aa4050e099517f2757f2106ad52d68a2ba36471be99c3a9343d8c408"
+    },
+    {
+      "path": "verification/portable_rebuilt_boot.log",
+      "bytes": 117,
+      "sha256": "f8694a540ce4599cd683fa778e2bc15aa64ccacd3df1fbee0a44577d0a53d339"
+    },
+    {
+      "path": "verification/portable_rebuilt_boot_result.json",
+      "bytes": 687,
+      "sha256": "c3ececf532abf127fc6d9d4dc9794d82c143ef1869e1dde4dab34a3447f314ed"
+    },
+    {
+      "path": "verification/portable_shipped_boot.log",
+      "bytes": 117,
+      "sha256": "9a78185d9b1a43966491c8bba091f6a2cd3bfb379c45a55b4448dc0885112547"
+    },
+    {
+      "path": "verification/portable_shipped_boot_result.json",
+      "bytes": 676,
+      "sha256": "28b6181cca156a4ee5e42bd5d03142c57abcc744e4fefb79bfc9ef1a9f2cbf31"
+    },
+    {
+      "path": "verification/portable_summary.json",
+      "bytes": 6453,
+      "sha256": "71a1ca72d9ec6fda196dd20a2b81ce18554342c5d60ba09039fa25b5a74b2f97"
+    },
+    {
+      "path": "verification/portable_tests.log",
+      "bytes": 309,
+      "sha256": "bfffab3f1fbdc39f63a84f13e602ce96fce2eb1f09cb83043cc7cd76040b2456"
+    },
+    {
+      "path": "verification/portable_tests_result.json",
+      "bytes": 1506,
+      "sha256": "d6ea5ee8ca2b04941365064336734c55188310edfb9a03412e1aed8bcffb88a6"
+    },
+    {
+      "path": "verification/powershell_environment_diagnosis.json",
+      "bytes": 2206,
+      "sha256": "2272284243d0055c55c0fd24f1c2937860376f5eda51b00b1122fd1f701e344f"
+    },
+    {
+      "path": "verification/powershell_environment_diagnosis_r2.json",
+      "bytes": 1597,
+      "sha256": "e65b79a448897baaecbcc6e20137c3db3f981d98cb8a6c1484ba618a6db398ab"
+    },
+    {
+      "path": "verification/prepare_main.py",
+      "bytes": 5463,
+      "sha256": "498c89dc170c84854dc4898d2b6376d976911334a2594ee1083a8200d328943c"
+    },
+    {
+      "path": "verification/README.txt",
+      "bytes": 308,
+      "sha256": "0d3f23023f557b868da5a056695887878d91a10e5f79cfc9f2e6f40d2e9c61f6"
+    },
+    {
+      "path": "verification/restore_history_check.py",
+      "bytes": 2401,
+      "sha256": "d243eb2105508a46f5a42153e31014c38ca9bebc5c54be5a0ba76327bbc78053"
+    },
+    {
+      "path": "verification/resume_portable_r2.py",
+      "bytes": 2748,
+      "sha256": "cafe1a500b551c84da0aa3ae1ab66473803ea69c89b31457a9d25b29fc5d4ac3"
+    },
+    {
+      "path": "verification/source_receipts_main_initial.json",
+      "bytes": 141114,
+      "sha256": "ee7bf84e96c82ef5853921a12ab3d95a48af8ebe641beb0a71a07cac2adedc67"
+    },
+    {
+      "path": "verification/verify_portable.py",
+      "bytes": 5725,
+      "sha256": "e49b1e644823dc92b7f064cfa02577aba00aa4ed1a6320c490a6312354b72134"
+    },
+    {
+      "path": "VERIFY_PACKAGE.py",
+      "bytes": 1409,
+      "sha256": "f56f5162c9d65def9d5325aafd5f834f98530757205474a8d7c792dc89d6def4"
+    }
+  ]
+}

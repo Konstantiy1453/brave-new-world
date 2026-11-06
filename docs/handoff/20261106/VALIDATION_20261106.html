@@ -1,0 +1,108 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2026-11-06 交接包验证记录</title><style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f4;color:#233345;font-family:"Microsoft YaHei","Segoe UI",sans-serif;line-height:1.85;font-size:16px}main{max-width:1100px;margin:28px auto;padding:48px 58px;background:white;border-top:5px solid #237785;box-shadow:0 6px 28px #21354714}h1{font-size:30px;line-height:1.4;margin:0 0 26px}h2{margin-top:40px;font-size:22px;border-bottom:1px solid #d9e2e8;padding-bottom:8px}h3{margin-top:28px}p{margin:14px 0}a{color:#086c8c}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.7;display:block;overflow:auto}th,td{border:1px solid #d9e2e8;padding:10px 12px;vertical-align:top}th{background:#eaf2f5;text-align:left}pre{padding:18px;background:#142635;color:#eef4f8;border-radius:6px;line-height:1.6;overflow:auto;font-size:13px}code{font-family:Consolas,"Microsoft YaHei",monospace;font-size:.92em;overflow-wrap:anywhere}p code,li code,td code{background:#eef3f5;padding:2px 4px}ul,ol{padding-left:24px}li{margin:6px 0}header{font-size:13px;color:#54717d;margin-bottom:26px}footer{font-size:13px;color:#54717d;border-top:1px solid #ddd;padding-top:18px;margin-top:44px}@media(max-width:700px){main{margin:0;padding:24px 18px}h1{font-size:25px}body{font-size:15px}}@media print{body{background:white}main{margin:0;padding:0;max-width:none;box-shadow:none}pre{white-space:pre-wrap;background:#f4f4f4;color:#111}h2,h3{break-after:avoid}tr{break-inside:avoid}}
+</style></head><body><main><header>COLONY CHARTER · 勇敢新世界 · 2026-11-06 交接资料</header><h1>2026-11-06 交接包验证记录</h1>
+<p>本轮在原电脑上，把交接包内的工程复制到一个新目录，使用随包引擎和导出模板进行验证。当前工程仍为 <strong>1.8.0</strong>，提交为 <code>af752d255c49bff477a5e884237d99f887cfad0c</code>。结果说明当前交接副本可以导入、运行选定测试并导出 Windows 程序。朋友电脑上的实测由接收方完成。</p>
+<h2>实际执行结果</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>本轮结果</th>
+<th>证据范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原发行 ZIP</td>
+<td>PASS</td>
+<td>CRC 检查；ZIP、EXE、PCK 与原 RELEASE_IDENTITY 哈希相符</td>
+</tr>
+<tr>
+<td>工程换目录导入</td>
+<td>PASS</td>
+<td>随包 Godot 4.5.1；隔离 APPDATA；退出码 0</td>
+</tr>
+<tr>
+<td><code>v17_bugs</code></td>
+<td>PASS</td>
+<td>43 项检查，失败 0</td>
+</tr>
+<tr>
+<td><code>v17_saves</code></td>
+<td>PASS</td>
+<td>103 项检查，失败 0</td>
+</tr>
+<tr>
+<td><code>v18_systems</code></td>
+<td>PASS</td>
+<td>92 项检查，失败 0</td>
+</tr>
+<tr>
+<td><code>ui_contract</code></td>
+<td>PASS</td>
+<td>暂停、速度一致性、地图切换、保存/读取入口及十类页面构建断言通过</td>
+</tr>
+<tr>
+<td>Windows x64 导出</td>
+<td>PASS（r2）</td>
+<td>随包 Windows 模板；生成 EXE/PCK 与原 1.8.0 逐字节一致</td>
+</tr>
+<tr>
+<td>原发行 EXE 无窗口启动</td>
+<td>PASS</td>
+<td><code>--headless --quit-after 120</code>；退出码 0，无错误标记</td>
+</tr>
+<tr>
+<td>新导出 EXE 无窗口启动</td>
+<td>PASS</td>
+<td>同上；属于启动冒烟检查</td>
+</tr>
+<tr>
+<td>Git 与 LFS 离线恢复</td>
+<td>PASS</td>
+<td>本地 bundle 克隆；17 个 LFS 对象恢复；当前快照叠加哈希一致</td>
+</tr>
+<tr>
+<td>原输入保护</td>
+<td>PASS</td>
+<td>485 个复制来源及主包副本复核一致；未改游戏、玩家存档、原建模资产或原发行</td>
+</tr>
+<tr>
+<td>模型文件交接</td>
+<td>PASS</td>
+<td>20 MAX/20 FBX、20 metadata、102 预览及纹理；文件哈希、依赖和图库链接检查</td>
+</tr>
+</tbody></table>
+<p>三套计数测试合计 <strong>238 项检查</strong>；<code>ui_contract</code> 另行报告断言结果，不人为给它补一个检查总数。默认全套中的七个旧辅助脚本仍写死原 D 盘输出路径，本轮选择的四套测试避开了它们，详见 START_HERE。</p>
+<p>新导出产物：</p>
+<pre><code class="language-text">ColonyCharter.exe   96,725,504 bytes
+SHA256 78ccc576e8f8bffd7ef6ad6f36ebd72a41e609a1052225a55b3407c96ea84065
+
+ColonyCharter.pck   14,222,340 bytes
+SHA256 614ff8b9e6bcb57aba18c71a8289e2a4cc11a2748b56c37a003db855ad5d41be
+</code></pre>
+<h2>保留的首次失败及处理</h2>
+<p>首次 <code>portable_build</code> 返回 1。Godot 已导出文件，脚本在最后一步 <code>Get-FileHash</code> 报命令不存在。本轮 Python 启动器继承了 PowerShell 7 的 <code>PSMODULEPATH</code>，再启动 Windows PowerShell 5.1，导致模块搜索不正确。</p>
+<p>最小复现保存在 <code>verification/powershell_environment_diagnosis_r2.json</code>：保留继承值时 <code>Get-Command Get-FileHash</code> 返回 1；仅移除子进程环境中的该键后返回 0。随后使用相同工程和构建脚本，以正确的子进程环境执行 <code>portable_build_r2</code>，退出码 0。</p>
+<p>原失败日志、退出码和两次诊断均保留。第一份诊断脚本未处理环境变量键名大小写，因此其第二个试验仍失败；r2 按不区分大小写删除键后得到上述结果。没有为使交接通过而修改游戏或原构建脚本。</p>
+<p>普通接手者从 Windows 新开的 PowerShell 窗口执行文档命令即可。自动化代理若经 Python 启动 Windows PowerShell 5，应让该子进程使用正确的模块环境；不要忽略非零退出码。</p>
+<h2>模型检查的边界</h2>
+<p>模型包内原报告仍保留制作时的验收状态。本轮核对源文件、交换文件、贴图、报告及预览的真实性与完整性，没有重新运行 3ds Max，也没有把模型接入游戏。</p>
+<ul>
+<li>12 项旧资产属于原正式白名单选集。</li>
+<li>8 项续建资产为候选，当前没有正式交付白名单。</li>
+<li><code>CC_ARCOLOGY_HP_v002</code> 材质/经营视图检查仍为 <code>NOT_RUN</code>，100px 预览缺失，索引已标记。</li>
+<li>102 张随包 PNG 解码通过；画廊 349 个本地引用存在。此项属于文件和链接检查。</li>
+</ul>
+<h2>本轮没有执行的验收</h2>
+<p>朋友电脑运行、完整真人通关、窗口图形效果及帧时间、新模型引擎导入/渲染、默认全套测试和完整平衡机器人批次均未运行。2026-11-02 的六套 858 检查与更早 1.8 的平衡报告按历史证据随包保留。</p>
+<h2>如何复核</h2>
+<ul>
+<li><code>verification/portable_summary.json</code>：每步命令、工作目录、隔离用户目录、进程、退出码及日志哈希。</li>
+<li><code>verification/history_restore_result.json</code>：Git bundle、LFS 对象和工作区覆盖的恢复记录。</li>
+<li><code>verification/art_verification_receipt.json</code>：模型文件、依赖与预览检查。</li>
+<li><code>SOURCE_RECEIPTS_MAIN.json</code> / <code>SOURCE_RECEIPTS_ART.json</code>：原路径和逐文件来源记录。</li>
+<li><code>MANIFEST_MAIN.json</code> / <code>MANIFEST_ART.json</code>：最终 ZIP 内文件的相对路径、大小与 SHA-256。</li>
+<li><code>VERIFY_PACKAGE.py</code>：解压后运行，核对实际接收内容；传输后的文件应以本地核验结果为准。</li>
+</ul>
+<p>证据 JSON 内的原绝对路径是本轮执行地点，不要求接收者创建相同目录。交接使用路径以顶层文档和相对路径索引为准。</p>
+<footer>离线阅读页。原文：VALIDATION_20261106.md。文件导航以两包合并后的目录为准。</footer></main></body></html>

@@ -1,0 +1,2876 @@
+{
+  "schema": "brave-new-world.art-handoff-index.v1",
+  "created_utc": "2026-11-06T08:46:07.549819+00:00",
+  "path_base": "Directory containing this index; all usable package paths are relative.",
+  "scope": "12 legacy formal building/component assets + 8 continuation candidates.",
+  "asset_count": 20,
+  "legacy_formal_count": 12,
+  "continuation_candidate_count": 8,
+  "source_snapshot_status": "PASS",
+  "this_handoff_native_max_execution": "NOT_RUN",
+  "this_handoff_game_integration": "NOT_RUN",
+  "source_metadata_preserved_byte_for_byte": true,
+  "original_evidence_scope": "Original support documents may describe 21 legacy assets or 68 planned continuation items; use this index for actual included files.",
+  "continuation_formal_whitelist_exists": false,
+  "continuation_saved_progress": {
+    "asset_id": "CC_SCRUBBER_HP_v003",
+    "stage": "FINALIZING",
+    "included": false,
+    "reason": "Only gray-stage MAX files exist; no final asset MAX/FBX."
+  },
+  "texture_files_per_source_package": 10,
+  "known_missing_previews": [
+    {
+      "kind": "business_thumbnail",
+      "expected_relative_path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_ARCOLOGY_HP_v002_business_100px.png",
+      "source_expected_path": "D:\\勇敢新世界\\art_reserve\\max_highpoly_continuation_20261102\\09_previews\\business\\CC_ARCOLOGY_HP_v002_business_100px.png",
+      "status": "NATIVE_PROJECTION_READY_IMAGE_NOT_RUN",
+      "included": false
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "CC_INDUSTRY_HP_v005",
+      "label_zh": "工业设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_INDUSTRY_HP_v005.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_INDUSTRY_HP_v005.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_INDUSTRY_HP_v005.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -23.700000762939453,
+          -18.0,
+          -0.043504249304533005
+        ],
+        [
+          17.025001525878906,
+          17.100000381469727,
+          14.170000076293945
+        ]
+      ],
+      "measured_size": [
+        40.72500228881836,
+        35.10000038146973,
+        14.213504325598478
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 284,
+        "vertices": 45420,
+        "triangles": 89756
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INDUSTRY_HP_v005_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INDUSTRY_HP_v005_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INDUSTRY_HP_v005_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/INDEPENDENT_BUILDING_FILE_AUDIT_v002.json",
+        "project/art_reserve/max_highpoly_20261031/11_max_scripts/CC_INDUSTRY_HP_v005_VISUAL_REVIEW.md",
+        "project/art_reserve/max_highpoly_20261031/10_validation/FINAL_PREVIEW_ALLOWLIST_v001.md",
+        "project/art_reserve/max_highpoly_20261031/10_validation/NATIVE_FULL_TRIANGLE_WIREFRAME_VIEWS_v001.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INDUSTRY_HP_v005_detail.png",
+          "source_allowlist_sha256": "07737a95956cea4f91b2558fb7a5db346e0bea2e09b3b36190df872906773fc0"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INDUSTRY_HP_v005_hero.png",
+          "source_allowlist_sha256": "048ab53cd734519874755fc34b904387b8175b17d23b20316beedd14b608b393"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INDUSTRY_HP_v005_rear.png",
+          "source_allowlist_sha256": "139801bcecd2c8aedffefccdb8dcfefe19978c6d712bd266765b75875d170dff"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_INDUSTRY_HP_v005_gray.png",
+          "source_allowlist_sha256": "a4bc4a2df8c7c72e62f90aaf2a1def5fa9846ffad506575f5984ce3f92551cab"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_INDUSTRY_HP_v005_feature_edges.png",
+          "source_allowlist_sha256": "b0cfc73a8b75e0d5afcd6bd661396664db7f5b968fd551cfcacbc7ab81cf7890"
+        },
+        {
+          "kind": "native_Max_full_triangle_wireframe_viewport",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_INDUSTRY_HP_v005_plant_fulltri_viewport.png",
+          "source_allowlist_sha256": "ba17e73069e15c77044eaa3d84c5bb7d2e35ad0b4f8d77ced285295b3792459c"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1609728,
+          "sha256": "7f416d6fb8b6f5924b5d442e6fe81594e2b230788394c1d9e3400ac36d5f2994"
+        },
+        "highpoly_fbx": {
+          "size": 3947232,
+          "sha256": "6d6f6138d8bec873e95de0a1376cca232ea4080de85006b6f77e08eb2b4c4d31"
+        },
+        "original_metadata": {
+          "size": 187431,
+          "sha256": "68ce8393f3106e470bf2fb32cb9869b8ceba8d92409883b9b25bed013cc54504"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_COMMAND_HP_v001",
+      "label_zh": "指挥设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_COMMAND_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_COMMAND_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_COMMAND_HP_v001.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -12.600000381469727,
+          -14.962564468383789,
+          -0.05143095925450325
+        ],
+        [
+          12.600000381469727,
+          10.600000381469727,
+          17.1200008392334
+        ]
+      ],
+      "measured_size": [
+        25.200000762939453,
+        25.562564849853516,
+        17.1714317984879
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 404,
+        "vertices": 54502,
+        "triangles": 107404
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_COMMAND_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_COMMAND_HP_v001_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_COMMAND_HP_v001_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V001_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_COMMAND_HP_v001_detail.png",
+          "source_allowlist_sha256": "e1e894cbffb9e1951236b32b50620087387a647ff0339ce07340065e2262ce28"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_COMMAND_HP_v001_hero.png",
+          "source_allowlist_sha256": "92338ab2df808cbe458e7e33213181db17d7b060d690aa925126051ec3d20a27"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_COMMAND_HP_v001_gray.png",
+          "source_allowlist_sha256": "5757c92561dcf9e672079dc14930c50b765bb848e2c4edf44e5b750a5745dc44"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_COMMAND_HP_v001_feature_edges.png",
+          "source_allowlist_sha256": "e3035510ea0bc18598585c82131cfe45325000fcf5c25333f49e639e2a35d6d0"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1957888,
+          "sha256": "06af7c47019150771bb06ebc6e15fa0d7ef5314327edd7560ece7e175b85ddf5"
+        },
+        "highpoly_fbx": {
+          "size": 5139328,
+          "sha256": "1e00dd400ab804fa1b974e5afdd10b571a5b273d34d9bda99f77840ea452cfe0"
+        },
+        "original_metadata": {
+          "size": 273245,
+          "sha256": "242545f0b08c75f056d5f951b12cb2c58f8e646b42f48e9eb2888fd225a49640"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_HOUSING_HP_v002",
+      "label_zh": "居住建筑",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_HOUSING_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_HOUSING_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_HOUSING_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -16.184999465942383,
+          -15.876984596252441,
+          -0.05143095925450325
+        ],
+        [
+          13.600000381469727,
+          11.600000381469727,
+          9.5
+        ]
+      ],
+      "measured_size": [
+        29.78499984741211,
+        27.476984977722168,
+        9.551430959254503
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 351,
+        "vertices": 33618,
+        "triangles": 65844
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_HOUSING_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_HOUSING_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_HOUSING_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V002_BATCH_COMPLETED.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/ADDITIONAL_NATIVE_CLOSE_REVIEWS_v001.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/max_job_receipts/e551564e-0ceb-4f1b-b84c-8602d914489d.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_HOUSING_HP_v002_detail.png",
+          "source_allowlist_sha256": "3f8ad82fa51f13d973a8efc35717cd6df57ca79bc67487f4ba51d0a4960d1239"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_HOUSING_HP_v002_hero.png",
+          "source_allowlist_sha256": "285fc98a2a3752280cadfaccb0af7bf152549a7fa4372cfb1cb00419d66d9fb9"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_HOUSING_HP_v002_link_cutaway.png",
+          "source_allowlist_sha256": "cb7ab573d3b3dd33bcc09a2b2faca272e6b1cca004f78d5aa920fb1df5aecc1f"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_HOUSING_HP_v002_rear.png",
+          "source_allowlist_sha256": "2a77a08f26c043998401c277878cd27e0d69eba6e2017282183ce47c258df8b6"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_HOUSING_HP_v002_gray.png",
+          "source_allowlist_sha256": "ba8e947d4562545a4fccfa8e05fff283ebdd54ad06056997e929653c6690d922"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_HOUSING_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "cf31a6b0e9eff83aad2f14515a6c41fd12387347e19a4985ebc05fdddcf7d10d"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1540096,
+          "sha256": "7f9e84cb895adea3e966421cdb7e64738fbdfbd844212b7337c67f68f0b54913"
+        },
+        "highpoly_fbx": {
+          "size": 3607888,
+          "sha256": "15057d5d361e14772d1dda97a0e7e2b8e65200e7bd775d91cad0d5ca64973cfc"
+        },
+        "original_metadata": {
+          "size": 227047,
+          "sha256": "661e904022033f346d665830978e16d967c606243f11afe183b7c96608d6fe64"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_POWER_HP_v002",
+      "label_zh": "能源设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_POWER_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_POWER_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_POWER_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -17.5,
+          -14.0,
+          0.0
+        ],
+        [
+          17.5,
+          14.0,
+          13.154000282287598
+        ]
+      ],
+      "measured_size": [
+        35.0,
+        28.0,
+        13.154000282287598
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 286,
+        "vertices": 29348,
+        "triangles": 57572
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_POWER_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_POWER_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_POWER_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V002_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_POWER_HP_v002_detail.png",
+          "source_allowlist_sha256": "e997f2a16dea1a702490db32caad3950d9b70ad99cdf01fef904faca2a72a378"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_POWER_HP_v002_hero.png",
+          "source_allowlist_sha256": "3a74e58a66083c84ad4dacea25661cff8f5f83a67c13c6a06ebad4d37586a8c1"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_POWER_HP_v002_gray.png",
+          "source_allowlist_sha256": "3c4185cbc65c07e402bc20aaff49637045f5ef733b89a35494593e6be16420bd"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_POWER_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "000e3be0b2d3e3ab85101572f6e44b23509dd93952d82d486893b9f111cf8c14"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1490944,
+          "sha256": "1d39f8d3492f064935ecf0a8fa3e92be0dc53857d8bebe32ebf65aef88a21349"
+        },
+        "highpoly_fbx": {
+          "size": 3224240,
+          "sha256": "abad31b82afc0bf535a6fd26d1a4e75ccdf5e879b718e17413b5a8ce3f7703ba"
+        },
+        "original_metadata": {
+          "size": 187557,
+          "sha256": "d7bd014f0e089ea621ea471f439c3fee128848ad30373b2f9a3763a40289a603"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_WATER_HP_v003",
+      "label_zh": "净水设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_WATER_HP_v003.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_WATER_HP_v003.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_WATER_HP_v003.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -18.0,
+          -14.5,
+          0.0
+        ],
+        [
+          18.0,
+          14.5,
+          8.360000610351562
+        ]
+      ],
+      "measured_size": [
+        36.0,
+        29.0,
+        8.360000610351562
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 298,
+        "vertices": 50234,
+        "triangles": 99332
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_WATER_HP_v003_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_WATER_HP_v003_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_WATER_HP_v003_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V003_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_WATER_HP_v003_detail.png",
+          "source_allowlist_sha256": "b5a71d5235fe3f88fe399badd7b1117b35bf7aca1a19824fc5cc8af96a3b7fb4"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_WATER_HP_v003_hero.png",
+          "source_allowlist_sha256": "1247156437e9b3f92c3d4818ca0336043ae3881c4d0c56432ebd8cf9008b442f"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_WATER_HP_v003_gray.png",
+          "source_allowlist_sha256": "8f26192745910125eb7f26704ac67a5f0adbf25181dda1e499f97c6190faf46c"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_WATER_HP_v003_feature_edges.png",
+          "source_allowlist_sha256": "bbb058301dbf99e603385800db2af2b030802936276f3fa4fe8c44ee05415016"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1683456,
+          "sha256": "64256a4263c877c4f06ec01e1e2c084377e15d993505c0e5dc9e3f991d65cb16"
+        },
+        "highpoly_fbx": {
+          "size": 4248752,
+          "sha256": "b8df470ebb910848ff49522fac4410bc90df4e8e6d5b87d547199899375ca42e"
+        },
+        "original_metadata": {
+          "size": 197203,
+          "sha256": "81a6530572989fb344e3379053bd3eb5c692edf28cd5defd7d9d6252e7ce8e68"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_MINING_HP_v002",
+      "label_zh": "矿业设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_MINING_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_MINING_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_MINING_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -15.5,
+          -18.5,
+          -0.8347526788711548
+        ],
+        [
+          21.075000762939453,
+          14.050000190734863,
+          21.5
+        ]
+      ],
+      "measured_size": [
+        36.57500076293945,
+        32.55000019073486,
+        22.334752678871155
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 225,
+        "vertices": 21790,
+        "triangles": 42688
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/rock_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/rock_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_MINING_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_MINING_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_MINING_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V002_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_MINING_HP_v002_detail.png",
+          "source_allowlist_sha256": "ae5a3209bd415611e368d4d08b2ed4169c33802ef2ab81160efac1610396dfa2"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_MINING_HP_v002_hero.png",
+          "source_allowlist_sha256": "1b887c69148e9220e91c269781b6e58df177be94738aaedfcd3286cd4b4c14c3"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_MINING_HP_v002_gray.png",
+          "source_allowlist_sha256": "3b09c479853d4e1fd3980897ce7ac9f167477f52cac1dc62dce805b63f120e67"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_MINING_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "6b0e6dfa9592ccc4b05a55ce020aff43e5a4125d941fd1e3a88f8ee395492143"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1294336,
+          "sha256": "e0617266077024452439365a115ce0b273d08fdf0c080e7b34c3aafdec26e693"
+        },
+        "highpoly_fbx": {
+          "size": 2399872,
+          "sha256": "12beef2995155d861f93cc6e88bdb23cdc92a35ab1109da5ab8e4bcc471afdd9"
+        },
+        "original_metadata": {
+          "size": 148383,
+          "sha256": "410d689254b2ba2aee26a921a1259be4099cb631ad895d6df29f0918b5f6e98e"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_GREENHOUSE_HP_v003",
+      "label_zh": "温室",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_GREENHOUSE_HP_v003.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_GREENHOUSE_HP_v003.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_GREENHOUSE_HP_v003.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -15.5,
+          -16.5,
+          -0.15000000596046448
+        ],
+        [
+          15.5,
+          16.5,
+          7.880000114440918
+        ]
+      ],
+      "measured_size": [
+        31.0,
+        33.0,
+        8.030000120401382
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 512,
+        "vertices": 98782,
+        "triangles": 190748
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_GREENHOUSE_HP_v003_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_GREENHOUSE_HP_v003_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_GREENHOUSE_HP_v003_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V003_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_GREENHOUSE_HP_v003_crop_detail.png",
+          "source_allowlist_sha256": "94acce7a0ffd8d175227165a32bcda9d7713f8e3a5e08d12d9d018e1b864c801"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_GREENHOUSE_HP_v003_detail.png",
+          "source_allowlist_sha256": "5fe7769af6bba23b96943fb5ac10795a750b72e348c413192c41923acadfaaab"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_GREENHOUSE_HP_v003_hero.png",
+          "source_allowlist_sha256": "22b2e9b6f99c4d645fbadb83a18eae047ed0f3855fdb41ac24004a85b4fafb56"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_GREENHOUSE_HP_v003_interior.png",
+          "source_allowlist_sha256": "9e1588ac90b15bda9f7e16400a43bfd9b7a481f39742c21dec35900b3f8159a4"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_GREENHOUSE_HP_v003_gray.png",
+          "source_allowlist_sha256": "3cbf160b6f005b3f19c66c8ca630a660c14a7602b088c0935e45f99a125d33ce"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_GREENHOUSE_HP_v003_feature_edges.png",
+          "source_allowlist_sha256": "f8416b68ea4c15edbacc6990329f48770e717ecbe10280dc6e3a1d75e26ef729"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 5128192,
+          "sha256": "51eae70dbb6e5a9f87fff35e3e1b4bc92dfe90cd99342ff012a3e286880e4ae6"
+        },
+        "highpoly_fbx": {
+          "size": 8052208,
+          "sha256": "f289989137dcf38f5fc5a9f812c78b96e03ac402cd8138782d0018bfaae93953"
+        },
+        "original_metadata": {
+          "size": 349469,
+          "sha256": "cb9eb44692e1a5a01a131425d42bd99584ddafd2214d70fcb5ecb8a68067a54b"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_RESEARCH_HP_v002",
+      "label_zh": "科研设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_RESEARCH_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_RESEARCH_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_RESEARCH_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -15.600000381469727,
+          -11.0,
+          -0.051430974155664444
+        ],
+        [
+          19.0,
+          10.100000381469727,
+          11.1899995803833
+        ]
+      ],
+      "measured_size": [
+        34.60000038146973,
+        21.100000381469727,
+        11.241430554538965
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 367,
+        "vertices": 57412,
+        "triangles": 113372
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_RESEARCH_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_RESEARCH_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_RESEARCH_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_PRODUCTION_PROGRESS.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/RESEARCH_V002_LIT_CUTAWAY_REEXPOSED_v002.json",
+        "project/art_reserve/max_highpoly_20261031/11_max_scripts/CC_RESEARCH_HP_v002_VISUAL_REVIEW.md"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_RESEARCH_HP_v002_detail.png",
+          "source_allowlist_sha256": "0500b765b4d88e00a6c898ad70043709fb2c6ccac961000d70e03419e71df168"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_RESEARCH_HP_v002_hero.png",
+          "source_allowlist_sha256": "32886cdc3546cdd22eb7b0485681f86811b6fe352afdf9638640b5f24b6b5562"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_RESEARCH_HP_v002_connector_lit_cutaway_v002.png",
+          "source_allowlist_sha256": "3786ae533adc49b9d34dc80a81a94c800dd96f72f7ec134a417ca735f48575c1"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_RESEARCH_HP_v002_gray.png",
+          "source_allowlist_sha256": "233bdc7187b9f3c429900ad2b1987754c9fdcffc5d3beb2630c632801c35b3cf"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_RESEARCH_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "29de6c5b288942ae9e409994d04252d59ba9ea5cef231f3924f45f866af46a2b"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 2134016,
+          "sha256": "e4b0d18e916708943ef1a38f067d08703d40346b141436c08c68e617472c0b91"
+        },
+        "highpoly_fbx": {
+          "size": 5099488,
+          "sha256": "e975a83372424569c46a3fdd8de34def00a44861aede46936e2d4916bc01f0ea"
+        },
+        "original_metadata": {
+          "size": 250449,
+          "sha256": "1451073389818f3c7e304b04a3a185aad5fe40b9f558cef24b6b2f3a694d29f7"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_LOGISTICS_HP_v002",
+      "label_zh": "物流设施",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_LOGISTICS_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_LOGISTICS_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_LOGISTICS_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -22.0,
+          -21.0,
+          0.0
+        ],
+        [
+          22.0,
+          17.049999237060547,
+          14.220000267028809
+        ]
+      ],
+      "measured_size": [
+        44.0,
+        38.04999923706055,
+        14.220000267028809
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 352,
+        "vertices": 32672,
+        "triangles": 63936
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_LOGISTICS_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_LOGISTICS_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_LOGISTICS_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V002_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_LOGISTICS_HP_v002_detail.png",
+          "source_allowlist_sha256": "e4155c3c26f92f71201b7754b18fad249a66dc5ea2a4c8c07e6bf033a2e55dba"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_LOGISTICS_HP_v002_hero.png",
+          "source_allowlist_sha256": "ef1638e8358878c8d4bbb2f8c9a56f35ecd2bcb14d9000409bdc267c343d8ec4"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_LOGISTICS_HP_v002_gray.png",
+          "source_allowlist_sha256": "35a5b5fdaa30554f7536584d36bd521f75d37e82cd733aafe8cf02cb2c8a66f9"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_LOGISTICS_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "d28c9e1b43f63abe3b8fb6c74ce1af90b3685015b1f02cb61e1151847b91ed35"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1511424,
+          "sha256": "602be76228e5173846e9d8b021abc5cdec56a8a5e47d7a1b8f850318c104ed5c"
+        },
+        "highpoly_fbx": {
+          "size": 3580016,
+          "sha256": "4145fd6cfa7579a723aee11e11b9f53a3b0140e088538d7c7a35a485a3635de9"
+        },
+        "original_metadata": {
+          "size": 233034,
+          "sha256": "8a421de2c1d4a008c45a3fe7c205ef96dc35139927835b74519ab01018f4cca0"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_CIVIC_HP_v001",
+      "label_zh": "公共建筑",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_CIVIC_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_CIVIC_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_CIVIC_HP_v001.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -17.0,
+          -18.5,
+          0.0
+        ],
+        [
+          17.0,
+          15.5,
+          6.170000076293945
+        ]
+      ],
+      "measured_size": [
+        34.0,
+        34.0,
+        6.170000076293945
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 182,
+        "vertices": 30644,
+        "triangles": 60564
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_CIVIC_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_CIVIC_HP_v001_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_CIVIC_HP_v001_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/BUILDING_V001_BATCH_COMPLETED.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_CIVIC_HP_v001_detail.png",
+          "source_allowlist_sha256": "3ab78e25d33033d5793b636addcc821c6dfc03d0589135667fb90e66392f0652"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_CIVIC_HP_v001_hero.png",
+          "source_allowlist_sha256": "40b3c7ebef1726ddcf85b173dbb3b10d20b5e3f16bbfecb53b7736f9610da9b1"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_CIVIC_HP_v001_gray.png",
+          "source_allowlist_sha256": "dbcd98f0d26ee6ae14face57fcb7d5b3bc2311fd06d0c7fdcc393abc7e2cf035"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_CIVIC_HP_v001_feature_edges.png",
+          "source_allowlist_sha256": "09daf418cc318cb68677197e04973540341020ef33d07dc900719c80f12a37af"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1187840,
+          "sha256": "bf8d3800898cc4735a49bf690445e59321c79e13f133c7d85fb6d028ae712028"
+        },
+        "highpoly_fbx": {
+          "size": 2716560,
+          "sha256": "5009eaf175ce23acb68363ead856a2f7d8c19a83a54fa242955ae1dca34ad977"
+        },
+        "original_metadata": {
+          "size": 119952,
+          "sha256": "4613b44c30ad2210aec1eccdd81854829d0528993e79d4af5ca163c891a4085c"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_INFRASTRUCTURE_HP_v002",
+      "label_zh": "基础设施源库",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_INFRASTRUCTURE_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_INFRASTRUCTURE_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_INFRASTRUCTURE_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -60.9900016784668,
+          -5.5,
+          -0.07999999821186066
+        ],
+        [
+          65.31999969482422,
+          75.32499694824219,
+          6.666299819946289
+        ]
+      ],
+      "measured_size": [
+        126.31000137329102,
+        80.82499694824219,
+        6.74629981815815
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 184,
+        "vertices": 164852,
+        "triangles": 325320
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/metal_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INFRASTRUCTURE_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INFRASTRUCTURE_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INFRASTRUCTURE_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_INFRASTRUCTURE_HP_v002_production.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/ADDITIONAL_NATIVE_CLOSE_REVIEWS_v001.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/INFRASTRUCTURE_CLOSE_REVIEWS_v002.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INFRASTRUCTURE_HP_v002_detail.png",
+          "source_allowlist_sha256": "a2e2ec08774538b0c8f94ff34696280503430388eeae7198140583b34bb0fcd4"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INFRASTRUCTURE_HP_v002_grate_detail.png",
+          "source_allowlist_sha256": "8f0be801ff8a856a3ae0cc917a02517a93c795a96e79ebfb5f3ebde7295848c5"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INFRASTRUCTURE_HP_v002_hero.png",
+          "source_allowlist_sha256": "8fca54109e0745d6f03c984da68fc71887a4d9c4b86da5b4d7e268fff3d0c09c"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INFRASTRUCTURE_HP_v002_pipe_joint_close.png",
+          "source_allowlist_sha256": "0158990316285af619965aa51e0f69dbedb91796e457f5faa58355b3e4050079"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_INFRASTRUCTURE_HP_v002_stair_close.png",
+          "source_allowlist_sha256": "73ff7e4297c913bb093b86962d7c55e64aebb3b3d1dd0691a0a8da8889b03f97"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_INFRASTRUCTURE_HP_v002_gray.png",
+          "source_allowlist_sha256": "9dab2c8140a3265a3f8026f7a5459174c5a9e68a7eb9f2781f5f57740eb53181"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_INFRASTRUCTURE_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "82617711541e7a3ac54cd038e9ec5d0e69e87d16f51488f9b58f3402dd458c7c"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "equivalent_cylinder_caps_verified",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": false,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1769472,
+          "sha256": "824fe76465e8511e1fec52e1c99175ced0f3f7a5c6902c32c96669836a2895ae"
+        },
+        "highpoly_fbx": {
+          "size": 10869696,
+          "sha256": "42d6e521fa4c75a0eb2cd63cc922b31c878472e182515b445c5b426ab0c2e0ff"
+        },
+        "original_metadata": {
+          "size": 126004,
+          "sha256": "fe43b46eedc126bd924a69ea49570cc436475ff2567b6e6e8fa844474e2b4a3b"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_ENVIRONMENT_HP_v002",
+      "label_zh": "环境源库",
+      "source_package": "max_highpoly_20261031",
+      "selection_status": "LEGACY_FORMAL_SELECTED",
+      "source_max": "project/art_reserve/max_highpoly_20261031/05_buildings/CC_ENVIRONMENT_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx/CC_ENVIRONMENT_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_20261031/10_validation/CC_ENVIRONMENT_HP_v002.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; authored building entrances face -Y",
+      "bounds": [
+        [
+          -16.197166442871094,
+          -9.268406867980957,
+          -0.11340267956256866
+        ],
+        [
+          16.062206268310547,
+          10.47402286529541,
+          12.89712905883789
+        ]
+      ],
+      "measured_size": [
+        32.25937271118164,
+        19.742429733276367,
+        13.01053173840046
+      ],
+      "pivot": null,
+      "geometry_summary": {
+        "node_count": 12,
+        "vertices": 123372,
+        "triangles": 200346
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "true_max_build": "executed by caller",
+        "evaluated_geometry_counts": "passed",
+        "uv_channel_1_coverage": "passed",
+        "source_save": "passed",
+        "fbx_file_export": "passed",
+        "hashes": "external verification pending",
+        "source_reopen": "not yet run",
+        "fbx_reimport": "not yet run",
+        "topology_manifold_checks": "not performed by this helper",
+        "render_and_visual_review": "managed by caller"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_20261031/07_materials_textures/surfaces/concrete_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_ENVIRONMENT_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_ENVIRONMENT_HP_v002_delivery004_library_exchange.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_ENVIRONMENT_HP_v002_delivery004_library_fbx_import.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/CC_ENVIRONMENT_HP_v002_production.json",
+        "project/art_reserve/max_highpoly_20261031/10_validation/NATIVE_FULL_TRIANGLE_WIREFRAME_VIEWS_v001.json"
+      ],
+      "previews": [
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_ENVIRONMENT_HP_v002_detail.png",
+          "source_allowlist_sha256": "16a8e88271ccfa3c3dfb9646cfc5bf3318ca5f518a53f0d1a5a307b3db60156e"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_ENVIRONMENT_HP_v002_hero.png",
+          "source_allowlist_sha256": "0ee556220699cecf2023407efb095d2498d7d0d0332f6dfe7d477793e0c2e541"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_ENVIRONMENT_HP_v002_rock_00_close.png",
+          "source_allowlist_sha256": "c7b5c998726903b3725e8a83817316b563f95461871c098b7444e4be31e1fe40"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_ENVIRONMENT_HP_v002_rock_01_close.png",
+          "source_allowlist_sha256": "209d7c73241582e96df504d167f213487d7e0f11c65c81d2bccf4c6753494a9b"
+        },
+        {
+          "kind": "actual_Arnold_render_beauty",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/beauty/CC_ENVIRONMENT_HP_v002_rock_02_close.png",
+          "source_allowlist_sha256": "efc9e37fc03988d9ca10f40ec7839894dd6c4c05fcb5975e1647af94d9342985"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_ENVIRONMENT_HP_v002_gray.png",
+          "source_allowlist_sha256": "e551c5db25f7af9edcae3770fa2e80bca177dd6df8d5b0e7a6a79a80e75ff056"
+        },
+        {
+          "kind": "actual_Arnold_render_gray",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/gray/CC_ENVIRONMENT_HP_v002_rock_02_reverse.png",
+          "source_allowlist_sha256": "0099fba25155cdded0eb604e6e4c7dab49ad6384dbfea5557f0b1e29e66689e7"
+        },
+        {
+          "kind": "actual_Arnold_render_wire",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_ENVIRONMENT_HP_v002_feature_edges.png",
+          "source_allowlist_sha256": "8a9300d478b4218ba1ee20201748a4af8b1b7642628c91a80dd3ff216b1ccc32"
+        },
+        {
+          "kind": "native_Max_full_triangle_wireframe_viewport",
+          "status": "actual",
+          "path": "project/art_reserve/max_highpoly_20261031/09_previews/wire/CC_ENVIRONMENT_HP_v002_rock00_fulltri_viewport.png",
+          "source_allowlist_sha256": "69f05400c7ef0564ba8e7a63720cb84472277f383625dc79a89678165c977881"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_exchange_status": "exact_exchange_passed",
+        "fbx_exchange_passed": true,
+        "exact_exchange_pass": true,
+        "equivalence_pass": true
+      },
+      "visual_review_status": "LEGACY_ALLOWLIST_ACTUAL_WITH_REPORTED_LIMITATIONS",
+      "file_receipts": {
+        "source_max": {
+          "size": 8048640,
+          "sha256": "90c714c8b92908a9852868f0f45b143836d8f4c3b48662fa2c0effcda607e8fc"
+        },
+        "highpoly_fbx": {
+          "size": 9224752,
+          "sha256": "30e162cd9c6e6b6d8bbfe84528e538504e2f011b60602bcc88531a2ee66dc2c4"
+        },
+        "original_metadata": {
+          "size": 11344,
+          "sha256": "ebb7085a7f20c57cf533253fe9ba29d1f498d0b35b50fff3108315b1a482caa0"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_APARTMENT_HP_v002",
+      "label_zh": "公寓",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_APARTMENT_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_APARTMENT_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_APARTMENT_HP_v002.json",
+      "game_building_ids_from_source": [
+        "apartment"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -27.0,
+          -22.204999923706055,
+          -0.08944272249937057
+        ],
+        [
+          27.0,
+          21.0,
+          40.70000076293945
+        ]
+      ],
+      "measured_size": [
+        54.0,
+        43.204999923706055,
+        40.789443485438824
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 653,
+        "vertices": 60532,
+        "triangles": 118464
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_APARTMENT_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_APARTMENT_HP_v002_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_APARTMENT_HP_v002_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_APARTMENT_HP_v002_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_APARTMENT_HP_v002_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_APARTMENT_HP_v002_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_APARTMENT_HP_v002_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_APARTMENT_HP_v002_business_100px.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 2375680,
+          "sha256": "b8144003045cc90ed28c13559e6a6c62f9be43866b9ac9a2b0db72364e3888aa"
+        },
+        "highpoly_fbx": {
+          "size": 6170608,
+          "sha256": "e844258821744a4e5698ee190c465c22edbec32338043be4264022bc05d78473"
+        },
+        "original_metadata": {
+          "size": 573869,
+          "sha256": "f52ac1f4ae97174078c4286454167a2f9d5f732fb4caadcb4046e7deef12298b"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_ARCOLOGY_HP_v002",
+      "label_zh": "生态综合体",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_ARCOLOGY_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_ARCOLOGY_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_ARCOLOGY_HP_v002.json",
+      "game_building_ids_from_source": [
+        "arcology"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -65.0,
+          -66.16999816894531,
+          0.0
+        ],
+        [
+          65.0,
+          65.0,
+          51.06965637207031
+        ]
+      ],
+      "measured_size": [
+        130.0,
+        131.1699981689453,
+        51.06965637207031
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 1196,
+        "vertices": 98396,
+        "triangles": 192036
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "NOT_RUN",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_ARCOLOGY_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_ARCOLOGY_HP_v002_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_ARCOLOGY_HP_v002_interior_cutaway.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_ARCOLOGY_HP_v002_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_ARCOLOGY_HP_v002_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_ARCOLOGY_HP_v002_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_ARCOLOGY_HP_v002_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        }
+      ],
+      "known_missing_previews": [
+        {
+          "kind": "business_thumbnail",
+          "expected_relative_path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_ARCOLOGY_HP_v002_business_100px.png",
+          "source_expected_path": "D:\\勇敢新世界\\art_reserve\\max_highpoly_continuation_20261102\\09_previews\\business\\CC_ARCOLOGY_HP_v002_business_100px.png",
+          "status": "NATIVE_PROJECTION_READY_IMAGE_NOT_RUN",
+          "included": false
+        }
+      ],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "NOT_RUN",
+      "file_receipts": {
+        "source_max": {
+          "size": 4317184,
+          "sha256": "c6c41dd791295a0bf71357c0fb12b1527ba371029e08e0f57fdaf55e8e1bb1ac"
+        },
+        "highpoly_fbx": {
+          "size": 10875728,
+          "sha256": "787c588f779c800cc1e587f7248ff4f9d0cc4e4bf70d0605737fbb5359d262a6"
+        },
+        "original_metadata": {
+          "size": 1081305,
+          "sha256": "fcc40ae236cbb2d816a09c67d7722a2dead3b1709b61032738e059e37208f034"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_CAPITAL_HALL_HP_v002",
+      "label_zh": "首府大厅",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_CAPITAL_HALL_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CAPITAL_HALL_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CAPITAL_HALL_HP_v002.json",
+      "game_building_ids_from_source": [
+        "capital_hall"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -56.0,
+          -48.0,
+          0.0
+        ],
+        [
+          56.0,
+          40.0,
+          31.69999885559082
+        ]
+      ],
+      "measured_size": [
+        112.0,
+        88.0,
+        31.69999885559082
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 421,
+        "vertices": 49126,
+        "triangles": 96620
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CAPITAL_HALL_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CAPITAL_HALL_HP_v002_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CAPITAL_HALL_HP_v002_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_CAPITAL_HALL_HP_v002_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_CAPITAL_HALL_HP_v002_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_CAPITAL_HALL_HP_v002_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CAPITAL_HALL_HP_v002_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CAPITAL_HALL_HP_v002_business_100px_v002.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 2138112,
+          "sha256": "d2f684c00317776de455856e8901f7ea2386741d4134b868da1bc6f9dbd814d8"
+        },
+        "highpoly_fbx": {
+          "size": 4631712,
+          "sha256": "b707f5d78a96f3bb2084ef29c0de684a4639fe7dad6ac4f30880b1cead24f762"
+        },
+        "original_metadata": {
+          "size": 378914,
+          "sha256": "2963dea1c800cf4e3434bbd79765a3fe9d3f2c4b231ca7e089cc7ce92efcec1b"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_CIVIL_CARGO_SHIP_HP_v001",
+      "label_zh": "民用货船",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_CIVIL_CARGO_SHIP_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CIVIL_CARGO_SHIP_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CIVIL_CARGO_SHIP_HP_v001.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -10.894400596618652,
+          -42.067222595214844,
+          -4.872000217437744
+        ],
+        [
+          10.894400596618652,
+          42.070587158203125,
+          23.649999618530273
+        ]
+      ],
+      "measured_size": [
+        21.788801193237305,
+        84.13780975341797,
+        28.521999835968018
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 576,
+        "vertices": 54523,
+        "triangles": 106742
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CIVIL_CARGO_SHIP_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CIVIL_CARGO_SHIP_HP_v001_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CIVIL_CARGO_SHIP_HP_v001_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_CIVIL_CARGO_SHIP_HP_v001_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_CIVIL_CARGO_SHIP_HP_v001_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_CIVIL_CARGO_SHIP_HP_v001_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CIVIL_CARGO_SHIP_HP_v001_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CIVIL_CARGO_SHIP_HP_v001_business_100px.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 2154496,
+          "sha256": "e722b18929f978329105c0e6c3066670b0462e39fc69744977d585c06a9d9fb4"
+        },
+        "highpoly_fbx": {
+          "size": 5596832,
+          "sha256": "3bfeecc897bd033198941aa76e7d407e058d73915394d421523ed1247705e150"
+        },
+        "original_metadata": {
+          "size": 526320,
+          "sha256": "7c4c5c8e06693f54719adc819b667d05f864ea18d44db4a8e0455e18e35fbf8d"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_CONSTRUCTION_KIT_HP_v001",
+      "label_zh": "施工组件",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_CONSTRUCTION_KIT_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CONSTRUCTION_KIT_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CONSTRUCTION_KIT_HP_v001.json",
+      "game_building_ids_from_source": [],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -78.0,
+          -34.45000076293945,
+          -0.028800001367926598
+        ],
+        [
+          70.0,
+          37.0,
+          36.22276306152344
+        ]
+      ],
+      "measured_size": [
+        148.0,
+        71.45000076293945,
+        36.251563062891364
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 1086,
+        "vertices": 83884,
+        "triangles": 163440
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CONSTRUCTION_KIT_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CONSTRUCTION_KIT_HP_v001_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CONSTRUCTION_KIT_HP_v001_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_CONSTRUCTION_KIT_HP_v001_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_CONSTRUCTION_KIT_HP_v001_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_CONSTRUCTION_KIT_HP_v001_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CONSTRUCTION_KIT_HP_v001_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CONSTRUCTION_KIT_HP_v001_business_100px.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 3461120,
+          "sha256": "8ee599b537c4584e92655ee25e1ce1dbc0f99217fd95e6b229fb6170afc64b6a"
+        },
+        "highpoly_fbx": {
+          "size": 9787824,
+          "sha256": "26ee01ec19e819a18b87b300738766d8e427014fa86c3e9c64753624b9863933"
+        },
+        "original_metadata": {
+          "size": 983518,
+          "sha256": "4d5c44d210c69811130041089f9e5aebf1f0fee7d3a3bace5269c722e558a975"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_CREW_QUARTERS_HP_v001",
+      "label_zh": "人员宿舍",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_CREW_QUARTERS_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CREW_QUARTERS_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CREW_QUARTERS_HP_v001.json",
+      "game_building_ids_from_source": [
+        "crew_quarters"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -31.0,
+          -23.0,
+          0.0
+        ],
+        [
+          31.0,
+          23.0,
+          7.480000019073486
+        ]
+      ],
+      "measured_size": [
+        62.0,
+        46.0,
+        7.480000019073486
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 585,
+        "vertices": 42764,
+        "triangles": 83220
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/soil_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CREW_QUARTERS_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CREW_QUARTERS_HP_v001_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_CREW_QUARTERS_HP_v001_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_CREW_QUARTERS_HP_v001_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_CREW_QUARTERS_HP_v001_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_CREW_QUARTERS_HP_v001_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CREW_QUARTERS_HP_v001_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_CREW_QUARTERS_HP_v001_business_100px.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 2338816,
+          "sha256": "8c9cb421591ac2e55505ce95ca336ec3c184fe7447c9b447610166376e50f65f"
+        },
+        "highpoly_fbx": {
+          "size": 5307808,
+          "sha256": "4f2b37076d4cb9c81e148f3d5d60dfb40605505df73a28541b7db84a139e03f5"
+        },
+        "original_metadata": {
+          "size": 520423,
+          "sha256": "79476895a6a6dcd6a0bbce7b8bd696ed46444d34767ed16b32c1dc5af765d546"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_HARBOR_QUAY_KIT_HP_v002",
+      "label_zh": "港口码头组件",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_HARBOR_QUAY_KIT_HP_v002.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_HARBOR_QUAY_KIT_HP_v002.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_HARBOR_QUAY_KIT_HP_v002.json",
+      "game_building_ids_from_source": [
+        "port"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -59.97999954223633,
+          -30.0,
+          -4.199999809265137
+        ],
+        [
+          59.97999954223633,
+          51.97999954223633,
+          41.07246780395508
+        ]
+      ],
+      "measured_size": [
+        119.95999908447266,
+        81.97999954223633,
+        45.272467613220215
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 339,
+        "vertices": 44690,
+        "triangles": 88024
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_HARBOR_QUAY_KIT_HP_v002_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_HARBOR_QUAY_KIT_HP_v002_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_HARBOR_QUAY_KIT_HP_v002_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_HARBOR_QUAY_KIT_HP_v002_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_HARBOR_QUAY_KIT_HP_v002_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_HARBOR_QUAY_KIT_HP_v002_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_HARBOR_QUAY_KIT_HP_v002_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_HARBOR_QUAY_KIT_HP_v002_business_100px_v002.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1548288,
+          "sha256": "7a06e90871f4f3c6c230c75d9c38cae3188073daee166e97b705a3915c45e3a5"
+        },
+        "highpoly_fbx": {
+          "size": 4082288,
+          "sha256": "bec59a619d105245fcbfbaee1fce6cdbd9c8d91d201264a3d6b98be364424c36"
+        },
+        "original_metadata": {
+          "size": 316401,
+          "sha256": "2c5896376326d1de26a2a2e379862cded6176148db8099facfb3a22ad35f9024"
+        }
+      }
+    },
+    {
+      "asset_id": "CC_LIFT_PORT_HP_v001",
+      "label_zh": "升降港",
+      "source_package": "max_highpoly_continuation_20261102",
+      "selection_status": "CONTINUATION_CANDIDATE",
+      "source_max": "project/art_reserve/max_highpoly_continuation_20261102/05_buildings/CC_LIFT_PORT_HP_v001.max",
+      "highpoly_fbx": "project/art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_LIFT_PORT_HP_v001.fbx",
+      "original_metadata": "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_LIFT_PORT_HP_v001.json",
+      "game_building_ids_from_source": [
+        "lift_port"
+      ],
+      "game_mapping_scope": "Existing source annotation only; game integration remains pending.",
+      "units": {
+        "system_type": "meters",
+        "system_scale": 1.0,
+        "display_type": "metric",
+        "display_metric": "meters",
+        "one_meter_in_system_units": 1.0
+      },
+      "axis": "Z up; entrance -Y unless interfaces specify otherwise",
+      "bounds": [
+        [
+          -47.0,
+          -42.0,
+          0.0
+        ],
+        [
+          47.0,
+          42.0,
+          153.8000030517578
+        ]
+      ],
+      "measured_size": [
+        94.0,
+        84.0,
+        153.8000030517578
+      ],
+      "pivot": {
+        "position_m": [
+          0,
+          0,
+          0
+        ],
+        "meaning": "footprint centre at local ground datum"
+      },
+      "geometry_summary": {
+        "node_count": 276,
+        "vertices": 26454,
+        "triangles": 51808
+      },
+      "uv_scope": "Existing UV1 preserved; missing UV1 receives editable box projection. No unique atlas or texture baking is claimed.",
+      "fbx_settings_readback": {
+        "SmoothingGroups": true,
+        "Preserveinstances": true,
+        "UpAxis": "z",
+        "ConvertUnit": "m",
+        "ScaleFactor": 1.0,
+        "Cameras": false,
+        "Lights": false,
+        "Animation": false,
+        "EmbedTextures": false,
+        "SmoothMeshExport": false,
+        "Triangulate": true
+      },
+      "original_metadata_checks": {
+        "script_execution": "PASS",
+        "native_save": "PASS",
+        "source_reopen": "PASS",
+        "fbx_export": "PASS",
+        "fbx_reimport": "PASS",
+        "uv1": "PASS",
+        "materials": "PASS",
+        "gray_and_feature_visual_review": "PASS",
+        "material_and_business_visual_review": "PASS",
+        "topology": "REPORTED_SEPARATELY",
+        "spatial_self_intersection": "NOT_RUN"
+      },
+      "bitmap_dependencies": [
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/concrete_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/metal_roughness_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_basecolor_4k.png",
+        "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/surfaces/paint_roughness_4k.png"
+      ],
+      "evidence_reports": [
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_LIFT_PORT_HP_v001_reopen.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_LIFT_PORT_HP_v001_fbx_reimport.json",
+        "project/art_reserve/max_highpoly_continuation_20261102/10_validation/CC_LIFT_PORT_HP_v001_visual_review.json"
+      ],
+      "previews": [
+        {
+          "kind": "gray",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/gray/CC_LIFT_PORT_HP_v001_gray.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "feature",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/wire/CC_LIFT_PORT_HP_v001_feature_edges.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "material_close",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/detail/CC_LIFT_PORT_HP_v001_material_close.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_LIFT_PORT_HP_v001_business.png",
+          "status": "FILE_EXISTS_SAVED_METADATA"
+        },
+        {
+          "kind": "business_thumbnail",
+          "path": "project/art_reserve/max_highpoly_continuation_20261102/09_previews/business/CC_LIFT_PORT_HP_v001_business_100px_v002.png",
+          "status": "PASS"
+        }
+      ],
+      "known_missing_previews": [],
+      "this_handoff_max_execution": "NOT_RUN",
+      "this_handoff_game_integration": "NOT_RUN",
+      "saved_native_status": {
+        "source_reopen_passed": true,
+        "fbx_reimport_passed": true
+      },
+      "visual_review_status": "PASS",
+      "file_receipts": {
+        "source_max": {
+          "size": 1384448,
+          "sha256": "ddf85f2319e43b657b5eea817d86769825937383c78834a6b6685add3d3ece7a"
+        },
+        "highpoly_fbx": {
+          "size": 2780288,
+          "sha256": "155614b88d01bb329846aa7e37b23e0694861b5b4690bb99a7351842da5bccc3"
+        },
+        "original_metadata": {
+          "size": 252755,
+          "sha256": "54600eb6bb54ca0cec3cef89ac7bc19fd9f101078d2ab6758708dd550f3e5771"
+        }
+      }
+    }
+  ],
+  "support_documents": [
+    "project/art_reserve/max_highpoly_20261031/00_brief/DELIVERY_TARGET_IDS.json",
+    "project/art_reserve/max_highpoly_20261031/00_brief/PRODUCTION_PLAN.md",
+    "project/art_reserve/max_highpoly_20261031/07_materials_textures/MATERIALS_AND_COLORSPACE.md",
+    "project/art_reserve/max_highpoly_20261031/10_validation/ENVIRONMENT_V002_ACTUAL_VISUAL_REVIEW.md",
+    "project/art_reserve/max_highpoly_20261031/10_validation/FINAL_PREVIEW_ALLOWLIST_v001.json",
+    "project/art_reserve/max_highpoly_20261031/10_validation/FINAL_PREVIEW_ALLOWLIST_v001.md",
+    "project/art_reserve/max_highpoly_20261031/10_validation/INDEPENDENT_BUILDING_FILE_AUDIT_v002.md",
+    "project/art_reserve/max_highpoly_20261031/10_validation/KIT_VISUAL_REVIEW_v001.md",
+    "project/art_reserve/max_highpoly_20261031/10_validation/PACKAGE_RECONCILIATION.json",
+    "project/art_reserve/max_highpoly_20261031/11_max_scripts/BUILDINGS_V001_VISUAL_REVIEW.md",
+    "project/art_reserve/max_highpoly_20261031/11_max_scripts/BUILDINGS_V002_VISUAL_REVIEW.md",
+    "project/art_reserve/max_highpoly_20261031/11_max_scripts/BUILDINGS_V003_VISUAL_REVIEW.md",
+    "project/art_reserve/max_highpoly_20261031/11_max_scripts/relink_textures.py",
+    "project/art_reserve/max_highpoly_20261031/OPEN_AND_REVIEW.md",
+    "project/art_reserve/max_highpoly_20261031/QA_REPORT.md",
+    "project/art_reserve/max_highpoly_20261031/README.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/00_brief/ASSET_TASKS.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/00_brief/CURRENT_SELECTION.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/00_brief/MODELING_INSTRUCTIONS.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/ACTIVE_JOB.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/HELPER_SOURCE_RECEIPTS.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/INVENTORY.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/PRODUCTION_PLAN.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/PROGRESS.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/01_progress/TEXTURE_SOURCE_RECEIPTS.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/07_materials_textures/MATERIALS_AND_COLORSPACE.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/10_validation/P0_INDEPENDENT_VISUAL_REVIEW_v001.json",
+    "project/art_reserve/max_highpoly_continuation_20261102/10_validation/P0_INDEPENDENT_VISUAL_REVIEW_v001.md",
+    "project/art_reserve/max_highpoly_continuation_20261102/11_max_scripts/relink_textures.py"
+  ],
+  "receipts": "SOURCE_RECEIPTS_ART.json",
+  "gallery": "MODEL_GALLERY.html",
+  "instructions": "MODEL_INTEGRATION.md"
+}
