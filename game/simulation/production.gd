@@ -11,6 +11,7 @@ const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Sites = preload("res://simulation/sites.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Pollution = preload("res://simulation/pollution.gd")
+const Copies = preload("res://simulation/copies.gd")
 const UTILITY_ROLES: Array[String] = ["power", "water", "port"]
 const LOWEST_JOB_FACTOR: float = 0.2
 const LOWEST_USE_FACTOR: float = 0.3
@@ -163,6 +164,15 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 		float(sim.state.world.regions[region].get("development_multiplier", 1.0))
 		* maxf(0.3, 1.0 + cheaper)
 	)
+	# Every further copy of a kind costs a little more cash; great works are one of a kind anyway.
+	var copies: int = 0 if great else Copies.count_kind(sim, kind)
+	var surcharge: float = minf(
+		float(sim.config.economy.get("copy_surcharge", 0.0)) * copies,
+		float(sim.config.economy.get("copy_surcharge_cap", 1.0)) - 1.0
+	)
+	d.cost *= 1.0 + surcharge
+	d.copy_number = copies + 1
+	d.copy_surcharge = surcharge
 	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster)))
 	return d
 
@@ -554,10 +564,13 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					"residents", "public", served * float(d.spend), "commerce.income", true, b.kind
 				)
 			"income":
+				var limited: float = Copies.factor_for(
+					sim, b, float(sim.config.economy.get("income_copy_factor", 1.0)), 1
+				)
 				sim._transfer(
 					"external",
 					"public",
-					float(d.daily_income) * eff,
+					float(d.daily_income) * eff * limited,
 					"service.income",
 					true,
 					b.kind
@@ -856,14 +869,30 @@ static func build_forecast(
 		for good: String in spec.inputs:
 			revenue -= float(spec.inputs[good]) * Market.price(sim, good) * (1.0 - fee)
 	elif role == "foodworks":
+		var order: float = Copies.next_factor(
+			sim,
+			kind,
+			float(sim.config.economy.get("foodworks_copy_factor", 1.0)),
+			int(sim.config.economy.get("foodworks_free_copies", 0))
+		)
 		revenue = (
-			float(spec.daily_payment) * (1.0 + Research.bonus(sim, "foodworks")) * (1.0 - fee)
+			(
+				float(spec.daily_payment)
+				* order
+				* (1.0 + Research.bonus(sim, "foodworks"))
+				* (1.0 - fee)
+			)
 			- float(spec.food_input) * float(sim.config.prices.food) * (1.0 + fee)
 		)
 	elif role == "commerce":
 		revenue = float(spec.customers) * float(spec.spend)
 	elif role == "income":
-		revenue = float(spec.daily_income)
+		revenue = (
+			float(spec.daily_income)
+			* Copies.next_factor(
+				sim, kind, float(sim.config.economy.get("income_copy_factor", 1.0)), 1
+			)
+		)
 	var jobs: int = jobs_for(sim, {"kind": kind, "level": 1})
 	var wages: float = (
 		jobs * Population.worker_wage(sim)

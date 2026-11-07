@@ -53,6 +53,13 @@
     },
     "admin_per_resident": 0.04,
     "admin_per_settlement": 8.0,
+    "admin_resident_scale": 2500.0,
+    "admin_settlement_growth": 0.15,
+    "copy_surcharge": 0.025,
+    "copy_surcharge_cap": 1.75,
+    "income_copy_factor": 0.85,
+    "foodworks_free_copies": 6,
+    "foodworks_copy_factor": 0.8,
     "construction_stock": {
       "materials": 70.0,
       "parts": 24.0
@@ -811,7 +818,7 @@
       "power": 3.0,
       "water": 2.0,
       "maintenance": 4.0,
-      "description": "作物适配解锁；消耗 6 食品及 6 吨港口吞吐，向轨道补给采购局交付加工食品；外部付款 78/日，受供给与岗位限制。",
+      "description": "作物适配解锁；消耗 6 食品及 6 吨港口吞吐，向轨道补给采购局交付加工食品；外部付款 78/日，受供给与岗位限制。采购局订量有限：第 7 座起每多一座只有前一座的 80%。",
       "food_input": 6.0,
       "daily_payment": 78.0,
       "requires_tech": "adaptation"
@@ -1159,7 +1166,7 @@
       "power": 40.0,
       "water": 8.0,
       "maintenance": 30.0,
-      "description": "向星外出售算力，每天收入 ¥280。只能建在居住据点。",
+      "description": "向星外出售算力，第一座每天收入 ¥280；买家有限，每多一座只有前一座的 85%。只能建在居住据点。",
       "daily_income": 280.0,
       "specialists": 3,
       "site_kinds": [

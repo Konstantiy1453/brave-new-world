@@ -407,16 +407,19 @@ func _running_costs() -> void:
 	var sim: RefCounted = make()
 	var residents: int = int(sim.settlement(0).population)
 	var rules: Dictionary = sim.config.economy
+	# 1.9: the per-resident part grows with the colony's size (one settlement here, so the
+	# per-settlement part is still the straight line).
+	var crowding: float = float(residents) / float(rules.admin_resident_scale)
 	check(
 		is_equal_approx(
 			sim._admin_cost(),
 			(
 				float(rules.admin)
-				+ float(rules.admin_per_resident) * residents
+				+ float(rules.admin_per_resident) * residents * (1.0 + crowding)
 				+ float(rules.admin_per_settlement)
 			)
 		),
-		"administration grows with the colony"
+		"administration grows a little faster than the colony"
 	)
 
 

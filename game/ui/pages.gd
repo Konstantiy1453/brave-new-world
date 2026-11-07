@@ -974,6 +974,16 @@ static func _build_card(g, b, key: String):
 				g.populate_current_page()
 		)
 	D.label(card, str(spec.description), 15, D.MUTED)
+	if float(spec.get("copy_surcharge", 0.0)) > 0.0:
+		D.label(
+			card,
+			(
+				"第 %d 座：资金 +%.0f%%（同类设施越多越贵）"
+				% [int(spec.copy_number), float(spec.copy_surcharge) * 100.0]
+			),
+			15,
+			D.MUTED
+		)
 	if bool(spec.get("megaproject", false)):
 		D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 15, D.TEAL)
 	if refusal != "":
@@ -1003,6 +1013,29 @@ static func _forecast_text(forecast: Dictionary) -> String:
 	if float(forecast.reserve_days) >= 0.0:
 		parts.append("储量够挖 %.0f 日" % float(forecast.reserve_days))
 	return " · ".join(parts)
+
+
+## The public services budget: an optional running cost that keeps people, by level.
+static func _services_budget(g, b) -> void:
+	var rules: Dictionary = g.sim.pop_rules.get("services", {})
+	if rules.is_empty():
+		return
+	D.label(b, "公共服务预算：按全殖民地居民每天付费，提高吸引力、减少离开、增加出生，并减少污染带来的健康支出。现金不够付当天预算时，当天不生效。", 17, D.MUTED)
+	var row = D.row(b)
+	var current: int = int(g.sim.state.policy.get("services", 0))
+	for level: int in range(int(rules.levels) + 1):
+		var cost: float = g.sim.Population.services_cost(g.sim, level)
+		var text: String = (
+			"关"
+			if level == 0
+			else ("%d 级 · ¥ %.0f/日 · 吸引力 +%.2f" % [level, cost, float(rules.appeal[level])])
+		)
+		var chosen: int = level
+		var button = D.button(
+			row, text, func(): g.act("policy", {"services": chosen}), "", "Services_%d" % level
+		)
+		button.toggle_mode = true
+		button.button_pressed = level == current
 
 
 static func economy(g, b):
@@ -1600,6 +1633,7 @@ static func population(g, b):
 		"×"
 	)
 	D.button(wage_row, "应用工资", func(): g.act("policy", {"wage": wage.value}), "", "ApplyWage")
+	_services_budget(g, b)
 	var rules: Dictionary = g.sim.pop_rules.recruitment
 	D.label(
 		b,

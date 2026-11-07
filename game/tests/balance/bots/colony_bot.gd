@@ -74,6 +74,11 @@ const LOW_FOOD_DAYS: float = 12.0
 const PORT_PEOPLE: int = 100
 const SWAP_KINDS: Array[String] = ["apartment", "arcology"]
 const SWAP_FREE_BEDS: int = 35
+## Public services budget (1.9): raise a level with this much cash cover, lower it below the other.
+const SERVICES_UP_COVER: float = 120.0
+const SERVICES_DOWN_COVER: float = 45.0
+const SERVICES_REVIEW_PERIOD: int = 60
+const COVER_WINDOW_DAYS: int = 90
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -87,6 +92,8 @@ var last_reshuffle: int = -1000
 var research_full_income: float = 1000.0
 var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
+## Whether this bot uses the public services budget (passive and sloppy players do not).
+var uses_services: bool = false
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -148,6 +155,7 @@ func on_day() -> void:
 		_upgrades(reserve)
 	_research_contract()
 	_wages()
+	_public_services()
 
 
 ## Lands on the start that looks richest from orbit, among those with a farming partner in reach.
@@ -1168,6 +1176,28 @@ func _invest(reserve: float) -> void:
 
 
 ## Raises pay only when people are staying away for lack of appeal, not for lack of beds or food.
+## Public cash over the mean daily operating expense of the last 90 days.
+func cash_cover() -> float:
+	var history: Array = sim.state.operating_history
+	var days: int = mini(COVER_WINDOW_DAYS, history.size())
+	var expense: float = 0.0
+	for index: int in range(history.size() - days, history.size()):
+		expense += float(history[index].expense)
+	return float(sim.state.cash) / maxf(1.0, expense / maxi(1, days))
+
+
+## Money with nothing better to do buys people a better life, a level at a time.
+func _public_services() -> void:
+	if not uses_services or today() % SERVICES_REVIEW_PERIOD != 0:
+		return
+	var level: int = int(sim.state.policy.get("services", 0))
+	var cover: float = cash_cover()
+	if cover >= SERVICES_UP_COVER and level < int(sim.pop_rules.services.levels):
+		act("policy", {"services": level + 1})
+	elif cover < SERVICES_DOWN_COVER and level > 0:
+		act("policy", {"services": level - 1})
+
+
 func _wages() -> void:
 	if fixed_wage > 0.0:
 		if not is_equal_approx(float(sim.state.policy.wage), fixed_wage):

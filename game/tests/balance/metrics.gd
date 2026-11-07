@@ -10,6 +10,12 @@ const INCOME_SAMPLE_DAYS: int = 30
 const EARLY_INCOME_DAY: int = 720
 const LATE_INCOME_DAY: int = 2160
 const POLLUTION_CHECK_DAYS: Array[int] = [1080, 2880]
+## Cash cover (1.9): public cash over the mean daily operating expense of the last 90 days,
+## sampled every 30 days from day 720.
+const COVER_WINDOW_DAYS: int = 90
+const COVER_EVERY_DAYS: int = 30
+const COVER_FROM_DAY: int = 720
+const YEAR_DAYS: int = 360
 
 var record: Dictionary = {}
 var _pending_seen: Dictionary = {}
@@ -20,6 +26,9 @@ var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
 var _last_entry: Dictionary = {}
 var _opened_at: Dictionary = {}
+var _expense_days: Array[float] = []
+var _expense_today: float = 0.0
+var _expense_day: int = -1
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -56,6 +65,11 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"first_road_days": -1,
 				"final_day": 0,
 				"final_status": "",
+				"cover_samples": [],
+				"services_days": 0,
+				"services_max": 0,
+				"year_surplus": [],
+				"year_invested": [],
 			}
 		)
 	)
@@ -69,6 +83,10 @@ func sample(sim: RefCounted) -> void:
 	_scan_events(sim)
 	_scan_company(state)
 	_scan_income(state, day)
+	_scan_cover(state, day)
+	if int(state.policy.get("services_paid_day", -1)) == day:
+		record.services_days = int(record.services_days) + 1
+		record.services_max = maxi(int(record.services_max), int(state.policy.get("services", 0)))
 	var issues: Array = sim.audit()
 	if not issues.is_empty():
 		record.audit_error_count += issues.size()
@@ -154,6 +172,20 @@ func _count_entry(entry: Dictionary, day: int) -> void:
 	var key: String = str(entry.key)
 	var amount: float = float(entry.amount)
 	var operating: bool = bool(entry.operating)
+	var year: int = int(max(day - 1, 0) / YEAR_DAYS)
+	while record.year_surplus.size() <= year:
+		record.year_surplus.append(0.0)
+		record.year_invested.append(0.0)
+	if operating and entry.to == "public":
+		record.year_surplus[year] = float(record.year_surplus[year]) + amount
+	if operating and entry.from == "public":
+		record.year_surplus[year] = float(record.year_surplus[year]) - amount
+		if day != _expense_day:
+			_close_expense_day(day)
+		_expense_today += amount
+	if not operating and entry.from == "public" and entry.to == "external":
+		if key != "arrears" and not key.begins_with("aid."):
+			record.year_invested[year] = float(record.year_invested[year]) + amount
 	if key == "export" and day > EXPORT_MIX_FROM_DAY:
 		var good: String = str(entry.detail)
 		record.export_revenue[good] = float(record.export_revenue.get(good, 0.0)) + amount
@@ -209,6 +241,22 @@ func _scan_company(state: Dictionary) -> void:
 	if not record.company_stages.has(stage):
 		record.company_stages.append(stage)
 		record.company_stage_days[stage] = int(state.day)
+
+
+func _close_expense_day(day: int) -> void:
+	if _expense_day >= 0:
+		_expense_days.append(_expense_today)
+		if _expense_days.size() > COVER_WINDOW_DAYS:
+			_expense_days.pop_front()
+	_expense_today = 0.0
+	_expense_day = day
+
+
+func _scan_cover(state: Dictionary, day: int) -> void:
+	if day < COVER_FROM_DAY or day % COVER_EVERY_DAYS != 0 or _expense_days.is_empty():
+		return
+	var expense: float = maxf(_mean(_expense_days), 1.0)
+	record.cover_samples.append([day, snappedf(float(state.cash) / expense, 0.1)])
 
 
 func _scan_income(state: Dictionary, day: int) -> void:

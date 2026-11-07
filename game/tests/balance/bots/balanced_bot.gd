@@ -5,6 +5,10 @@ extends "res://tests/balance/bots/colony_bot.gd"
 const YEAR_DAYS: int = 360
 
 
+func _init() -> void:
+	uses_services = true
+
+
 ## A year past the award tells the harness what it needs about the time after it.
 func finished() -> bool:
 	return (

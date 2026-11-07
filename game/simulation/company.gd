@@ -55,7 +55,16 @@ static func social_environment(sim) -> void:
 		):
 			var leaving: int = mini(
 				int(s.workers) - 2,
-				maxi(1, int(float(s.population) * float(sim.pop_rules.departure.share)))
+				maxi(
+					1,
+					int(
+						(
+							float(s.population)
+							* float(sim.pop_rules.departure.share)
+							* Population.services_effect(sim, "departures")
+						)
+					)
+				)
 			)
 			s.workers -= leaving
 			s.population -= leaving

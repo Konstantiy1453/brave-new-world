@@ -32,6 +32,13 @@ const MIN_OFF_SHARE: float = 0.25
 const LARGEST_DISTRUST_RISE: float = 0.8
 const POLLUTION_EARLY_LIMIT: float = 0.02
 const ROAD_DAYS: Array[int] = [90, 300]
+## 1.9 money rows: cash cover in days of operating expense, and the share of surplus spent.
+const COVER_BEFORE_MEDIAN: float = 60.0
+const COVER_BEFORE_P90: float = 120.0
+const COVER_AFTER_MEDIAN: float = 180.0
+const COVER_AFTER_P90: float = 365.0
+const ABSORPTION_LEAST: float = 0.8
+const ABSORPTION_YEARS: Array[int] = [2, 3, 4, 5, 6]
 
 
 static func median(values: Array) -> float:
@@ -122,6 +129,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_population_rows(rows, runs)
 	_research_rows(rows, runs)
 	_money_rows(rows, runs)
+	_cash_rows(rows, runs)
 	_event_rows(rows, runs)
 	_no_control_row(rows, extras)
 	_audit_row(rows, runs, extras)
@@ -340,6 +348,108 @@ static func _money_rows(rows: Array, runs: Array) -> void:
 		"no good > 60% after year 2",
 		"median %.0f%%, worst %.0f%%" % [median(shares) * 100.0, worst * 100.0],
 		_verdict(worst <= EXPORT_CONCENTRATION, not shares.is_empty())
+	)
+
+
+static func percentile(values: Array, share: float) -> float:
+	if values.is_empty():
+		return -1.0
+	var sorted_values: Array = values.duplicate()
+	sorted_values.sort()
+	return float(sorted_values[mini(sorted_values.size() - 1, int(share * sorted_values.size()))])
+
+
+## Cover samples of one run between `first` and `last` day, inclusive.
+static func cover_between(run: Dictionary, first: int, last: int) -> Array:
+	var values: Array = []
+	for sample: Array in run.get("cover_samples", []):
+		if int(sample[0]) >= first and int(sample[0]) <= last:
+			values.append(float(sample[1]))
+	return values
+
+
+static func _cash_rows(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var medians: Array = []
+	var highs: Array = []
+	var after: Array = []
+	for run: Dictionary in group:
+		var award: int = int(run.award_day)
+		var last: int = award if award > 0 else int(run.final_day)
+		var before: Array = cover_between(run, 720, last)
+		if not before.is_empty():
+			medians.append(median(before))
+			highs.append(percentile(before, 0.9))
+		var samples: Array = run.get("cover_samples", [])
+		if award > 0 and award <= 2880 and not samples.is_empty():
+			after.append(float(samples.back()[1]))
+	var before_median: float = median(medians)
+	var before_high: float = median(highs)
+	_row(
+		rows,
+		"Cash cover before the award",
+		(
+			"day 720 to award: median <= %.0f days, p90 <= %.0f"
+			% [COVER_BEFORE_MEDIAN, COVER_BEFORE_P90]
+		),
+		"median %.0f days, p90 %.0f days" % [before_median, before_high],
+		_verdict(
+			before_median <= COVER_BEFORE_MEDIAN and before_high <= COVER_BEFORE_P90,
+			not medians.is_empty()
+		)
+	)
+	var after_median: float = median(after)
+	var after_high: float = percentile(after, 0.9)
+	_row(
+		rows,
+		"Cash cover after the award",
+		(
+			"last day, runs awarded by 2880: median <= %.0f days, p90 <= %.0f"
+			% [COVER_AFTER_MEDIAN, COVER_AFTER_P90]
+		),
+		"median %.0f days, p90 %.0f days" % [after_median, after_high],
+		_verdict(
+			after_median <= COVER_AFTER_MEDIAN and after_high <= COVER_AFTER_P90,
+			not after.is_empty()
+		)
+	)
+	var yearly: Array = []
+	for year: int in ABSORPTION_YEARS:
+		var shares: Array = []
+		for run: Dictionary in group:
+			var surplus: Array = run.get("year_surplus", [])
+			var invested: Array = run.get("year_invested", [])
+			if year < surplus.size() and float(surplus[year]) > 0.0:
+				shares.append(float(invested[year]) / float(surplus[year]))
+		yearly.append(median(shares))
+	var lowest: float = INF
+	var parts: PackedStringArray = []
+	for index: int in range(yearly.size()):
+		parts.append("y%d %.0f%%" % [ABSORPTION_YEARS[index] + 1, float(yearly[index]) * 100.0])
+		if float(yearly[index]) >= 0.0:
+			lowest = minf(lowest, float(yearly[index]))
+	var users: int = 0
+	var used_days: Array = []
+	for run: Dictionary in group:
+		if int(run.get("services_days", 0)) > 0:
+			users += 1
+			used_days.append(int(run.services_days))
+	_row(
+		rows,
+		"Services budget",
+		"used by the balanced bot (1.9 optional spending)",
+		(
+			"%d of %d runs, median %.0f days paid"
+			% [users, group.size(), median(used_days) if not used_days.is_empty() else 0.0]
+		),
+		_verdict(users * 10 >= group.size() * 8, not group.is_empty())
+	)
+	_row(
+		rows,
+		"Absorption",
+		"spending >= 80% of operating surplus in years 3-7",
+		", ".join(parts),
+		_verdict(lowest >= ABSORPTION_LEAST, lowest < INF)
 	)
 
 

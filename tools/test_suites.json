@@ -12,6 +12,7 @@
     {"name": "v17_events", "script": "res://tests/v17_events.gd", "success": "V17_EVENTS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_tutorial", "script": "res://tests/v17_tutorial.gd", "success": "V17_TUTORIAL_RESULT checks=\\d+ failures=0"},
     {"name": "v18_systems", "script": "res://tests/v18_systems.gd", "success": "V18_SYSTEMS_RESULT checks=\\d+ failures=0"},
+    {"name": "v19_money", "script": "res://tests/v19_money.gd", "success": "V19_MONEY_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

@@ -26,6 +26,7 @@ const DISPATCH_ORDER: Array[String] = [
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
+const Copies = preload("res://simulation/copies.gd")
 const HUB_FOOD_DAYS: float = 3.0
 const HUNGRY_DAYS: float = 7.0
 const TERMINAL_MATERIALS: float = 24.0
@@ -183,15 +184,22 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		if scale <= 0:
 			continue
 		sim._consume(s, "food", float(d.food_input) * scale)
-		sim._transfer(
-			"external", "public", float(d.daily_payment) * scale, "food_order.income", true
+		# The supply bureau buys a limited amount: copies beyond the free ones are paid less.
+		var payment: float = (
+			float(d.daily_payment)
+			* scale
+			* Copies.factor_for(
+				sim,
+				b,
+				float(sim.config.economy.get("foodworks_copy_factor", 1.0)),
+				int(sim.config.economy.get("foodworks_free_copies", 0))
+			)
 		)
+		sim._transfer("external", "public", payment, "food_order.income", true)
 		sim._public_expense(
-			float(d.daily_payment) * scale * float(sim.config.economy.port_fee),
-			"food_order.port_fee",
-			"external"
+			payment * float(sim.config.economy.port_fee), "food_order.port_fee", "external"
 		)
-		sim.state.exports_total += float(d.daily_payment) * scale
+		sim.state.exports_total += payment
 		cap -= float(d.food_input) * scale
 	# Sell only surplus after promised cross-region stock.
 	for key in EXPORT_ORDER:

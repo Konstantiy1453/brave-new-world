@@ -253,6 +253,11 @@ func _set_policy(args: Dictionary) -> String:
 		float(pop_rules.wage.min),
 		float(pop_rules.wage.max)
 	)
+	state.policy.services = clampi(
+		int(args.get("services", state.policy.get("services", 0))),
+		0,
+		int(pop_rules.get("services", {}).get("levels", 0))
+	)
 	if args.get("event_pause", "") in [EventsV2.PAUSE_ALL, EventsV2.PAUSE_CRITICAL]:
 		state.policy.event_pause = str(args.event_pause)
 	_log("贸易保留 %.0f 天食品，企业利润税 %.0f%%。" % [state.policy.food_reserve, state.policy.tax * 100.0])
@@ -270,6 +275,7 @@ func tick() -> void:
 	for s: Dictionary in state.settlements:
 		stocks[str(s.region)] = s.stock.duplicate(true)
 	_repay()
+	Population.pay_services(self)
 	Logistics.advance_shipments(self)
 	for s: Dictionary in state.settlements:
 		if s.arrival > 0:
@@ -329,12 +335,20 @@ func _admin_cost() -> float:
 	var saved: float = Research.bonus(self, "admin")
 	for s: Dictionary in state.settlements:
 		saved += Population.service_total(self, s, "admin")
+	# Administration grows a little faster than the colony: per resident with size, per settlement
+	# with the number of settlements. Without the 1.9 keys it is the 1.8 straight line.
+	var rules: Dictionary = config.economy
+	var crowding: float = (
+		float(residents) / maxf(1.0, float(rules.get("admin_resident_scale", INF)))
+	)
+	var places: int = state.settlements.size()
+	var spread: float = float(rules.get("admin_settlement_growth", 0.0)) * maxi(0, places - 1)
 	return (
 		maxf(0.3, 1.0 + saved)
 		* (
-			float(config.economy.admin)
-			+ float(config.economy.admin_per_resident) * residents
-			+ float(config.economy.admin_per_settlement) * state.settlements.size()
+			float(rules.admin)
+			+ float(rules.admin_per_resident) * residents * (1.0 + crowding)
+			+ float(rules.admin_per_settlement) * places * (1.0 + spread)
 		)
 	)
 

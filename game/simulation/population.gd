@@ -17,6 +17,8 @@ static func ensure_state(state: Dictionary) -> void:
 		state.recruit_campaigns = []
 	if not state.policy.has("wage"):
 		state.policy.wage = 1.0
+	if not state.policy.has("services"):
+		state.policy.services = 0
 	for s: Dictionary in state.settlements:
 		if not s.has("arrival_accrual"):
 			s.arrival_accrual = 0.0
@@ -27,6 +29,45 @@ static func ensure_state(state: Dictionary) -> void:
 
 
 ## Food per person per day, after what cold chains and reserves save.
+## The public services budget (1.9). Level 0 is the 1.8 colony. It is paid at the start of the day
+## for every resident, and works only on a day it was paid in full.
+static func services_level(sim: RefCounted) -> int:
+	if int(sim.state.policy.get("services_paid_day", -1)) != int(sim.state.day):
+		return 0
+	return int(sim.state.policy.get("services", 0))
+
+
+## The budget's effect on `key` (appeal, departures, births or health) at today's level.
+static func services_effect(sim: RefCounted, key: String) -> float:
+	var table: Array = sim.pop_rules.get("services", {}).get(key, [])
+	var level: int = services_level(sim)
+	if level < 0 or level >= table.size():
+		return 0.0 if key == "appeal" else 1.0
+	return float(table[level])
+
+
+## What a level costs a day for the colony as it is now.
+static func services_cost(sim: RefCounted, level: int) -> float:
+	var table: Array = sim.pop_rules.get("services", {}).get("cost_per_resident", [])
+	if level <= 0 or level >= table.size():
+		return 0.0
+	var residents: int = 0
+	for s: Dictionary in sim.state.settlements:
+		residents += int(s.population)
+	return float(table[level]) * residents
+
+
+static func pay_services(sim: RefCounted) -> void:
+	var level: int = int(sim.state.policy.get("services", 0))
+	if level <= 0:
+		return
+	var cost: float = services_cost(sim, level)
+	if float(sim.state.cash) < cost:
+		return
+	sim._public_expense(cost, "services.budget", "external")
+	sim.state.policy.services_paid_day = int(sim.state.day)
+
+
 static func food_rate(sim: RefCounted) -> float:
 	return (
 		float(sim.config.economy.food_per_person)
@@ -96,6 +137,9 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 	var services: float = service_total(sim, s, "appeal")
 	if services > 0.0:
 		parts.services = float(parts.get("services", 0.0)) + services
+	var budget: float = services_effect(sim, "appeal")
+	if budget > 0.0:
+		parts.budget = budget
 	var dirty: float = Pollution.penalty(sim) * float(sim.progression.pollution.appeal_weight)
 	if dirty >= 0.005:
 		parts.pollution = -dirty
@@ -240,6 +284,7 @@ static func _births(sim: RefCounted, s: Dictionary) -> void:
 	var yearly: float = (
 		float(sim.pop_rules.births.per_adult_per_year)
 		* (1.0 + service_total(sim, s, "births") + Research.bonus(sim, "births"))
+		* services_effect(sim, "births")
 	)
 	s.birth_accrual = float(s.birth_accrual) + adults * yearly / 360.0
 	if float(s.birth_accrual) < 1.0:

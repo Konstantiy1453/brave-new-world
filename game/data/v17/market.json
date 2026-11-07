@@ -6,7 +6,7 @@
   },
   "decay_per_day": 0.02,
   "depth": 0.4,
-  "floor": 0.6,
+  "floor": 0.55,
   "scale": {
     "ore": 6000.0,
     "copper": 3000.0,
