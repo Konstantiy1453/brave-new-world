@@ -6,6 +6,9 @@ signal atlas_refined
 signal region_progress(busy: bool, progress: float)
 signal region_ready(id: int)
 const Geo = preload("res://world/world_gen.gd")
+const Shaders = preload("res://world/shaders.gd")
+const NightLights = preload("res://world/night_lights.gd")
+const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
 static var atlas_cache: Dictionary = {}
 var world: Dictionary = {}
@@ -29,6 +32,16 @@ var transport_root: Node3D
 var buildings_root: Node3D
 var cloud_shell: MeshInstance3D
 var globe_shader: ShaderMaterial
+var cloud_shader: ShaderMaterial
+var atmosphere_shader: ShaderMaterial
+var terrain_shader: ShaderMaterial
+var night_lights: ImageTexture
+var lights_signature: String = ""
+## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
+var sky: VisualClock = VisualClock.new()
+## Player settings for the moving map; the defaults are what a new player sees.
+var day_night_enabled: bool = true
+var weather_enabled: bool = true
 var sun_light: DirectionalLight3D
 var flat_shader: ShaderMaterial
 var noise: FastNoiseLite
@@ -68,6 +81,23 @@ var region_build_count: int = 0
 var last_region_ms: int = 0
 var last_region_cached: bool = false
 var terrain_unique_samples: int = 0
+
+
+func _ice_latitude() -> float:
+	return float(world.get("plates", {}).get("ice_latitude", 76.0))
+
+
+## Wetter planets are cloudier.
+func _cloud_coverage() -> float:
+	var rain: float = float(world.get("plates", {}).get("rainfall_base", 0.5))
+	return clampf(0.3 + (rain - 0.3) * 1.2, 0.2, 0.8)
+
+
+## The night-side light map shared by the globe and the flat map; empty until towns exist.
+func _night_lights_texture() -> ImageTexture:
+	if night_lights == null:
+		night_lights = ImageTexture.create_from_image(NightLights.paint([], []))
+	return night_lights
 
 
 ## Settlements go by their names, sites still waiting for one by the kind of place they are.

@@ -1,0 +1,1646 @@
+{
+  "kinds": {
+    "apartment": {
+      "model": "apartment"
+    },
+    "aquafarm": {
+      "model": "aquafarm"
+    },
+    "arcology": {
+      "model": "arcology"
+    },
+    "atmospheric_water": {
+      "model": "water",
+      "shell": "c9d4d6",
+      "stand_in": "gray model only"
+    },
+    "capital_hall": {
+      "model": "capital_hall"
+    },
+    "civic_center": {
+      "model": "civic_center"
+    },
+    "climate_regulator": {
+      "model": "climate_regulator"
+    },
+    "clinic": {
+      "model": "clinic"
+    },
+    "commerce": {
+      "model": "civic",
+      "stand_in": "variant not modelled yet"
+    },
+    "component_plant": {
+      "model": "component_plant"
+    },
+    "crew_quarters": {
+      "model": "crew_quarters"
+    },
+    "crystal_vat": {
+      "model": "research",
+      "shell": "a9c4d8",
+      "stand_in": "gray model only"
+    },
+    "culture_center": {
+      "model": "culture_center"
+    },
+    "data_center": {
+      "model": "data_center"
+    },
+    "deep_well": {
+      "model": "water",
+      "shell": "a9b5b8",
+      "stand_in": "gray model only"
+    },
+    "depot": {
+      "model": "logistics"
+    },
+    "desalination": {
+      "model": "desalination"
+    },
+    "farm": {
+      "model": "greenhouse"
+    },
+    "field_station": {
+      "model": "field_station"
+    },
+    "fission": {
+      "model": "fission"
+    },
+    "foodworks": {
+      "model": "industry",
+      "shell": "d3c39b",
+      "stand_in": "gray model only"
+    },
+    "frontier_lodge": {
+      "model": "frontier_lodge"
+    },
+    "fusion": {
+      "model": "fusion"
+    },
+    "geothermal": {
+      "model": "geothermal"
+    },
+    "habitat": {
+      "model": "habitat"
+    },
+    "hospital": {
+      "model": "hospital"
+    },
+    "hydroponic_farm": {
+      "model": "greenhouse",
+      "shell": "d4dde0",
+      "stand_in": "gray model only"
+    },
+    "institute": {
+      "model": "research",
+      "scale": 1.12,
+      "shell": "d8d2c4",
+      "stand_in": "gray model only"
+    },
+    "lab": {
+      "model": "research"
+    },
+    "lift_port": {
+      "model": "lift_port"
+    },
+    "machine_works": {
+      "model": "industry",
+      "shell": "8fa3b5",
+      "stand_in": "gray model only"
+    },
+    "mine_copper": {
+      "model": "mine",
+      "ore": "copper",
+      "stand_in": "gray model only"
+    },
+    "mine_copper_auto": {
+      "model": "mine_copper_auto",
+      "ore": "copper"
+    },
+    "mine_copper_heavy": {
+      "model": "mine_copper_heavy",
+      "ore": "copper",
+      "pit": true
+    },
+    "mine_crystal": {
+      "model": "mine",
+      "ore": "crystal",
+      "stand_in": "gray model only"
+    },
+    "mine_crystal_auto": {
+      "model": "mine_crystal_auto",
+      "ore": "crystal"
+    },
+    "mine_crystal_heavy": {
+      "model": "mine_crystal_heavy",
+      "ore": "crystal"
+    },
+    "mine_ore": {
+      "model": "mine",
+      "ore": "ore"
+    },
+    "mine_ore_auto": {
+      "model": "mine_ore_auto",
+      "ore": "ore"
+    },
+    "mine_ore_heavy": {
+      "model": "mine_ore_heavy",
+      "ore": "ore",
+      "pit": true
+    },
+    "park": {
+      "model": "civic",
+      "shell": "b9c4a6",
+      "stand_in": "gray model only"
+    },
+    "pharma_plant": {
+      "model": "industry",
+      "shell": "e2e8e6",
+      "stand_in": "gray model only"
+    },
+    "port": {
+      "model": "port"
+    },
+    "power": {
+      "model": "power"
+    },
+    "processor": {
+      "model": "industry"
+    },
+    "protein_plant": {
+      "model": "industry",
+      "shell": "b6c7a7",
+      "stand_in": "gray model only"
+    },
+    "ranch": {
+      "model": "ranch"
+    },
+    "school": {
+      "model": "school"
+    },
+    "scrubber": {
+      "model": "scrubber"
+    },
+    "sea_copper": {
+      "model": "water",
+      "shell": "c8b07a",
+      "stand_in": "gray model only"
+    },
+    "service": {
+      "model": "civic",
+      "scale": 0.7,
+      "shell": "d9cfb8",
+      "stand_in": "reuses the civic hall"
+    },
+    "smelter": {
+      "model": "industry",
+      "shell": "b98d6c",
+      "stand_in": "gray model only"
+    },
+    "tailings_plant": {
+      "model": "industry",
+      "shell": "a39b8f",
+      "stand_in": "gray model only"
+    },
+    "university": {
+      "model": "university"
+    },
+    "vertical_farm": {
+      "model": "vertical_farm"
+    },
+    "water": {
+      "model": "water"
+    },
+    "wind_farm": {
+      "model": "wind_farm"
+    }
+  },
+  "models": {
+    "apartment": {
+      "file": "res://assets/models/apartment.res",
+      "lowest": 0.0,
+      "parts_dropped": 399.0,
+      "parts_kept": 254.0,
+      "recipe_hash": "94d172cbb3ae8e05",
+      "seconds": 0.454,
+      "size": [
+        4.0,
+        3.92,
+        3.15
+      ],
+      "source": "CC_APARTMENT_HP_v002",
+      "source_sha256": "e844258821744a4e5698ee190c465c22edbec32338043be4264022bc05d78473",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4848.0,
+      "units_per_metre": 0.0741
+    },
+    "aquafarm": {
+      "file": "res://assets/models/aquafarm.res",
+      "lowest": -0.38,
+      "parts_dropped": 52.0,
+      "parts_kept": 519.0,
+      "recipe_hash": "f8e64cc5a3192faf",
+      "seconds": 0.3,
+      "size": [
+        3.41,
+        0.67,
+        4.0
+      ],
+      "source": "CC_AQUAFARM_HP_v001",
+      "source_sha256": "b315f180b349bc8e8b6e4fec8e8092ea6a71c36278be1c32481d5433a0c537b3",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3500.0,
+      "units_per_metre": 0.0488
+    },
+    "arcology": {
+      "file": "res://assets/models/arcology.res",
+      "lowest": 0.0,
+      "parts_dropped": 236.0,
+      "parts_kept": 960.0,
+      "recipe_hash": "d3bd7c1023b2d22b",
+      "seconds": 0.891,
+      "size": [
+        3.93,
+        2.02,
+        3.99
+      ],
+      "source": "CC_ARCOLOGY_HP_v003",
+      "source_sha256": "7892c2b1761323cdcca9a4189c42f71e6107d251804819b43f940de9b04cfe14",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 6949.0,
+      "units_per_metre": 0.0305
+    },
+    "bridge_span": {
+      "file": "res://assets/models/bridge_span.res",
+      "lowest": 0.0,
+      "parts_dropped": 76.0,
+      "parts_kept": 44.0,
+      "recipe_hash": "2c1e76c0b321cf75",
+      "seconds": 0.199,
+      "size": [
+        1.98,
+        0.57,
+        0.79
+      ],
+      "source": "CC_ROADS_BRIDGES_CLOSURE_HP_v003",
+      "source_sha256": "64db3907d4b770afcfd89062a3dfbacb10af058fa083e3d0ae1064987f3258f5",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "metal",
+        "shell"
+      ],
+      "triangles": 2236.0,
+      "units_per_metre": 0.09
+    },
+    "capital_hall": {
+      "file": "res://assets/models/capital_hall.res",
+      "lowest": 0.0,
+      "parts_dropped": 179.0,
+      "parts_kept": 242.0,
+      "recipe_hash": "4d5d4c430a2357e4",
+      "seconds": 0.411,
+      "size": [
+        5.0,
+        1.84,
+        3.93
+      ],
+      "source": "CC_CAPITAL_HALL_HP_v002",
+      "source_sha256": "b707f5d78a96f3bb2084ef29c0de684a4639fe7dad6ac4f30880b1cead24f762",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell",
+        "water"
+      ],
+      "triangles": 8440.0,
+      "units_per_metre": 0.0446
+    },
+    "cargo_ship": {
+      "file": "res://assets/models/cargo_ship.res",
+      "lowest": -0.35,
+      "parts_dropped": 458.0,
+      "parts_kept": 118.0,
+      "recipe_hash": "c22cd1148844bce3",
+      "seconds": 0.315,
+      "size": [
+        1.55,
+        2.03,
+        6.0
+      ],
+      "source": "CC_CIVIL_CARGO_SHIP_HP_v001",
+      "source_sha256": "3bfeecc897bd033198941aa76e7d407e058d73915394d421523ed1247705e150",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3496.0,
+      "units_per_metre": 0.0714
+    },
+    "civic": {
+      "file": "res://assets/models/civic.res",
+      "lowest": 0.0,
+      "parts_dropped": 83.0,
+      "parts_kept": 99.0,
+      "recipe_hash": "755b624c7dc5ace7",
+      "seconds": 0.252,
+      "size": [
+        4.0,
+        0.94,
+        4.0
+      ],
+      "source": "CC_CIVIC_HP_v001",
+      "source_sha256": "5009eaf175ce23acb68363ead856a2f7d8c19a83a54fa242955ae1dca34ad977",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4256.0,
+      "units_per_metre": 0.1176
+    },
+    "civic_center": {
+      "file": "res://assets/models/civic_center.res",
+      "lowest": 0.0,
+      "parts_dropped": 40.0,
+      "parts_kept": 279.0,
+      "recipe_hash": "55d30755d27c641a",
+      "seconds": 0.293,
+      "size": [
+        4.0,
+        0.96,
+        3.27
+      ],
+      "source": "CC_CIVIC_CENTER_HP_v001",
+      "source_sha256": "6e3786b6154258c6813d9b47522d1994224cc763eba9769b3e739caee5385c08",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4480.0,
+      "units_per_metre": 0.0606
+    },
+    "climate_regulator": {
+      "file": "res://assets/models/climate_regulator.res",
+      "lowest": 0.0,
+      "parts_dropped": 68.0,
+      "parts_kept": 394.0,
+      "recipe_hash": "6e075a203d27abb3",
+      "seconds": 0.217,
+      "size": [
+        5.0,
+        1.39,
+        3.66
+      ],
+      "source": "CC_CLIMATE_REGULATOR_HP_v001",
+      "source_sha256": "019960cc3ba7c9b0c494ac7f1e0f6752b4683b4309209784d14f22de88c21461",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 8784.0,
+      "units_per_metre": 0.0446
+    },
+    "clinic": {
+      "file": "res://assets/models/clinic.res",
+      "lowest": 0.0,
+      "parts_dropped": 61.0,
+      "parts_kept": 139.0,
+      "recipe_hash": "df0ed0478763a7a0",
+      "seconds": 0.192,
+      "size": [
+        4.0,
+        0.83,
+        3.37
+      ],
+      "source": "CC_CLINIC_HP_v001",
+      "source_sha256": "324695cb1a7d774ef4a04e115c568f7fa3b8d2ca1d7a5b6ac326a2b05505e12c",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 5112.0,
+      "units_per_metre": 0.1053
+    },
+    "component_plant": {
+      "file": "res://assets/models/component_plant.res",
+      "lowest": 0.0,
+      "parts_dropped": 263.0,
+      "parts_kept": 185.0,
+      "recipe_hash": "e344598092013596",
+      "seconds": 0.404,
+      "size": [
+        4.0,
+        1.07,
+        3.04
+      ],
+      "source": "CC_COMPONENT_PLANT_HP_v001",
+      "source_sha256": "979f9dce0fff80b2fa7dfbb3ed8328000621b3d3f6efa3ad2bc7eff9cb5d4fb4",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4142.0,
+      "units_per_metre": 0.037
+    },
+    "construction": {
+      "file": "res://assets/models/construction.res",
+      "lowest": 0.0,
+      "parts_dropped": 153.0,
+      "parts_kept": 235.0,
+      "recipe_hash": "e7894d30773c6d5f",
+      "seconds": 0.57,
+      "size": [
+        4.0,
+        1.59,
+        3.29
+      ],
+      "source": "CC_CONSTRUCTION_KIT_HP_v001",
+      "source_sha256": "26ee01ec19e819a18b87b300738766d8e427014fa86c3e9c64753624b9863933",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal",
+        "shell"
+      ],
+      "triangles": 4152.0,
+      "units_per_metre": 0.0714
+    },
+    "construction_crane": {
+      "file": "res://assets/models/construction_crane.res",
+      "lowest": 0.0,
+      "parts_dropped": 162.0,
+      "parts_kept": 80.0,
+      "recipe_hash": "c1734e9c739cb495",
+      "seconds": 0.409,
+      "size": [
+        3.6,
+        2.63,
+        1.09
+      ],
+      "source": "CC_CONSTRUCTION_KIT_HP_v001",
+      "source_sha256": "26ee01ec19e819a18b87b300738766d8e427014fa86c3e9c64753624b9863933",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal",
+        "shell"
+      ],
+      "triangles": 2256.0,
+      "units_per_metre": 0.0728
+    },
+    "crew_quarters": {
+      "file": "res://assets/models/crew_quarters.res",
+      "lowest": 0.0,
+      "parts_dropped": 355.0,
+      "parts_kept": 230.0,
+      "recipe_hash": "8bcf39b5cb24d332",
+      "seconds": 0.308,
+      "size": [
+        4.0,
+        0.63,
+        2.97
+      ],
+      "source": "CC_CREW_QUARTERS_HP_v001",
+      "source_sha256": "4f2b37076d4cb9c81e148f3d5d60dfb40605505df73a28541b7db84a139e03f5",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 5408.0,
+      "units_per_metre": 0.0645
+    },
+    "culture_center": {
+      "file": "res://assets/models/culture_center.res",
+      "lowest": 0.0,
+      "parts_dropped": 56.0,
+      "parts_kept": 291.0,
+      "recipe_hash": "f4b8202e6d71d355",
+      "seconds": 0.34,
+      "size": [
+        4.0,
+        1.04,
+        3.26
+      ],
+      "source": "CC_CULTURE_CENTER_HP_v001",
+      "source_sha256": "d13e64ed6d3ebef6064fd0f45541be4e012327fb5111c3c5b625e128bd36f1b7",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4208.0,
+      "units_per_metre": 0.0526
+    },
+    "data_center": {
+      "file": "res://assets/models/data_center.res",
+      "lowest": 0.0,
+      "parts_dropped": 90.0,
+      "parts_kept": 157.0,
+      "recipe_hash": "e13760afdcc216f5",
+      "seconds": 0.236,
+      "size": [
+        4.0,
+        0.52,
+        3.05
+      ],
+      "source": "CC_DATA_CENTER_HP_v001",
+      "source_sha256": "296d07347f11af8423a260fd040a62267192185ea0b3acd76418bc33cd3f8e59",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "gold",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4744.0,
+      "units_per_metre": 0.0526
+    },
+    "depleted_copper": {
+      "file": "res://assets/models/depleted_copper.res",
+      "lowest": 0.0,
+      "parts_dropped": 0.0,
+      "parts_kept": 46.0,
+      "recipe_hash": "dd583ef6b3d5bed7",
+      "seconds": 0.177,
+      "size": [
+        1.58,
+        0.74,
+        3.4
+      ],
+      "source": "CC_MINERAL_DEPLETED_PLOT_KIT_HP_v003",
+      "source_sha256": "e317165d18d420c98377e61cf73782741da1f2ab561e2eec326375870f7e3cc9",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "green",
+        "metal",
+        "shell"
+      ],
+      "triangles": 2512.0,
+      "units_per_metre": 0.1863
+    },
+    "depleted_crystal": {
+      "file": "res://assets/models/depleted_crystal.res",
+      "lowest": 0.0,
+      "parts_dropped": 12.0,
+      "parts_kept": 33.0,
+      "recipe_hash": "18d3fcf4e3ea915d",
+      "seconds": 0.17,
+      "size": [
+        1.58,
+        0.46,
+        3.4
+      ],
+      "source": "CC_MINERAL_DEPLETED_PLOT_KIT_HP_v003",
+      "source_sha256": "e317165d18d420c98377e61cf73782741da1f2ab561e2eec326375870f7e3cc9",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "green",
+        "metal",
+        "shell"
+      ],
+      "triangles": 2928.0,
+      "units_per_metre": 0.1863
+    },
+    "depleted_ore": {
+      "file": "res://assets/models/depleted_ore.res",
+      "lowest": 0.0,
+      "parts_dropped": 12.0,
+      "parts_kept": 35.0,
+      "recipe_hash": "0246e1e5eb71daf1",
+      "seconds": 0.171,
+      "size": [
+        1.58,
+        0.46,
+        3.4
+      ],
+      "source": "CC_MINERAL_DEPLETED_PLOT_KIT_HP_v003",
+      "source_sha256": "e317165d18d420c98377e61cf73782741da1f2ab561e2eec326375870f7e3cc9",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "green",
+        "metal",
+        "shell"
+      ],
+      "triangles": 2928.0,
+      "units_per_metre": 0.1863
+    },
+    "desalination": {
+      "file": "res://assets/models/desalination.res",
+      "lowest": -0.25,
+      "parts_dropped": 101.0,
+      "parts_kept": 176.0,
+      "recipe_hash": "00fc227d2eb8cdfd",
+      "seconds": 0.369,
+      "size": [
+        3.56,
+        0.79,
+        4.0
+      ],
+      "source": "CC_DESALINATION_HP_v002",
+      "source_sha256": "b174abf0c5b6e8196093cfbd5d73a680f75fa5c5cd72687e9218cfa961d397ae",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell",
+        "water"
+      ],
+      "triangles": 4821.0,
+      "units_per_metre": 0.0302
+    },
+    "field_station": {
+      "file": "res://assets/models/field_station.res",
+      "lowest": 0.0,
+      "parts_dropped": 139.0,
+      "parts_kept": 192.0,
+      "recipe_hash": "7b1d48be0a5225eb",
+      "seconds": 0.305,
+      "size": [
+        4.0,
+        0.41,
+        3.16
+      ],
+      "source": "CC_FIELD_STATION_HP_v002",
+      "source_sha256": "b0d8883f8f2dce9098af8bbc690b8035154dee99ac38ed024a8d24df67cd2568",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 17074.0,
+      "units_per_metre": 0.0351
+    },
+    "fission": {
+      "file": "res://assets/models/fission.res",
+      "lowest": 0.0,
+      "parts_dropped": 92.0,
+      "parts_kept": 178.0,
+      "recipe_hash": "86d9d234c825cb2b",
+      "seconds": 0.391,
+      "size": [
+        4.0,
+        2.2,
+        3.27
+      ],
+      "source": "CC_FISSION_HP_v002",
+      "source_sha256": "d09c8679cfc113e5c65760e619c45a9342763843c466478bf444be42b41ed680",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3908.0,
+      "units_per_metre": 0.0303
+    },
+    "frontier_lodge": {
+      "file": "res://assets/models/frontier_lodge.res",
+      "lowest": 0.0,
+      "parts_dropped": 54.0,
+      "parts_kept": 309.0,
+      "recipe_hash": "8a97ac05b9fb1ddb",
+      "seconds": 0.293,
+      "size": [
+        4.0,
+        1.09,
+        3.03
+      ],
+      "source": "CC_FRONTIER_LODGE_HP_v002",
+      "source_sha256": "36c89144db97253492150f52c10ae3af56ef7808ef7e494875fd2ead1a893f1a",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4788.0,
+      "units_per_metre": 0.069
+    },
+    "fusion": {
+      "file": "res://assets/models/fusion.res",
+      "lowest": 0.0,
+      "parts_dropped": 264.0,
+      "parts_kept": 318.0,
+      "recipe_hash": "6f1a354848a57553",
+      "seconds": 0.562,
+      "size": [
+        4.0,
+        1.17,
+        3.39
+      ],
+      "source": "CC_FUSION_HP_v002",
+      "source_sha256": "3b0024e90bb419594f57bf62d0996c610c0c2dcc0cdbe4fd812f88f94be2e897",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 5036.0,
+      "units_per_metre": 0.0303
+    },
+    "geothermal": {
+      "file": "res://assets/models/geothermal.res",
+      "lowest": 0.0,
+      "parts_dropped": 125.0,
+      "parts_kept": 147.0,
+      "recipe_hash": "496cf94188520c45",
+      "seconds": 0.264,
+      "size": [
+        4.0,
+        0.72,
+        3.19
+      ],
+      "source": "CC_GEOTHERMAL_HP_v003",
+      "source_sha256": "08b371f4df946fb89850be3eefc5035277d156078a2ca82ade4b8bcba659e201",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4889.0,
+      "units_per_metre": 0.037
+    },
+    "greenhouse": {
+      "file": "res://assets/models/greenhouse.res",
+      "lowest": -0.02,
+      "parts_dropped": 312.0,
+      "parts_kept": 200.0,
+      "recipe_hash": "af01c3ddd995075f",
+      "seconds": 0.597,
+      "size": [
+        3.76,
+        1.26,
+        4.0
+      ],
+      "source": "CC_GREENHOUSE_HP_v003",
+      "source_sha256": "f289989137dcf38f5fc5a9f812c78b96e03ac402cd8138782d0018bfaae93953",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4082.0,
+      "units_per_metre": 0.1212
+    },
+    "habitat": {
+      "file": "res://assets/models/habitat.res",
+      "lowest": 0.0,
+      "parts_dropped": 234.0,
+      "parts_kept": 117.0,
+      "recipe_hash": "a88243cab99b5288",
+      "seconds": 0.222,
+      "size": [
+        4.0,
+        1.63,
+        3.24
+      ],
+      "source": "CC_HOUSING_HP_v002",
+      "source_sha256": "15057d5d361e14772d1dda97a0e7e2b8e65200e7bd775d91cad0d5ca64973cfc",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3816.0,
+      "units_per_metre": 0.1345
+    },
+    "harbor": {
+      "file": "res://assets/models/harbor.res",
+      "lowest": -0.08,
+      "parts_dropped": 140.0,
+      "parts_kept": 69.0,
+      "recipe_hash": "e4ae6165019130a1",
+      "seconds": 0.214,
+      "size": [
+        5.6,
+        2.69,
+        2.01
+      ],
+      "source": "CC_HARBOR_QUAY_KIT_HP_v002",
+      "source_sha256": "bec59a619d105245fcbfbaee1fce6cdbd9c8d91d201264a3d6b98be364424c36",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold"
+      ],
+      "triangles": 3648.0,
+      "units_per_metre": 0.0636
+    },
+    "hospital": {
+      "file": "res://assets/models/hospital.res",
+      "lowest": 0.0,
+      "parts_dropped": 85.0,
+      "parts_kept": 531.0,
+      "recipe_hash": "a49e93b2e98ca6d7",
+      "seconds": 0.586,
+      "size": [
+        4.0,
+        1.14,
+        3.2
+      ],
+      "source": "CC_HOSPITAL_HP_v001",
+      "source_sha256": "4a8760a99bec5f3e5cc1794294a5d25b38326cfd0232f31f2570d470b70e7e63",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4804.0,
+      "units_per_metre": 0.0444
+    },
+    "industry": {
+      "file": "res://assets/models/industry.res",
+      "lowest": 0.0,
+      "parts_dropped": 137.0,
+      "parts_kept": 147.0,
+      "recipe_hash": "84128a6d05da9d47",
+      "seconds": 0.374,
+      "size": [
+        4.0,
+        1.82,
+        3.46
+      ],
+      "source": "CC_INDUSTRY_HP_v005",
+      "source_sha256": "6d6f6138d8bec873e95de0a1376cca232ea4080de85006b6f77e08eb2b4c4d31",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4926.0,
+      "units_per_metre": 0.0985
+    },
+    "landing_pods": {
+      "file": "res://assets/models/landing_pods.res",
+      "lowest": 0.0,
+      "parts_dropped": 96.0,
+      "parts_kept": 278.0,
+      "recipe_hash": "be31e90284213502",
+      "seconds": 0.366,
+      "size": [
+        4.6,
+        0.66,
+        3.4
+      ],
+      "source": "CC_SETTLEMENT_BASIC_PODS_HP_v001",
+      "source_sha256": "8a4f5af5a36f9fc3960bb2fe8dcea3d116b2d554d445355a38e8a4ade7873ead",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "shell"
+      ],
+      "triangles": 5456.0,
+      "units_per_metre": 0.1
+    },
+    "lift_port": {
+      "file": "res://assets/models/lift_port.res",
+      "lowest": 0.0,
+      "parts_dropped": 188.0,
+      "parts_kept": 88.0,
+      "recipe_hash": "1385a402dfb46dc2",
+      "seconds": 0.208,
+      "size": [
+        5.0,
+        8.02,
+        4.47
+      ],
+      "source": "CC_LIFT_PORT_HP_v001",
+      "source_sha256": "155614b88d01bb329846aa7e37b23e0694861b5b4690bb99a7351842da5bccc3",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 8736.0,
+      "units_per_metre": 0.0532
+    },
+    "logistics": {
+      "file": "res://assets/models/logistics.res",
+      "lowest": 0.0,
+      "parts_dropped": 224.0,
+      "parts_kept": 128.0,
+      "recipe_hash": "2e0fd79254a060f0",
+      "seconds": 0.22,
+      "size": [
+        4.0,
+        1.68,
+        3.46
+      ],
+      "source": "CC_LOGISTICS_HP_v002",
+      "source_sha256": "4145fd6cfa7579a723aee11e11b9f53a3b0140e088538d7c7a35a485a3635de9",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4264.0,
+      "units_per_metre": 0.0909
+    },
+    "mine": {
+      "file": "res://assets/models/mine.res",
+      "lowest": -0.12,
+      "parts_dropped": 38.0,
+      "parts_kept": 187.0,
+      "recipe_hash": "09a01d76fd34d6da",
+      "seconds": 0.186,
+      "size": [
+        4.0,
+        3.18,
+        3.57
+      ],
+      "source": "CC_MINING_HP_v002",
+      "source_sha256": "12beef2995155d861f93cc6e88bdb23cdc92a35ab1109da5ab8e4bcc471afdd9",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal",
+        "ore",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4706.0,
+      "units_per_metre": 0.1096
+    },
+    "mine_copper_auto": {
+      "file": "res://assets/models/mine_copper_auto.res",
+      "lowest": -0.01,
+      "parts_dropped": 92.0,
+      "parts_kept": 368.0,
+      "recipe_hash": "55293c0ff6fd20ef",
+      "seconds": 0.448,
+      "size": [
+        4.0,
+        0.78,
+        3.53
+      ],
+      "source": "CC_MINE_COPPER_AUTO_HP_v002",
+      "source_sha256": "211ad26e6fd576fc2c4c8c0a301d9555abd1a91eb0c8c282d6a4cec3169da1b1",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "ore",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4176.0,
+      "units_per_metre": 0.0339
+    },
+    "mine_copper_heavy": {
+      "file": "res://assets/models/mine_copper_heavy.res",
+      "lowest": -0.63,
+      "parts_dropped": 112.0,
+      "parts_kept": 324.0,
+      "recipe_hash": "852ace1267dad478",
+      "seconds": 3.625,
+      "size": [
+        4.0,
+        1.0,
+        2.83
+      ],
+      "source": "CC_MINE_COPPER_HEAVY_HP_v004",
+      "source_sha256": "54425f688bdb13137c7fdd08bd4d9c0c3193438c6a696b8e34c88eaf9f7f88a7",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 7446.0,
+      "units_per_metre": 0.0195
+    },
+    "mine_crystal_auto": {
+      "file": "res://assets/models/mine_crystal_auto.res",
+      "lowest": 0.0,
+      "parts_dropped": 116.0,
+      "parts_kept": 365.0,
+      "recipe_hash": "6521971c94b77a55",
+      "seconds": 0.437,
+      "size": [
+        4.0,
+        0.78,
+        3.53
+      ],
+      "source": "CC_MINE_CRYSTAL_AUTO_HP_v001",
+      "source_sha256": "e0b34e4e821d6a291f374f6a3a43a358546fc307ba90fc8fe3d22c8186bf7fdf",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "ore",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4586.0,
+      "units_per_metre": 0.0339
+    },
+    "mine_crystal_heavy": {
+      "file": "res://assets/models/mine_crystal_heavy.res",
+      "lowest": -1.25,
+      "parts_dropped": 70.0,
+      "parts_kept": 189.0,
+      "recipe_hash": "07efab7b973b12fa",
+      "seconds": 0.218,
+      "size": [
+        4.0,
+        3.5,
+        3.46
+      ],
+      "source": "CC_MINE_CRYSTAL_HEAVY_HP_v003",
+      "source_sha256": "e35e9f4fbad3a2b4a7c48f73609067d3f63b66f15bcae41bb88735b3f66338e8",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4314.0,
+      "units_per_metre": 0.0385
+    },
+    "mine_ore_auto": {
+      "file": "res://assets/models/mine_ore_auto.res",
+      "lowest": 0.0,
+      "parts_dropped": 105.0,
+      "parts_kept": 337.0,
+      "recipe_hash": "d8c5ea41b126cbef",
+      "seconds": 0.428,
+      "size": [
+        4.0,
+        0.78,
+        3.53
+      ],
+      "source": "CC_MINE_ORE_AUTO_HP_v001",
+      "source_sha256": "f718a1337980f4777f95f2896ff7afec7ad36daf42b31b9404325da4007d7366",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "ore",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4218.0,
+      "units_per_metre": 0.0339
+    },
+    "mine_ore_heavy": {
+      "file": "res://assets/models/mine_ore_heavy.res",
+      "lowest": -0.63,
+      "parts_dropped": 105.0,
+      "parts_kept": 284.0,
+      "recipe_hash": "6ac94d44743e7daa",
+      "seconds": 3.298,
+      "size": [
+        4.0,
+        1.0,
+        2.83
+      ],
+      "source": "CC_MINE_ORE_HEAVY_HP_v004",
+      "source_sha256": "456258c75cf8c9ec1cf3bd70193ee7df1ba86da559bcd02e76b7e49aeba23575",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 6567.0,
+      "units_per_metre": 0.0195
+    },
+    "port": {
+      "file": "res://assets/models/port.res",
+      "lowest": 0.0,
+      "parts_dropped": 351.0,
+      "parts_kept": 141.0,
+      "recipe_hash": "070aa5bc4dfc9cb0",
+      "seconds": 0.308,
+      "size": [
+        4.0,
+        1.07,
+        3.03
+      ],
+      "source": "CC_PORT_HP_v002",
+      "source_sha256": "4e277318876e7508aa6e0f2ed4fe5a848a3f4ec5b879cb5c97f64cd579a904d6",
+      "state": "wip",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4114.0,
+      "units_per_metre": 0.027
+    },
+    "power": {
+      "file": "res://assets/models/power.res",
+      "lowest": 0.0,
+      "parts_dropped": 128.0,
+      "parts_kept": 158.0,
+      "recipe_hash": "25e62b87d4a1cdbb",
+      "seconds": 0.221,
+      "size": [
+        4.0,
+        1.89,
+        3.2
+      ],
+      "source": "CC_POWER_HP_v002",
+      "source_sha256": "abad31b82afc0bf535a6fd26d1a4e75ccdf5e879b718e17413b5a8ce3f7703ba",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4928.0,
+      "units_per_metre": 0.1143
+    },
+    "ranch": {
+      "file": "res://assets/models/ranch.res",
+      "lowest": 0.0,
+      "parts_dropped": 59.0,
+      "parts_kept": 403.0,
+      "recipe_hash": "a71cd98195972cd1",
+      "seconds": 0.26,
+      "size": [
+        4.0,
+        0.43,
+        3.11
+      ],
+      "source": "CC_RANCH_HP_v002",
+      "source_sha256": "b84fa82a7c738fffbb7e06604bb226e8eb885267e31005ede55de818dd2abef0",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 6996.0,
+      "units_per_metre": 0.037
+    },
+    "research": {
+      "file": "res://assets/models/research.res",
+      "lowest": 0.0,
+      "parts_dropped": 289.0,
+      "parts_kept": 78.0,
+      "recipe_hash": "04ca4c9b22e21d22",
+      "seconds": 0.343,
+      "size": [
+        4.0,
+        1.67,
+        2.44
+      ],
+      "source": "CC_RESEARCH_HP_v002",
+      "source_sha256": "e975a83372424569c46a3fdd8de34def00a44861aede46936e2d4916bc01f0ea",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 4322.0,
+      "units_per_metre": 0.1156
+    },
+    "road_closure": {
+      "file": "res://assets/models/road_closure.res",
+      "lowest": 0.0,
+      "parts_dropped": 10.0,
+      "parts_kept": 37.0,
+      "recipe_hash": "d6608d33ac083229",
+      "seconds": 0.172,
+      "size": [
+        1.9,
+        0.37,
+        0.07
+      ],
+      "source": "CC_ROADS_BRIDGES_CLOSURE_HP_v003",
+      "source_sha256": "64db3907d4b770afcfd89062a3dfbacb10af058fa083e3d0ae1064987f3258f5",
+      "state": "accepted",
+      "surfaces": [
+        "gold",
+        "shell"
+      ],
+      "triangles": 1184.0,
+      "units_per_metre": 0.1008
+    },
+    "route_gate": {
+      "file": "res://assets/models/route_gate.res",
+      "lowest": 0.0,
+      "parts_dropped": 6.0,
+      "parts_kept": 21.0,
+      "recipe_hash": "3f1f10ab9b714de7",
+      "seconds": 0.168,
+      "size": [
+        2.6,
+        1.22,
+        1.37
+      ],
+      "source": "CC_ROADS_BRIDGES_CLOSURE_HP_v003",
+      "source_sha256": "64db3907d4b770afcfd89062a3dfbacb10af058fa083e3d0ae1064987f3258f5",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "metal"
+      ],
+      "triangles": 1840.0,
+      "units_per_metre": 0.1718
+    },
+    "school": {
+      "file": "res://assets/models/school.res",
+      "lowest": 0.0,
+      "parts_dropped": 96.0,
+      "parts_kept": 416.0,
+      "recipe_hash": "13765d6a0d53d67d",
+      "seconds": 0.455,
+      "size": [
+        4.0,
+        0.62,
+        3.49
+      ],
+      "source": "CC_SCHOOL_HP_v002",
+      "source_sha256": "d8c4b433c6d0d0c5b33c997a250d0250a1f9dab56f61378b14aa2d4eb55a8ec6",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3721.0,
+      "units_per_metre": 0.0513
+    },
+    "scrubber": {
+      "file": "res://assets/models/scrubber.res",
+      "lowest": 0.0,
+      "parts_dropped": 323.0,
+      "parts_kept": 78.0,
+      "recipe_hash": "6224cb7dee7b6bf9",
+      "seconds": 0.305,
+      "size": [
+        4.0,
+        3.59,
+        2.88
+      ],
+      "source": "CC_SCRUBBER_HP_v003",
+      "source_sha256": "40f6cebbfa1fced6480ff26e70700f8642c8397699a6d573d38ab90ec0211216",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3583.0,
+      "units_per_metre": 0.0625
+    },
+    "street_lamp": {
+      "file": "res://assets/models/street_lamp.res",
+      "lowest": 0.0,
+      "parts_dropped": 4,
+      "parts_kept": 14,
+      "recipe_hash": "12d5b0044d1a3c01",
+      "seconds": 0.175,
+      "size": [
+        1.08,
+        1.71,
+        0.23
+      ],
+      "source": "CC_ROADS_BRIDGES_CLOSURE_HP_v003",
+      "source_sha256": "64db3907d4b770afcfd89062a3dfbacb10af058fa083e3d0ae1064987f3258f5",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "gold",
+        "metal"
+      ],
+      "triangles": 508,
+      "units_per_metre": 0.24
+    },
+    "university": {
+      "file": "res://assets/models/university.res",
+      "lowest": 0.0,
+      "parts_dropped": 97.0,
+      "parts_kept": 475.0,
+      "recipe_hash": "22898f698bfb2a1f",
+      "seconds": 0.581,
+      "size": [
+        5.0,
+        0.79,
+        3.89
+      ],
+      "source": "CC_UNIVERSITY_HP_v001",
+      "source_sha256": "9dc2ee94d2be3d97891b8e0168d336a7ca3b87eb1488300ef9c4423a218a7355",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "glass",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 8500.0,
+      "units_per_metre": 0.0463
+    },
+    "vertical_farm": {
+      "file": "res://assets/models/vertical_farm.res",
+      "lowest": 0.0,
+      "parts_dropped": 882.0,
+      "parts_kept": 327.0,
+      "recipe_hash": "370e119c8746a3c9",
+      "seconds": 0.635,
+      "size": [
+        4.0,
+        2.83,
+        3.49
+      ],
+      "source": "CC_VERTICAL_FARM_HP_v003",
+      "source_sha256": "2aaea049e5b060422899b7f62b3abead022f9d39c35dc846f1d8d193e3dc239d",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 10082.0,
+      "units_per_metre": 0.083
+    },
+    "water": {
+      "file": "res://assets/models/water.res",
+      "lowest": 0.0,
+      "parts_dropped": 208.0,
+      "parts_kept": 90.0,
+      "recipe_hash": "133ac2655bddf0ed",
+      "seconds": 0.333,
+      "size": [
+        4.0,
+        1.15,
+        3.22
+      ],
+      "source": "CC_WATER_HP_v003",
+      "source_sha256": "b8df470ebb910848ff49522fac4410bc90df4e8e6d5b87d547199899375ca42e",
+      "state": "legacy",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell",
+        "water"
+      ],
+      "triangles": 4628.0,
+      "units_per_metre": 0.1111
+    },
+    "wind_farm": {
+      "file": "res://assets/models/wind_farm.res",
+      "lowest": 0.0,
+      "parts_dropped": 151.0,
+      "parts_kept": 171.0,
+      "recipe_hash": "5dbce29b018e3bd4",
+      "seconds": 0.387,
+      "size": [
+        4.0,
+        2.5,
+        2.12
+      ],
+      "source": "CC_WIND_FARM_HP_v001",
+      "source_sha256": "58e1c9850e3341ecbb3b03680c603b8ca58092584a3cb1b8360a0f620dc9a0cf",
+      "state": "accepted",
+      "surfaces": [
+        "concrete",
+        "dark",
+        "glass",
+        "gold",
+        "green",
+        "metal",
+        "roof",
+        "shell"
+      ],
+      "triangles": 3735.0,
+      "units_per_metre": 0.0153
+    }
+  },
+  "units": {
+    "size": "game units, x across, y up, z front (+z faces the street)",
+    "triangles": "finest level of detail"
+  },
+  "version": 1
+}

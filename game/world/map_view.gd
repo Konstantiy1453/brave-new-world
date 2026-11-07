@@ -2,6 +2,18 @@ extends "res://world/planet_view.gd"
 ## Native lightweight 3D renderer: owns the camera, the view mode and input.
 
 const SUN_ROTATION: Vector3 = Vector3(-26, -46, 0)
+const DAY_AMBIENT: Color = Color("8aacbe")
+const NIGHT_AMBIENT: Color = Color("4a6a96")
+const DAY_SKY: Color = Color("080f1c")
+const NIGHT_SKY: Color = Color("03070f")
+const SUN_ENERGY: float = 1.12
+
+var environment: Environment
+var fill_light: DirectionalLight3D
+## A site the camera keeps in view while the spin eases out after a click.
+var focus_site: int = -1
+## 0 by full day, 1 by full night, at the selected site: lamps and windows read this.
+var region_night: float = 0.0
 
 
 func _ready() -> void:
@@ -53,6 +65,11 @@ func setup(data: Dictionary) -> void:
 	if str(world.version) != "CC-GEO-1.4" and not world.regions.is_empty():
 		planet_yaw = deg_to_rad(float(world.regions[0].lon))
 		planet_pitch = deg_to_rad(float(world.regions[0].lat))
+	sky.reset(int(world.seed), planet_yaw)
+	focus_site = -1
+	lights_signature = ""
+	globe_movers.clear()
+	flat_movers.clear()
 	_build_planet()
 	_build_flat()
 	show_planet()
@@ -74,6 +91,10 @@ func sync_state(data: Dictionary) -> void:
 	if transport_now != transport_signature:
 		transport_signature = transport_now
 		_update_transport()
+	var lights_now: String = _lights_signature()
+	if lights_now != lights_signature:
+		lights_signature = lights_now
+		_update_night_lights()
 	if mode == "region" and not region_busy:
 		var new_signature := _building_signature()
 		if new_signature != signature:
@@ -98,6 +119,24 @@ func _marker_signature() -> String:
 			]
 		)
 	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
+
+
+## Towns and lit roads change the night side; a few dozen people more do not.
+func _lights_signature() -> String:
+	var towns: Array = []
+	for place: Dictionary in state.get("settlements", []):
+		var built: int = 0
+		for building: Dictionary in place.get("buildings", []):
+			if int(building.get("remaining", 0)) <= 0:
+				built += 1
+		towns.append([int(place.region), built, int(place.get("population", 0)) / 40])
+	var lit: Array = []
+	var day: int = int(state.get("day", 0))
+	for road: Dictionary in state.get("roads", []):
+		lit.append(
+			[int(road.get("id", 0)), Geo.road_building(road, day) or Geo.road_blocked(road, day)]
+		)
+	return "%s|%s" % [str(towns), str(lit)]
 
 
 func _transport_signature() -> String:
@@ -238,6 +277,8 @@ func orbit(dx: float, dy: float) -> void:
 	if mode == "flat":
 		pan(dx, dy)
 	elif mode == "planet":
+		focus_site = -1
+		sky.hold_spin()
 		planet_yaw -= dx * .005
 		planet_pitch = clampf(planet_pitch + dy * .004, -1.25, 1.25)
 	else:
@@ -250,6 +291,7 @@ func zoom(amount: float) -> void:
 		flat_user_zoomed = true
 		flat_size = clampf(flat_size + amount * .85, 4.2, 23.0)
 	elif mode == "planet":
+		sky.hold_spin()
 		planet_distance = clampf(planet_distance + amount * .65, 7.0, 15.8)
 	else:
 		local_distance = clampf(local_distance + amount * 3.5, 31.0, 140.0)
@@ -284,7 +326,7 @@ func _region_at(screen_pos: Vector2) -> int:
 		var point: Vector3 = (
 			_flat_point(reg.lat, reg.lon)
 			if mode == "flat"
-			else Geo.unit_point(reg.lat, reg.lon) * 3.055
+			else planet.to_global(Geo.unit_point(reg.lat, reg.lon) * 3.055)
 		)
 		if mode == "planet" and point.normalized().dot(camera.position.normalized()) < .18:
 			continue
@@ -315,6 +357,8 @@ func pick_region(screen_pos: Vector2) -> int:
 	var nearest: int = _region_at(screen_pos)
 	if nearest >= 0:
 		selected_region = nearest
+		if mode == "planet":
+			sky.hold_spin()
 		_update_markers()
 		region_selected.emit(nearest)
 	return nearest
@@ -324,25 +368,142 @@ func focus_region(id: int) -> void:
 	if id < 0 or id >= world.regions.size():
 		return
 	selected_region = id
-	planet_yaw = deg_to_rad(float(world.regions[id].lon))
+	focus_site = id
+	sky.hold_spin()
+	_track_focus()
 	planet_pitch = deg_to_rad(float(world.regions[id].lat)) * .75
 	_update_markers()
+
+
+## Keeps a clicked site in front of the camera while the planet comes to rest under it.
+func _track_focus() -> void:
+	if focus_site < 0 or focus_site >= world.regions.size():
+		return
+	var target: float = deg_to_rad(float(world.regions[focus_site].lon)) + sky.spin
+	planet_yaw = smooth_yaw + wrapf(target - smooth_yaw, -PI, PI)
 
 
 func _process(delta: float) -> void:
 	_poll_atlas_job()
 	if camera == null:
 		return
+	sky.advance(delta)
+	if planet != null and is_instance_valid(planet):
+		planet.rotation.y = sky.spin
+	if focus_site >= 0 and mode == "planet":
+		_track_focus()
+		if sky.hold <= 0.0:
+			focus_site = -1
 	_update_camera(1.0 - exp(-delta * 9.0))
-	if cloud_shell != null and is_instance_valid(cloud_shell):
-		cloud_shell.rotation.y += delta * .0015
+	_apply_sky()
+	if mode == "region" and surface != null and surface.visible:
+		_animate_region(delta)
+	elif mode == "planet":
+		_place_movers(globe_movers, sky.day_fraction)
+	elif mode == "flat":
+		_place_movers(flat_movers, sky.day_fraction)
 	if marker_root != null and is_instance_valid(marker_root) and planet.visible:
+		var toward: Vector3 = planet.to_local(camera.global_position).normalized()
 		for child in marker_root.get_children():
 			if child is Node3D and child.has_meta("point"):
-				child.visible = (
-					Vector3(child.get_meta("point")).normalized().dot(camera.position.normalized())
-					> .12
-				)
+				child.visible = Vector3(child.get_meta("point")).normalized().dot(toward) > .12
+
+
+## The town after dark: windows, street lamps, headlights and pools of lamp light follow the
+## night at the site; vehicles run while the game clock runs.
+func _animate_region(delta: float) -> void:
+	if traffic != null and is_instance_valid(traffic):
+		traffic.running = sky.running
+		traffic.rate = sky.rate
+		traffic.advance(delta)
+	if sky.running:
+		_sail(delta * sky.rate)
+	var night: float = region_night if day_night_enabled else 0.0
+	if mats.has("glass_on"):
+		mats["glass_on"].emission_energy_multiplier = night * 0.85
+	if mats.has("lamps"):
+		mats["lamps"].emission_energy_multiplier = 1.3 + night * 3.0
+	if mats.has("headlight"):
+		mats["headlight"].emission_energy_multiplier = 0.4 + night * 3.5
+	if glow_material != null:
+		glow_material.set_shader_parameter("intensity", night * 0.8)
+	if mats.has("smoke"):
+		var shade: float = lerpf(1.0, 0.32, night)
+		mats["smoke"].albedo_color = Color(shade, shade, shade * 1.04, 1.0)
+
+
+## What the game clock is doing; main.gd calls this every frame.
+func set_clock(running: bool, speed: int, day: int, fraction: float) -> void:
+	sky.set_clock(running, speed, day, fraction)
+
+
+## Player settings: a turning planet, day and night with lights, moving weather.
+func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
+	sky.spin_enabled = spin
+	sky.weather_enabled = weather
+	day_night_enabled = day_night
+	weather_enabled = weather
+	if not spin:
+		sky.spin_factor = 0.0
+
+
+## Captures and window tests want the same picture every time: the clock stops where it is,
+## with the planet unturned. Day, night and clouds stay as the settings have them.
+func freeze_motion() -> void:
+	sky.frozen = true
+	sky.spin = 0.0
+	if planet != null and is_instance_valid(planet):
+		planet.rotation.y = 0.0
+
+
+## Feeds the visual clock to every map shader. In planet frames: the shaders never turn anything.
+func _apply_sky() -> void:
+	var sun: Vector3 = sky.sun_local()
+	if not day_night_enabled:
+		sun = _shoulder_sun()
+	var night_value: float = 1.0 if day_night_enabled else 0.0
+	var storms: Array[Vector4] = sky.storm_vectors()
+	var radii: PackedFloat32Array = sky.storm_radii()
+	var season: float = sky.season() if day_night_enabled else 0.0
+	if globe_shader != null and planet.visible:
+		globe_shader.set_shader_parameter("sun_local", sun)
+		globe_shader.set_shader_parameter("camera_local", planet.to_local(camera.global_position))
+		globe_shader.set_shader_parameter("season", season)
+		globe_shader.set_shader_parameter("day_night", night_value)
+	if cloud_shell != null and is_instance_valid(cloud_shell):
+		cloud_shell.visible = weather_enabled
+	if flat_shader != null:
+		flat_shader.set_shader_parameter("cloud_opacity", 0.22 if weather_enabled else 0.0)
+	for material: ShaderMaterial in [cloud_shader, flat_shader]:
+		if material == null:
+			continue
+		material.set_shader_parameter("sun_local", sun)
+		material.set_shader_parameter("weather_time", sky.weather_time)
+		material.set_shader_parameter("storms", storms)
+		material.set_shader_parameter("storm_radius", radii)
+		material.set_shader_parameter("day_night", night_value)
+	if flat_shader != null:
+		flat_shader.set_shader_parameter("season", season)
+	if atmosphere_shader != null:
+		atmosphere_shader.set_shader_parameter("sun_local", sun)
+		atmosphere_shader.set_shader_parameter("day_night", night_value)
+	for key: String in ["terrain_ground_true", "terrain_ground_false"]:
+		if mats.has(key):
+			mats[key].set_shader_parameter("weather_time", sky.weather_time)
+			mats[key].set_shader_parameter("cloud_shadow", 0.35 if weather_enabled else 0.0)
+	for kind: String in ["globe_footprint_town", "globe_footprint_farm"]:
+		if mats.has(kind):
+			mats[kind].set_shader_parameter("sun_world", sky.sun_world())
+			mats[kind].set_shader_parameter("day_night", night_value)
+
+
+## Without day and night the globe is lit as in 1.8: from over the viewer's shoulder.
+func _shoulder_sun() -> Vector3:
+	if camera == null or planet == null:
+		return Vector3(0.6, 0.3, 0.7)
+	var basis: Basis = camera.global_transform.basis
+	var toward_sun: Vector3 = (basis.z + basis.x * -0.55 + basis.y * 0.5).normalized()
+	return planet.global_transform.basis.inverse() * toward_sun
 
 
 func _update_camera(weight: float) -> void:
@@ -370,19 +531,62 @@ func _update_camera(weight: float) -> void:
 	_aim_sun()
 
 
-## On the globe the sun stays over the viewer's shoulder, so the part being looked at is never in
-## the dark. The regional scene keeps its fixed sun and its long shadows.
+## On the globe the light comes from the real sun (or over the viewer's shoulder without day and
+## night). In a region the sun stands where it stands over that site on the turning planet.
 func _aim_sun() -> void:
 	if sun_light == null:
 		return
+	if mode == "region" and day_night_enabled and not world.is_empty():
+		_aim_region_sun()
+		return
+	_light_day_scene()
 	if mode != "planet":
 		sun_light.rotation_degrees = SUN_ROTATION
 		return
-	var basis: Basis = camera.global_transform.basis
-	var toward_sun: Vector3 = (basis.z + basis.x * -0.55 + basis.y * 0.5).normalized()
-	sun_light.look_at_from_position(toward_sun * 10.0, Vector3.ZERO, Vector3.UP)
-	if globe_shader != null:
-		globe_shader.set_shader_parameter("sun_direction", toward_sun)
+	var toward_sun: Vector3 = sky.sun_world()
+	if not day_night_enabled and planet != null:
+		toward_sun = planet.global_transform.basis * _shoulder_sun()
+	sun_light.look_at_from_position(toward_sun * 10.0, Vector3.ZERO, _up_hint(toward_sun))
+
+
+static func _up_hint(direction: Vector3) -> Vector3:
+	return Vector3.RIGHT if absf(direction.normalized().y) > 0.98 else Vector3.UP
+
+
+func _light_day_scene() -> void:
+	region_night = 0.0
+	sun_light.light_energy = SUN_ENERGY
+	sun_light.light_color = Color("f6ecd1")
+	if environment != null:
+		environment.ambient_light_color = DAY_AMBIENT
+		environment.ambient_light_energy = .38
+		environment.background_color = DAY_SKY
+	if fill_light != null:
+		fill_light.light_energy = .18
+
+
+## The site's sky: east is +x, north is -z, as the regional ground is laid out.
+func _aim_region_sun() -> void:
+	var reg: Dictionary = world.regions[selected_region]
+	var up: Vector3 = Geo.unit_point(float(reg.lat), float(reg.lon)).rotated(Vector3.UP, sky.spin)
+	var east: Vector3 = Vector3(up.z, 0.0, -up.x).normalized()
+	if east.length() < 0.5:
+		east = Vector3.RIGHT
+	var north: Vector3 = up.cross(east)
+	var sun: Vector3 = sky.sun_world()
+	var height: float = sun.dot(up)
+	var local := Vector3(sun.dot(east), maxf(height, 0.06), -sun.dot(north)).normalized()
+	var daylight: float = smoothstep(-0.1, 0.14, height)
+	region_night = 1.0 - daylight
+	sun_light.look_at_from_position(local * 10.0, Vector3.ZERO, _up_hint(local))
+	sun_light.light_energy = SUN_ENERGY * smoothstep(-0.02, 0.12, height)
+	sun_light.light_color = Color("ffad6b").lerp(Color("f6ecd1"), smoothstep(0.04, 0.35, height))
+	if environment != null:
+		environment.ambient_light_color = NIGHT_AMBIENT.lerp(DAY_AMBIENT, daylight)
+		environment.ambient_light_energy = lerpf(.62, .38, daylight)
+		environment.background_color = NIGHT_SKY.lerp(DAY_SKY, daylight)
+	if fill_light != null:
+		fill_light.light_energy = lerpf(.85, .18, daylight)
 
 
 func _build_environment() -> void:
@@ -391,7 +595,7 @@ func _build_environment() -> void:
 	camera = Camera3D.new()
 	camera.current = true
 	add_child(camera)
-	var environment := Environment.new()
+	environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color("080f1c")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -415,6 +619,7 @@ func _build_environment() -> void:
 	fill.light_energy = .18
 	fill.rotation_degrees = Vector3(35, 140, 0)
 	add_child(fill)
+	fill_light = fill
 	_build_stars()
 
 

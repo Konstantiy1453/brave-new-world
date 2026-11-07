@@ -35,6 +35,8 @@ const SIDEBAR_PAGES: Array[String] = ["site", "settlement"]
 static func run(g, folder: String) -> void:
 	DirAccess.make_dir_recursive_absolute(folder)
 	g.paused = true
+	# The same picture every time: the moving map holds still, with its look intact.
+	g.map.freeze_motion()
 	var report: Dictionary = {
 		"kind": "v1.8 source-project window; automated UI rendering, not manual play",
 		"adapter": RenderingServer.get_video_adapter_name(),

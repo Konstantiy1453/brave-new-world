@@ -78,6 +78,7 @@ func run():
 	var w: Dictionary = Geo.new().generate("2147483648")
 	report.generation_ms = (Time.get_ticks_usec() - start) / 1000.0
 	map.setup(w)
+	map.freeze_motion()
 	map.pending_atlas.path = ProjectSettings.globalize_path(
 		"res://../evidence/v17/tests/world_visual_atlas.png"
 	)

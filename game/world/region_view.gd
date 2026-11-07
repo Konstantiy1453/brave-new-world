@@ -4,6 +4,15 @@ extends "res://world/building_models.gd"
 ## free plots are instanced; each building kind is one baked mesh.
 
 const Rules = preload("res://simulation/rules.gd")
+const Traffic = preload("res://world/traffic.gd")
+const ModelArt = preload("res://world/model_art.gd")
+## Deck height of the bridge model above its origin, in game units (5.03 m at 0.09 units a metre).
+const BRIDGE_DECK: float = 0.45
+const BRIDGE_LENGTH: float = 1.98
+const SHIP_CYCLE_S: Vector4 = Vector4(26.0, 12.0, 26.0, 14.0)
+## Building roles whose working plants send up steam or smoke.
+const SMOKE_ROLES: Array[String] = ["factory", "harvest", "great"]
+const SMOKE_KINDS: Array[String] = ["geothermal", "fission", "fusion", "smelter", "processor"]
 ## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
 const OLD_FIELD: Dictionary = {
 	"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0, "rows": 2
@@ -56,6 +65,18 @@ var field_has_sea: bool = false
 var baked_models: Dictionary = {}
 var road_tool: SurfaceTool
 var road_sections: int = 0
+## The living town of the region on show: vehicles, light pools, smoke.
+var traffic: Traffic
+var region_gates: Array = []
+var smoke_emitters: Array = []
+var glow_material: ShaderMaterial
+## Road sections over water in the town being built, joined into runs: one bridge each.
+var bridge_runs: Array = []
+## The cargo ship of a coastal town: where it sails from and to, and how far it is in its cycle.
+var ship: Node3D
+var ship_route: Array = []
+var ship_clock: float = 0.0
+var _wet_run: Dictionary = {}
 
 
 ## The town grew beside the fixed river in old worlds; in generated worlds plots avoid the rivers.
@@ -296,16 +317,14 @@ func _build_terrain(token: int) -> bool:
 			var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
 			terrain_unique_samples += 1
 			field_has_sea = field_has_sea or not bool(g.land)
-			var color := _geo_color(g, ll.x, ll.y)
-			if reg.river:
-				color = color.lerp(Color("59704e"), .4)
-			else:
-				color = color.lerp(Color("777566"), .35)
-			color = color.darkened(maxf(noise.get_noise_2d(x * 2.5, z * 2.5) * .25, 0))
-			if is_finite(_water_height_at(x, z, 1.9)):
-				color = color.lerp(Color("354e43"), .48)
+			# The ground shader colours from data, as the globe does: temperature, rainfall,
+			# wet banks and height. See world/shaders.gd.
+			var data: Color = Shaders.encode(
+				float(g.height), float(g.temperature), float(g.rainfall), 0.0
+			)
+			data.b = 1.0 if is_finite(_water_height_at(x, z, 1.9)) else 0.0
 			var index: int = iz * (resolution + 1) + ix
-			colors[index] = color
+			colors[index] = data
 			var height: float = _ground_from_geo(x, z, g, ll)
 			heights[index] = height
 			forests[index] = _forest_chance(g)
@@ -339,9 +358,7 @@ func _build_terrain(token: int) -> bool:
 	st.generate_normals()
 	var terrain := MeshInstance3D.new()
 	terrain.mesh = st.commit()
-	var material := _mat("terrain", Color.WHITE, 0, 1)
-	material.vertex_color_use_as_albedo = true
-	terrain.material_override = material
+	terrain.material_override = _terrain_material(bool(reg.river))
 	surface.add_child(terrain)
 	# Geological section of a floating regional cutaway, deliberately no debug grid.
 	var border := SurfaceTool.new()
@@ -392,6 +409,19 @@ func _build_terrain(token: int) -> bool:
 	return true
 
 
+## One ground material per river setting: the uniforms carry the clock, not the region.
+func _terrain_material(river: bool) -> ShaderMaterial:
+	var key: String = "terrain_ground_" + str(river)
+	if not mats.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = Shaders.shader("terrain")
+		material.set_shader_parameter("noise3d", Shaders.noise_texture())
+		material.set_shader_parameter("river_tint", 1.0 if river else 0.0)
+		mats[key] = material
+	terrain_shader = mats[key]
+	return mats[key]
+
+
 ## One ribbon per river, so a winding channel is one mesh rather than one node per bend.
 func _build_river() -> void:
 	if str(world.version) == "CC-GEO-1.4":
@@ -417,8 +447,7 @@ func _build_river() -> void:
 		var bb := Vector3(b.x + side_b.x, segment.yb, b.y + side_b.y)
 		for vertex in [aa, ab, ba, ab, bb, ba]:
 			st.add_vertex(vertex)
-	var material := _mat("river_authoritative", Color("224f59"), .08, .36)
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var material: Material = _water_material("river", Color("224f59"))
 	for key: int in ribbons:
 		var st: SurfaceTool = ribbons[key]
 		st.generate_normals()
@@ -429,7 +458,7 @@ func _build_river() -> void:
 			Vector3(lake.center.x, lake.height, lake.center.y),
 			lake.radius,
 			.025,
-			_mat("lakewater", Color("2e798a"), .32, .2),
+			_water_material("lake", Color("2e798a")),
 			40
 		)
 
@@ -476,9 +505,21 @@ func _build_sea() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(field_width, field_depth)
 	var sea := _mesh(
-		surface, plane, Vector3(0, sea_height, 0), _mat("sea", Color("285e76"), .4, .2)
+		surface, plane, Vector3(0, sea_height, 0), _water_material("sea", Color("285e76"))
 	)
 	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## Moving water: rippling normals over the same colours as before.
+func _water_material(kind: String, tint: Color) -> ShaderMaterial:
+	var key: String = "water_" + kind
+	if not mats.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = Shaders.shader("water")
+		material.set_shader_parameter("noise3d", Shaders.noise_texture())
+		material.set_shader_parameter("tint", tint)
+		mats[key] = material
+	return mats[key]
 
 
 func _instanced(mesh: Mesh, material: Material, placed: Array) -> MultiMeshInstance3D:
@@ -721,8 +762,14 @@ func _build_colony() -> void:
 	road_tool = SurfaceTool.new()
 	road_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	road_sections = 0
+	region_gates.clear()
+	smoke_emitters.clear()
+	var stops: Array = []
+	var pools: Array = []
 	if int(settlement.get("base_housing", 0)) > 0:
 		_build_base_housing(offset, int(settlement.base_housing))
+		stops.append({"end": Vector2(offset - 6.0, 0.0), "z": 0.0, "kind": "base", "active": true})
+	var roles: Dictionary = Rules.read("economy").buildings
 	var buildings: Array = settlement.get("buildings", [])
 	for i in range(buildings.size()):
 		var b: Dictionary = buildings[i]
@@ -730,16 +777,36 @@ func _build_colony() -> void:
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0
 		var active: bool = b.get("enabled", true) and b.get("active", true) and complete
 		var model := MeshInstance3D.new()
-		model.mesh = _baked_model(str(b.kind), active)
+		var art: Dictionary = ModelArt.kind_entry(str(b.kind))
+		model.mesh = (
+			_baked_model(str(b.kind), active)
+			if art.is_empty()
+			else _art_base(active, _pit_depth(art, complete))
+		)
 		model.position = Vector3(slot.x, _ground(slot.x, slot.y), slot.y)
 		model.set_meta("building_kind", str(b.kind))
 		buildings_root.add_child(model)
-		if not complete:
+		if not art.is_empty():
+			_dress_building(model, b, art, active, complete, _street_yaw(slot.x, offset))
+		elif not complete:
 			_construction_frame(model)
 		_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
+		stops.append({"end": slot, "z": slot.y, "kind": str(b.kind), "active": active})
+		if active:
+			pools.append([model.position, 2.6])
+			var role: String = str(roles.get(str(b.kind), {}).get("role", ""))
+			if role in SMOKE_ROLES or str(b.kind) in SMOKE_KINDS:
+				_add_smoke(model)
 	_road(Vector3(offset, 0, -12), Vector3(offset, 0, 12))
 	for z in [-10, -5, 0, 5, 10]:
 		var p := Vector3(offset + 1.1, _ground(offset + 1.1, z), z)
+		pools.append([p, 1.3])
+		var lamp: MeshInstance3D = ModelArt.instance("street_lamp", _lamp_slot_material)
+		if lamp != null:
+			lamp.position = p
+			lamp.rotation.y = PI * 0.5
+			buildings_root.add_child(lamp)
+			continue
 		_cylinder(
 			buildings_root,
 			p + Vector3(0, .8, 0),
@@ -757,6 +824,10 @@ func _build_colony() -> void:
 	_build_outbound_route(offset)
 	_draw_free_plots(settlement)
 	_finish_roads()
+	_build_bridges()
+	_build_harbor(settlement, offset)
+	_build_light_pools(pools)
+	_build_traffic(stops, offset, int(settlement.get("region", 0)))
 
 
 func _build_base_housing(offset: float, capacity: int) -> void:
@@ -765,6 +836,16 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 	root.set_meta("base_housing", capacity)
 	root.position = Vector3(offset - 6.0, _ground(offset - 6.0, 0), 0)
 	buildings_root.add_child(root)
+	var pods: MeshInstance3D = ModelArt.instance(
+		"landing_pods", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if pods != null:
+		_cylinder(root, Vector3(0, -.22, 0), 2.6, .6, _mat("pad", Color("43545a"), .3, .85), 8)
+		pods.position.y = .08
+		root.add_child(pods)
+		_base_housing_label(root, capacity)
+		_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
+		return
 	var shell := _mat("basehousing", Color("c4b69a"), .45, .55)
 	var dark := _mat("darkmetal", Color("354954"), .65, .38)
 	var light := _mat("baselight", Color("f1d896"), .3, .4, .45)
@@ -785,6 +866,11 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 		for z in [-.85, .85]:
 			_box(root, Vector3(x, .32, z), Vector3(.7, .34, .14), dark)
 	_box(root, Vector3(0, .37, 1.28), Vector3(1.2, .13, .5), shell)
+	_base_housing_label(root, capacity)
+	_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
+
+
+func _base_housing_label(root: Node3D, capacity: int) -> void:
 	var label := Label3D.new()
 	label.text = "登陆生活舱 · " + str(capacity) + " 人"
 	label.font = label_font
@@ -795,7 +881,6 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 	label.position = Vector3(0, 1.6, 0)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	root.add_child(label)
-	_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
 
 
 func _build_outbound_route(offset: float) -> void:
@@ -829,13 +914,35 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 	finish.x = clampf(finish.x, -half_width + 2.0, half_width - 2.0)
 	finish.y = clampf(finish.y, -half_depth + 2.0, half_depth - 2.0)
 	_road(Vector3(start.x, 0, start.y), Vector3(finish.x, 0, finish.y))
+	var day: int = int(state.get("day", 0))
+	if not Geo.road_building(route, day) and not Geo.road_blocked(route, day):
+		region_gates.append({"end": finish})
 	var gate := Vector3(finish.x, _ground(finish.x, finish.y), finish.y)
-	var steel := _mat("routegate", Color("bcb28d"), .55, .5)
-	for x in [-.85, .85]:
-		_tube(buildings_root, gate + Vector3(x, 0, 0), gate + Vector3(x, 2, 0), .09, steel)
-	_box(buildings_root, gate + Vector3(0, 2, 0), Vector3(2, .35, .24), steel)
-	var label := Label3D.new()
 	var blocked: bool = Geo.road_blocked(route, int(state.get("day", 0)))
+	# The gantry spans the road: across it is x when the road runs along z.
+	var across_yaw: float = 0.0 if absf(direction.y) > absf(direction.x) else PI * 0.5
+	var gantry: MeshInstance3D = ModelArt.instance(
+		"route_gate", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if gantry != null:
+		gantry.position = gate
+		gantry.rotation.y = across_yaw
+		buildings_root.add_child(gantry)
+	else:
+		var steel := _mat("routegate", Color("bcb28d"), .55, .5)
+		for x in [-.85, .85]:
+			_tube(buildings_root, gate + Vector3(x, 0, 0), gate + Vector3(x, 2, 0), .09, steel)
+		_box(buildings_root, gate + Vector3(0, 2, 0), Vector3(2, .35, .24), steel)
+	if blocked and not Geo.road_building(route, int(state.get("day", 0))):
+		var closure: MeshInstance3D = ModelArt.instance(
+			"road_closure", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		)
+		if closure != null:
+			var near: Vector2 = finish - direction * 2.2
+			closure.position = Vector3(near.x, _ground(near.x, near.y) + .02, near.y)
+			closure.rotation.y = across_yaw
+			buildings_root.add_child(closure)
+	var label := Label3D.new()
 	var kind: String = "海运 · " if str(route.get("variant", "")) == "sea" else "陆运 · "
 	if Geo.road_building(route, int(state.get("day", 0))):
 		kind = "在建 · "
@@ -862,6 +969,7 @@ func _road(a: Vector3, b: Vector3) -> void:
 
 
 func _road_section(a: Vector3, b: Vector3) -> void:
+	_note_bridge(a, b)
 	a.y = _ground(a.x, a.z) + .16
 	b.y = _ground(b.x, b.z) + .16
 	a.y = maxf(a.y, _water_height_at(a.x, a.z, 1.5) + .24)
@@ -890,6 +998,399 @@ func _finish_roads() -> void:
 	mesh.material_override = material
 	mesh.name = "ServiceRoads"
 	buildings_root.add_child(mesh)
+
+
+## Joins consecutive road sections over water into one run; a dry section closes the run.
+func _note_bridge(a: Vector3, b: Vector3) -> void:
+	var middle: Vector3 = a.lerp(b, 0.5)
+	var water: float = _water_height_at(middle.x, middle.z, 1.2)
+	var continues: bool = not _wet_run.is_empty() and Vector3(_wet_run.end).distance_to(a) < 0.01
+	if not is_finite(water):
+		if not _wet_run.is_empty():
+			bridge_runs.append(_wet_run)
+			_wet_run = {}
+		return
+	if continues:
+		_wet_run.end = b
+		_wet_run.water = maxf(float(_wet_run.water), water)
+	else:
+		if not _wet_run.is_empty():
+			bridge_runs.append(_wet_run)
+		_wet_run = {"start": a, "end": b, "water": water}
+
+
+## A modelled span over every run of road above a river or lake, stretched to its length.
+func _build_bridges() -> void:
+	if not _wet_run.is_empty():
+		bridge_runs.append(_wet_run)
+		_wet_run = {}
+	for run: Dictionary in bridge_runs:
+		var start: Vector3 = run.start
+		var end: Vector3 = run.end
+		var along := Vector2(end.x - start.x, end.z - start.z)
+		var length: float = along.length() + 1.0
+		var span: MeshInstance3D = ModelArt.instance(
+			"bridge_span", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		)
+		if span == null or length < 0.5:
+			continue
+		var middle: Vector3 = start.lerp(end, 0.5)
+		span.position = Vector3(middle.x, float(run.water) + .22 - BRIDGE_DECK, middle.z)
+		# The model's span runs along its x axis.
+		span.rotation.y = -atan2(along.y, along.x)
+		span.scale = Vector3(maxf(length / BRIDGE_LENGTH, 0.6), 1.0, 1.0)
+		buildings_root.add_child(span)
+	bridge_runs.clear()
+
+
+## A coastal town with a port or a sea route gets a quay at its nearest shore and a cargo ship
+## that sails in, berths and leaves.
+func _build_harbor(settlement: Dictionary, offset: float) -> void:
+	ship = null
+	ship_route.clear()
+	if not field_has_sea or not _harbor_wanted(settlement):
+		return
+	var sea_level: float = -region_ground * 30.0 + .04
+	var town := Vector2(offset, 0.0)
+	var best: Dictionary = {}
+	for step: int in range(24):
+		var heading := Vector2.RIGHT.rotated(TAU * float(step) / 24.0)
+		var last_land: Vector2 = town
+		for reach: int in range(4, int(maxf(half_width, half_depth)) - 2):
+			var at: Vector2 = town + heading * float(reach)
+			if absf(at.x) > half_width - 3.0 or absf(at.y) > half_depth - 3.0:
+				break
+			if _ground(at.x, at.y) < sea_level - .1:
+				if best.is_empty() or reach < int(best.reach):
+					best = {"reach": reach, "shore": last_land, "heading": heading}
+				break
+			last_land = at
+	if best.is_empty():
+		return
+	var heading: Vector2 = best.heading
+	var shore: Vector2 = best.shore
+	var quay: MeshInstance3D = ModelArt.instance(
+		"harbor", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if quay == null:
+		return
+	quay.position = Vector3(shore.x, maxf(_ground(shore.x, shore.y), sea_level) - .05, shore.y)
+	# The quay's sea side is the model's -z: turn it to face the open water.
+	quay.rotation.y = atan2(-heading.x, -heading.y)
+	buildings_root.add_child(quay)
+	var vessel: MeshInstance3D = ModelArt.instance(
+		"cargo_ship", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if vessel == null:
+		return
+	var side := Vector2(-heading.y, heading.x)
+	var berth: Vector2 = shore + heading * 2.4 + side * 0.6
+	var offing: Vector2 = berth + heading * 30.0 + side * 6.0
+	offing.x = clampf(offing.x, -half_width + 3.0, half_width - 3.0)
+	offing.y = clampf(offing.y, -half_depth + 3.0, half_depth - 3.0)
+	ship_route = [
+		Vector3(offing.x, sea_level - .02, offing.y), Vector3(berth.x, sea_level - .02, berth.y)
+	]
+	ship = vessel
+	buildings_root.add_child(vessel)
+	_sail(0.0)
+
+
+func _harbor_wanted(settlement: Dictionary) -> bool:
+	for building: Dictionary in settlement.get("buildings", []):
+		if str(building.kind) == "port" and int(building.get("remaining", 0)) <= 0:
+			return true
+	for route: Dictionary in state.get("roads", []):
+		if str(route.get("variant", "")) != "sea":
+			continue
+		if int(route.get("a", -1)) == selected_region or int(route.get("b", -1)) == selected_region:
+			return true
+	return false
+
+
+## Sails in, berths, sails out, waits beyond the horizon; `elapsed` is seconds of town time.
+func _sail(elapsed: float) -> void:
+	if ship == null or not is_instance_valid(ship) or ship_route.size() < 2:
+		return
+	var cycle: float = SHIP_CYCLE_S.x + SHIP_CYCLE_S.y + SHIP_CYCLE_S.z + SHIP_CYCLE_S.w
+	ship_clock = fposmod(ship_clock + elapsed, cycle)
+	var offing: Vector3 = ship_route[0]
+	var berth: Vector3 = ship_route[1]
+	var t: float = ship_clock
+	var at: Vector3 = berth
+	var facing: Vector3 = berth - offing
+	if t < SHIP_CYCLE_S.x:
+		at = offing.lerp(berth, smoothstep(0.0, 1.0, t / SHIP_CYCLE_S.x))
+	elif t < SHIP_CYCLE_S.x + SHIP_CYCLE_S.y:
+		at = berth
+	elif t < SHIP_CYCLE_S.x + SHIP_CYCLE_S.y + SHIP_CYCLE_S.z:
+		var out: float = (t - SHIP_CYCLE_S.x - SHIP_CYCLE_S.y) / SHIP_CYCLE_S.z
+		at = berth.lerp(offing, smoothstep(0.0, 1.0, out))
+		facing = offing - berth
+	else:
+		at = offing
+	ship.visible = t < SHIP_CYCLE_S.x + SHIP_CYCLE_S.y + SHIP_CYCLE_S.z
+	ship.position = at
+	if facing.length() > 0.01:
+		ship.look_at(at + facing.normalized(), Vector3.UP)
+
+
+## Open pits are dug below the ground the terrain draws: they get raised by their depth.
+static func _pit_depth(art: Dictionary, complete: bool) -> float:
+	if not complete or not bool(art.get("pit", false)):
+		return 0.0
+	return -ModelArt.lowest(str(art.model))
+
+
+## The hex pad and status beacon every modelled building stands on. A pit stands in an open hex
+## retaining wall instead, as tall as it is deep, so its benches show from above.
+func _art_base(active: bool, pit_depth: float = 0.0) -> ArrayMesh:
+	var key: String = "artbase|%s|%.2f" % [str(active), pit_depth]
+	if baked_models.has(key):
+		return baked_models[key]
+	var root := Node3D.new()
+	add_child(root)
+	var accent := _mat(
+		"accent" + str(active),
+		Color("75d6cc") if active else Color("d18061"),
+		.3,
+		.35,
+		.7 if active else .12
+	)
+	var pad_material := _mat("pad", Color("43545a"), .3, .85)
+	if pit_depth > 0.0:
+		var wall := CylinderMesh.new()
+		wall.top_radius = 2.3
+		wall.bottom_radius = 2.3
+		wall.height = pit_depth + .68
+		wall.radial_segments = 6
+		wall.cap_top = false
+		var ring := _mesh(root, wall, Vector3(0, (pit_depth + .08 - .6) * .5, 0), pad_material)
+		ring.material_override = _double_sided(pad_material)
+	else:
+		# Deep enough that the pad never shows a gap where the ground slopes.
+		_cylinder(root, Vector3(0, -.22, 0), 2.30, .6, pad_material, 6)
+	_cylinder(root, Vector3(1.8, .35, -1.7), .045, .5, _mat("metal", Color("73818a"), .6, .4), 6)
+	_sphere(root, Vector3(1.8, .64, -1.7), .09, accent, 8, 4)
+	var groups: Dictionary = {}
+	_collect_parts(root, Transform3D.IDENTITY, groups)
+	remove_child(root)
+	root.free()
+	var baked := ArrayMesh.new()
+	for material: Material in groups:
+		var st: SurfaceTool = groups[material]
+		st.commit(baked)
+		baked.surface_set_material(baked.get_surface_count() - 1, material)
+	baked_models[key] = baked
+	return baked
+
+
+## Turns a building's front (+z) towards the main street.
+static func _street_yaw(x: float, street_x: float) -> float:
+	if x < street_x - 0.5:
+		return PI * 0.5
+	if x > street_x + 0.5:
+		return -PI * 0.5
+	return 0.0
+
+
+## The building's model; a construction site while it is being built; a closed mine once the
+## deposit under it is worked out.
+func _dress_building(
+	model: MeshInstance3D,
+	building: Dictionary,
+	art: Dictionary,
+	active: bool,
+	complete: bool,
+	yaw: float
+) -> void:
+	var id: String = str(art.model)
+	var scale: float = float(art.get("scale", 1.0))
+	var great: bool = (
+		Rules.read("economy").buildings.get(str(building.kind), {}).get("role", "") == "great"
+	)
+	if not complete:
+		id = "construction"
+		scale = 1.2 if great else 1.0
+	elif art.has("ore") and _plot_depleted(building):
+		id = "depleted_" + str(art.ore)
+	var dressed: MeshInstance3D = ModelArt.instance(
+		id, func(slot: String) -> Material: return _art_material(slot, art, active)
+	)
+	if dressed == null:
+		return
+	dressed.rotation.y = yaw
+	dressed.scale = Vector3.ONE * scale
+	# Seated on the pad top; a pit's floor on the ground.
+	dressed.position.y = .08 + _pit_depth(art, complete)
+	model.add_child(dressed)
+	if not complete and great:
+		var crane: MeshInstance3D = ModelArt.instance(
+			"construction_crane",
+			func(slot: String) -> Material: return _art_material(slot, {}, true)
+		)
+		if crane != null:
+			crane.position = Vector3(-1.6, 0, 1.9).rotated(Vector3.UP, yaw)
+			crane.rotation.y = yaw
+			model.add_child(crane)
+
+
+func _double_sided(material: StandardMaterial3D) -> StandardMaterial3D:
+	var key: String = "double|" + str(material.get_instance_id())
+	if not mats.has(key):
+		var copy: StandardMaterial3D = material.duplicate()
+		copy.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mats[key] = copy
+	return mats[key]
+
+
+func _plot_depleted(building: Dictionary) -> bool:
+	var plots: Array = world.regions[selected_region].get("plots", [])
+	var plot: int = int(building.get("plot", -1))
+	if plot < 0 or plot >= plots.size():
+		return false
+	return float(plots[plot].get("reserves", 1.0)) <= 0.0
+
+
+## One material per slot and colour, shared by every model; window glass lights up at night.
+func _art_material(slot: String, art: Dictionary, active: bool) -> Material:
+	if slot == "glass":
+		return _window_mat(active)
+	var color: Color = ModelArt.slot_color(slot, art)
+	var finish: Array = ModelArt.SLOT_FINISH.get(slot, [0.3, 0.6])
+	return _mat("art_%s_%s" % [slot, color.to_html(false)], color, finish[0], finish[1])
+
+
+## Street lamps: their glass is the lamp light the map turns up after dark.
+func _lamp_slot_material(slot: String) -> Material:
+	if slot == "glass":
+		return _mat("lamps", Color("c4eee1"), .2, .4, 1.3)
+	return _art_material(slot, {}, true)
+
+
+## Where a vehicle's wheels are: on the road surface, which rides over water as a bridge.
+func _road_height(x: float, z: float) -> float:
+	return maxf(_ground(x, z) + .16, _water_height_at(x, z, 1.5) + .24)
+
+
+func _build_traffic(stops: Array, offset: float, region: int) -> void:
+	traffic = Traffic.new()
+	traffic.name = "Traffic"
+	buildings_root.add_child(traffic)
+	if stops.is_empty():
+		return
+	var working: int = 0
+	for stop: Dictionary in stops:
+		if bool(stop.active):
+			working += 1
+	traffic.vehicle_meshes = {
+		"truck": _vehicle_mesh("truck"), "van": _vehicle_mesh("van"), "bus": _vehicle_mesh("bus")
+	}
+	traffic.surface_height = _road_height
+	traffic.street_x = offset
+	traffic.stops = stops
+	traffic.gates = region_gates.duplicate()
+	traffic.setup(int(world.seed) * 31 + region, 2 + working / 2 + region_gates.size() * 2)
+
+
+func _vehicle_mesh(kind: String) -> ArrayMesh:
+	var key: String = "vehicle|" + kind
+	if baked_models.has(key):
+		return baked_models[key]
+	var root := Node3D.new()
+	add_child(root)
+	_build_vehicle(root, kind)
+	var groups: Dictionary = {}
+	_collect_parts(root, Transform3D.IDENTITY, groups)
+	remove_child(root)
+	root.free()
+	var baked := ArrayMesh.new()
+	for material: Material in groups:
+		var st: SurfaceTool = groups[material]
+		st.commit(baked)
+		baked.surface_set_material(baked.get_surface_count() - 1, material)
+	baked_models[key] = baked
+	return baked
+
+
+## Pools of lamp light on the ground after dark: one instanced mesh for the whole town.
+func _build_light_pools(pools: Array) -> void:
+	if pools.is_empty():
+		return
+	if glow_material == null:
+		glow_material = ShaderMaterial.new()
+		glow_material.shader = Shaders.shader("glow")
+	var placed: Array = []
+	for pool: Array in pools:
+		var at: Vector3 = pool[0]
+		var size: float = float(pool[1])
+		var lifted := Vector3(at.x, _ground(at.x, at.z) + .2, at.z)
+		placed.append(
+			[Transform3D(Basis.IDENTITY.scaled(Vector3(size, 1.0, size)), lifted), Color.WHITE]
+		)
+	var quad := PlaneMesh.new()
+	quad.size = Vector2(2.0, 2.0)
+	var node: MultiMeshInstance3D = _instanced(quad, glow_material, placed)
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.name = "LightPools"
+	buildings_root.add_child(node)
+
+
+## Steam and smoke over a working plant. Light, slow and few: a sign of life, not weather.
+func _add_smoke(model: MeshInstance3D) -> void:
+	var top: AABB = model.mesh.get_aabb()
+	var puff := CPUParticles3D.new()
+	puff.name = "Smoke"
+	puff.amount = 14
+	puff.lifetime = 4.5
+	puff.preprocess = 4.5
+	puff.local_coords = false
+	puff.position = Vector3(top.position.x * 0.35, top.end.y + .1, top.position.z * 0.3)
+	puff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	puff.emission_sphere_radius = .18
+	puff.direction = Vector3(0, 1, 0)
+	puff.spread = 14.0
+	puff.gravity = Vector3(.16, .05, .06)
+	puff.initial_velocity_min = .35
+	puff.initial_velocity_max = .6
+	puff.scale_amount_min = .5
+	puff.scale_amount_max = .8
+	var grow := Curve.new()
+	grow.add_point(Vector2(0.0, 0.35))
+	grow.add_point(Vector2(1.0, 1.6))
+	puff.scale_amount_curve = grow
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.92, 0.93, 0.94, 0.42))
+	fade.set_color(1, Color(0.85, 0.87, 0.89, 0.0))
+	puff.color_ramp = fade
+	var sprite := QuadMesh.new()
+	sprite.size = Vector2(.9, .9)
+	sprite.material = _smoke_material()
+	puff.mesh = sprite
+	model.add_child(puff)
+	smoke_emitters.append(puff)
+
+
+func _smoke_material() -> StandardMaterial3D:
+	if mats.has("smoke"):
+		return mats["smoke"]
+	var dot := GradientTexture2D.new()
+	dot.fill = GradientTexture2D.FILL_RADIAL
+	dot.fill_from = Vector2(0.5, 0.5)
+	dot.fill_to = Vector2(1.0, 0.5)
+	var soft := Gradient.new()
+	soft.set_color(0, Color(1, 1, 1, 1))
+	soft.set_color(1, Color(1, 1, 1, 0))
+	dot.gradient = soft
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = dot
+	material.vertex_color_use_as_albedo = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	mats["smoke"] = material
+	return material
 
 
 func _lander(parent: Node3D, pos: Vector3) -> void:

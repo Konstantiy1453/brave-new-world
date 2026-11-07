@@ -18,6 +18,12 @@ const MARKER_RICH_TONNES: Dictionary = {"ore": 6000.0, "copper": 4000.0, "crysta
 const MARKER_RICH_FERTILITY: float = 0.55
 const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
+## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
+const FLAT_WRAP_JUMP: float = 9.0
+
+## Cargo markers placed every frame along their route, between the daily updates.
+var globe_movers: Array = []
+var flat_movers: Array = []
 
 
 func _flat_point(lat: float, lon: float) -> Vector3:
@@ -25,24 +31,13 @@ func _flat_point(lat: float, lon: float) -> Vector3:
 
 
 func _build_flat() -> void:
-	var shader := Shader.new()
-	shader.code = """
-shader_type spatial;
-render_mode unshaded,cull_disabled;
-uniform sampler2D atlas:source_color,filter_linear_mipmap,repeat_disable;
-void fragment(){
- vec4 tex=texture(atlas,UV);
- vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float slope=texture(atlas,UV-vec2(step_uv.x,0)).a-texture(atlas,UV+vec2(step_uv.x,0)).a;
- slope+=texture(atlas,UV-vec2(0,step_uv.y)).a-texture(atlas,UV+vec2(0,step_uv.y)).a;
- float relief=clamp(slope*26.0,-.24,.24);
- relief*=smoothstep(.50,.57,tex.a);
- ALBEDO=tex.rgb*(.76+relief);
-}
-"""
 	var material := ShaderMaterial.new()
-	material.shader = shader
+	material.shader = Shaders.shader("flat")
 	material.set_shader_parameter("atlas", geography_atlas)
+	material.set_shader_parameter("noise3d", Shaders.noise_texture())
+	material.set_shader_parameter("lights", _night_lights_texture())
+	material.set_shader_parameter("ice_latitude", _ice_latitude())
+	material.set_shader_parameter("coverage", _cloud_coverage())
 	flat_shader = material
 	var sheet := QuadMesh.new()
 	sheet.size = Vector2(18, 9)
@@ -329,8 +324,10 @@ func _update_flat_transport() -> void:
 	for child in flat_transport_root.get_children():
 		flat_transport_root.remove_child(child)
 		child.queue_free()
+	flat_movers.clear()
 	for route: Dictionary in state.get("roads", []):
 		_draw_road_on_flat(route)
+	_place_movers(flat_movers, sky.day_fraction)
 
 
 func _draw_road_on_flat(route: Dictionary) -> void:
@@ -355,31 +352,65 @@ func _draw_road_on_flat(route: Dictionary) -> void:
 		segment.append(point)
 		points.append(point)
 	_line(flat_transport_root, segment, route_color, 1.1)
+	var lifted: Array[Vector3] = []
+	for point: Vector3 in points:
+		lifted.append(point + Vector3(0, 0, .03))
 	for shipment in state.get("shipments", []):
 		if points.is_empty() or int(shipment.get("road", 0)) != int(route.get("id", 0)):
 			continue
-		var progress: float = clampf(
-			(
-				1.0
-				- (
-					float(shipment.get("remaining", 1))
-					/ maxf(float(shipment.get("total_days", 1)), 1.0)
-				)
-			),
-			0,
-			1
-		)
-		if int(shipment.get("from", -1)) == int(route.get("b", -2)):
-			progress = 1.0 - progress
-		var index: int = clampi(int(progress * (points.size() - 1)), 0, points.size() - 1)
-		_sphere(
+		var marker := _sphere(
 			flat_transport_root,
-			points[index] + Vector3(0, 0, .03),
+			lifted[0],
 			.031,
 			_mat("flatshipment", Color("fff0bd"), 0, 1, 2),
 			8,
 			4
 		)
+		flat_movers.append(_mover(marker, lifted, shipment, route, FLAT_WRAP_JUMP))
+
+
+## A cargo marker and the path it follows. Lengths skip wrap jumps, so a marker leaps the
+## antimeridian on the flat map instead of crossing the whole sheet.
+func _mover(
+	node: Node3D, points: Array[Vector3], shipment: Dictionary, route: Dictionary, jump: float
+) -> Dictionary:
+	var lengths := PackedFloat32Array([0.0])
+	for index: int in range(1, points.size()):
+		var step: float = points[index - 1].distance_to(points[index])
+		lengths.append(lengths[index - 1] + (0.0 if step > jump else step))
+	return {
+		"node": node,
+		"points": points,
+		"lengths": lengths,
+		"remaining": float(shipment.get("remaining", 1)),
+		"total": maxf(float(shipment.get("total_days", 1)), 1.0),
+		"reverse": int(shipment.get("from", -1)) == int(route.get("b", -2)),
+	}
+
+
+## Glides every cargo marker to where it is part-way through the day.
+func _place_movers(movers: Array, fraction: float) -> void:
+	for mover: Dictionary in movers:
+		if not is_instance_valid(mover.node):
+			continue
+		var node: Node3D = mover.node
+		var done: float = clampf(
+			1.0 - (float(mover.remaining) - fraction) / float(mover.total), 0.0, 1.0
+		)
+		if bool(mover.reverse):
+			done = 1.0 - done
+		var points: Array[Vector3] = mover.points
+		var lengths: PackedFloat32Array = mover.lengths
+		var target: float = done * lengths[lengths.size() - 1]
+		var index: int = 0
+		while index < lengths.size() - 2 and lengths[index + 1] < target:
+			index += 1
+		var span: float = lengths[index + 1] - lengths[index] if lengths.size() > 1 else 0.0
+		if span <= 0.0:
+			node.position = points[mini(index + 1, points.size() - 1)]
+			continue
+		var t: float = (target - lengths[index]) / span
+		node.position = points[index].lerp(points[index + 1], t)
 
 
 func _build_global_water(parent: Node3D, flat: bool) -> void:

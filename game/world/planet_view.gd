@@ -1,14 +1,16 @@
 extends "res://world/flat_view.gd"
-## The globe: geography atlas, clouds, water overlay, markers, routes.
+## The globe: geography atlas, clouds, water overlay, markers, routes. The planet node turns with
+## the visual clock (`sky`); everything on it lives in the planet's own frame.
 
-const ICE_LATITUDE: float = 76.0
+const ATLAS_WIDTH: int = 1536
+const ATLAS_HEIGHT: int = 768
 
 
 func _build_planet() -> void:
 	# Both global modes share this authoritative atlas: no second random map.
 	var atlas_start: int = Time.get_ticks_msec()
 	var cache_key: String = (
-		"atlas-1536-r5-seed32:"
+		"atlas-1536-r6-data:"
 		+ str(world.version)
 		+ ":"
 		+ str(world.seed)
@@ -37,7 +39,11 @@ func _build_planet() -> void:
 			var bundled: Texture2D = load(bundled_path)
 			image = bundled.get_image()
 			last_atlas_source = "bundled"
-		if image != null and image.get_width() == 1536 and image.get_height() == 768:
+		if (
+			image != null
+			and image.get_width() == ATLAS_WIDTH
+			and image.get_height() == ATLAS_HEIGHT
+		):
 			last_atlas_cached = true
 		else:
 			var context: Dictionary = {}
@@ -63,43 +69,12 @@ func _build_planet() -> void:
 				atlas_cache.erase(atlas_cache.keys()[0])
 			atlas_cache[cache_key] = geography_atlas
 	last_atlas_ms = Time.get_ticks_msec() - atlas_start
-	var shader := Shader.new()
-	shader.code = """
-shader_type spatial;
-render_mode unshaded;
-uniform sampler2D atlas : source_color, filter_linear_mipmap, repeat_enable;
-uniform vec3 sun_direction=vec3(-.7,.48,.48);
-varying vec3 object_normal;
-void vertex(){object_normal=normalize(VERTEX);}
-void fragment(){
- vec3 n=normalize(object_normal);
- vec2 uv=vec2(atan(n.x,n.z)/6.283185307+.5,.5-asin(clamp(n.y,-1.0,1.0))/3.14159265);
- // atan() jumps at the antimeridian. The half-turn copy of u is continuous there, so the
- // smaller of the two derivatives keeps the mip level correct on both sides of the seam.
- vec2 wrapped=vec2(fract(uv.x+.5),uv.y);
- vec2 ddx=vec2(abs(dFdx(uv.x))<abs(dFdx(wrapped.x))?dFdx(uv.x):dFdx(wrapped.x),dFdx(uv.y));
- vec2 ddy=vec2(abs(dFdy(uv.x))<abs(dFdy(wrapped.x))?dFdy(uv.x):dFdy(wrapped.x),dFdy(uv.y));
- vec4 tex=textureGrad(atlas,uv,ddx,ddy);
- vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float slope=textureGrad(atlas,uv-vec2(step_uv.x,0),ddx,ddy).a;
- slope-=textureGrad(atlas,uv+vec2(step_uv.x,0),ddx,ddy).a;
- slope+=textureGrad(atlas,uv-vec2(0,step_uv.y),ddx,ddy).a;
- slope-=textureGrad(atlas,uv+vec2(0,step_uv.y),ddx,ddy).a;
- float relief=clamp(slope*26.0,-.24,.24);
- relief*=smoothstep(.50,.57,tex.a);
- float daylight=max(dot(n,normalize(sun_direction)),0.0);
- float shade=.065+daylight*.83;
- ALBEDO=tex.rgb*shade*(1.0+relief);
-}
-"""
 	globe_shader = ShaderMaterial.new()
-	globe_shader.shader = shader
+	globe_shader.shader = Shaders.shader("globe")
 	globe_shader.set_shader_parameter("atlas", geography_atlas)
-	if str(world.version) != "CC-GEO-1.4" and not world.regions.is_empty():
-		globe_shader.set_shader_parameter(
-			"sun_direction",
-			Geo.unit_point(float(world.regions[0].lat) + 15, float(world.regions[0].lon) - 32)
-		)
+	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
+	globe_shader.set_shader_parameter("lights", _night_lights_texture())
+	globe_shader.set_shader_parameter("ice_latitude", _ice_latitude())
 	var sphere := SphereMesh.new()
 	sphere.radius = 3
 	sphere.height = 6
@@ -109,15 +84,9 @@ void fragment(){
 	mesh.mesh = sphere
 	mesh.material_override = globe_shader
 	planet.add_child(mesh)
-	var atmosphere_shader := Shader.new()
-	atmosphere_shader.code = """
-shader_type spatial;
-render_mode unshaded,blend_add,cull_back,depth_draw_never;
-void fragment(){float f=pow(1.0-clamp(dot(NORMAL,VIEW),0.0,1.0),4.0);ALBEDO=vec3(.12,.48,.7)*f;ALPHA=f*.40;}
-"""
-	var am := ShaderMaterial.new()
-	am.shader = atmosphere_shader
-	_sphere(planet, Vector3.ZERO, 3.08, am, 96, 48)
+	atmosphere_shader = ShaderMaterial.new()
+	atmosphere_shader.shader = Shaders.shader("atmosphere")
+	_sphere(planet, Vector3.ZERO, 3.08, atmosphere_shader, 96, 48)
 	_build_clouds()
 	marker_root = Node3D.new()
 	planet.add_child(marker_root)
@@ -133,16 +102,18 @@ func _grid_preview() -> Image:
 	var width: int = int(world.grid_width)
 	var height: int = int(world.grid_height)
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
-	var ice_latitude: float = float(world.get("plates", {}).get("ice_latitude", ICE_LATITUDE))
 	for y in range(height):
 		for x in range(width):
-			var ll := Geo.cell_coordinate(y * width + x)
-			var cell: Dictionary = world.grid[y * width + x].duplicate()
-			cell.river = false  # rivers already have a persisted geometry overlay
-			var color := _geo_color(cell, ll.x, ll.y, null, ice_latitude)
-			color.a = clampf(.5 + float(cell.height) * .45, .01, .99)
-			image.set_pixel(x, y, color)
+			var cell: Dictionary = world.grid[y * width + x]
+			image.set_pixel(x, y, _geo_data(cell))
 	return image
+
+
+## The four numbers every map shader colours from; see `world/shaders.gd`.
+static func _geo_data(g: Dictionary) -> Color:
+	return Shaders.encode(
+		float(g.height), float(g.temperature), float(g.rainfall), float(g.get("ridge", 0.0))
+	)
 
 
 func _render_atlas_tile(
@@ -157,7 +128,6 @@ func _render_atlas_tile(
 	var row_start: int = height * tile / count
 	var row_end: int = height * (tile + 1) / count
 	var image := Image.create(width, row_end - row_start, false, Image.FORMAT_RGBA8)
-	var ice_latitude: float = float(context.get("ice_latitude", ICE_LATITUDE))
 	var tile_noise := FastNoiseLite.new()
 	tile_noise.seed = seed_value
 	tile_noise.frequency = 1.8
@@ -167,9 +137,7 @@ func _render_atlas_tile(
 		for x in range(width):
 			var lon: float = (float(x) + .5) * 360.0 / width - 180.0
 			var g: Dictionary = _atlas_sample(lat, lon, tile_noise, version, context)
-			var color := _geo_color(g, lat, lon, tile_noise, ice_latitude)
-			color.a = clampf(.5 + float(g.height) * .45, .01, .99)
-			image.set_pixel(x, y - row_start, color)
+			image.set_pixel(x, y - row_start, _geo_data(g))
 	return {"image": image, "row": row_start}
 
 
@@ -186,10 +154,12 @@ func _atlas_sample(
 ## Joins the tiles, writes the file and builds the mipmaps away from the frame: only uploading the
 ## finished texture happens on the main thread.
 static func _finish_atlas_image(job: Dictionary, tiles: Array) -> void:
-	var image := Image.create(1536, 768, false, Image.FORMAT_RGBA8)
+	var image := Image.create(ATLAS_WIDTH, ATLAS_HEIGHT, false, Image.FORMAT_RGBA8)
 	for result: Dictionary in tiles:
 		image.blit_rect(
-			result.image, Rect2i(0, 0, 1536, result.image.get_height()), Vector2i(0, result.row)
+			result.image,
+			Rect2i(0, 0, ATLAS_WIDTH, result.image.get_height()),
+			Vector2i(0, result.row)
 		)
 	image.save_png(job.path)
 	image.generate_mipmaps()
@@ -247,8 +217,8 @@ func _poll_atlas_job() -> void:
 				count,
 				int(atlas_job.seed),
 				str(atlas_job.version),
-				1536,
-				768,
+				ATLAS_WIDTH,
+				ATLAS_HEIGHT,
 				atlas_job.context
 			)
 		)
@@ -268,42 +238,37 @@ func _trim_disk_atlases(current: String) -> void:
 
 
 func _build_clouds() -> void:
-	var image := Image.create(512, 256, false, Image.FORMAT_RGBA8)
-	var cloud_noise := FastNoiseLite.new()
-	cloud_noise.seed = int(world.seed) + 79
-	cloud_noise.frequency = 1.8
-	cloud_noise.fractal_octaves = 4
-	for y in range(256):
-		for x in range(512):
-			var p: Vector3 = Geo.unit_point(90.0 - y * 180.0 / 256.0, x * 360.0 / 512.0 - 180.0)
-			var n: float = cloud_noise.get_noise_3dv(p * 2.6)
-			var a: float = clampf((n - .12) * 1.3, 0, .16)
-			image.set_pixel(x, y, Color(.85, .94, .98, a))
-	image.generate_mipmaps()
-	var s := Shader.new()
-	s.code = """
-shader_type spatial;
-render_mode blend_mix,depth_draw_never;
-uniform sampler2D clouds:source_color,filter_linear_mipmap,repeat_enable;
-varying vec3 point;
-void vertex(){point=normalize(VERTEX);}
-void fragment(){
- vec3 p=normalize(point);
- vec2 uv=vec2(atan(p.x,p.z)/6.2831853+.5,.5-asin(p.y)/3.14159265);
- vec2 wrapped=vec2(fract(uv.x+.5),uv.y);
- vec2 ddx=vec2(abs(dFdx(uv.x))<abs(dFdx(wrapped.x))?dFdx(uv.x):dFdx(wrapped.x),dFdx(uv.y));
- vec2 ddy=vec2(abs(dFdy(uv.x))<abs(dFdy(wrapped.x))?dFdy(uv.x):dFdy(wrapped.x),dFdy(uv.y));
- vec4 c=textureGrad(clouds,uv,ddx,ddy);
- ALBEDO=c.rgb;
- ROUGHNESS=1.0;
- ALPHA=c.a;
-}
-"""
-	var sm := ShaderMaterial.new()
-	sm.shader = s
-	sm.set_shader_parameter("clouds", ImageTexture.create_from_image(image))
-	cloud_shell = _sphere(planet, Vector3.ZERO, 3.026, sm, 96, 48)
+	cloud_shader = ShaderMaterial.new()
+	cloud_shader.shader = Shaders.shader("clouds")
+	cloud_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
+	cloud_shader.set_shader_parameter("coverage", _cloud_coverage())
+	cloud_shell = _sphere(planet, Vector3.ZERO, 3.026, cloud_shader, 128, 64)
 	cloud_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## Towns and lit roads for the night side. Repainted only when what it shows has changed.
+func _update_night_lights() -> void:
+	var roles: Dictionary = {}
+	for kind: String in Rules.read("economy").buildings:
+		roles[kind] = str(Rules.read("economy").buildings[kind].get("role", ""))
+	var towns: Array = []
+	for settlement: Dictionary in state.get("settlements", []):
+		var region: int = int(settlement.get("region", -1))
+		if region >= 0 and region < world.regions.size():
+			towns.append(NightLights.town_source(settlement, world.regions[region], roles))
+	var roads: Array = []
+	var day: int = int(state.get("day", 0))
+	for road: Dictionary in state.get("roads", []):
+		if str(road.get("variant", "")) == "sea":
+			continue
+		if Geo.road_building(road, day) or Geo.road_blocked(road, day):
+			continue
+		roads.append(road.get("coordinates", []))
+	var image: Image = NightLights.paint(towns, roads)
+	if night_lights == null:
+		night_lights = ImageTexture.create_from_image(image)
+	else:
+		night_lights.update(image)
 
 
 func _update_markers() -> void:
@@ -368,23 +333,19 @@ func _globe_marker(reg: Dictionary, with_label: bool) -> void:
 		return
 	var sizes: Dictionary = _footprint_sizes(_settlement_at(int(reg.id)))
 	if float(sizes.farmland) > 0.0:
-		_disc(root, normal * 3.0205, normal, float(sizes.farmland), _footprint_mat("farm"))
-	_disc(root, normal * 3.021, normal, float(sizes.town), _footprint_mat("town"))
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 1000 + int(reg.id)
-	for j in range(15):
-		var light_point: Vector3 = (
-			(
-				(
-					normal * 3.02
-					+ tangent * rng.randf_range(-.055, .055)
-					+ bitangent * rng.randf_range(-.055, .055)
-				)
-				. normalized()
-			)
-			* 3.022
-		)
-		_sphere(root, light_point, .005, _mat("citylight", Color("ffcf7a"), 0, 1, 2.8), 5, 3)
+		_disc(root, normal * 3.0205, normal, float(sizes.farmland), _globe_footprint_mat("farm"))
+	_disc(root, normal * 3.021, normal, float(sizes.town), _globe_footprint_mat("town"))
+
+
+## The flat map's footprint colours, fading on the night side of the globe.
+func _globe_footprint_mat(kind: String) -> ShaderMaterial:
+	var key: String = "globe_footprint_" + kind
+	if not mats.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = Shaders.shader("footprint")
+		material.set_shader_parameter("tint", _footprint_mat(kind).albedo_color)
+		mats[key] = material
+	return mats[key]
 
 
 func _settlement_at(id: int) -> Dictionary:
@@ -418,8 +379,10 @@ func _update_transport() -> void:
 	for child in transport_root.get_children():
 		transport_root.remove_child(child)
 		child.queue_free()
+	globe_movers.clear()
 	for r: Dictionary in state.get("roads", []):
 		_draw_road_on_globe(r)
+	_place_movers(globe_movers, sky.day_fraction)
 
 
 func _road_color(r: Dictionary) -> Color:
@@ -442,20 +405,7 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 	for shipment in state.get("shipments", []):
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue
-		var progress: float = clampf(
-			(
-				1.0
-				- (
-					float(shipment.get("remaining", 1))
-					/ maxf(float(shipment.get("total_days", 1)), 1.0)
-				)
-			),
-			0.0,
-			1.0
+		var marker := _sphere(
+			transport_root, points[0], .023, _mat("shipment", Color("ffedc2"), 0, 1, 2), 8, 4
 		)
-		if int(shipment.get("from", -1)) == int(r.get("b", -2)):
-			progress = 1.0 - progress
-		var index: int = clampi(int(progress * (points.size() - 1)), 0, points.size() - 1)
-		_sphere(
-			transport_root, points[index], .023, _mat("shipment", Color("ffedc2"), 0, 1, 2), 8, 4
-		)
+		globe_movers.append(_mover(marker, points, shipment, r, INF))

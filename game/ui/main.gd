@@ -98,6 +98,10 @@ var difficulty_option: OptionButton
 var difficulty: String = "normal"
 var detailed_info: bool = true
 var panel_pause: bool = true
+## The moving map: a turning planet, day and night with lights, weather. Saved in settings.cfg.
+var visual_spin: bool = true
+var visual_day_night: bool = true
+var visual_weather: bool = true
 var resume_on_close: bool = false
 var dev_mode: bool = false
 var modal_root: Control
@@ -144,6 +148,10 @@ func _ready():
 		get_window().content_scale_factor = float(preferences.get_value("display", "scale", 1.0))
 		detailed_info = bool(preferences.get_value("display", "details", true))
 		panel_pause = bool(preferences.get_value("gameplay", "panel_pause", true))
+		visual_spin = bool(preferences.get_value("visual", "spin", true))
+		visual_day_night = bool(preferences.get_value("visual", "day_night", true))
+		visual_weather = bool(preferences.get_value("visual", "weather", true))
+	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
 	show_menu()
 	var args = OS.get_cmdline_user_args()
 	for a in args:
@@ -376,6 +384,7 @@ func _process(delta):
 	if sample_frames.size() < 36000:
 		sample_frames.append(delta)
 	advance_time(delta)
+	_feed_map_clock()
 	if toast_time > 0:
 		toast_time -= delta
 		if toast_time <= 0:
@@ -432,6 +441,15 @@ func advance_time(delta: float):
 		if paused or panel_blocks_time():
 			accumulator = 0
 			break
+
+
+## The map's visual clock follows the game clock: faster at higher speeds, slow while paused.
+func _feed_map_clock() -> void:
+	var running: bool = not (
+		paused or menu_open or panel_blocks_time() or sim.state.status in ["planning", "failed"]
+	)
+	var seconds_per_day: float = float(sim.progression.get("time", {}).get("seconds_per_day", 5.0))
+	map.set_clock(running, speed, int(sim.state.day), accumulator / maxf(seconds_per_day, 0.01))
 
 
 ## Serialization happens here on the main thread; compression and disk work run on a worker.
@@ -1238,6 +1256,25 @@ func toggle_panel_pause():
 	var settings = ConfigFile.new()
 	settings.load("user://settings.cfg")
 	settings.set_value("gameplay", "panel_pause", panel_pause)
+	settings.save("user://settings.cfg")
+	open_page("save")
+
+
+## key is "spin", "day_night" or "weather".
+func toggle_visual(key: String) -> void:
+	match key:
+		"spin":
+			visual_spin = not visual_spin
+		"day_night":
+			visual_day_night = not visual_day_night
+		"weather":
+			visual_weather = not visual_weather
+	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
+	var settings = ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("visual", "spin", visual_spin)
+	settings.set_value("visual", "day_night", visual_day_night)
+	settings.set_value("visual", "weather", visual_weather)
 	settings.save("user://settings.cfg")
 	open_page("save")
 

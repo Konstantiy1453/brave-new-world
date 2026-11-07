@@ -1488,6 +1488,21 @@ static func settings(g, b):
 	D.button(
 		b, "打开面板时暂停：开（关闭后恢复原速度）" if g.panel_pause else "打开面板时暂停：关（面板打开时时间继续）", g.toggle_panel_pause
 	)
+	D.label(b, "地图画面", 20)
+	var visuals = D.row(b)
+	for entry: Array in [
+		["spin", "行星自转", g.visual_spin, "球面总览中行星缓慢自转；拖动或点选地点时会停下"],
+		["day_night", "昼夜与灯光", g.visual_day_night, "太阳照亮一半星球，入夜后城市与公路亮灯；地区视图随当地时间明暗"],
+		["weather", "云层与天气", g.visual_weather, "云层随风带移动，热带风暴生成与消散，地区地面有云影；关闭后不画云，显卡较弱时可关"],
+	]:
+		var key: String = str(entry[0])
+		D.button(
+			visuals,
+			"%s：%s" % [entry[1], "开" if bool(entry[2]) else "关"],
+			func(): g.toggle_visual(key),
+			str(entry[3]),
+			"Visual_" + key
+		)
 	D.label(b, "新手引导", 20)
 	var teaching = D.row(b)
 	D.button(teaching, "重新开始新手引导（开始一局引导专用的新游戏）", g.start_tutorial, "当前未保存的进度会丢失", "ReplayTutorial")
