@@ -270,9 +270,10 @@ research-first games taken over.
 - Counting raw exports only missed the decline it is for: with the balanced bot stopped on day 1,080
   (`mine_probe.gd --hands-off=1080`) the share sat at 16–26% while mines died one by one, and the ore
   behind exported materials and parts was not counted (seed 42, capital: ore 17%, everything resting on
-  ore 48%). Counting processing, a third warns roughly 200–400 days (read from 180-day samples) before
-  income falls 20% in three of four such colonies; a fifth warned earlier but showed for 750 of 3,600 days in a bot game that keeps replacing its
-  mines · lowering the line to a fifth with the raw-only measure.
+  ore 48%). Counting processing, a third warns 330, 420 and 210 days before income falls 20% in three of
+  four such colonies (the fourth's income falls with at most 16% resting on dying seams), and in normal
+  play by the balanced bot it shows for 0–390 of 3,600 days across six games; a fifth showed for 750 days
+  in one of them · lowering the line to a fifth with the raw-only measure.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.
