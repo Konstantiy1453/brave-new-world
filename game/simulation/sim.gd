@@ -329,19 +329,26 @@ func tick() -> void:
 
 ## Growth has running costs: a base, a per-resident part and a per-settlement part.
 func _admin_cost() -> float:
+	return _admin_for(_residents(), state.settlements.size())
+
+
+func _residents() -> int:
 	var residents: int = 0
 	for s: Dictionary in state.settlements:
 		residents += int(s.population)
+	return residents
+
+
+## Administration grows a little faster than the colony: per resident with size, per settlement
+## with the number of settlements. Without the 1.9 keys it is the 1.8 straight line.
+func _admin_for(residents: int, places: int) -> float:
 	var saved: float = Research.bonus(self, "admin")
 	for s: Dictionary in state.settlements:
 		saved += Population.service_total(self, s, "admin")
-	# Administration grows a little faster than the colony: per resident with size, per settlement
-	# with the number of settlements. Without the 1.9 keys it is the 1.8 straight line.
 	var rules: Dictionary = config.economy
 	var crowding: float = (
 		float(residents) / maxf(1.0, float(rules.get("admin_resident_scale", INF)))
 	)
-	var places: int = state.settlements.size()
 	var spread: float = float(rules.get("admin_settlement_growth", 0.0)) * maxi(0, places - 1)
 	return (
 		maxf(0.3, 1.0 + saved)
@@ -546,6 +553,44 @@ func summary() -> Dictionary:
 		"runway": float(state.cash) / (-net) if net < -0.01 else -1.0,
 		"debt": state.debt,
 		"contract": contract_progress()
+	}
+
+
+## Days of public cash at the mean daily operating expense of the recent past: the money
+## readout of the economy page, the top bar and the advisor, and what the bots steer by.
+## Money counts as idle only once a full window has been seen, not in the first months.
+func cover_view() -> Dictionary:
+	var history: Array = state.operating_history
+	var rules: Dictionary = config.economy
+	var window: int = int(rules.get("cover_window_days", HISTORY_LIMIT))
+	var days: int = mini(window, history.size())
+	var expense: float = 0.0
+	for index: int in range(history.size() - days, history.size()):
+		expense += float(history[index].expense)
+	var cover: float = float(state.cash) / maxf(1.0, expense / maxi(1, days))
+	var band: String = Keys.COVER_NORMAL
+	if cover < float(rules.get("cover_short_days", 0.0)):
+		band = Keys.COVER_SHORT
+	elif cover >= float(rules.get("cover_idle_days", INF)) and days >= window:
+		band = Keys.COVER_IDLE
+	return {"cover": cover, "expense": expense / maxi(1, days), "days": days, "band": band}
+
+
+func cash_cover() -> float:
+	return float(cover_view().cover)
+
+
+## What administration costs today and what growth adds to it, for the economy page.
+func admin_view() -> Dictionary:
+	var residents: int = _residents()
+	var places: int = state.settlements.size()
+	var today: float = _admin_for(residents, places)
+	var step: int = int(config.economy.get("admin_preview_residents", 100))
+	return {
+		"daily": today,
+		"residents_step": step,
+		"per_residents": _admin_for(residents + step, places) - today,
+		"per_settlement": _admin_for(residents, places + 1) - today,
 	}
 
 

@@ -78,7 +78,6 @@ const SWAP_FREE_BEDS: int = 35
 const SERVICES_UP_COVER: float = 120.0
 const SERVICES_DOWN_COVER: float = 45.0
 const SERVICES_REVIEW_PERIOD: int = 60
-const COVER_WINDOW_DAYS: int = 90
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -1175,15 +1174,9 @@ func _invest(reserve: float) -> void:
 				return
 
 
-## Raises pay only when people are staying away for lack of appeal, not for lack of beds or food.
-## Public cash over the mean daily operating expense of the last 90 days.
+## Public cash over the mean daily operating expense of the recent past (`Sim.cash_cover`).
 func cash_cover() -> float:
-	var history: Array = sim.state.operating_history
-	var days: int = mini(COVER_WINDOW_DAYS, history.size())
-	var expense: float = 0.0
-	for index: int in range(history.size() - days, history.size()):
-		expense += float(history[index].expense)
-	return float(sim.state.cash) / maxf(1.0, expense / maxi(1, days))
+	return sim.cash_cover()
 
 
 ## Money with nothing better to do buys people a better life, a level at a time.
@@ -1198,6 +1191,7 @@ func _public_services() -> void:
 		act("policy", {"services": level - 1})
 
 
+## Raises pay only when people are staying away for lack of appeal, not for lack of beds or food.
 func _wages() -> void:
 	if fixed_wage > 0.0:
 		if not is_equal_approx(float(sim.state.policy.wage), fixed_wage):

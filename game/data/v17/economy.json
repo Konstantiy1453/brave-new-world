@@ -4,7 +4,8 @@
     "money": "account units",
     "goods": "tonnes",
     "time": "game day",
-    "price": "account units per tonne"
+    "price": "account units per tonne",
+    "cover": "days of public cash at the mean daily operating expense of the last cover_window_days days"
   },
   "resources": {
     "ore": "铁矿",
@@ -61,6 +62,10 @@
     "income_copy_factor": 0.85,
     "foodworks_free_copies": 6,
     "foodworks_copy_factor": 0.8,
+    "cover_window_days": 90,
+    "cover_short_days": 30,
+    "cover_idle_days": 180,
+    "admin_preview_residents": 100,
     "construction_stock": {
       "materials": 70.0,
       "parts": 24.0

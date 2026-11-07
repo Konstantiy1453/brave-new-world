@@ -55,3 +55,8 @@ const SH_POLLUTION: String = "pollution"
 
 const SOURCE_PROCESSING: String = "processing"
 const SOURCE_IMPORT: String = "import"
+
+## Cash cover bands (`Sim.cover_view`): money running short, ordinary, or sitting idle.
+const COVER_SHORT: String = "short"
+const COVER_NORMAL: String = "normal"
+const COVER_IDLE: String = "idle"

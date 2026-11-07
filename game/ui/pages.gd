@@ -1038,6 +1038,21 @@ static func _services_budget(g, b) -> void:
 		button.button_pressed = level == current
 
 
+## Cash cover, by band: red when it runs short, a hint where to spend it when money sits idle.
+static func _cover_line(g, b) -> void:
+	var cover: Dictionary = g.sim.cover_view()
+	var text: String = Labels.cover_text(cover)
+	if text == "":
+		return
+	var color: Color = D.TEAL
+	if str(cover.band) == Keys.COVER_SHORT:
+		color = D.RED
+	elif str(cover.band) == Keys.COVER_IDLE:
+		text += " · " + Labels.idle_money(g.sim)
+		color = D.GOLD
+	D.label(b, text, 17, color)
+
+
 static func economy(g, b):
 	var state: Dictionary = g.sim.state
 	var row = D.row(b)
@@ -1053,6 +1068,22 @@ static func economy(g, b):
 	if float(summary.runway) >= 0.0:
 		lasting = "预计现金可维持 %.1f 天" % float(summary.runway)
 	D.label(b, "近 7 日平均净额 ¥ %+.0f/日 · %s" % [float(summary.operating_average), lasting], 19, D.TEAL)
+	_cover_line(g, b)
+	var admin: Dictionary = g.sim.admin_view()
+	D.label(
+		b,
+		(
+			"行政开支 ¥ %.0f/日：每多 %d 人 +¥ %.1f/日，每多一处据点 +¥ %.1f/日"
+			% [
+				float(admin.daily),
+				int(admin.residents_step),
+				float(admin.per_residents),
+				float(admin.per_settlement)
+			]
+		),
+		16,
+		D.MUTED
+	)
 	if float(state.get("debt", 0)) > 0.0:
 		D.label(
 			b,
@@ -1090,24 +1121,36 @@ static func economy(g, b):
 		_money_column(g, capital, "近 30 日投资（不计经营）", totals.invest, D.MUTED)
 		_money_column(g, capital, "近 30 日外来资金（不计经营）", totals.funding, D.MUTED)
 	_goods_table(b, totals.goods)
-	D.label(b, "出口价格：出口越多价格越低，停售后缓慢恢复", 20, D.TEAL)
+	D.label(
+		b,
+		"出口价格：出口越多价格越低，停售后缓慢恢复；最低按基准的 %.0f%% 结算" % (float(g.sim.market_rules.floor) * 100.0),
+		20,
+		D.TEAL
+	)
 	for row_data: Dictionary in g.sim.market_view():
 		var arrow: String = {-1: "↓", 0: "→", 1: "↑"}[int(row_data.trend)]
-		D.label(
-			b,
-			(
-				"%s  ¥ %.1f / t  %s（基准 %.1f，%.0f%%）"
-				% [
-					RES.get(row_data.good, row_data.good),
-					row_data.price,
-					arrow,
-					row_data.base,
-					row_data.factor * 100.0
-				]
-			),
-			16,
-			D.INK if float(row_data.factor) > 0.8 else D.GOLD
+		var line: String = (
+			"%s  ¥ %.1f / t  %s（基准 %.1f，%.0f%%）"
+			% [
+				RES.get(row_data.good, row_data.good),
+				row_data.price,
+				arrow,
+				row_data.base,
+				row_data.factor * 100.0
+			]
 		)
+		if bool(row_data.at_floor):
+			line += " · 市场已饱和：再多卖只能按底价结算"
+		else:
+			line += (
+				" · 再卖 %.0f t 后 ¥ %.1f · 底价 ¥ %.1f"
+				% [
+					float(row_data.ahead_tonnes),
+					float(row_data.ahead_price),
+					float(row_data.floor_price)
+				]
+			)
+		D.label(b, line, 16, D.INK if float(row_data.factor) > 0.8 else D.GOLD)
 	for s in state.settlements:
 		var c = D.card(b)
 		D.label(c, s.name + " / 本地库存", 20)

@@ -14,6 +14,7 @@ const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Keys = preload("res://simulation/keys.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
@@ -653,7 +654,7 @@ func settlement() -> Dictionary:
 func refresh():
 	if not is_instance_valid(top_stats):
 		return
-	_refresh_top()
+	var window: Dictionary = _refresh_top()
 	var state: Dictionary = sim.state
 	date_label.text = (
 		"%s · %s" % [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
@@ -678,6 +679,9 @@ func refresh():
 			hint += "  |  据点尚未相连，打开交通运输修路或开航线。"
 		else:
 			hint += "  |  贸易和运输按本地库存自动进行。"
+		var advice: String = _money_advice(window)
+		if advice != "":
+			hint = advice
 		if not sim.Research.idle_categories(sim).is_empty():
 			hint = "! 有研究团队闲着：打开科研教育，给他们挑一个课题"
 	if not state.get("event", {}).is_empty():
@@ -686,8 +690,24 @@ func refresh():
 	refresh_sidebar()
 
 
+## The advisor on money: a market sold down to its floor first, then cash with nothing to do.
+func _money_advice(window: Dictionary) -> String:
+	for row: Dictionary in sim.market_view():
+		var flows: Array = window.goods.get(str(row.good), [])
+		if bool(row.at_floor) and not flows.is_empty() and float(flows[Stats.EXPORTED]) > 0.0:
+			return (
+				"! %s市场已饱和：再多卖只能按底价结算，打开经营账本看行情"
+				% str(Labels.RESOURCE_NAMES.get(str(row.good), row.good))
+			)
+	var cover: Dictionary = sim.cover_view()
+	if str(cover.band) == Keys.COVER_IDLE and float(cover.expense) >= 1.0:
+		return "现金可支撑 %.0f 天，%s" % [float(cover.cover), Labels.idle_money(sim)]
+	return ""
+
+
 ## Colony totals and what the last month did to them, scaled up while the colony is younger than that.
-func _refresh_top() -> void:
+## Returns the month's window for the advisor.
+func _refresh_top() -> Dictionary:
 	var state: Dictionary = sim.state
 	var window: Dictionary = sim.stats_window(int(MONTH_DAYS))
 	var scale: float = MONTH_DAYS / maxi(1, int(window.days))
@@ -697,13 +717,17 @@ func _refresh_top() -> void:
 		income += float(window.income[key])
 	for key: String in window.expense:
 		expense += float(window.expense[key])
+	var cover_line: String = Labels.cover_text(sim.cover_view())
 	_set_cell(
 		"money",
 		float(state.cash),
 		(income - expense) * scale,
 		(
-			"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
-			% [float(state.cash), income, expense]
+			(
+				"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
+				% [float(state.cash), income, expense]
+			)
+			+ ("" if cover_line == "" else "\n" + cover_line)
 		)
 	)
 	var people: int = 0
@@ -757,6 +781,7 @@ func _refresh_top() -> void:
 			change * scale,
 			Labels.flow_text(str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), flows)
 		)
+	return window
 
 
 func _set_cell(key: String, value: float, change: float, hint: String) -> void:

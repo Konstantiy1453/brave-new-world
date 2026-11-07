@@ -437,3 +437,21 @@ static func planet_type(types: Dictionary, character: Dictionary) -> String:
 	)
 	var relief: String = str(types.reliefs[character.relief].name)
 	return text if relief == "" else "%s，%s" % [text, relief]
+
+
+## 「现金可支撑 N 天」 for the top bar and the economy page; empty while nothing has been spent.
+static func cover_text(cover: Dictionary) -> String:
+	if float(cover.expense) < 1.0:
+		return ""
+	return (
+		"现金可支撑 %.0f 天（按近 %d 日平均经营支出 ¥ %.0f/日）"
+		% [float(cover.cover), int(cover.days), float(cover.expense)]
+	)
+
+
+## Where money with nothing to do could go, for the economy page and the advisor.
+static func idle_money(sim: RefCounted) -> String:
+	var services: Dictionary = sim.pop_rules.get("services", {})
+	if not services.is_empty() and int(sim.state.policy.get("services", 0)) < int(services.levels):
+		return "钱闲着：可以升级、扩建设施，或在人口移民里提高公共服务预算"
+	return "钱闲着：可以升级、扩建设施，或开辟新据点"

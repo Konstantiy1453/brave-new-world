@@ -248,3 +248,15 @@ research-first games taken over.
   the plan's thresholds; balanced, research-first and rush use it, passive and sloppy do not.
 - Commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7) are not done ·
   the money rows pass without them; they remain the next ways to spend.
+- Cash cover is one read-only `Sim.cover_view()` (window, short and idle bands in `economy.json`) used by
+  the economy page, the top bar, the advisor and the bots · the player sees what the bots steer by; the
+  harness metric keeps its own ledger sampling so recorded rows stay comparable · a copy per caller.
+- Money counts as idle (≥ 180 days of cover) only once a full 90-day window has been seen · a fresh colony
+  sits on its starting capital for weeks, and "spend it" is wrong advice before the first buildings are up
+  · idle from the first day.
+- The advisor line puts a pending message first, idle research teams second, a market at its floor third
+  (only for goods exported in the last 30 days) and idle money last · research stays the heart of the game
+  and a falling price is the more urgent money news · money advice above research.
+- The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
+  administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
+  settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.
