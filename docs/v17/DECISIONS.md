@@ -261,6 +261,11 @@ research-first games taken over.
 - The advisor line puts a pending message first, idle research teams second, a market at its floor third
   (only for goods exported in the last 30 days) and idle money last · research stays the heart of the game
   and a falling price is the more urgent money news · money advice above research.
+- Export income at risk weighs the month's export value of each mined good by the share of its mines'
+  full-rate output that comes from seams with under 360 days left; the advisor warns at a third
+  (`mine_warning_days`, `mine_warning_share`) and the warning comes before the floor and idle-money lines ·
+  everything it needs is already in the state (seam reserves, the build forecast's rate, the stats window),
+  so nothing new is saved · recording each mine's daily output and income in the save.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.

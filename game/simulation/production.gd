@@ -641,6 +641,52 @@ static func _factory_boost(sim: RefCounted, b: Dictionary) -> float:
 	return boost
 
 
+## Export income at risk (1.9 advisor): the share of a window's export value that came from mines
+## with under `mine_warning_days` of reserves left at their full rate. Read-only: mines without a
+## plot yet are skipped rather than given one.
+static func mine_outlook(sim: RefCounted, window: Dictionary) -> Dictionary:
+	var limit: float = float(sim.config.economy.get("mine_warning_days", 360.0))
+	var output: Dictionary = {}
+	var ending: Dictionary = {}
+	for s: Dictionary in sim.state.settlements:
+		var plots: Array = sim.state.world.regions[int(s.region)].plots
+		var field_bonus: float = _field_bonus(sim, s)
+		for b: Dictionary in s.buildings:
+			if role_of(sim, str(b.kind)) != "mine" or int(b.get("remaining", 0)) > 0:
+				continue
+			if not b.get("enabled", true) or int(b.get("plot", -1)) < 0:
+				continue
+			var seam: Dictionary = plots[int(b.plot)]
+			var reserves: float = float(seam.get("reserves", 0.0))
+			if reserves <= 0.0:
+				continue
+			var d: Dictionary = sim.config.buildings[b.kind]
+			var good: String = str(d.output)
+			var rate: float = (
+				float(d.rate)
+				* float(seam.get("grade", 1.0))
+				* field_bonus
+				* _good_bonus(sim, good)
+				* output_factor(sim, b)
+			)
+			output[good] = float(output.get(good, 0.0)) + rate
+			if reserves / maxf(rate, 0.001) < limit:
+				ending[good] = float(ending.get(good, 0.0)) + rate
+	var total: float = 0.0
+	var at_risk: float = 0.0
+	for good: String in window.get("goods", {}):
+		var value: float = float(window.goods[good][Stats.EXPORTED]) * Market.price(sim, good)
+		total += value
+		if float(output.get(good, 0.0)) > 0.0:
+			at_risk += value * float(ending.get(good, 0.0)) / float(output[good])
+	return {
+		"share": at_risk / total if total > 0.0 else 0.0,
+		"export_value": total,
+		"at_risk": at_risk,
+		"days": limit,
+	}
+
+
 ## A mine with nothing left to dig lets its crew go and stops costing money.
 static func _depleted(sim: RefCounted, s: Dictionary, b: Dictionary) -> bool:
 	if not str(b.kind).begins_with("mine_"):

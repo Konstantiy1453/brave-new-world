@@ -10,6 +10,7 @@ const Population = preload("res://simulation/population.gd")
 const Market = preload("res://simulation/market.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Keys = preload("res://simulation/keys.gd")
+const Stats = preload("res://simulation/stats.gd")
 
 const SEED: int = 260129
 const SAVE_PATH: String = "user://v19_money.save"
@@ -57,6 +58,7 @@ func run() -> void:
 	_cover()
 	_admin_view()
 	_market_view()
+	_mine_outlook()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -344,3 +346,48 @@ func _market_view() -> void:
 	row = _market_row(sim, "ore")
 	check(bool(row.at_floor), "a flooded market is at its floor")
 	check(is_equal_approx(float(row.price), float(row.floor_price)), "and sells at the floor price")
+
+
+## One ore seam with a mine on it, and one day of exports in the stats.
+func _mine_outlook() -> void:
+	var sim: RefCounted = make()
+	var rules: Dictionary = sim.config.economy
+	var place: Dictionary = sim.state.settlements[0]
+	place.buildings.clear()
+	var plots: Array = sim.state.world.regions[int(place.region)].plots
+	var seam: Dictionary = {
+		"kind": "deposit", "resource": "ore", "grade": 1.0, "reserves": 1.0, "depth": 0
+	}
+	plots.append(seam)
+	var mine: Dictionary = _fake("mine_ore")
+	mine.plot = plots.size() - 1
+	place.buildings.append(mine)
+	var unplaced: Dictionary = _fake("mine_copper")
+	place.buildings.append(unplaced)
+	Stats.goods(sim.state, "ore", Stats.EXPORTED, 100.0)
+	Stats.close_day(sim.state)
+	var outlook: Dictionary = sim.mine_outlook(sim.stats_window(30))
+	check(
+		is_equal_approx(float(outlook.share), 1.0),
+		"all export income comes from a mine about to run out"
+	)
+	check(
+		float(outlook.share) >= float(rules.mine_warning_share), "which is past the warning share"
+	)
+	check(int(unplaced.plot) == -1, "the outlook does not give a mine without a plot one")
+	Stats.goods(sim.state, "parts", Stats.EXPORTED, 100.0)
+	Stats.close_day(sim.state)
+	outlook = sim.mine_outlook(sim.stats_window(30))
+	var ore: float = 100.0 * Market.price(sim, "ore")
+	var parts: float = 100.0 * Market.price(sim, "parts")
+	check(
+		is_equal_approx(float(outlook.share), ore / (ore + parts)),
+		"other exports dilute the share by their value"
+	)
+	seam.reserves = 1.0e9
+	outlook = sim.mine_outlook(sim.stats_window(30))
+	check(float(outlook.share) == 0.0, "a seam with years left is no risk")
+	seam.reserves = 1.0
+	mine.enabled = false
+	outlook = sim.mine_outlook(sim.stats_window(30))
+	check(float(outlook.share) == 0.0, "a mine switched off earns nothing to lose")

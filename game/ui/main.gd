@@ -690,8 +690,12 @@ func refresh():
 	refresh_sidebar()
 
 
-## The advisor on money: a market sold down to its floor first, then cash with nothing to do.
+## The advisor on money: export income from mines about to run out first, then a market sold
+## down to its floor, then cash with nothing to do.
 func _money_advice(window: Dictionary) -> String:
+	var outlook: Dictionary = sim.mine_outlook(window)
+	if float(outlook.share) >= float(sim.config.economy.mine_warning_share):
+		return "! " + Labels.mine_warning(outlook, true)
 	for row: Dictionary in sim.market_view():
 		var flows: Array = window.goods.get(str(row.good), [])
 		if bool(row.at_floor) and not flows.is_empty() and float(flows[Stats.EXPORTED]) > 0.0:

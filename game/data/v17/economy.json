@@ -66,6 +66,8 @@
     "cover_short_days": 30,
     "cover_idle_days": 180,
     "admin_preview_residents": 100,
+    "mine_warning_days": 360,
+    "mine_warning_share": 0.33,
     "construction_stock": {
       "materials": 70.0,
       "parts": 24.0

@@ -2,7 +2,7 @@ extends RefCounted
 ## Developer capture of the 1.9 money interface: the public services budget on the population page,
 ## the copy surcharge in the build list and the cash cover, administration and market floor lines
 ## on the economy page, after a balanced colony has grown for two years.
-##   godot --path game -- --dev --dev-script=res://tests/art/capture_pages_v19.gd
+##   godot --path game -- --dev --dev-script=res://tests/art/capture_pages_v19.gd [--days=1440]
 
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 const OUT: String = "res://../evidence/v17/art/pages"
@@ -11,10 +11,14 @@ const DAYS: int = 700
 
 
 static func run(g) -> void:
+	var days: int = DAYS
+	for argument: String in OS.get_cmdline_user_args():
+		if argument.begins_with("--days="):
+			days = int(argument.trim_prefix("--days="))
 	g.sim.new_game(SEED, "capital", 1, "normal")
 	var bot: RefCounted = Bot.new()
 	bot.begin(g.sim, SEED)
-	for _day: int in range(DAYS):
+	for _day: int in range(days):
 		bot.on_day()
 		g.sim.tick()
 	g.coach.stop(false)
@@ -27,9 +31,11 @@ static func run(g) -> void:
 	g.paused = true
 	g.refresh()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	# Captures of other days keep the default ones: economy_day1440.png next to economy.png.
+	var suffix: String = "" if days == DAYS else "_day%d" % days
 	for page: String in ["population", "build", "economy"]:
 		g.open_page(page)
-		await _capture(g, page)
+		await _capture(g, page + suffix)
 	# The market rows sit below the fold of the economy page.
 	var scroll: ScrollContainer = g.find_child("Page_economy", true, false) as ScrollContainer
 	if scroll != null:
@@ -39,7 +45,7 @@ static func run(g) -> void:
 			if label.text.begins_with("出口价格"):
 				scroll.scroll_vertical = int(label.global_position.y - box.global_position.y)
 				break
-		await _capture(g, "economy_market")
+		await _capture(g, "economy_market" + suffix)
 	g.get_tree().quit(0)
 
 

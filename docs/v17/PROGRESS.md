@@ -23,7 +23,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (25 s, 4.0 MB); all 56 building kinds drawn with models (40 own, 16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts | automated conversion; contact sheets and region showcase viewed (`evidence/v17/art/gallery/`, `showcase_*.png`) |
 | Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
 | Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
-| Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 48 checks, `ui_contract`), screenshots viewed (`evidence/v17/art/pages/economy*.png`) |
+| Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line, in this order, for export income leaning on mines with under 360 days of reserves (a third or more of the month's export value; the share also shows on the economy page), for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 54 checks, `ui_contract`), screenshots viewed (`evidence/v17/art/pages/economy*.png`, `economy_day1440.png`) |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
@@ -73,9 +73,8 @@ last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16
 3. Road vehicles are procedural: no truck or car model was delivered.
 4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
 5. Money: commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7), the
-   payback suite (A2.2), spending per sink and the windfall row (A2.9), 「钱花在哪」 on the economy page
-   and the warning for export income from mines running out (A2.10) are not done; a full harness run
-   (10 seeds, 3 difficulties) is still to do.
+   payback suite (A2.2), spending per sink and the windfall row (A2.9) and 「钱花在哪」 on the economy page
+   (A2.10) are not done; a full harness run (10 seeds, 3 difficulties) is still to do.
 6. The README still describes the 1.8.0 release; its 「后期钱会花不完」 limitation (in
    `docs/HISTORICAL_README_1.8.md`) is answered in the 1.9 release notes once the full run confirms the
    money rows.

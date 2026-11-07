@@ -580,6 +580,11 @@ func cash_cover() -> float:
 	return float(cover_view().cover)
 
 
+## How much of a window's export value comes from mines about to run out (the advisor's warning).
+func mine_outlook(window: Dictionary) -> Dictionary:
+	return Production.mine_outlook(self, window)
+
+
 ## What administration costs today and what growth adds to it, for the economy page.
 func admin_view() -> Dictionary:
 	var residents: int = _residents()

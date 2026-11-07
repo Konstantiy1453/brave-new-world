@@ -1053,6 +1053,15 @@ static func _cover_line(g, b) -> void:
 	D.label(b, text, 17, color)
 
 
+## Export income that leans on mines about to run out, from the last 30 days' exports.
+static func _mine_line(g, b, month: Dictionary) -> void:
+	var outlook: Dictionary = g.sim.mine_outlook(month)
+	if float(outlook.share) <= 0.0:
+		return
+	var warn: bool = float(outlook.share) >= float(g.sim.config.economy.mine_warning_share)
+	D.label(b, Labels.mine_warning(outlook, warn), 16, D.RED if warn else D.MUTED)
+
+
 static func economy(g, b):
 	var state: Dictionary = g.sim.state
 	var row = D.row(b)
@@ -1069,6 +1078,8 @@ static func economy(g, b):
 		lasting = "预计现金可维持 %.1f 天" % float(summary.runway)
 	D.label(b, "近 7 日平均净额 ¥ %+.0f/日 · %s" % [float(summary.operating_average), lasting], 19, D.TEAL)
 	_cover_line(g, b)
+	var totals: Dictionary = g.sim.stats_window(30)
+	_mine_line(g, b, totals)
 	var admin: Dictionary = g.sim.admin_view()
 	D.label(
 		b,
@@ -1112,7 +1123,6 @@ static func economy(g, b):
 		"CashChart",
 		[{"values": series.cash, "color": D.GOLD}, {"values": series.net, "color": D.TEAL}]
 	)
-	var totals: Dictionary = g.sim.stats_window(30)
 	var columns = D.row(b)
 	_money_column(g, columns, "近 30 日收入", totals.income, D.TEAL)
 	_money_column(g, columns, "近 30 日支出", totals.expense, D.GOLD)
