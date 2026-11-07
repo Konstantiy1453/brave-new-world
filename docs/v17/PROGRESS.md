@@ -1,3 +1,53 @@
+# Colony Charter 1.9 — Progress (in development)
+
+Started 2026-11-07 from the user's request after a friend compared the 1.8 demo with TerraGenesis:
+the planet should turn, show day and night with lit towns and roads at night, the surface looked
+too rough, and the map needs moving elements such as clouds (Plague Inc. / Rebel Inc. style). The
+3ds Max models uploaded the same day (release `art-assets-20261107`) are placed in the game. Balance
+work follows `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` Part A.
+
+Evidence labels as in `CLAUDE.md`. Everything below ran in a Linux cloud container (Godot 4.5.1
+Linux build, software OpenGL under Xvfb); the Windows EXE, real-GPU frame times and a human playtest
+are **NOT_RUN**.
+
+## Done
+
+| Area | What | Evidence |
+|---|---|---|
+| Moving globe | Planet spins (240 s a turn at 1×, faster with game speed, eases out on drag, zoom and click; a clicked site stays in view); fixed sun with a real terminator; seasons over the 360-day year move the terminator and the ice edges; moonlit night side | source-project window, screenshots viewed (`evidence/v17/art/dynamics/globe_*.png`) |
+| Night lights | Warm town lights, cold industrial lights and dotted road lamps after sunset on the globe and the flat map; town patches fade at night | screenshots viewed |
+| Surface | Atlas stores geography; per-pixel palette shared by globe, flat map and regional ground: smooth coastlines, blended biomes, sun-lit relief, ocean depth, glint, organic ice caps | screenshots viewed |
+| Clouds | Animated clouds on latitude winds, cross-faded layers, drifting cyclones with eyes and arms, day/night cloud lighting, twilight tint, atmosphere rim lit by the sun | screenshots viewed |
+| Region dynamics | Day and night from the site's place on the globe; lit windows, lamp pools, headlights; trucks, vans and buses on the service roads; smoke from working plants; drifting cloud shadows; rippling water; smooth cargo motion on globe and flat map | screenshots viewed |
+| Settings | 「地图画面」: spin, day/night with lights, clouds/weather (off hides clouds) | automated tests (ui_contract) |
+| Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (25 s, 4.0 MB); all 56 building kinds drawn with models (40 own, 16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts | automated conversion; contact sheets and region showcase viewed (`evidence/v17/art/gallery/`, `showcase_*.png`) |
+| Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
+
+## Test results (Linux)
+
+Headless suites: 34 pass, 4 fail — the same 4 as the untouched 1.8.0 source on Linux
+(`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`: Windows-recorded fixtures and world
+hashes do not reproduce on the Linux build). The 7 `review_*` tools also fail on both, on their
+hard-coded `D:` output paths. Window suites `world_v16_visual` and `world_v17_seam` pass.
+
+## Not done / open
+
+1. Windows: rebake the menu atlas with `tests/art/bake_menu_atlas.gd`, run the suites, export the EXE
+   and measure frame times on a real GPU (the cloud and flat-map shaders are the heaviest: about 20
+   texture reads a pixel on the flat map).
+2. 16 building kinds still borrow a related model (their own exist only as gray models or are not
+   made): deep_well, atmospheric_water, mine_copper, mine_crystal, tailings_plant, sea_copper,
+   crystal_vat, hydroponic_farm, protein_plant, foodworks, smelter, machine_works, pharma_plant,
+   institute, park, commerce. 7 models are used before their final visual review (`wip` in
+   `data/v17/models.json`).
+3. Road vehicles are procedural: no truck or car model was delivered.
+4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
+
+**Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
+`docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.
+
+---
+
 # Colony Charter 1.8 — Progress
 
 ## Final summary

@@ -3,11 +3,12 @@
 Single-player colony management game. Godot 4.5.1, GDScript, GL Compatibility, Windows x64.
 Deterministic fixed-step simulation, audited ledgers, Chinese UI, offline and free.
 
-The current job is version 1.8. Read these before doing anything:
+The current job is version 1.9: the moving map (spin, day and night, lights, clouds), the 3ds Max models placed
+in the game, and the money balance. Read these before doing anything:
 
-1. `docs/v17/V18_BRIEF.md` — the user's request, word for word, and the acceptance bar.
-2. `docs/v17/PROGRESS.md` — what is done, in progress and next. **Update it before stopping.**
-3. `docs/v17/V18_PLAN.md` — design and order of work for 1.8. `docs/v17/PLAN.md` still describes modules and data ownership.
+1. `docs/v17/PROGRESS.md` — the 1.9 section first: what is done, in progress and next. **Update it before stopping.**
+2. `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` — the 1.9 plan (money, models, bar).
+3. `docs/v17/V18_BRIEF.md` — the 1.8 request and acceptance bar; every row still holds.
 4. `docs/v17/DECISIONS.md` — judgment calls already made. Add one line per new call.
 
 Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` is the 1.7 brief. Folders keep the name `v17`.
@@ -32,8 +33,11 @@ Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` 
 and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.8 keeps its own saves in `%APPDATA%\ColonyCharter\v18` and only
 reads the user's 1.7 saves in `%APPDATA%\ColonyCharter\v17`; never write there either.
 
-`art_reserve/` belongs to a separate 3ds Max modelling task that may be running at the same time. Do not
-touch it and do not stage it. **Stage explicit paths; never `git add -A`.**
+`art_reserve/` belongs to a separate 3ds Max modelling task. Do not touch it and do not stage it. The models reach
+the game only through `game/tests/art/convert_models.gd` (recipes in `game/tests/art/model_recipes.json`), which
+reads an unpacked copy of the `art-assets-20261107` release outside the repository and writes
+`game/assets/models/*.res` and `game/data/v17/models.json`. No FBX, MAX or texture goes under `game/`.
+**Stage explicit paths; never `git add -A`.**
 
 ## Commands (PowerShell, from the project root)
 
@@ -53,6 +57,17 @@ $engine = 'D:\勇敢新世界\tools\godot-4.5.1\Godot_v4.5.1-stable_win64_consol
 # Balance harness (writes evidence\v17\balance\<timestamp>.json and refreshes docs\v17\BALANCE.md)
 & $engine --headless --path game --script res://tests/balance/run_balance.gd -- --quick --label=note
 & $engine --headless --path game --script res://tests/balance/run_balance.gd -- --full --jobs=12 --label=note
+```
+
+On Linux (cloud sessions) use the Linux build of Godot 4.5.1 and `tools/run_tests.py` (same suites, same rules;
+`--only`, `--jobs`, `--window` under `xvfb-run`). Four suites fail on Linux before any change because their
+fixtures and world hashes were recorded on Windows (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`);
+the `review_*` tools need their original `D:` paths. Model conversion and captures:
+
+```bash
+godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<unpacked art release>
+xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/model_gallery.gd
+xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/capture_dynamics.gd -- --days=900
 ```
 
 `gdformat` and `gdlint` are in the Python 3.12 Scripts folder and may not be on PATH. Git is at
