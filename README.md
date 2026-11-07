@@ -2,7 +2,9 @@
 
 单颗行星殖民经营游戏，当前可玩原型 **1.8.0**，使用 Godot **4.5.1** / GDScript / GL Compatibility，面向 Windows x64。项目按离线单机、免费、无内购的方向开发。
 
-本仓库提供可继续编辑的源码、玩法配置、测试与指定历史输入。完整离线工具、可运行版和 20 项模型资产通过 **[Releases](https://github.com/Konstantiy1453/brave-new-world/releases)** 提供。游戏基线为 `af752d255c49bff477a5e884237d99f887cfad0c`，交接资料日期为 **2026-11-06**。
+本仓库提供可继续编辑的源码、玩法配置、测试与指定历史输入。完整离线工具、可运行版和模型资产通过 **[Releases](https://github.com/Konstantiy1453/brave-new-world/releases)** 提供。游戏基线为 `af752d255c49bff477a5e884237d99f887cfad0c`，交接资料日期为 **2026-11-06**。
+
+**2026-11-07 三维资产更新：** [完整资产交接入口](art-assets/20261107/README.md) · [全部 MAX/FBX、贴图与预览下载](https://github.com/Konstantiy1453/brave-new-world/releases/tag/art-assets-20261107)。本次归档两套资产库全部现存文件，当前入口 77 项，其中续建正式验收 32 项；文化中心收尾后已暂停制作。全部独立保存，尚未接入游戏。
 
 ## 从 Git clone 开始开发
 

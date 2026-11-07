@@ -1,0 +1,385 @@
+{
+  "schema": "BNW_GITHUB_TRANSPORT_V1",
+  "created_utc": "2026-11-07T05:55:08Z",
+  "label": "独立保存，尚未接入游戏",
+  "repository": "Konstantiy1453/brave-new-world",
+  "tag": "art-assets-20261107",
+  "reason": "Large uploads repeatedly returned HTTP408. Original verified ZIP bytes are preserved; failed large files use 96MiB transport pieces.",
+  "archive_verification_sha256": "e35d1f3cd936a08a381c9be539982ffdb8c92dcb9bfbbce1147bc75a6370fd8e",
+  "archives": [
+    {
+      "filename": "BNW_3D_assets_20261107_part01_01_current_native.zip",
+      "bytes": 213211900,
+      "sha256": "ba658675cc44e28ece860b0065622a5e05f70bccf5c252b32c815f86ddbbb1be",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part01_01_current_native.zip",
+          "bytes": 213211900,
+          "sha256": "ba658675cc44e28ece860b0065622a5e05f70bccf5c252b32c815f86ddbbb1be",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part01_01_current_native.zip"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part02_02_current_fbx.zip",
+      "bytes": 770812889,
+      "sha256": "b45dbe816fa102091a2f1c43ffeda1d44253cee605eca4ece67e8504135bd871",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.001",
+          "bytes": 100663296,
+          "sha256": "8a73e16eaba9f52e09543db5765f704536e5de2f25e03b9b0a2bab52aed2ec3b",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.001"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.002",
+          "bytes": 100663296,
+          "sha256": "93277d2a8a043899511c0aa427b2f4e0f708f0fac0f1b08d4eca3797bbc21372",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.002"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.003",
+          "bytes": 100663296,
+          "sha256": "e85498e0cac94fc1bbe1c82c32fb9720a669de776bff883106c0ca98db2edf25",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.003"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.004",
+          "bytes": 100663296,
+          "sha256": "f9cf667cc5075a747799a24da394384c45c0b91ebc3a0c9addfd6e38913e8517",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.004"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.005",
+          "bytes": 100663296,
+          "sha256": "a42fef0e4bbaff6f88beb22afb2915bc1b3dbc089b4a5b3a92eb283517ef2931",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.005"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.006",
+          "bytes": 100663296,
+          "sha256": "8fa100aac8c24f2512ce96ad7a2130125fa3539adacf0414326224b0b6ef8847",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.006"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.007",
+          "bytes": 100663296,
+          "sha256": "667bd85bdedb32c4a3ff94c1e5539c4b79c5cd484e04d7ebadd56ca2907dff6c",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.007"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part02_02_current_fbx.zip.008",
+          "bytes": 66169817,
+          "sha256": "f58d33632d16316c03fe39f2ad6e80556abd2dd18fb252eb6776401dd17d66b7",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part02_02_current_fbx.zip.008"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip",
+      "bytes": 1544865399,
+      "sha256": "a25bf973194fef98acc77cff952aa13b27b48d7a71ad5363204d5b43624afac8",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.001",
+          "bytes": 100663296,
+          "sha256": "db7b211147f36f4af204376e9ed61101292923b30cf9bd714497964b76cda69b",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.001"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.002",
+          "bytes": 100663296,
+          "sha256": "7fa0943d37dd2464924c8467c8202d678f9b3135093dcf59eb00d9735ae3cd0f",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.002"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.003",
+          "bytes": 100663296,
+          "sha256": "882aca1508cfbe9d64c2b48c5d64324563a673bfaee76d83bc4633dfc8ee33de",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.003"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.004",
+          "bytes": 100663296,
+          "sha256": "eabd3836e0d21cbac3fb97a344dbe15e222c457fdb1f11d1a8aac5ec21ae1505",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.004"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.005",
+          "bytes": 100663296,
+          "sha256": "0bb5458d64830cc665f56f16b1f404e12217d174b2b32284eba9095b2fae4c91",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.005"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.006",
+          "bytes": 100663296,
+          "sha256": "e5352210d4be735e6667e334ce62ab2e03a74686edb66ae1a5c679171de97ee1",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.006"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.007",
+          "bytes": 100663296,
+          "sha256": "fec0aff9ce72f443258f654b28930ae800f08e7d9f12df28e5c38db1476ad4f3",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.007"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.008",
+          "bytes": 100663296,
+          "sha256": "9be2d28130ba3c6b4d9c14df7a481a47cd87d46dbe109335ba49d5f6f6a38c6b",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.008"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.009",
+          "bytes": 100663296,
+          "sha256": "c6d83b28b15f0dc6d1614a281a28b2d97f9e77410697a11407add46801ffcee3",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.009"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.010",
+          "bytes": 100663296,
+          "sha256": "8de458afde9146a4adb1f2eb491cf193089d73a997a733fc9b9c5470bf4d5187",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.010"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.011",
+          "bytes": 100663296,
+          "sha256": "a8af6ad2cb120dcb54245a2231dd683f474cd748bb9bc27f5bcbd8f60b416d4e",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.011"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.012",
+          "bytes": 100663296,
+          "sha256": "9ca068b9252b08e129b0b26d7fa8dafcc2101e40ac07f5b75fddf66e7bcf0836",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.012"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.013",
+          "bytes": 100663296,
+          "sha256": "701a8855289979a9baa06b3d5c46973f6a13e554c215e68c203459e7cfca497d",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.013"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.014",
+          "bytes": 100663296,
+          "sha256": "e71ea351c32587f3cd21be835f5976bfc9721b5f0b607a5583486c1357e5136e",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.014"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.015",
+          "bytes": 100663296,
+          "sha256": "b42ad0753fbf3da728457b21a1f0c2daf003d35f1434d0d69f91731b894521ff",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.015"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.016",
+          "bytes": 34915959,
+          "sha256": "e88e054adec8b7218b7f6d4692ea483e532f850890d582617634895802f0f12d",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part03_03_materials_all_versions.zip.016"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip",
+      "bytes": 963034137,
+      "sha256": "3d25254ff396900d9322f77af24daad0f1529f0b8adbd637d4061dd7fa0f00b0",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.001",
+          "bytes": 100663296,
+          "sha256": "222075e8da10d8ba96ed16201fe48fda7cd2b4db98db9597957ee4effb4ae596",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.001"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.002",
+          "bytes": 100663296,
+          "sha256": "70d10592356c1e648bc06befb0cc779c98ef1207de15226b965e268309150d92",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.002"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.003",
+          "bytes": 100663296,
+          "sha256": "08d0be1af7830846de76fd55d73ffbed5271b43a8813b1fd65277614346d590c",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.003"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.004",
+          "bytes": 100663296,
+          "sha256": "38e2f04abb385ba33306e01709a53901c5a436c58e58cf4068e6b102a68922ca",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.004"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.005",
+          "bytes": 100663296,
+          "sha256": "36fd04680c3d7cfbc6d47ae90136b7deda6befd4ff1eb5150f06ed5f2395c5e1",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.005"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.006",
+          "bytes": 100663296,
+          "sha256": "58ca2bde051549c98dd783f54ab590b3f91d009a66299c9069efa0075f42c73e",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.006"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.007",
+          "bytes": 100663296,
+          "sha256": "e7bd071a874f9ae19ab1f1993cbdb294bfa3ee7ecb67bd57c4519ba1157338c1",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.007"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.008",
+          "bytes": 100663296,
+          "sha256": "a128f760084deecae66f02b582be760b769a552d21768b38ff541ae4db4da949",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.008"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.009",
+          "bytes": 100663296,
+          "sha256": "11c7b123c5f7cc574bbeb1cd0aaefffd38c8f1ae2c28caae186c3e761ce88a66",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.009"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.010",
+          "bytes": 57064473,
+          "sha256": "86ac68a8466c30cba10b2a9f2d365eddd99698f14c342a06a78ba66c52c2f169",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part04_04_previews_all_versions.zip.010"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part05_05_documentation_evidence_sources.zip",
+      "bytes": 88871213,
+      "sha256": "68e44df14f7fcc0109e1f9c623dbd11c24f98c5eab51fd8f28c8294e9b4551c2",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part05_05_documentation_evidence_sources.zip",
+          "bytes": 88871213,
+          "sha256": "68e44df14f7fcc0109e1f9c623dbd11c24f98c5eab51fd8f28c8294e9b4551c2",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part05_05_documentation_evidence_sources.zip"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part06_06_historical_native.zip",
+      "bytes": 496241772,
+      "sha256": "bfe089dd5b5666c1f371a4374151d3bbebdb42db10f49d89eea3105a9ba51731",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part06_06_historical_native.zip",
+          "bytes": 496241772,
+          "sha256": "bfe089dd5b5666c1f371a4374151d3bbebdb42db10f49d89eea3105a9ba51731",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part06_06_historical_native.zip"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part07_06_historical_native.zip",
+      "bytes": 245608501,
+      "sha256": "d8d890fb2d952ddddf53ffb8dbb4ca704102c0c5c64cf1b8730d76301d7baf25",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part07_06_historical_native.zip",
+          "bytes": 245608501,
+          "sha256": "d8d890fb2d952ddddf53ffb8dbb4ca704102c0c5c64cf1b8730d76301d7baf25",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part07_06_historical_native.zip"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip",
+      "bytes": 1167490747,
+      "sha256": "25b3ea6970040d70e860e2eedba7041e773cb7d7b6cae60e438d6e7d6f87c45c",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.001",
+          "bytes": 100663296,
+          "sha256": "5cc63804a7bc3e7dda47a6498af06ae4d5d2189d13c23e7691cd68fa7f8e63ea",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.001"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.002",
+          "bytes": 100663296,
+          "sha256": "ff09bfdfa015abcc5c72cc9830cfeb20d5e3f9c4ecd3f2fd03dce1462ba9dc98",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.002"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.003",
+          "bytes": 100663296,
+          "sha256": "3abe151d8cc8f787933f776db4a789d7a1dca0ecb85356adc3447fbd131a9cc4",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.003"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.004",
+          "bytes": 100663296,
+          "sha256": "e34b92741ae28d3333f94e3de6c05cb6b0e876dc67c6c4ca31b3bba669605f5b",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.004"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.005",
+          "bytes": 100663296,
+          "sha256": "36059515610b78e02e87bb45d782c389cc260ea0c737fd9bccb26267c3bcad46",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.005"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.006",
+          "bytes": 100663296,
+          "sha256": "27340b4371c97cfacb4f59e465a9614fa5e629b3321b3a4d4917592ee2187977",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.006"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.007",
+          "bytes": 100663296,
+          "sha256": "996ccf4a454bccb7766dc8289b7d0ccaebec287c733bb99772c0138a1272b081",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.007"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.008",
+          "bytes": 100663296,
+          "sha256": "6db1ace38a46c0a11497267b1594062dcbd564f717b2d84e1c924f74ad5d6d32",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.008"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.009",
+          "bytes": 100663296,
+          "sha256": "a55cc3e1f23d8f44de7ab7e6cca8fd8beb61cb6e9c2be5295d48abdb52982f09",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.009"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.010",
+          "bytes": 100663296,
+          "sha256": "c6ff6e0d9023fc4eb1d2ee3af90664d1146a8e15cc06da3ab9c01435d42dffce",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.010"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.011",
+          "bytes": 100663296,
+          "sha256": "36b547faf571135cf097b9d4dfe3723155e8c1e8b159dffcec131c7ff8a955e3",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.011"
+        },
+        {
+          "name": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip.012",
+          "bytes": 60194491,
+          "sha256": "63dd4bc724d966f2c692744ba5fe590e0bdbf08092a953fddde453f51879b03d",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part08_07_historical_fbx.zip.012"
+        }
+      ]
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part09_07_historical_fbx.zip",
+      "bytes": 293190015,
+      "sha256": "5eef5d1ef8420c638eef1a0cb6d487dd3b0f8aaf4184fb890187c3f5bab7f0e2",
+      "parts": [
+        {
+          "name": "BNW_3D_assets_20261107_part09_07_historical_fbx.zip",
+          "bytes": 293190015,
+          "sha256": "5eef5d1ef8420c638eef1a0cb6d487dd3b0f8aaf4184fb890187c3f5bab7f0e2",
+          "url": "https://github.com/Konstantiy1453/brave-new-world/releases/download/art-assets-20261107/BNW_3D_assets_20261107_part09_07_historical_fbx.zip"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "archive_count": 9,
+    "transport_file_count": 51,
+    "total_bytes": 5783326573
+  }
+}

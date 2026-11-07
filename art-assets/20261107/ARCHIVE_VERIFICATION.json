@@ -1,0 +1,118 @@
+{
+  "status": "PASS_ARCHIVE_INTEGRITY_ONLY",
+  "completed_utc": "2026-11-07T05:25:55.192107+00:00",
+  "scope": "CRC and SHA-256 of every decompressed entry, safe relative paths, exact manifest count and bytes, ZIP SHA-256 and source stability. No new asset acceptance.",
+  "manifest_sha256": "a86b73dd1b7b5c44b9169d3581179494e27e18b4ce4f73c5630f788aae84ce8b",
+  "source_before": {
+    "phase": "pre_pack",
+    "files": 2627,
+    "bytes": 10035936473,
+    "status": "PASS",
+    "completed_utc": "2026-11-07T05:21:27.017039+00:00"
+  },
+  "source_after": {
+    "phase": "post_pack",
+    "files": 2627,
+    "bytes": 10035936473,
+    "status": "PASS",
+    "completed_utc": "2026-11-07T05:25:55.192107+00:00"
+  },
+  "parts": [
+    {
+      "filename": "BNW_3D_assets_20261107_part01_01_current_native.zip",
+      "bytes": 213211900,
+      "sha256": "ba658675cc44e28ece860b0065622a5e05f70bccf5c252b32c815f86ddbbb1be",
+      "file_count": 77,
+      "uncompressed_bytes": 750526464,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part02_02_current_fbx.zip",
+      "bytes": 770812889,
+      "sha256": "b45dbe816fa102091a2f1c43ffeda1d44253cee605eca4ece67e8504135bd871",
+      "file_count": 62,
+      "uncompressed_bytes": 1155975664,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part03_03_materials_all_versions.zip",
+      "bytes": 1544865399,
+      "sha256": "a25bf973194fef98acc77cff952aa13b27b48d7a71ad5363204d5b43624afac8",
+      "file_count": 128,
+      "uncompressed_bytes": 1653190465,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part04_04_previews_all_versions.zip",
+      "bytes": 963034137,
+      "sha256": "3d25254ff396900d9322f77af24daad0f1529f0b8adbd637d4061dd7fa0f00b0",
+      "file_count": 708,
+      "uncompressed_bytes": 964159663,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part05_05_documentation_evidence_sources.zip",
+      "bytes": 88871213,
+      "sha256": "68e44df14f7fcc0109e1f9c623dbd11c24f98c5eab51fd8f28c8294e9b4551c2",
+      "file_count": 1464,
+      "uncompressed_bytes": 946696265,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part06_06_historical_native.zip",
+      "bytes": 496241772,
+      "sha256": "bfe089dd5b5666c1f371a4374151d3bbebdb42db10f49d89eea3105a9ba51731",
+      "file_count": 47,
+      "uncompressed_bytes": 1781481472,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part07_06_historical_native.zip",
+      "bytes": 245608501,
+      "sha256": "d8d890fb2d952ddddf53ffb8dbb4ca704102c0c5c64cf1b8730d76301d7baf25",
+      "file_count": 93,
+      "uncompressed_bytes": 776744960,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part08_07_historical_fbx.zip",
+      "bytes": 1167490747,
+      "sha256": "25b3ea6970040d70e860e2eedba7041e773cb7d7b6cae60e438d6e7d6f87c45c",
+      "file_count": 32,
+      "uncompressed_bytes": 1609689504,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    },
+    {
+      "filename": "BNW_3D_assets_20261107_part09_07_historical_fbx.zip",
+      "bytes": 293190015,
+      "sha256": "5eef5d1ef8420c638eef1a0cb6d487dd3b0f8aaf4184fb890187c3f5bab7f0e2",
+      "file_count": 16,
+      "uncompressed_bytes": 397472016,
+      "crc_status": "PASS_ALL_ENTRIES_READ_TO_EOF",
+      "sha256_status": "PASS_ALL_ENTRIES",
+      "path_safety_status": "PASS"
+    }
+  ],
+  "summary": {
+    "part_count": 9,
+    "file_count": 2627,
+    "zip_bytes": 5783326573,
+    "raw_bytes": 10035936473
+  }
+}

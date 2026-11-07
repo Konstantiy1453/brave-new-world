@@ -1,0 +1,63 @@
+{
+  "schema": "BNW_ART_HANDOFF_STATUS_V1",
+  "created_utc": "2026-11-07T05:10:42.754934+00:00",
+  "label": "独立保存，尚未接入游戏",
+  "production_state": "PAUSED_BY_USER_AFTER_CULTURE_CENTER",
+  "scope": "Finish only the in-progress culture center, preserve all existing assets from both libraries and publish the archive. No further modeling, game edits or engine integration.",
+  "repository": "https://github.com/Konstantiy1453/brave-new-world",
+  "release_tag": "art-assets-20261107",
+  "delivery_channel": "GitHub Release binary assets plus repository handoff documentation",
+  "libraries": [
+    "max_highpoly_20261031",
+    "max_highpoly_continuation_20261102"
+  ],
+  "legacy_formal_entries": 21,
+  "legacy_evidence": "Original records preserved; no new full-library native or visual acceptance.",
+  "continuation_summary": {
+    "run": "20261107T130639_468399",
+    "accepted_count": 32,
+    "pending_count": 36,
+    "work_entry_count": 68,
+    "accepted_showcase_count": 0,
+    "pending_showcase_count": 3,
+    "showcase_entry_count": 3,
+    "total_formal_assets": 32,
+    "public_building_count": 56,
+    "supplementary_count": 12,
+    "package_status": "VALID_LISTED_ASSETS_WITH_PENDING_WORK",
+    "game_integration": "NOT_RUN_NOT_IN_SCOPE",
+    "physical_validation": "NOT_RUN_NOT_CLAIMED"
+  },
+  "existing_continuation": {
+    "asset_families": 56,
+    "accepted": 32,
+    "final_files_pending_visual": 7,
+    "existing_partial_environment_v003": 2,
+    "gray_only": 15,
+    "unproduced_main_candidates": 12,
+    "unproduced_showcases": 3
+  },
+  "last_completed_asset": {
+    "asset_id": "CC_CULTURE_CENTER_HP_v001",
+    "asset_parts": 347,
+    "triangles": 65008,
+    "native_job_id": "d77d60bb-4520-4558-a521-b4e48822de8e",
+    "native_job_status": "SUCCEEDED",
+    "native_host": "Autodesk 3ds Max 2024",
+    "max_reopen": "PASS",
+    "isolated_fbx_reimport": "PASS",
+    "final_visual": "PASS",
+    "source_max_sha256": "442ea8c6ba53fc013b147ef0ef7959c605654ab111aaf51dc1ef5cdeeaaa3143",
+    "fbx_sha256": "d13e64ed6d3ebef6064fd0f45541be4e012327fb5111c3c5b625e128bd36f1b7",
+    "visual_report_sha256": "706f6e0d48602d33539f767079ee69ca4a0d227ca79ed1d469682c4006807732"
+  },
+  "geography_scope": "Frozen CC-GEO-1.6, seed 260129 reference; not all current procedural worlds.",
+  "game_integration": "NOT_RUN_NOT_IN_SCOPE",
+  "game_changes": [],
+  "integrity_report": "ARCHIVE_VERIFICATION.json",
+  "server_upload_report": "UPLOAD_VERIFICATION.json (separate Release attachment after upload)",
+  "portable_path_check": "PORTABILITY_CHECK.json",
+  "cross_machine_full_library_validation": "NOT_RUN",
+  "remaining_work": "Per-task details remain in continuation 01_progress/COMPLETION_REPORT.md and root ASSET_INDEX.json. No pending status is promoted by packing.",
+  "resume_policy": "Do not resume production unless the user requests it. Existing historical scripts are source records, not an instruction to run them."
+}

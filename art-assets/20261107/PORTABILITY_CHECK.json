@@ -1,0 +1,49 @@
+{
+  "status": "PASS_SAME_MACHINE_RELOCATION_ONLY",
+  "native_host": "Autodesk 3ds Max 2024",
+  "pid": 33248,
+  "asset_id": "CC_CULTURE_CENTER_HP_v001",
+  "launcher_return": true,
+  "relinked_paths": [
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\concrete_basecolor_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\concrete_roughness_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\metal_basecolor_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\metal_roughness_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\paint_basecolor_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\paint_roughness_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\soil_basecolor_4k.png",
+    "D:\\勇敢新世界\\art_reserve\\github_handoff_20261107\\validation_probe_portability\\art_reserve\\max_highpoly_continuation_20261102\\07_materials_textures\\surfaces\\soil_roughness_4k.png"
+  ],
+  "launcher_actual_execution": "PASS",
+  "distinct_bitmap_files": 8,
+  "scene_object_count_including_review_setup": 362,
+  "relinked_copy_saved_and_reopened": "PASS",
+  "original_source_unchanged_sha256": "442ea8c6ba53fc013b147ef0ef7959c605654ab111aaf51dc1ef5cdeeaaa3143",
+  "probe_copy_sha256": "8dc4c3383af2de38f0b0415ca3871517f4741eee0d09cf4d2c26a298dd3a2e4d",
+  "tool_sha256": "850a41a9160672ddd9c655aefb49b2a25b988891db57370b375bcd7195c267eb",
+  "source_scene_restored": "PASS",
+  "prior_attempts": [
+    {
+      "job_id": "599199c2-ba2d-4a56-93c4-3adf19a1eedc",
+      "status": "FAIL",
+      "reason": "Initial helper used nonexistent rt.sceneMaps; replaced with getClassInstances(Bitmaptexture). No source file changed."
+    },
+    {
+      "job_id": "c119057f-9252-40bb-8035-28a4101e89b6",
+      "status": "REJECTED_BEFORE_EXECUTION",
+      "reason": "Prior scene load left bridge undo context active. Restarted only owned Max after confirming original saved; executed copy test in native startup context outside bridge undo transaction."
+    },
+    {
+      "status": "FAIL_THEN_FIXED",
+      "reason": "Max2024 nested python.ExecuteFile misencoded the Chinese __file__ path, causing blocked_missing. Launcher changed to UTF8/Base64 ASCII transport and runpy; final actual launcher execution, save and reopen passed."
+    },
+    {
+      "job_id": "186c5abc-b66b-4eeb-8ba0-ddda2c4b03b0",
+      "status": "REJECTED_BEFORE_EXECUTION",
+      "reason": "Bridge undo context remained active; no change executed. Final check ran in native startup context on owned PID33248."
+    }
+  ],
+  "scope": "Actual same-machine relocation to a distinct directory, Bitmaptexture remap, save and reopen of culture center only. No second machine or full-library validation; no geometry/material parameter edits. Probe is not a deliverable model.",
+  "checked_utc": "2026-11-07T05:20:15.139281+00:00",
+  "launcher_sha256": "ac09d6698e2e97e2084257418b771bf13cb095cbb75bdc443b03cd91df417b11"
+}
