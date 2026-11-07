@@ -8,7 +8,7 @@ work follows `docs/superpowers/plans/2026-11-01-v19-money-and-models-instruction
 
 Evidence labels as in `CLAUDE.md`. Everything below ran in a Linux cloud container (Godot 4.5.1
 Linux build, software OpenGL under Xvfb); the Windows EXE, real-GPU frame times and a human playtest
-are **NOT_RUN**.
+are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 
 ## Done
 
@@ -23,31 +23,42 @@ are **NOT_RUN**.
 | Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (25 s, 4.0 MB); all 56 building kinds drawn with models (40 own, 16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts | automated conversion; contact sheets and region showcase viewed (`evidence/v17/art/gallery/`, `showcase_*.png`) |
 | Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
 | Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
+| Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 48 checks, `ui_contract`), screenshots viewed (`evidence/v17/art/pages/economy*.png`) |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
-| | 1.8.0 on Linux | first pass (plan values) | kept (gentle) | stronger variant |
-|---|---|---|---|---|
-| Balanced award, median | day 2,464 (9/9) | day 2,548 (8/9) | day 2,400 (9/9) | day 2,398 (9/9) |
-| Cover day 720 to award, median / p90 | 74 / 158 | 12 / 76 | 15 / 101 | 11 / 69 |
-| Cover one year after award, median / p90 | 85 / 634 | 24 / 60 | 8 / 40 | 3 / 82 |
-| Absorption, years 3–7 | 79–111% | 95–107% | 92–111% | 96–110% |
-| Taken over (rush, balanced, research-first) | 0 / 27 | 3 / 27 | 2 / 27 | 1 / 27 |
-| Wage lever | +26% | +17% | +18%, +23% with homes exempt | +23% |
-| Services budget used (balanced) | - | - | 7 / 9 runs | 4 / 9 runs |
+| | 1.8.0 on Linux | first pass (plan values) | gentle | stronger variant | **kept: gentle, homes exempt** |
+|---|---|---|---|---|---|
+| Balanced award, median | day 2,464 (9/9) | day 2,548 (8/9) | day 2,400 (9/9) | day 2,398 (9/9) | day 2,599 (9/9) |
+| Research-first award, median | day 2,204 | day 2,554 (8/9) | day 2,274 (8/9) | day 2,416 (8/9) | day 2,479 (9/9) |
+| Cover day 720 to award, median / p90 | 74 / 158 | 12 / 76 | 15 / 101 | 11 / 69 | 16 / 85 |
+| Cover one year after award, median / p90 | 85 / 634 | 24 / 60 | 8 / 40 | 3 / 82 | 12 / 81 |
+| Absorption, years 3–7 | 79–111% | 95–107% | 92–111% | 96–110% | 93–108% |
+| Taken over (rush, balanced, research-first) | 0 / 27 | 3 / 27 | 2 / 27 | 1 / 27 | 2 / 27 |
+| Wage lever | +26% | +17% | +18% | +23% | +23% |
+| Services budget used (balanced) | - | - | 7 / 9 runs | 4 / 9 runs | 6 / 9 runs |
+| Openings: spread of medians | 24% (miss) | 8% | 17% (miss) | 23% (miss) | 4% |
 
-The kept configuration adds the housing exemption; its confirmation run is recorded in `BALANCE.md`
-(label `1.9-money-linux`). Quick runs have 3 seeds a cell, so differences of one takeover are noise; a full
-run (10 seeds, 3 difficulties) on Windows is still to do. The openings row still misses, as in 1.8.0.
+The last column is the kept configuration, confirmed by the run in `BALANCE.md` (label `1.9-money-linux`,
+2026-11-07T14-03-08). It meets every row a quick run measures except two: the services budget is used in 6
+of 9 balanced runs (the row asks for 8), and the sloppy row needs hard difficulty, which only full runs play.
+The openings row passes (medians 4% apart; the workers opening favours rush). Award medians are about 200
+days later than the gentle run without the exemption, but single runs moved both ways (balanced, science,
+seed 260129: day 2,304 → 2,174; capital, seed 20261029: 2,706 → 3,042). Both takeovers are rush runs that
+missed the main contract deadline (days 3,091 and 3,248). With 3 seeds a cell all of this may be noise: a
+full run (10 seeds, 3 difficulties) on Windows is still to do.
 
 ## Test results (Linux)
 
-Headless suites: 34 pass, 4 fail — the same 4 as the untouched 1.8.0 source on Linux
-(`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`: Windows-recorded fixtures and world
-hashes do not reproduce on the Linux build). The 7 `review_*` tools also fail on both, on their
-hard-coded `D:` output paths. Window suites `world_v16_visual` and `world_v17_seam` pass;
-`v16_interaction_probe` and `v16_scroll_probe` fail on the same fixture-loading errors as 1.8.0 on Linux.
-New suite `v19_money` passes; `v17_contract_population` follows the 1.9 administration rule.
+Headless suites, after the money readouts: 35 pass, 4 fail — the same 4 as the untouched 1.8.0 source
+on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`: Windows-recorded fixtures and
+world hashes do not reproduce on the Linux build). `v19_money` (48 checks) passes; `ui_contract` now
+also checks that the economy page shows the cover, administration and floor lines;
+`v17_contract_population` follows the 1.9 administration rule. Of the `review_*` tools,
+`review_save_nested` passes; the others fail on both versions on their hard-coded `D:` output paths (they
+then wait for the runner's 540 s timeout, so the last run was stopped after two of them). Window suites,
+last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` and
+`v16_scroll_probe` fail on the same fixture-loading errors as 1.8.0 on Linux.
 
 ## Not done / open
 
@@ -61,10 +72,13 @@ New suite `v19_money` passes; `v17_contract_population` follows the 1.9 administ
    `data/v17/models.json`).
 3. Road vehicles are procedural: no truck or car model was delivered.
 4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
-5. Money: commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7) are not
-   done; a full harness run (10 seeds, 3 difficulties) is still to do.
-6. Branch `v17` is not on GitHub: this cloud session has read access only (push refused with 403 until the
-   Claude GitHub App is installed on the repository). The user has a git bundle of the branch.
+5. Money: commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7), the
+   payback suite (A2.2), spending per sink and the windfall row (A2.9), 「钱花在哪」 on the economy page
+   and the warning for export income from mines running out (A2.10) are not done; a full harness run
+   (10 seeds, 3 difficulties) is still to do.
+6. The README still describes the 1.8.0 release; its 「后期钱会花不完」 limitation (in
+   `docs/HISTORICAL_README_1.8.md`) is answered in the 1.9 release notes once the full run confirms the
+   money rows.
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.

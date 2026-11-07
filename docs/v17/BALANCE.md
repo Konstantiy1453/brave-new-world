@@ -7,88 +7,61 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **v1.8.0** · 2026-11-01T03-10-20 · 2888 s wall clock. Source: balance harness.
+Run: **1.9-money-linux** · 2026-11-07T14-03-08 · 2934 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
-| Floor | rush bot day >= 1440 | earliest day 2086 | PASS |
-| Balanced award, normal | 2160-2880 | median 2454 (27/30 awarded) | PASS |
-| Balanced award, easy | 1800-2520 | median 2343 (28/30 awarded) | PASS |
-| Balanced award, hard | 2520-3240 | median 2709 (27/30 awarded) | PASS |
-| Openings | medians within 15%; best bot differs by opening | capital 2752, workers 2623, science 2294; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
+| Floor | rush bot day >= 1440 | earliest day 2331 | PASS |
+| Balanced award, normal | 2160-2880 | median 2599 (9/9 awarded) | PASS |
+| Balanced award, easy | 1800-2520 | median -1 (0/0 awarded) | NOT_MEASURED |
+| Balanced award, hard | 2520-3240 | median -1 (0/0 awarded) | NOT_MEASURED |
+| Openings | medians within 15%; best bot differs by opening | capital 2624, workers 2709, science 2594; best { "capital": "research_first", "workers": "rush", "science": "research_first" }; without rush { "capital": "research_first", "workers": "balanced", "science": "research_first" } | PASS |
 | Failure, passive | review 150-400, failure 400-900 | review 168, failure 438 | PASS |
-| Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 30/30 | PASS |
-| Population | >= 300 by year 2; >= 800 by year 4 | 385 / 946 | PASS |
-| Research, balanced | >= 40 techs; every category; research teams 10-20% | 40 techs; 4 categories; 12% | PASS |
-| Research-first | more techs than balanced, award in standard band | 74 techs; day 2163 | PASS |
-| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 92%; x3.70 | PASS |
-| Export mix | no good > 60% after year 2 | median 30%, worst 41% | PASS |
-| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 215 days; 53 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 47% | PASS |
-| Distrust | largest daily rise <= 0.8 | worst 0.52 | PASS |
-| Pollution | output penalty < 2% through year 3 | year 3 worst 0.5%; year 8 median 2.9% | PASS |
-| Roads | first road takes 90-300 days | median 146 days | PASS |
-| Pollution, no control | output penalty >= 15% by year 8 | 32.8% | PASS |
-| Audits | 0 errors in every run | 0 errors in 480 runs | PASS |
-| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 147 to 185 arrivals (+26%) | PASS |
-| Geography | sites 14-20 / 20-30 / 28-40; 3+ start pairs; 3+ start archetypes; land 25-45%; continents 2-6 | sites 15-20 / 20-30 / 28-40; pairs min 3; 4 archetypes; land 25-45%; continents 2,3,4,5,6 | PASS |
-| Road trade-off | cheaper road is the slower one for 30-70% of pairs | 90% of 2568 pairs | MISS |
+| Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 0/0 | MISS |
+| Population | >= 300 by year 2; >= 800 by year 4 | 318 / 910 | PASS |
+| Research, balanced | >= 40 techs; every category; research teams 10-20% | 40 techs; 4 categories; 11% | PASS |
+| Research-first | more techs than balanced, award in standard band | 85 techs; day 2479 | PASS |
+| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 101%; x4.97 | PASS |
+| Export mix | no good > 60% after year 2 | median 28%, worst 34% | PASS |
+| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 16 days, p90 85 days | PASS |
+| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 12 days, p90 81 days | PASS |
+| Services budget | used by the balanced bot (1.9 optional spending) | 6 of 9 runs, median 330 days paid | MISS |
+| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 95%, y4 93%, y5 108%, y6 102%, y7 93% | PASS |
+| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 193 days; 54 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 51% | PASS |
+| Distrust | largest daily rise <= 0.8 | worst 0.38 | PASS |
+| Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 2.7% | PASS |
+| Roads | first road takes 90-300 days | median 166 days | PASS |
+| Pollution, no control | output penalty >= 15% by year 8 | 35.5% | PASS |
+| Audits | 0 errors in every run | 0 errors in 48 runs | PASS |
+| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 154 to 190 arrivals (+23%) | PASS |
 | Determinism | same seed + action log => identical state | 3/3 replays identical | PASS |
 
 | Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop y2 / y4 / y8 | Techs at award |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| balanced | easy | capital | 10 | 100% | 2472 | 0% | -1 | 316 | 413 / 955 / 2323 | 40 |
-| balanced | easy | science | 10 | 90% | 2281 | 10% | 2797 | 375 | 299 / 879 / 2241 | 40 |
-| balanced | easy | workers | 10 | 90% | 2359 | 10% | 3184 | 458 | 438 / 948 / 2287 | 40 |
-| balanced | hard | capital | 10 | 80% | 2681 | 20% | 2663 | 231 | 365 / 951 / 2400 | 40 |
-| balanced | hard | science | 10 | 90% | 2579 | 20% | 3114 | 339 | 325 / 862 / 2267 | 48 |
-| balanced | hard | workers | 10 | 100% | 2786 | 0% | -1 | 284 | 381 / 940 / 2348 | 40 |
-| balanced | normal | capital | 10 | 80% | 2752 | 20% | 3283 | 281 | 383 / 951 / 2315 | 40 |
-| balanced | normal | science | 10 | 100% | 2294 | 10% | 3268 | 478 | 335 / 924 / 1931 | 46 |
-| balanced | normal | workers | 10 | 90% | 2623 | 10% | 3265 | 488 | 401 / 989 / 2235 | 40 |
-| passive | easy | capital | 10 | 0% | -1 | 100% | 536 | 25821 | -1 / -1 / -1 | -1 |
-| passive | easy | science | 10 | 0% | -1 | 100% | 522 | 9025 | -1 / -1 / -1 | -1 |
-| passive | easy | workers | 10 | 0% | -1 | 100% | 542 | 5454 | -1 / -1 / -1 | -1 |
-| passive | hard | capital | 10 | 0% | -1 | 100% | 353 | 13852 | -1 / -1 / -1 | -1 |
-| passive | hard | science | 10 | 0% | -1 | 100% | 342 | 3592 | -1 / -1 / -1 | -1 |
-| passive | hard | workers | 10 | 0% | -1 | 100% | 362 | 523 | -1 / -1 / -1 | -1 |
-| passive | normal | capital | 10 | 0% | -1 | 100% | 438 | 15851 | -1 / -1 / -1 | -1 |
-| passive | normal | science | 10 | 0% | -1 | 100% | 426 | 3684 | -1 / -1 / -1 | -1 |
-| passive | normal | workers | 10 | 0% | -1 | 100% | 446 | 656 | -1 / -1 / -1 | -1 |
-| random_legal | easy | capital | 10 | 0% | -1 | 90% | 471 | 8034 | 90 / -1 / -1 | -1 |
-| random_legal | hard | science | 10 | 0% | -1 | 100% | 311 | 0 | -1 / -1 / -1 | -1 |
-| random_legal | normal | workers | 10 | 0% | -1 | 100% | 393 | 0 | -1 / -1 / -1 | -1 |
-| research_first | easy | capital | 10 | 100% | 1771 | 0% | -1 | 285 | 400 / 1151 / -1 | 59 |
-| research_first | easy | science | 10 | 100% | 1714 | 0% | -1 | 248 | 371 / 1124 / -1 | 65 |
-| research_first | easy | workers | 10 | 100% | 1759 | 0% | -1 | 344 | 413 / 1171 / -1 | 59 |
-| research_first | hard | capital | 10 | 70% | 2256 | 30% | 2536 | 254 | 355 / 830 / 2441 | 74 |
-| research_first | hard | science | 10 | 90% | 2199 | 10% | 2729 | 293 | 361 / 933 / 2150 | 80 |
-| research_first | hard | workers | 10 | 70% | 2234 | 30% | 1633 | 127 | 340 / 849 / -1 | 76 |
-| research_first | normal | capital | 10 | 100% | 2209 | 0% | -1 | 282 | 373 / 875 / 1801 | 74 |
-| research_first | normal | science | 10 | 100% | 1982 | 0% | -1 | 250 | 407 / 1055 / -1 | 74 |
-| research_first | normal | workers | 10 | 100% | 2299 | 0% | -1 | 290 | 372 / 1088 / -1 | 75 |
-| rush | easy | capital | 10 | 100% | 2497 | 0% | -1 | 193 | 411 / 886 / -1 | 40 |
-| rush | easy | science | 10 | 100% | 2196 | 0% | -1 | 220 | 403 / 1024 / -1 | 40 |
-| rush | easy | workers | 10 | 100% | 2497 | 0% | -1 | 220 | 409 / 939 / -1 | 40 |
-| rush | hard | capital | 10 | 50% | 2664 | 50% | 2634 | 217 | 324 / 827 / 1820 | 43 |
-| rush | hard | science | 10 | 50% | 2654 | 50% | 2815 | 221 | 311 / 838 / 2189 | 45 |
-| rush | hard | workers | 10 | 70% | 2672 | 30% | 2619 | 137 | 346 / 887 / 2174 | 41 |
-| rush | normal | capital | 10 | 60% | 2528 | 40% | 2820 | 142 | 376 / 946 / 1891 | 40 |
-| rush | normal | science | 10 | 90% | 2509 | 10% | 3281 | 220 | 331 / 950 / 2354 | 45 |
-| rush | normal | workers | 10 | 80% | 2515 | 20% | 2828 | 290 | 404 / 985 / 1892 | 40 |
-| sloppy | easy | capital | 10 | 0% | -1 | 100% | 947 | 16388 | 60 / -1 / -1 | -1 |
-| sloppy | easy | science | 10 | 0% | -1 | 100% | 947 | 2258 | 60 / -1 / -1 | -1 |
-| sloppy | easy | workers | 10 | 0% | -1 | 100% | 820 | 1000 | 105 / -1 / -1 | -1 |
-| sloppy | hard | capital | 10 | 0% | -1 | 100% | 642 | 354 | -1 / -1 / -1 | -1 |
-| sloppy | hard | science | 10 | 0% | -1 | 100% | 642 | 239 | -1 / -1 / -1 | -1 |
-| sloppy | hard | workers | 10 | 0% | -1 | 100% | 566 | 312 | -1 / -1 / -1 | -1 |
-| sloppy | normal | capital | 10 | 0% | -1 | 100% | 764 | 3588 | 60 / -1 / -1 | -1 |
-| sloppy | normal | science | 10 | 0% | -1 | 100% | 764 | 218 | 60 / -1 / -1 | -1 |
-| sloppy | normal | workers | 10 | 0% | -1 | 100% | 670 | 358 | 104 / -1 / -1 | -1 |
+| balanced | normal | capital | 3 | 100% | 2624 | 0% | -1 | 295 | 413 / 910 / 2338 | 40 |
+| balanced | normal | science | 3 | 100% | 2594 | 0% | -1 | 368 | 293 / 939 / 2474 | 42 |
+| balanced | normal | workers | 3 | 100% | 2709 | 0% | -1 | 368 | 311 / 879 / 2294 | 40 |
+| passive | normal | capital | 3 | 0% | -1 | 100% | 438 | 16827 | -1 / -1 / -1 | -1 |
+| passive | normal | science | 3 | 0% | -1 | 100% | 426 | 4569 | -1 / -1 / -1 | -1 |
+| passive | normal | workers | 3 | 0% | -1 | 100% | 446 | 1476 | -1 / -1 / -1 | -1 |
+| random_legal | easy | capital | 1 | 0% | -1 | 0% | -1 | 0 | 30 / -1 / -1 | -1 |
+| random_legal | hard | science | 1 | 0% | -1 | 100% | 316 | 0 | -1 / -1 / -1 | -1 |
+| random_legal | normal | workers | 1 | 0% | -1 | 100% | 366 | 0 | -1 / -1 / -1 | -1 |
+| research_first | normal | capital | 3 | 100% | 2201 | 0% | -1 | 314 | 313 / 907 / -1 | 77 |
+| research_first | normal | science | 3 | 100% | 2574 | 0% | -1 | 348 | 330 / 813 / -1 | 95 |
+| research_first | normal | workers | 3 | 100% | 2717 | 0% | -1 | 307 | 371 / 691 / -1 | 85 |
+| rush | normal | capital | 3 | 100% | 2736 | 0% | -1 | 203 | 351 / 821 / 2372 | 43 |
+| rush | normal | science | 3 | 67% | 2636 | 33% | 3091 | 216 | 372 / 937 / 2152 | 50 |
+| rush | normal | workers | 3 | 67% | 2600 | 33% | 3248 | 157 | 350 / 840 / 2662 | 44 |
+| sloppy | normal | capital | 3 | 0% | -1 | 100% | 764 | 375 | 60 / -1 / -1 | -1 |
+| sloppy | normal | science | 3 | 0% | -1 | 100% | 764 | 246 | 60 / -1 / -1 | -1 |
+| sloppy | normal | workers | 3 | 0% | -1 | 100% | 764 | 15 | 104 / -1 / -1 | -1 |
 <!-- results:end -->
 
 ## History
 
 <!-- history:begin -->
+- 2026-11-07T14-03-08 · 1.9-money-linux (quick): 20 targets met, 2 missed.
 - 2026-11-01T03-10-20 · v1.8.0 (full): 20 targets met, 2 missed.
 - 2026-11-01T02-21-34 · 1.8 fifth full (full): 20 targets met, 2 missed.
 - 2026-11-01T01-32-25 · 1.8 fourth full (full): 20 targets met, 2 missed.
@@ -103,6 +76,14 @@ Run: **v1.8.0** · 2026-11-01T03-10-20 · 2888 s wall clock. Source: balance har
 - 2026-10-31T03-00-14 · phase 2 (quick): 3 targets met, 10 missed.
 - 2026-10-31T02-23-14 · phase 1 (full): 4 targets met, 11 missed.
 - 2026-10-31T02-00-23 · 1.6 baseline (full): 4 targets met, 11 missed.
+
+## 1.9 money
+
+The current results are a quick run (3 seeds, normal difficulty) on the Linux build: the easy and hard
+rows are not measured there, and the sloppy row cannot pass without hard games. The 1.9 money settings
+were compared over five such runs (1.8.0, the plan's starting values, gentle, stronger, and the kept
+gentle settings with homes exempt from the copy surcharge); the comparison table is in `PROGRESS.md`
+under "Money: quick harness on Linux". A full run (10 seeds, 3 difficulties) on Windows is still to do.
 
 ## Before and after
 

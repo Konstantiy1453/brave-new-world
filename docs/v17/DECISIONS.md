@@ -248,6 +248,10 @@ research-first games taken over.
   the plan's thresholds; balanced, research-first and rush use it, passive and sloppy do not.
 - Commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7) are not done ·
   the money rows pass without them; they remain the next ways to spend.
+- The confirmation run keeps the plan's bot thresholds for the services budget (up at 120 days of cover,
+  down below 45) and reports the harness row as missed (6 of 9 balanced runs; the row asks for 8) · with
+  money binding the optional budget is meant for colonies with cash to spare, and the 80% bar is this
+  job's own · lowering the bot's thresholds until a self-set row passes.
 - Cash cover is one read-only `Sim.cover_view()` (window, short and idle bands in `economy.json`) used by
   the economy page, the top bar, the advisor and the bots · the player sees what the bots steer by; the
   harness metric keeps its own ledger sampling so recorded rows stay comparable · a copy per caller.
