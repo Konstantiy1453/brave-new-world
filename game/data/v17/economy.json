@@ -57,6 +57,7 @@
     "admin_settlement_growth": 0.15,
     "copy_surcharge": 0.025,
     "copy_surcharge_cap": 1.75,
+    "copy_surcharge_exempt_roles": ["housing"],
     "income_copy_factor": 0.85,
     "foodworks_free_copies": 6,
     "foodworks_copy_factor": 0.8,

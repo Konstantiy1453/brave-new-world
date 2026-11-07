@@ -164,8 +164,12 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 		float(sim.state.world.regions[region].get("development_multiplier", 1.0))
 		* maxf(0.3, 1.0 + cheaper)
 	)
-	# Every further copy of a kind costs a little more cash; great works are one of a kind anyway.
-	var copies: int = 0 if great else Copies.count_kind(sim, kind)
+	# Every further copy of a kind costs a little more cash. Great works are one of a kind, and homes
+	# are what the charter's population needs, so neither pays it.
+	var exempt: Array = sim.config.economy.get("copy_surcharge_exempt_roles", [])
+	var copies: int = (
+		0 if great or str(d.get("role", "")) in exempt else Copies.count_kind(sim, kind)
+	)
 	var surcharge: float = minf(
 		float(sim.config.economy.get("copy_surcharge", 0.0)) * copies,
 		float(sim.config.economy.get("copy_surcharge_cap", 1.0)) - 1.0

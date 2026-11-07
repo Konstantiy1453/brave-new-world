@@ -88,6 +88,10 @@ func _copies() -> void:
 	)
 	var great: Dictionary = sim.build_preview(region, "university")
 	check(float(great.get("copy_surcharge", 0.0)) == 0.0, "great works pay no copy surcharge")
+	for _index: int in range(5):
+		place.buildings.append(_fake("habitat"))
+	var home: Dictionary = sim.build_preview(region, "habitat")
+	check(float(home.get("copy_surcharge", 0.0)) == 0.0, "homes pay no copy surcharge")
 	fund(sim, 1.0e9)
 	var forecast: Dictionary = sim.build_forecast(region, "farm")
 	check(

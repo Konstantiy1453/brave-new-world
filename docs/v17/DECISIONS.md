@@ -219,3 +219,32 @@ One line each: decision · reason · alternative rejected.
 - Open-pit mines stand in an open hex retaining wall as tall as the pit is deep · the terrain covers anything below ground · carving holes in the regional terrain.
 - No road-vehicle model was delivered (the excavators, haul carts and tractor are parts of buildings), so the town's trucks, vans and buses stay procedural behind a mesh table · the traffic code takes any mesh per kind · cutting the haul cart out of a mine for road traffic.
 - Tests run on Linux with `tools/run_tests.py` · cloud sessions have no Windows; four suites and the seven `review_*` tools fail on Linux before any change (Windows-recorded fixtures and hashes, hard-coded `D:` paths) and are reported as such · rewriting fixtures on Linux, which would then fail on Windows.
+
+## 1.9: money (2026-11-07)
+
+Quick harness on Linux (3 seeds, standard, 48 runs a configuration), baseline = untouched 1.8.0 source on
+Linux: balanced award median day 2,464; cash cover from day 720 to the award median 74 / p90 158 days;
+one year after the award median 85 / p90 634; absorption 79% in year 7; 0 of 27 rush, balanced and
+research-first games taken over.
+
+- First pass with the 1.9 plan's starting values (floor 0.5, +4% a copy to ×2, administration 1,500
+  residents and +25% a settlement) · it met every money row (cover 12 / 76 days) but 3 of 27 games were taken
+  over on contract deadlines with 1–4 days of cover, and the wage lever fell to +17% · it overshot the cover
+  bar fivefold; the plan's warning about the knife edge applied.
+- Kept the gentle variant: floor 0.55, +2.5% a copy to ×1.75, administration scale 2,500 residents and +15%
+  a settlement · cover 15 / 101 days before the award, 8 / 40 after, absorption 92–111%, balanced award day
+  2,400 (9/9), 2 of 27 games taken over · a stronger variant (floor 0.5, +3% to ×2, 2,000 / +20%) measured
+  the same within noise (1 of 27 taken over, lever +23%) but widened the openings to 23% and left money for
+  the services budget in only 4 of 9 runs.
+- Homes (role `housing`) pay no copy surcharge · dearer houses taxed exactly the population the charter
+  needs: the wage lever went from +18% to +23% in `lever_probe.gd` with the exemption · exempting nothing.
+- Data centres earn ×0.85 per further working copy; foodworks beyond the sixth ×0.8 · the 1.9 plan's quota
+  option; one rule in `simulation/copies.gd` serves the daily income and the build forecast · making
+  processed food and compute market goods, a bigger change to the market page.
+- Public services budget, levels 0–3 at ¥0.3 / 0.6 / 1.0 per resident a day, with the plan's effects · the
+  plan's optional sink that buys people gradually; an unpaid day does nothing rather than run arrears, so it
+  cannot push a colony into the takeover spiral · charging it as arrears like wages.
+- Bots raise the budget a level at 120 days of cover and lower it below 45, reviewed every 60 days ·
+  the plan's thresholds; balanced, research-first and rush use it, passive and sloppy do not.
+- Commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7) are not done ·
+  the money rows pass without them; they remain the next ways to spend.
