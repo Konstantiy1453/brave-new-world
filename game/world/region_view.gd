@@ -1338,7 +1338,7 @@ func _build_light_pools(pools: Array) -> void:
 
 ## Steam and smoke over a working plant. Light, slow and few: a sign of life, not weather.
 func _add_smoke(model: MeshInstance3D) -> void:
-	var top: AABB = model.mesh.get_aabb()
+	var top: AABB = _model_bounds(model)
 	var puff := CPUParticles3D.new()
 	puff.name = "Smoke"
 	puff.amount = 14
@@ -1369,6 +1369,16 @@ func _add_smoke(model: MeshInstance3D) -> void:
 	puff.mesh = sprite
 	model.add_child(puff)
 	smoke_emitters.append(puff)
+
+
+## The building's extent in its own frame, including a dressed model and its turn and scale.
+static func _model_bounds(model: MeshInstance3D) -> AABB:
+	var bounds: AABB = model.mesh.get_aabb()
+	for child: Node in model.get_children():
+		if child is MeshInstance3D and (child as MeshInstance3D).mesh != null:
+			var part: MeshInstance3D = child
+			bounds = bounds.merge(part.transform * part.mesh.get_aabb())
+	return bounds
 
 
 func _smoke_material() -> StandardMaterial3D:
