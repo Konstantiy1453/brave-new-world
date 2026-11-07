@@ -364,6 +364,8 @@ func _mine_outlook() -> void:
 	place.buildings.append(mine)
 	var unplaced: Dictionary = _fake("mine_copper")
 	place.buildings.append(unplaced)
+	# The civic service slot is a building without an entry in the building rules.
+	place.buildings.append(_fake("service"))
 	Stats.goods(sim.state, "ore", Stats.EXPORTED, 100.0)
 	Stats.close_day(sim.state)
 	var outlook: Dictionary = sim.mine_outlook(sim.stats_window(30))
@@ -391,3 +393,16 @@ func _mine_outlook() -> void:
 	mine.enabled = false
 	outlook = sim.mine_outlook(sim.stats_window(30))
 	check(float(outlook.share) == 0.0, "a mine switched off earns nothing to lose")
+	mine.enabled = true
+	place.buildings.append(_fake("processor"))
+	outlook = sim.mine_outlook(sim.stats_window(30))
+	check(
+		is_equal_approx(float(outlook.share), 1.0),
+		"parts made from the dying seam's ore are at risk with it"
+	)
+	place.buildings.append(_fake("tailings_plant"))
+	outlook = sim.mine_outlook(sim.stats_window(30))
+	check(
+		float(outlook.share) > 0.0 and float(outlook.share) < 1.0,
+		"ore from tailings, which never run out, dilutes the risk"
+	)

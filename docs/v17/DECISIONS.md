@@ -261,11 +261,18 @@ research-first games taken over.
 - The advisor line puts a pending message first, idle research teams second, a market at its floor third
   (only for goods exported in the last 30 days) and idle money last · research stays the heart of the game
   and a falling price is the more urgent money news · money advice above research.
-- Export income at risk weighs the month's export value of each mined good by the share of its mines'
-  full-rate output that comes from seams with under 360 days left; the advisor warns at a third
-  (`mine_warning_days`, `mine_warning_share`) and the warning comes before the floor and idle-money lines ·
-  everything it needs is already in the state (seam reserves, the build forecast's rate, the stats window),
-  so nothing new is saved · recording each mine's daily output and income in the save.
+- Export income at risk weighs the month's export value of each good by its dependence on seams with
+  under 360 days left: a raw good by the share of its supply (mines and renewable harvest) from such
+  seams, a factory good by the highest risk among its inputs (a factory needs all of them). The advisor
+  warns at a third (`mine_warning_days`, `mine_warning_share`), ahead of the floor and idle-money lines ·
+  everything it needs is already in the state (seam reserves, the build forecast's rates, the recipes,
+  the stats window), so nothing new is saved · recording each mine's daily output and income in the save.
+- Counting raw exports only missed the decline it is for: with the balanced bot stopped on day 1,080
+  (`mine_probe.gd --hands-off=1080`) the share sat at 16–26% while mines died one by one, and the ore
+  behind exported materials and parts was not counted (seed 42, capital: ore 17%, everything resting on
+  ore 48%). Counting processing, a third warns roughly 200–400 days (read from 180-day samples) before
+  income falls 20% in three of four such colonies; a fifth warned earlier but showed for 750 of 3,600 days in a bot game that keeps replacing its
+  mines · lowering the line to a fifth with the raw-only measure.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.

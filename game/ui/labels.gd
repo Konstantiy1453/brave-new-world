@@ -457,9 +457,9 @@ static func idle_money(sim: RefCounted) -> String:
 	return "钱闲着：可以升级、扩建设施，或开辟新据点"
 
 
-## The share of export income that comes from mines running out, with advice once it is too much.
+## The share of export income that depends on mines running out, with advice once it is too much.
 static func mine_warning(outlook: Dictionary, warn: bool) -> String:
 	return (
-		"近 30 日出口收入中约 %.0f%% 来自 %d 天内将采空的矿%s"
+		"近 30 日出口收入中约 %.0f%% 依赖 %d 天内将采空的矿（含用其矿石加工的产品）%s"
 		% [float(outlook.share) * 100.0, int(outlook.days), "，收入会下滑：提前开新矿或发展加工" if warn else ""]
 	)
