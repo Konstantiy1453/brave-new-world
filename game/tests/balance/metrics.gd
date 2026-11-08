@@ -126,6 +126,7 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
 	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
 	record.great_works = _great_works(sim)
+	record.shuttle_lines = _shuttle_lines(sim)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
@@ -142,6 +143,18 @@ func _great_works(sim: RefCounted) -> Dictionary:
 			if bool(spec.get("megaproject", false)) and int(b.remaining) <= 0:
 				built[str(b.kind)] = int(b.get("level", 1))
 	return built
+
+
+## Short-range shuttle lines opened over the run, and how many stood down for a road or sea route.
+func _shuttle_lines(sim: RefCounted) -> Dictionary:
+	var lines: Dictionary = {"opened": 0, "retired": 0}
+	for road: Dictionary in sim.state.roads:
+		if str(road.get("variant", "")) != sim.Keys.ROUTE_SHUTTLE:
+			continue
+		lines.opened += 1
+		if bool(road.get("retired", false)):
+			lines.retired += 1
+	return lines
 
 
 func _categories(sim: RefCounted) -> int:

@@ -461,6 +461,32 @@ static func _cash_rows(rows: Array, runs: Array) -> void:
 	_sinks_row(rows, group)
 	_windfall_row(rows, runs)
 	_great_works_row(rows, runs)
+	_shuttle_row(rows, runs)
+
+
+## Short-range shuttle (1.9): how many rush runs opened a line, how many lines in all, and how many
+## stood down when a road or sea route between the same settlements opened.
+static func _shuttle_row(rows: Array, runs: Array) -> void:
+	var flyers: Array = runs.filter(func(run: Dictionary) -> bool: return str(run.bot) == "rush")
+	var used: int = 0
+	var opened: int = 0
+	var retired: int = 0
+	for run: Dictionary in flyers:
+		var lines: Dictionary = run.get("shuttle_lines", {})
+		opened += int(lines.get("opened", 0))
+		retired += int(lines.get("retired", 0))
+		if int(lines.get("opened", 0)) > 0:
+			used += 1
+	_row(
+		rows,
+		"Shuttle lines",
+		"rush runs that opened a short-range shuttle line (no target)",
+		(
+			"%d/%d runs, %d lines, %d stood down for a road or sea route"
+			% [used, flyers.size(), opened, retired]
+		),
+		STATUS_INFO if not flyers.is_empty() else STATUS_NONE
+	)
 
 
 ## Late great works (1.9): in how many runs of the bots that build them each one stands at the end,
