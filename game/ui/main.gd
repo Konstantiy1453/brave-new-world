@@ -18,6 +18,8 @@ const Keys = preload("res://simulation/keys.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
+const V18_SAVE_MANUAL: String = "/ColonyCharter/v18/manual.save"
+const V18_SAVE_AUTO: String = "/ColonyCharter/v18/autosave.save"
 const V17_SAVE_MANUAL: String = "/ColonyCharter/v17/manual.save"
 const V17_SAVE_AUTO: String = "/ColonyCharter/v17/autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
@@ -1081,9 +1083,12 @@ func old_save_path(relative: String) -> String:
 	return OS.get_environment("APPDATA") + relative
 
 
-## The newer of the manual and automatic saves; a 1.7 or 1.6 save if this version has none yet.
+## The newer of the manual and automatic saves; a 1.8, 1.7 or 1.6 save if this version has none
+## yet. Older versions' files are only read: saving writes to this version's own folder.
 func _latest_save() -> String:
 	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(V18_SAVE_MANUAL), old_save_path(V18_SAVE_AUTO)])
 	if best == "":
 		best = _newest_of([old_save_path(V17_SAVE_MANUAL), old_save_path(V17_SAVE_AUTO)])
 	if best == "":

@@ -30,8 +30,8 @@ Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` 
 
 `%APPDATA%\ColonyCharter\v16` (player saves), `build\v16`, `delivery\` (except `delivery\v17`), `versions\`,
 `docs\v16\`, existing files under `evidence\` (write only to `evidence\v17`), `tools\godot-4.5.1\`,
-and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.8 keeps its own saves in `%APPDATA%\ColonyCharter\v18` and only
-reads the user's 1.7 saves in `%APPDATA%\ColonyCharter\v17`; never write there either.
+and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.9 keeps its own saves (schema 5) in `%APPDATA%\ColonyCharter\v19`
+and only reads the user's 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v18` and `\v17`; never write there either.
 
 `art_reserve/` belongs to a separate 3ds Max modelling task. Do not touch it and do not stage it. The models reach
 the game only through `game/tests/art/convert_models.gd` (recipes in `game/tests/art/model_recipes.json`), which

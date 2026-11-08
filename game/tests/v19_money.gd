@@ -64,6 +64,7 @@ func run() -> void:
 	_sinks()
 	_career_transfer()
 	_commissions()
+	_old_schema_save()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -586,3 +587,48 @@ func _commissions() -> void:
 		"selling points stays cheaper than buying them"
 	)
 	check(sim.audit().is_empty(), "the ledger balances")
+
+
+## A 1.8 save (schema 4, none of the 1.9 fields) loads, gets the defaults and a log line, plays
+## on, and its file is not touched.
+func _old_schema_save() -> void:
+	var sim: RefCounted = make()
+	for _day: int in range(3):
+		sim.tick()
+	var old: Dictionary = sim.state.duplicate(true)
+	old.schema = 4
+	old.policy.erase("services")
+	old.policy.erase("services_paid_day")
+	old.stats.erase("sinks")
+	for key: String in ["transferred", "transfer_year", "transfer_year_total"]:
+		old.career.erase(key)
+	for project: Dictionary in old.research.projects.values():
+		project.erase("commission")
+	var path: String = "user://v19_from_1_8.save"
+	var snap: Dictionary = SaveIo.snapshot(sim, path)
+	snap.raw = var_to_bytes(old)
+	snap.header.version = 4
+	check(SaveIo.write_snapshot(snap) == "", "a schema 4 file is written")
+	var before: PackedByteArray = FileAccess.get_file_as_bytes(path)
+	var loaded: RefCounted = Sim.new()
+	var error: String = loaded.load_game(path)
+	check(error == "", "a 1.8 save loads: " + error)
+	if error != "":
+		return
+	check(int(loaded.state.schema) == SaveIo.SCHEMA, "and is brought to schema 5")
+	check(int(loaded.state.policy.get("services", -1)) == 0, "with the services budget off")
+	check(loaded.state.stats.get("sinks") is Array, "with an empty spending record")
+	check(
+		str(loaded.state.log.back().text).begins_with("1.8 存档按 1.9 规则继续经营"),
+		"the log says it now plays by 1.9 rules"
+	)
+	check(loaded.Career.validate(loaded.state) == "", "the career record is valid")
+	loaded.tick()
+	check(loaded.audit().is_empty(), "it plays on with a balanced ledger")
+	check(FileAccess.get_file_as_bytes(path) == before, "the 1.8 file is left as it was")
+	var again: String = "user://v19_from_1_8_again.save"
+	check(loaded.save_game(again) == "", "it saves")
+	check(
+		int(SaveIo.read_header(again).get("version", 0)) == SaveIo.SCHEMA,
+		"as a schema 5 file of its own"
+	)
