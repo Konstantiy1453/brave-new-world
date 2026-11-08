@@ -308,9 +308,22 @@ research-first games taken over.
 - The globe and flat map draw each terraforming stage through the same palette inputs the rules change
   (1 °C toward 20 °C, more rain), with rain drawn at 3 points a stage more than the rules' 5% and a
   slightly clearer sea · a stage the player paid ¥120,000 or more for should show from orbit.
-- Bots: balanced and rush build, stage and level the late works from 150 days of cash cover, one step
-  every 30 days, and value the techs that unlock them a little in research; the generic upgrade logic
-  leaves great works alone · the plan's rule · letting cash alone decide.
+- A great work's later stages and levels buy what the town's warehouse lacks at import price, as its
+  first stage does (`supply_cost` in the upgrade preview; the button shows the total) · ports import
+  only a 70 t / 24 t working stock and factories fill at most the stock targets, so terraforming's
+  second stage (800 t materials, 260 t parts) needed a parts factory in the same town and a raised
+  target · every other upgrade still builds from local stock, as in 1.8.
+- Bots: balanced and rush build, stage and level the late works when cash pays for the step with its
+  supplies and keeps 10 days of expenses (60 before the award, when the charter comes first). The step
+  runs before the day's other building; after the award they save for the next one (new investment
+  waits) and chase its technologies (value +40, a paid redraw when none is on offer; before the award
+  only the unlocking technology counts, +6, as in the 1.9 phase 4 bots, which keeps the payback seed's
+  colony unchanged). The district's ground in the hall's town is cleared by pulling down a public
+  factory, and the district goes on that plot at once; a step refused for anything but money is left
+  alone for 360 days. No crews are waited for: great works need none to work. The generic upgrade logic
+  leaves great works alone · the plan's "150 days of cover" was never reached in 1.9 (cover peaked at
+  124–142 days while expenses grow with the colony), so no run built any work
+  (`1.9-great-works-linux`: 0 of 21) · the plan's cover rule as written.
 - The five new works use recoloured stand-ins (climate regulator, arcology, data centre, lift port,
   hospital) marked "not modelled yet" in `models.json` and `model_recipes.json` · the plan's interim
   kitbash until the 3ds Max task models them.
