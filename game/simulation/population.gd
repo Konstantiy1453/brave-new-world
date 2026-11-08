@@ -62,7 +62,7 @@ static func pay_services(sim: RefCounted) -> void:
 	if level <= 0:
 		return
 	var cost: float = services_cost(sim, level)
-	if float(sim.state.cash) < cost:
+	if sim.optional_room() < cost:
 		return
 	sim._public_expense(cost, "services.budget", "external")
 	sim.state.policy.services_paid_day = int(sim.state.day)

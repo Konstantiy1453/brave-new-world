@@ -1022,7 +1022,18 @@ static func _services_budget(g, b) -> void:
 	var rules: Dictionary = g.sim.pop_rules.get("services", {})
 	if rules.is_empty():
 		return
-	D.label(b, "公共服务预算：按全殖民地居民每天付费，提高吸引力、减少离开、增加出生，并减少污染带来的健康支出。现金不够付当天预算时，当天不生效。", 17, D.MUTED)
+	(
+		D
+		. label(
+			b,
+			(
+				"公共服务预算：按全殖民地居民每天付费，提高吸引力、减少离开、增加出生，并减少污染带来的健康支出。现金在留足 %.0f 天日常开支后不够付当天预算时，当天不付也不生效，不会因此欠债。"
+				% float(g.sim.config.economy.get("optional_reserve_days", 0.0))
+			),
+			17,
+			D.MUTED
+		)
+	)
 	var row = D.row(b)
 	var current: int = int(g.sim.state.policy.get("services", 0))
 	for level: int in range(int(rules.levels) + 1):

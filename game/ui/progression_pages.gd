@@ -134,6 +134,7 @@ static func _tech_card(g, parent, row: Dictionary, count):
 			)
 		else:
 			D.label(c, str(row.reason), 13, D.GOLD)
+		_commission_switch(g, c, row)
 		return
 	var previews: PackedStringArray = []
 	for preview: Dictionary in row.previews:
@@ -149,6 +150,45 @@ static func _tech_card(g, parent, row: Dictionary, count):
 	)
 	D.font_size(pick, 14)
 	pick.custom_minimum_size.y = 30
+
+
+## Commissioned research: a two-step switch on a project its own team is working on, each step
+## with its cost a day and the days it saves.
+static func _commission_switch(g, c, row: Dictionary) -> void:
+	var quotes: Array = row.get("commission_quotes", [])
+	if quotes.is_empty():
+		return
+	var line = D.row(c)
+	var tech: String = str(row.id)
+	var current: int = int(row.commission)
+	var off = D.button(
+		line,
+		"不委托",
+		func(): g.act("research_commission", {"tech": tech, "level": 0}),
+		"外部实验室按研究点收费，只加在有自己团队的课题上",
+		"Commission_%s_0" % tech
+	)
+	off.toggle_mode = true
+	off.button_pressed = current == 0
+	D.font_size(off, 12)
+	for quote: Dictionary in quotes:
+		var level: int = int(quote.level)
+		var button = D.button(
+			line,
+			"委托 %d 级 · ¥ %.0f/日 · 预计提前 %d 天" % [level, float(quote.cost), int(quote.days_saved)],
+			func(): g.act("research_commission", {"tech": tech, "level": level}),
+			"按研究点付费，从公共现金按日支付（计入投资）；现金不够的那天暂停，不会欠债",
+			"Commission_%s_%d" % [tech, level]
+		)
+		button.toggle_mode = true
+		button.button_pressed = current == level
+		D.font_size(button, 12)
+	if current > 0:
+		var state: String = str(quotes[mini(current, quotes.size()) - 1].state)
+		if state == "no_team":
+			D.label(c, "团队没有在做这个课题，委托暂停", 12, D.GOLD)
+		elif state == "no_cash":
+			D.label(c, "现金不够今天的委托（先留足日常开支），委托暂停", 12, D.GOLD)
 
 
 ## Paid outside work for the labs, once the academic network exists.

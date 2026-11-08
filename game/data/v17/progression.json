@@ -6,7 +6,8 @@
     "year_days": 360,
     "money": "account units",
     "staff": "persons",
-    "stock": "tonnes"
+    "stock": "tonnes",
+    "commission": "speedup: extra points a day per point of the team's own rate, by level; price: money per point by tier 1-5, times 1 + crowding per other running commission"
   },
   "scope": "all difficulties share rules; normal is baseline candidate calibration",
   "difficulty": {
@@ -49,6 +50,11 @@
     "projects_per_lab": 2,
     "minimum_staff": 3,
     "contract_point_price": 50.0,
+    "commission": {
+      "speedup": [0.0, 0.5, 1.0],
+      "price_per_point_by_tier": [100.0, 150.0, 220.0, 320.0, 450.0],
+      "crowding": 0.25
+    },
     "contract_tech": "research_network",
     "science_opening_rate": 1.1,
     "science_opening_funding": 0.5

@@ -231,6 +231,10 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Research.set_contract(self, int(args.get("staff", 0)))
 		"career_transfer":
 			refusal = Career.transfer(self, float(args.get("amount", 0.0)))
+		"research_commission":
+			refusal = Research.commission(
+				self, str(args.get("tech", "")), int(args.get("level", 0))
+			)
 	return refusal
 
 
@@ -599,6 +603,14 @@ func cover_view() -> Dictionary:
 
 func cash_cover() -> float:
 	return float(cover_view().cover)
+
+
+## Cash optional daily spending may use (services budget, commissioned research): what is left
+## after keeping `optional_reserve_days` of average operating expenses for today's bills, so an
+## optional payment never leaves a wage or an upkeep bill unpaid.
+func optional_room() -> float:
+	var keep: float = float(config.economy.get("optional_reserve_days", 0.0))
+	return float(state.cash) - keep * float(cover_view().expense)
 
 
 ## How much of a window's export value comes from mines about to run out (the advisor's warning).

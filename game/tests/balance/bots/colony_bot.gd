@@ -81,6 +81,10 @@ const SERVICES_REVIEW_PERIOD: int = 60
 ## Career transfer (1.9): after the award, cash above this much cover goes to the career balance.
 const TRANSFER_COVER: float = 240.0
 const TRANSFER_REVIEW_PERIOD: int = 60
+## Commissioned research (1.9): level 1 from this much cover, level 2 from twice it, all stopped
+## below the floor.
+const COMMISSION_FLOOR_COVER: float = 45.0
+const COMMISSION_REVIEW_PERIOD: int = 30
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -97,6 +101,10 @@ var fixed_wage: float = 0.0
 ## Whether this bot uses the public services budget (passive and sloppy players do not).
 var uses_services: bool = false
 var uses_transfer: bool = false
+var uses_commissions: bool = false
+## Commission every running project, not only the one the charter needs next.
+var commission_all: bool = false
+var commission_cover: float = 90.0
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -159,6 +167,7 @@ func on_day() -> void:
 	_research_contract()
 	_wages()
 	_public_services()
+	_commissions()
 	_career_transfer()
 
 
@@ -1194,6 +1203,37 @@ func _public_services() -> void:
 		act("policy", {"services": level + 1})
 	elif cover < SERVICES_DOWN_COVER and level > 0:
 		act("policy", {"services": level - 1})
+
+
+## Commissions on what the charter needs next (or on every running project), by cash cover.
+func _commissions() -> void:
+	if not uses_commissions or today() % COMMISSION_REVIEW_PERIOD != 0:
+		return
+	var cover: float = cash_cover()
+	var level: int = 0
+	if cover >= commission_cover * 2.0:
+		level = 2
+	elif cover >= commission_cover:
+		level = 1
+	var chain: Dictionary = _hall_chain()
+	var targets: Array = []
+	for column: Dictionary in sim.research_cards():
+		var running: Dictionary = column.running
+		if not running.is_empty():
+			targets.append(str(running.id))
+	if not commission_all:
+		var goal: Array = targets.filter(func(tech: String) -> bool: return chain.has(tech))
+		targets = goal.slice(0, 1) if not goal.is_empty() else targets.slice(0, 1)
+	var projects: Dictionary = sim.state.research.projects
+	for tech: String in projects:
+		var wanted: int = level if targets.has(tech) else 0
+		if cover < COMMISSION_FLOOR_COVER:
+			wanted = 0
+		if (
+			int(projects[tech].get("commission", 0)) != wanted
+			and not sim.state.research.completed.has(tech)
+		):
+			act("research_commission", {"tech": tech, "level": wanted})
 
 
 ## After the award, money a finished colony has no use for goes to the career balance, keeping

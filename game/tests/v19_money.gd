@@ -11,6 +11,8 @@ const Market = preload("res://simulation/market.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Research = preload("res://simulation/research.gd")
+const ResearchBot = preload("res://tests/balance/bots/research_first_bot.gd")
 
 const SEED: int = 260129
 const SAVE_PATH: String = "user://v19_money.save"
@@ -61,6 +63,7 @@ func run() -> void:
 	_mine_outlook()
 	_sinks()
 	_career_transfer()
+	_commissions()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -491,3 +494,95 @@ func _career_transfer() -> void:
 	)
 	drain(sim)
 	check(sim.act("career_transfer", {"amount": 10.0}) != "", "no transfer without the cash")
+
+
+func _ledger_today(sim: RefCounted, key: String) -> float:
+	var total: float = 0.0
+	for entry: Dictionary in sim.state.ledger:
+		if str(entry.key) == key and int(entry.day) == int(sim.state.day):
+			total += float(entry.amount)
+	return total
+
+
+## Commissioned research on a colony whose labs are at work: the research-first bot plays 150 days
+## with its own commissions off, then the test drives them.
+func _commissions() -> void:
+	var sim: RefCounted = Sim.new()
+	sim.new_game(SEED, "science", 1, "normal")
+	sim.state.events_v2.next_draw = 99999
+	var bot: RefCounted = ResearchBot.new()
+	bot.uses_commissions = false
+	bot.begin(sim, SEED)
+	for _day: int in range(150):
+		bot.on_day()
+		sim.tick()
+	var rules: Dictionary = sim.progression.research.commission
+	var working: Array = []
+	for key: String in sim.state.research.projects:
+		if int(sim.state.research.projects[key].effective) > 0:
+			working.append(key)
+	check(working.size() >= 2, "the labs run two projects to commission: %d" % working.size())
+	if working.size() < 2:
+		return
+	fund(sim, 1.0e7)
+	var first: String = working[0]
+	var second: String = working[1]
+	var quote: Dictionary = Research.commission_quote(sim, first, 1)
+	var p: Dictionary = sim.state.research.projects[first]
+	check(
+		is_equal_approx(float(quote.extra), float(p.rate) * float(rules.speedup[1])),
+		"level 1 adds half the team's own points"
+	)
+	check(
+		is_equal_approx(
+			float(quote.cost),
+			(
+				float(quote.extra)
+				* float(rules.price_per_point_by_tier[int(sim.config.techs[first].tier) - 1])
+			)
+		),
+		"priced by the project's tier"
+	)
+	check(int(quote.days_saved) > 0, "and it saves days")
+	check(sim.act("research_commission", {"tech": first, "level": 1}) == "", "commissioned")
+	var work: float = float(p.work)
+	sim.tick()
+	var paid: float = _ledger_today(sim, "research.commission")
+	check(paid > 0.0, "the day's commission is paid")
+	check(
+		float(p.work) > work + float(p.rate) * 1.4,
+		"the project gains its team's points and the commission's"
+	)
+	check(
+		float(sim.sinks_by_year()[0].get("commissions", 0.0)) >= paid,
+		"commissions are a spending sink"
+	)
+	var crowded: Dictionary = Research.commission_quote(sim, second, 1)
+	check(
+		is_equal_approx(
+			float(crowded.cost) / float(crowded.extra),
+			Research.commission_price(sim, second, 0) * (1.0 + float(rules.crowding))
+		),
+		"each other commission makes points dearer"
+	)
+	check(sim.act("research_commission", {"tech": second, "level": 1}) == "", "a second one")
+	check(
+		sim.act("research_commission", {"tech": first, "level": 9}) != "",
+		"no level beyond the table"
+	)
+	check(sim.act("research_allocate", {"tech": second, "staff": 0}) == "", "team stood down")
+	check(
+		sim.act("research_commission", {"tech": second, "level": 2}) != "",
+		"no commission without a team"
+	)
+	drain(sim)
+	sim.tick()
+	check(_ledger_today(sim, "research.commission") == 0.0, "no cash, no commission today")
+	check(
+		(
+			float(sim.progression.research.contract_point_price)
+			< float(rules.price_per_point_by_tier[0])
+		),
+		"selling points stays cheaper than buying them"
+	)
+	check(sim.audit().is_empty(), "the ledger balances")

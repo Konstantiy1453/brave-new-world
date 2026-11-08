@@ -391,6 +391,7 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 			p.work = minf(float(sim.config.techs[key].cost), float(p.work) + float(p.rate))
 			if p.work >= float(sim.config.techs[key].cost):
 				finished.append(key)
+	_commissions(sim, advance, finished)
 	for key: String in finished:
 		_finish(sim, key)
 	r.contract.effective = 0
@@ -437,6 +438,91 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 
 static func tick(sim: RefCounted) -> void:
 	rebalance(sim, true)
+
+
+## Commissioned research (1.9): outside labs add points to a project its own team is working on,
+## paid daily from public cash as investment. Level 0 stops it. No team, no commission.
+static func commission(sim: RefCounted, tech: String, level: int) -> String:
+	ensure(sim)
+	var r: Dictionary = sim.state.research
+	var rules: Dictionary = sim.progression.research.get("commission", {})
+	if rules.is_empty():
+		return "委托研究未开放"
+	if level < 0 or level >= rules.speedup.size():
+		return "委托级别无效"
+	if not r.projects.has(tech) or r.completed.has(tech):
+		return "只能委托正在进行的课题"
+	if level > 0 and int(r.projects[tech].staff) <= 0:
+		return "委托研究只能加在有自己团队的课题上"
+	r.projects[tech].commission = level
+	rebalance(sim, false)
+	return ""
+
+
+## Projects whose commission runs today: a level set and the project's own team at work.
+static func _commissioned(sim: RefCounted, finished: Array = []) -> Array:
+	var r: Dictionary = sim.state.research
+	var running: Array = []
+	for key: String in r.projects:
+		var p: Dictionary = r.projects[key]
+		if int(p.get("commission", 0)) <= 0 or r.completed.has(key) or finished.has(key):
+			continue
+		if int(p.effective) > 0:
+			running.append(key)
+	return running
+
+
+## Money a point costs from outside labs: by the project's tier, dearer with every other
+## commission running at the same time.
+static func commission_price(sim: RefCounted, tech: String, others: int) -> float:
+	var rules: Dictionary = sim.progression.research.commission
+	var prices: Array = rules.price_per_point_by_tier
+	var tier: int = clampi(int(sim.config.techs[tech].tier), 1, prices.size())
+	return float(prices[tier - 1]) * (1.0 + float(rules.crowding) * maxi(0, others))
+
+
+## Pays today's commissions and adds their points; a day the cash cannot cover pauses that one.
+static func _commissions(sim: RefCounted, advance: bool, finished: Array) -> void:
+	if not advance or sim.progression.research.get("commission", {}).is_empty():
+		return
+	var running: Array = _commissioned(sim, finished)
+	for key: String in running:
+		var quote: Dictionary = commission_quote(
+			sim, key, int(sim.state.research.projects[key].commission)
+		)
+		if float(quote.cost) <= 0.0 or sim.optional_room() < float(quote.cost):
+			continue
+		sim._transfer("public", "external", float(quote.cost), "research.commission", false, key)
+		var p: Dictionary = sim.state.research.projects[key]
+		var total_cost: float = float(sim.config.techs[key].cost)
+		p.work = minf(total_cost, float(p.work) + float(quote.extra))
+		if float(p.work) >= total_cost and not finished.has(key):
+			finished.append(key)
+
+
+## What a commission at `level` adds and costs a day on this project now, and the days it saves.
+## `state` is "off", "running", "no_team" (its own team is not at work) or "no_cash".
+static func commission_quote(sim: RefCounted, tech: String, level: int) -> Dictionary:
+	var rules: Dictionary = sim.progression.research.get("commission", {})
+	var p: Dictionary = sim.state.research.projects.get(tech, {})
+	if rules.is_empty() or p.is_empty() or level <= 0:
+		return {"level": 0, "extra": 0.0, "cost": 0.0, "days_saved": 0, "state": "off"}
+	var others: int = (
+		_commissioned(sim).filter(func(key: String) -> bool: return key != tech).size()
+	)
+	var rate: float = float(p.get("rate", 0.0))
+	var extra: float = rate * float(rules.speedup[clampi(level, 0, rules.speedup.size() - 1)])
+	var cost: float = extra * commission_price(sim, tech, others)
+	var left: float = maxf(0.0, float(sim.config.techs[tech].cost) - float(p.get("work", 0.0)))
+	var saved: int = 0
+	if rate > 0.0 and extra > 0.0:
+		saved = ceili(left / rate) - ceili(left / (rate + extra))
+	var state: String = "running"
+	if int(p.get("effective", 0)) <= 0:
+		state = "no_team"
+	elif sim.optional_room() < cost:
+		state = "no_cash"
+	return {"level": level, "extra": extra, "cost": cost, "days_saved": saved, "state": state}
 
 
 ## Windfall research goes to the project with the most work already done.
@@ -528,7 +614,18 @@ static func _row(sim: RefCounted, key: String) -> Dictionary:
 		"rate": float(project.get("rate", 0.0)),
 		"reason": str(project.get("reason", "")),
 		"previews": previews,
+		"commission": int(project.get("commission", 0)),
+		"commission_quotes": _quotes(sim, key),
 	}
+
+
+## Quotes for every commission level above 0, for the research page's switch.
+static func _quotes(sim: RefCounted, key: String) -> Array:
+	var quotes: Array = []
+	var levels: int = sim.progression.research.get("commission", {}).get("speedup", []).size()
+	for level: int in range(1, levels):
+		quotes.append(commission_quote(sim, key, level))
+	return quotes
 
 
 static func _unlocks(sim: RefCounted, tech: String) -> Array:

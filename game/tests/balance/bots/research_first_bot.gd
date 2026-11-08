@@ -5,6 +5,9 @@ extends "res://tests/balance/bots/colony_bot.gd"
 func _init() -> void:
 	uses_services = true
 	uses_transfer = true
+	uses_commissions = true
+	commission_all = true
+	commission_cover = 60.0
 	reserve_days = 5.0
 	payback_limit = 500.0
 	science_target = 0.2
