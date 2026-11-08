@@ -90,10 +90,10 @@ area, figures here):
 
 ## Test results (Linux)
 
-Headless suites, after the late great works (commit `c5cb6d0`): 36 pass, 4 fail — the same 4, with the
-same failing checks, as the untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`,
-`world_v16_seed`: Windows-recorded fixtures and world hashes do not reproduce on the Linux build).
-`v19_money` (155 checks) and `v19_payback` (39 checks) pass; `ui_contract` checks the economy page's
+Headless suites at commit `3c19e77`: 37 pass, 4 fail — the same 4, with the same failing checks, as the
+untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`:
+Windows-recorded fixtures and world hashes do not reproduce on the Linux build). `v19_money` (155 checks),
+`v19_payback` (39 checks) and the new `v19_art` (479 checks) pass; `ui_contract` checks the economy page's
 cover, administration and floor lines; `v17_contract_population` follows the 1.9 administration rule. Of
 the `review_*` tools, `review_save_nested` passes; the others fail on both versions on their hard-coded
 `D:` output paths (they then wait for the runner's 540 s timeout, so they were not run this time). Window
