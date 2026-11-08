@@ -3,6 +3,7 @@ extends SceneTree
 ## chosen moments: the globe by day and by night, the flat map, and a region at noon and at night.
 ## Options: --seed=260129 --days=900 --out=res://../evidence/v17/art/dynamics --size=1600x900
 ## --terraform=3 draws the map as if that many terraforming stages were finished (render-only).
+## --shuttle adds a render-only shuttle line from the home town to the second settlement.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -51,8 +52,18 @@ func run() -> void:
 	map.setup(sim.geo)
 	map.sync_state(sim.state)
 	var stages: int = int(str(options.get("terraform", "0")))
+	var shown: Dictionary = sim.state.duplicate(true)
+	if str(options.get("shuttle", "")) == "true":
+		var line: Dictionary = _shuttle_line(sim)
+		if not line.is_empty():
+			line.id = shown.roads.size()
+			line.ready_day = 0
+			line.blocked_until = 0
+			line.sent_today = 0.0
+			shown.roads.append(line)
+			map.sync_state(shown)
+		print("CAPTURE_DYNAMICS shuttle line=%s" % str(not line.is_empty()))
 	if stages > 0:
-		var shown: Dictionary = sim.state.duplicate(true)
 		shown.settlements[0].buildings.append(
 			{
 				"kind": "terraforming",
@@ -92,6 +103,17 @@ func run() -> void:
 		await _shot("region_dusk")
 		_set_local_time(home, PI)
 		await _shot("region_night")
+	if wanted.contains("pad"):
+		map.show_region(int(home.id))
+		while map.region_busy:
+			await process_frame
+		_set_local_time(home, 0.4)
+		map.local_distance = 52.0
+		map.smooth_distance = 52.0
+		for view: int in range(4):
+			map.local_yaw = 0.68 + view * PI * 0.5
+			map.smooth_yaw = map.local_yaw
+			await _shot("region_side_%d" % view)
 	if wanted == "all" or wanted.contains("showcase"):
 		await _showcase(sim, home)
 	var file := FileAccess.open(folder + "/report.json", FileAccess.WRITE)
@@ -104,6 +126,19 @@ func run() -> void:
 		)
 	)
 	quit(0 if report.failures.is_empty() else 1)
+
+
+## The first pair of settlements a shuttle can join, home first; empty when none can.
+func _shuttle_line(sim: RefCounted) -> Dictionary:
+	var places: Array = sim.state.settlements
+	for first: int in range(places.size()):
+		for second: int in range(first + 1, places.size()):
+			var line: Dictionary = sim.road_quote(
+				int(places[first].region), int(places[second].region), "shuttle"
+			)
+			if bool(line.reachable):
+				return line
+	return {}
 
 
 ## Hour angle 0 is local noon at the site, PI local midnight.

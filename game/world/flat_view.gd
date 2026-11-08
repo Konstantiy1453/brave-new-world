@@ -326,13 +326,16 @@ func _update_flat_transport() -> void:
 		child.queue_free()
 	flat_movers.clear()
 	for route: Dictionary in state.get("roads", []):
-		_draw_road_on_flat(route)
+		if not bool(route.get("retired", false)):
+			_draw_road_on_flat(route)
 	_place_movers(flat_movers, sky.day_fraction)
 
 
 func _draw_road_on_flat(route: Dictionary) -> void:
 	var day: int = int(state.get("day", 0))
 	var route_color := Color("e7bb75")
+	if str(route.get("variant", "")) == "shuttle":
+		route_color = SHUTTLE_COLOR
 	if Geo.road_building(route, day):
 		route_color = Color("8fa1a8")
 	elif Geo.road_blocked(route, day):

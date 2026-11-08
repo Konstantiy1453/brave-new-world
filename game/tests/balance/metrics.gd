@@ -102,7 +102,7 @@ func sample(sim: RefCounted) -> void:
 	)
 	if int(record.first_road_days) < 0:
 		for road: Dictionary in state.roads:
-			if str(road.get("variant", "")) != "sea":
+			if not str(road.get("variant", "")) in ["sea", "shuttle"]:
 				record.first_road_days = int(road.get("build_days", 0))
 				break
 	if state.status == "success" and int(record.award_day) < 0:

@@ -314,6 +314,21 @@ research-first games taken over.
 - The five new works use recoloured stand-ins (climate regulator, arcology, data centre, lift port,
   hospital) marked "not modelled yet" in `models.json` and `model_recipes.json` · the plan's interim
   kitbash until the 3ds Max task models them.
+- Short-range shuttle (the user's request, 2026-11-08): a fourth route variant in `economy.json`
+  `roads.shuttle`, a straight hop of at most 3,500 km (nearest neighbours are 1,900–3,100 km apart by
+  median on the three planet sizes), pads ready in 10 days, 1–2 days a trip, 4 t a day, ¥8,000 +
+  ¥2/km, ¥40 a day upkeep and 30 times a road's fee a tonne, no technology needed · early, very dear,
+  very small and fast, as asked · a 900 km range, which reached no settlement on an Earth-sized world.
+- A road or sea route may be built where a shuttle flies, and the shuttle stands down (no traffic, no
+  upkeep) the day it opens; one shuttle line per pair; never paved; left out of the contract's network,
+  the first-road metric and the road lamps at night · a stopgap must not replace the network the
+  contract asks for · counting shuttle lines as network.
+- The rush bot flies a shuttle to each new outpost while that outpost's road is saved for and built;
+  every bot counts only roads and sea routes as joining an outpost · the harness's floor row then
+  catches a shuttle that shortens the game · no bot using it.
+- In the region view the shuttle lands on a lit pad on the nearest clear, dry ground back from the
+  lane's end, and flies a simple lifting body until the `shuttle` model exists · the lane's end itself
+  can be a building's plot.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.

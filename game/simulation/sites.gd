@@ -411,7 +411,7 @@ static func links(sim: RefCounted, site: int) -> Dictionary:
 	if from < 0:
 		return {}
 	var variants: Dictionary = {}
-	for variant: String in ["valley", "engineered", "sea"]:
+	for variant: String in ["valley", "engineered", "sea", Keys.ROUTE_SHUTTLE]:
 		var road: Dictionary = Logistics.quote(sim, from, site, variant)
 		variants[variant] = {
 			"reachable": bool(road.reachable),

@@ -74,6 +74,7 @@ func run() -> void:
 	_commissions()
 	_old_schema_save()
 	_great_works()
+	_shuttle()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -770,3 +771,87 @@ func _great_works() -> void:
 		"the next stage is an upgrade at its own price"
 	)
 	check(Megaprojects.count(sim) >= 5, "five finished kinds count for the milestone")
+
+
+## The short-range shuttle (1.9): an early, dear, small and fast link that stands down when a road
+## between the same two settlements opens, and is not part of the contract's network.
+func _shuttle() -> void:
+	var sim: RefCounted = make()
+	fund(sim, 1.0e6)
+	var home: int = int(sim.state.settlements[0].region)
+	Production.produce(sim, sim.state.settlements[0], "materials", 500.0, "test")
+	# The expedition licence of contract stage 1, so a second settlement may be founded.
+	sim.state.contract.licences.append("expedition")
+	var spec: Dictionary = sim.config.roads[Keys.ROUTE_SHUTTLE]
+	var near: int = -1
+	var far: int = -1
+	for site: int in range(sim.state.world.regions.size()):
+		if site == home:
+			continue
+		var quote: Dictionary = sim.road_quote(home, site, Keys.ROUTE_SHUTTLE)
+		if not bool(quote.reachable):
+			far = site if far < 0 else far
+			continue
+		if near < 0 and sim.road_quote(home, site, "valley").reachable:
+			if sim.act("settle", {"site": site, "from": home}) == "":
+				near = site
+	check(near >= 0, "a settlement within shuttle range")
+	check(far >= 0, "and a site beyond it")
+	if near < 0:
+		return
+	check(
+		str(sim.road_quote(home, far, Keys.ROUTE_SHUTTLE).reason).contains("航程"),
+		"beyond the range the reason says so"
+	)
+	var quote: Dictionary = sim.road_quote(home, near, Keys.ROUTE_SHUTTLE)
+	check(float(quote.distance) <= float(spec.max_km), "within the range")
+	check(
+		is_equal_approx(
+			float(quote.cost),
+			float(spec.base_cost) + float(quote.distance) * float(spec.cost_per_km)
+		),
+		"priced at its base and per kilometre, with no technology needed"
+	)
+	check(int(quote.build_days) == int(spec.build_days), "its pads are built in days")
+	var road: Dictionary = sim.road_quote(home, near, "valley")
+	check(int(quote.days) <= int(road.days), "it is at least as fast as the road")
+	check(int(quote.capacity) < int(road.capacity) / 4, "and carries a fraction of it")
+	check(
+		sim.act("connect", {"a": home, "b": near, "variant": Keys.ROUTE_SHUTTLE}) == "",
+		"a shuttle line is built"
+	)
+	check(
+		sim.act("connect", {"a": home, "b": near, "variant": Keys.ROUTE_SHUTTLE}) != "",
+		"not two of them"
+	)
+	var line: Dictionary = sim.state.roads.back()
+	check(Logistics.largest_connected(sim) == 1, "a shuttle line is not the contract's network")
+	check(sim.act("upgrade_road", {"road": int(line.id)}) != "", "and is never paved")
+	for _day: int in range(int(spec.build_days) + 2):
+		sim.tick()
+	check(not sim.WorldGen.road_building(line, int(sim.state.day)), "the pads are ready")
+	check(
+		sim.Logistics._road_capacity(sim, line) <= float(spec.capacity) + 0.001,
+		"it carries its small load"
+	)
+	var valley: String = sim.act("connect", {"a": home, "b": near, "variant": "valley"})
+	check(valley == "", "a road can still be built where the shuttle flies: " + valley)
+	var ground: Dictionary = sim.state.roads.back()
+	for _day: int in range(int(ground.build_days) + 2):
+		sim.tick()
+	check(bool(line.get("retired", false)), "when the road opens the shuttle stands down")
+	check(
+		int(sim.Logistics.road_between(sim, home, near).get("id", -1)) == int(ground.id),
+		"and the road is the link between the two"
+	)
+	var upkeep_before: float = _ledger_today(sim, "road.upkeep")
+	sim.tick()
+	check(
+		_ledger_today(sim, "road.upkeep") <= float(ground.upkeep) + 0.001,
+		(
+			"the stood-down line costs no upkeep: %.1f then %.1f"
+			% [upkeep_before, _ledger_today(sim, "road.upkeep")]
+		)
+	)
+	var issues: Array = sim.audit()
+	check(issues.is_empty(), "the ledger balances: " + str(issues).left(300))

@@ -5,6 +5,9 @@ signal region_selected(id: int)
 signal atlas_refined
 signal region_progress(busy: bool, progress: float)
 signal region_ready(id: int)
+## Shuttle lines (1.9) are drawn in cyan, as arcs above the globe this high at the middle.
+const SHUTTLE_COLOR: Color = Color("8fd8ee")
+const SHUTTLE_ARC: float = 0.07
 const Geo = preload("res://world/world_gen.gd")
 const Shaders = preload("res://world/shaders.gd")
 const NightLights = preload("res://world/night_lights.gd")

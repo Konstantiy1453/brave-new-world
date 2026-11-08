@@ -65,3 +65,7 @@ const COVER_IDLE: String = "idle"
 const SINK_BUILDINGS: String = "buildings"
 const SINK_UPGRADES: String = "upgrades"
 const SINK_GREAT_WORKS: String = "great_works"
+
+## Route variants that are not roads (economy.json `roads`).
+const ROUTE_SEA: String = "sea"
+const ROUTE_SHUTTLE: String = "shuttle"

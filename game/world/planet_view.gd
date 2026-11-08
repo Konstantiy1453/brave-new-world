@@ -259,7 +259,7 @@ func _update_night_lights() -> void:
 	var roads: Array = []
 	var day: int = int(state.get("day", 0))
 	for road: Dictionary in state.get("roads", []):
-		if str(road.get("variant", "")) == "sea":
+		if str(road.get("variant", "")) in ["sea", "shuttle"]:
 			continue
 		if Geo.road_building(road, day) or Geo.road_blocked(road, day):
 			continue
@@ -381,7 +381,8 @@ func _update_transport() -> void:
 		child.queue_free()
 	globe_movers.clear()
 	for r: Dictionary in state.get("roads", []):
-		_draw_road_on_globe(r)
+		if not bool(r.get("retired", false)):
+			_draw_road_on_globe(r)
 	_place_movers(globe_movers, sky.day_fraction)
 
 
@@ -389,7 +390,9 @@ func _road_color(r: Dictionary) -> Color:
 	var day: int = int(state.get("day", 0))
 	if Geo.road_building(r, day):
 		return Color("8fa1a8")
-	return Color("d77963") if Geo.road_blocked(r, day) else Color("e9bf71")
+	if Geo.road_blocked(r, day):
+		return Color("d77963")
+	return SHUTTLE_COLOR if str(r.get("variant", "")) == "shuttle" else Color("e9bf71")
 
 
 func _draw_road_on_globe(r: Dictionary) -> void:
@@ -399,8 +402,12 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 			var ll: Vector2 = Geo.cell_coordinate(int(index))
 			coordinates.append([ll.x, ll.y])
 	var points: Array[Vector3] = []
-	for ll in coordinates:
-		points.append(Geo.unit_point(float(ll[0]), float(ll[1])) * 3.048)
+	# A shuttle line flies: it arcs up from both pads instead of lying on the ground.
+	var lift: float = SHUTTLE_ARC if str(r.get("variant", "")) == "shuttle" else 0.0
+	for index: int in range(coordinates.size()):
+		var ll: Array = coordinates[index]
+		var along: float = float(index) / maxf(1.0, float(coordinates.size() - 1))
+		points.append(Geo.unit_point(float(ll[0]), float(ll[1])) * (3.048 + lift * sin(PI * along)))
 	_line(transport_root, points, _road_color(r), 1.5)
 	for shipment in state.get("shipments", []):
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):

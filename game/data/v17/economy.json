@@ -1472,6 +1472,24 @@
       "reason": "沿海航线",
       "name": "沿海航线",
       "fee_factor": 1.5
+    },
+    "shuttle": {
+      "capacity": 4,
+      "upkeep": 40.0,
+      "closure_chance_per_day": 0.0,
+      "closure_days": [
+        0,
+        0
+      ],
+      "speed_km_per_day": 2500.0,
+      "min_days": 1,
+      "base_cost": 8000.0,
+      "cost_per_km": 2.0,
+      "build_days": 10,
+      "max_km": 3500.0,
+      "fee_factor": 30.0,
+      "reason": "垂直起降穿梭机：不用修路，起降坪几天就好，但运量很小、运费和养护都很贵",
+      "name": "短程穿梭机航线"
     }
   },
   "enterprise": {

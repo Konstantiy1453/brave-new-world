@@ -6,6 +6,9 @@ extends RefCounted
 
 const HIGH_GROUND: float = 0.38
 const SEA_SPEED_KM_PER_DAY: float = 340.0
+## The shuttle flies: a straight hop drawn with this many points, no terrain in the way.
+const AIR: String = "shuttle"
+const AIR_POINTS: int = 12
 const NEIGHBORS: Array[Vector2i] = [
 	Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)
 ]
@@ -77,6 +80,8 @@ static func find(
 	var regions: Array = world.regions
 	if a < 0 or b < 0 or a >= regions.size() or b >= regions.size() or a == b:
 		return _unreachable(variant, "请选择两个不同的地点")
+	if variant == AIR:
+		return _air(world, a, b, rules)
 	var terrain: Dictionary = _prepared(world)
 	var low: int = mini(a, b)
 	var high: int = maxi(a, b)
@@ -94,6 +99,37 @@ static func find(
 	found.a = a
 	found.b = b
 	return found
+
+
+## A short hop by air: a great-circle line, nothing in the way, but only up to `max_km`.
+static func _air(world: Dictionary, a: int, b: int, rules: Dictionary) -> Dictionary:
+	var spec: Dictionary = rules[AIR]
+	var from: Vector3 = unit(float(world.regions[a].lat), float(world.regions[a].lon))
+	var to: Vector3 = unit(float(world.regions[b].lat), float(world.regions[b].lon))
+	var distance: float = roundf(from.angle_to(to) * float(world.radius_km))
+	if distance > float(spec.max_km):
+		return _unreachable(AIR, "超出穿梭机航程：%.0f km，最远 %.0f km" % [distance, float(spec.max_km)])
+	var coordinates: Array = []
+	for index: int in range(AIR_POINTS + 1):
+		var point: Vector3 = from.slerp(to, float(index) / AIR_POINTS).normalized()
+		coordinates.append(
+			[rad_to_deg(asin(clampf(point.y, -1.0, 1.0))), rad_to_deg(atan2(point.x, point.z))]
+		)
+	return {
+		"reachable": true,
+		"distance": distance,
+		"days": maxi(int(spec.min_days), ceili(distance / float(spec.speed_km_per_day))),
+		"cost": roundf(float(spec.base_cost) + distance * float(spec.cost_per_km)),
+		"path": [],
+		"coordinates": coordinates,
+		"mountain": false,
+		"variant": AIR,
+		"a": a,
+		"b": b,
+		"capacity": int(spec.capacity),
+		"reason": str(spec.reason),
+		"build_days": int(spec.build_days),
+	}
 
 
 static func _unreachable(variant: String, reason: String) -> Dictionary:

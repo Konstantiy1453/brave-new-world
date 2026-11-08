@@ -8,6 +8,7 @@ func _init() -> void:
 	uses_transfer = true
 	uses_commissions = true
 	uses_great_works = true
+	uses_shuttle = true
 	commission_all = true
 	reserve_days = 2.0
 	payback_limit = 700.0

@@ -10,6 +10,11 @@ const ModelArt = preload("res://world/model_art.gd")
 const BRIDGE_DECK: float = 0.45
 const BRIDGE_LENGTH: float = 1.98
 const SHIP_CYCLE_S: Vector4 = Vector4(26.0, 12.0, 26.0, 14.0)
+## A shuttle's day in town seconds: on the pad, lifting, flying out, away, flying back, landing.
+const SHUTTLE_CYCLE_S: Array[float] = [16.0, 3.0, 5.0, 14.0, 5.0, 3.0]
+const SHUTTLE_HOVER: float = 2.4
+const SHUTTLE_CRUISE: float = 9.0
+const SHUTTLE_REACH: float = 30.0
 ## Building roles whose working plants send up steam or smoke.
 const SMOKE_ROLES: Array[String] = ["factory", "harvest", "great"]
 const SMOKE_KINDS: Array[String] = ["geothermal", "fission", "fusion", "smelter", "processor"]
@@ -75,6 +80,8 @@ var bridge_runs: Array = []
 ## The cargo ship of a coastal town: where it sails from and to, and how far it is in its cycle.
 var ship: Node3D
 var ship_route: Array = []
+## [{"craft": Node3D, "pad": Vector3, "away": Vector3, "clock": float}]
+var shuttle_flights: Array = []
 var ship_clock: float = 0.0
 var _wet_run: Dictionary = {}
 
@@ -884,8 +891,10 @@ func _base_housing_label(root: Node3D, capacity: int) -> void:
 
 
 func _build_outbound_route(offset: float) -> void:
+	shuttle_flights.clear()
 	for route: Dictionary in state.get("roads", []):
-		_build_road_gate(route, offset)
+		if not bool(route.get("retired", false)):
+			_build_road_gate(route, offset)
 
 
 func _build_road_gate(route: Dictionary, offset: float) -> void:
@@ -913,6 +922,9 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 	var finish := start + direction * gate_reach
 	finish.x = clampf(finish.x, -half_width + 2.0, half_width - 2.0)
 	finish.y = clampf(finish.y, -half_depth + 2.0, half_depth - 2.0)
+	if str(route.get("variant", "")) == "shuttle":
+		_build_shuttle_pad(route, finish, direction, to)
+		return
 	_road(Vector3(start.x, 0, start.y), Vector3(finish.x, 0, finish.y))
 	var day: int = int(state.get("day", 0))
 	if not Geo.road_building(route, day) and not Geo.road_blocked(route, day):
@@ -1106,6 +1118,135 @@ func _harbor_wanted(settlement: Dictionary) -> bool:
 		if int(route.get("a", -1)) == selected_region or int(route.get("b", -1)) == selected_region:
 			return true
 	return false
+
+
+## A shuttle line lands on a lit pad at the edge of town, where the service lane ends. The craft
+## is the `shuttle` model once one is delivered, a simple lifting body until then.
+func _build_shuttle_pad(
+	route: Dictionary, finish: Vector2, direction: Vector2, to: Dictionary
+) -> void:
+	var day: int = int(state.get("day", 0))
+	var spot: Vector2 = _pad_spot(finish, direction)
+	var pad := Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
+	_cylinder(
+		buildings_root, pad + Vector3(0, .04, 0), 1.3, .08, _mat("shuttle_pad", Color("4a575e"))
+	)
+	_cylinder(
+		buildings_root,
+		pad + Vector3(0, .085, 0),
+		1.0,
+		.012,
+		_mat("shuttle_mark", Color("e6b45a"), 0.0, .5, .4)
+	)
+	var light := _mat("shuttle_light", SHUTTLE_COLOR, 0.0, .4, 1.4)
+	for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+		_cylinder(buildings_root, pad + Vector3(corner.x, .16, corner.y), .05, .18, light, 6)
+	var building: bool = Geo.road_building(route, day)
+	if not building:
+		region_gates.append({"end": spot})
+		var craft: Node3D = _shuttle_craft()
+		buildings_root.add_child(craft)
+		var away: Vector2 = spot + direction * SHUTTLE_REACH
+		(
+			shuttle_flights
+			. append(
+				{
+					"craft": craft,
+					"pad": pad + Vector3(0, .12, 0),
+					"away": Vector3(away.x, pad.y + SHUTTLE_CRUISE, away.y),
+					"clock": float(shuttle_flights.size()) * 17.0,
+				}
+			)
+		)
+	var label := Label3D.new()
+	label.text = (
+		("在建 · " if building else "穿梭机 · ") + str(to.name) + " / " + str(route.get("days", 0)) + "天"
+	)
+	label.font = label_font
+	label.font_size = 42
+	label.pixel_size = .012
+	label.modulate = Color("ead49d")
+	label.outline_modulate = Color("091621")
+	label.position = pad + Vector3(0, 2.9, 0)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	buildings_root.add_child(label)
+	_fly(0.0)
+
+
+## Dry, level ground clear of every plot for the pad: from the lane's end back toward town, and
+## to either side of it.
+func _pad_spot(finish: Vector2, direction: Vector2) -> Vector2:
+	var side := Vector2(-direction.y, direction.x)
+	for back: int in range(0, 9):
+		for across: float in [0.0, 3.5, -3.5, 7.0, -7.0]:
+			var at: Vector2 = finish - direction * (1.5 * back) + side * across
+			if absf(at.x) > half_width - 2.0 or absf(at.y) > half_depth - 2.0:
+				continue
+			if _near_plot(at.x, at.y) or _ground(at.x, at.y) < -.4:
+				continue
+			if is_finite(_water_height_at(at.x, at.y, 1.6)):
+				continue
+			return at
+	return finish
+
+
+func _shuttle_craft() -> Node3D:
+	var modelled: MeshInstance3D = ModelArt.instance(
+		"shuttle", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if modelled != null:
+		return modelled
+	var craft := Node3D.new()
+	var hull := _mat("shuttle_hull", Color("d9dee0"), .3, .45)
+	var dark := _mat("shuttle_dark", Color("2f3d45"), .4, .4)
+	var glow := _mat("shuttle_glow", SHUTTLE_COLOR, 0.0, .3, 2.0)
+	_box(craft, Vector3(0, .22, 0), Vector3(.5, .3, 1.4), hull)
+	_box(craft, Vector3(0, .3, -.62), Vector3(.36, .16, .3), dark)
+	_box(craft, Vector3(0, .2, .1), Vector3(1.5, .06, .5), hull)
+	_box(craft, Vector3(0, .45, .55), Vector3(.06, .3, .3), hull)
+	for side: float in [-.62, .62]:
+		_cylinder(craft, Vector3(side, .18, .3), .1, .12, glow, 8)
+	return craft
+
+
+## Lifts off, flies out of the field, waits, flies back and lands; `elapsed` is town seconds.
+func _fly(elapsed: float) -> void:
+	var cycle: float = 0.0
+	for part: float in SHUTTLE_CYCLE_S:
+		cycle += part
+	for flight: Dictionary in shuttle_flights:
+		var craft: Node3D = flight.craft
+		if craft == null or not is_instance_valid(craft):
+			continue
+		flight.clock = fposmod(float(flight.clock) + elapsed, cycle)
+		var pad: Vector3 = flight.pad
+		var hover: Vector3 = pad + Vector3(0, SHUTTLE_HOVER, 0)
+		var away: Vector3 = flight.away
+		var t: float = float(flight.clock)
+		var at: Vector3 = pad
+		var facing: Vector3 = Vector3(away.x - pad.x, 0, away.z - pad.z)
+		var phase: int = 0
+		while phase < SHUTTLE_CYCLE_S.size() - 1 and t >= SHUTTLE_CYCLE_S[phase]:
+			t -= SHUTTLE_CYCLE_S[phase]
+			phase += 1
+		var share: float = smoothstep(0.0, 1.0, t / SHUTTLE_CYCLE_S[phase])
+		match phase:
+			1:
+				at = pad.lerp(hover, share)
+			2:
+				at = hover.lerp(away, share)
+			3:
+				at = away
+			4:
+				at = away.lerp(hover, share)
+				facing = -facing
+			5:
+				at = hover.lerp(pad, share)
+				facing = -facing
+		craft.visible = phase != 3
+		craft.position = at
+		if facing.length() > 0.01:
+			craft.look_at(at + facing.normalized(), Vector3.UP)
 
 
 ## Sails in, berths, sails out, waits beyond the horizon; `elapsed` is seconds of town time.

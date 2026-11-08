@@ -422,6 +422,7 @@ func _animate_region(delta: float) -> void:
 		traffic.advance(delta)
 	if sky.running:
 		_sail(delta * sky.rate)
+		_fly(delta * sky.rate)
 	var night: float = region_night if day_night_enabled else 0.0
 	if mats.has("glass_on"):
 		mats["glass_on"].emission_energy_multiplier = night * 0.85

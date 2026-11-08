@@ -112,6 +112,8 @@ var uses_commissions: bool = false
 var commission_all: bool = false
 var commission_cover: float = 90.0
 var uses_great_works: bool = false
+## Short-range shuttle lines to new outposts while their roads are saved for and built (1.9).
+var uses_shuttle: bool = false
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -468,6 +470,9 @@ func _unconnected() -> Array:
 		var place: Dictionary = sim.state.settlements[at]
 		var joined: bool = false
 		for road: Dictionary in sim.state.roads:
+			# A shuttle line is a stopgap: the outpost still needs its road or sea route.
+			if str(road.get("variant", "")) == sim.Keys.ROUTE_SHUTTLE:
+				continue
 			joined = joined or int(road.a) == int(place.region) or int(road.b) == int(place.region)
 		if not joined:
 			missing.append(int(place.region))
@@ -535,10 +540,22 @@ func _best_link(site: int) -> Dictionary:
 func _connect_settlements(reserve: float) -> void:
 	for site: Variant in _unconnected():
 		var link: Dictionary = _best_link(int(site))
+		# A shuttle carries a little at once while the road is saved for and built.
+		if uses_shuttle and not link.is_empty():
+			_shuttle_to(int(link.from), int(site), reserve)
 		# Food and materials wait on this road: it comes before any cushion.
 		if not link.is_empty() and float(sim.state.cash) >= float(link.cost) + reserve * 0.1:
 			act("connect", {"a": int(link.from), "b": int(site), "variant": link.variant})
 		return
+
+
+## A shuttle line to a new outpost with no link yet, when the cash is there.
+func _shuttle_to(from: int, site: int, reserve: float) -> void:
+	if not sim.Logistics.road_between(sim, from, site).is_empty():
+		return
+	var quote: Dictionary = sim.road_quote(from, site, sim.Keys.ROUTE_SHUTTLE)
+	if str(quote.refusal) == "" and float(sim.state.cash) >= float(quote.cost) + reserve:
+		act("connect", {"a": from, "b": site, "variant": sim.Keys.ROUTE_SHUTTLE})
 
 
 ## A road that runs full holds up everything behind it.
@@ -546,7 +563,7 @@ func _pave_busy_roads(reserve: float) -> void:
 	if not sim._has(str(sim.config.road_upgrade.tech)):
 		return
 	for road: Dictionary in sim.state.roads:
-		if bool(road.get("paved", false)) or str(road.get("variant", "")) == "sea":
+		if bool(road.get("paved", false)) or str(road.get("variant", "")) in ["sea", "shuttle"]:
 			continue
 		var cost: float = float(road.cost) * float(sim.config.road_upgrade.cost_factor)
 		if float(road.sent_today) > float(road.capacity) and float(sim.state.cash) > cost + reserve:

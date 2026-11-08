@@ -7,6 +7,8 @@ const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
 const SINK_YEARS: int = 4
+## Ways to join two settlements, in the order the transport page offers them.
+const ROUTE_VARIANTS: Array[String] = ["valley", "engineered", "sea", "shuttle"]
 const RES = {
 	"ore": "铁矿",
 	"copper": "铜矿",
@@ -95,7 +97,9 @@ static func _site_card(g, b, known: Dictionary):
 	var links: Dictionary = g.sim.site_links(g.selected)
 	if not links.is_empty():
 		var ways: PackedStringArray = []
-		for variant: String in ["valley", "engineered", "sea"]:
+		for variant: String in ROUTE_VARIANTS:
+			if not links.variants.has(variant):
+				continue
 			var road: Dictionary = links.variants[variant]
 			if bool(road.reachable):
 				ways.append(
@@ -1359,13 +1363,15 @@ static func _road_options(g, b, a: int, z: int):
 	var state: Dictionary = g.sim.state
 	var c = D.card(b)
 	D.label(c, "%s → %s" % [state.world.regions[a].name, state.world.regions[z].name], 21)
-	for variant: String in ["valley", "engineered", "sea"]:
+	for variant: String in ROUTE_VARIANTS:
 		var quote: Dictionary = g.sim.road_quote(a, z, variant)
 		var spec: Dictionary = g.sim.config.roads[variant]
 		if not bool(quote.reachable):
 			if variant != "sea":
 				D.label(c, "%s：%s" % [spec.name, str(quote.reason)], 16, D.MUTED)
 			continue
+		if variant == Keys.ROUTE_SHUTTLE:
+			D.label(c, str(spec.reason), 15, D.MUTED)
 		var risk: String = "无"
 		if float(quote.closure_chance) > 0.0:
 			risk = "约每 %.0f 日一次" % (1.0 / float(quote.closure_chance))
@@ -1412,13 +1418,18 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
 	var building: bool = WG.road_building(road, int(state.day))
 	var blocked: bool = WG.road_blocked(road, int(state.day)) and not building
+	var retired: bool = bool(road.get("retired", false))
 	D.label(
 		c,
 		(
 			"%s%s：%s ↔ %s"
 			% [
 				spec.name,
-				"（已铺装）" if bool(road.get("paved", false)) else "",
+				(
+					"（已停飞：两地已有道路或航线）"
+					if retired
+					else ("（已铺装）" if bool(road.get("paved", false)) else "")
+				),
 				state.world.regions[int(road.a)].name,
 				state.world.regions[int(road.b)].name
 			]
@@ -1465,7 +1476,7 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		and not bool(road.get("paved", false))
 		and not building
 		and int(road.get("paving_until", 0)) <= int(state.day)
-		and str(road.get("variant", "valley")) != "sea"
+		and not str(road.get("variant", "valley")) in [Keys.ROUTE_SEA, Keys.ROUTE_SHUTTLE]
 	):
 		var id: int = int(road.id)
 		D.button(

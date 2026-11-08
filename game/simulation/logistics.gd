@@ -1,6 +1,9 @@
 extends RefCounted
 ## Trade, the road network, shipments and reservations. A road joins two settlements and comes in
-## three variants (valley, engineered, sea); each one dispatches surplus to deficit on its own.
+## three variants (valley, engineered, sea); each one dispatches surplus to deficit on its own. A
+## short-range shuttle line (1.9) can join two settlements before any road: small, fast and dear,
+## it stands down once a road or sea route between the same two opens, and it is not part of the
+## network the contract asks for.
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -54,19 +57,30 @@ static func ensure_state(state: Dictionary) -> void:
 
 ## The route a road between two sites would take, in the number scheme of this world.
 static func route_between(sim: RefCounted, a: int, b: int, variant: String) -> Dictionary:
-	if WorldGen.is_generated(str(sim.geo.version)) or variant == "sea":
+	if (
+		WorldGen.is_generated(str(sim.geo.version))
+		or variant == Keys.ROUTE_SEA
+		or variant == Keys.ROUTE_SHUTTLE
+	):
 		return Routes.find(sim.geo, a, b, variant, sim.config.roads)
 	var found: Dictionary = WorldGen.new().route(sim.geo, a, b, variant == "engineered")
 	found.variant = variant
 	return found
 
 
-## A road between these two settlements, or an empty dictionary.
+## A working link between these two settlements (a stood-down shuttle line does not count), or an
+## empty dictionary.
 static func road_between(sim: RefCounted, a: int, b: int) -> Dictionary:
 	for road: Dictionary in sim.state.roads:
+		if bool(road.get("retired", false)):
+			continue
 		if int(road.a) == a and int(road.b) == b or int(road.a) == b and int(road.b) == a:
 			return road
 	return {}
+
+
+static func is_shuttle(r: Dictionary) -> bool:
+	return str(r.get("variant", "valley")) == Keys.ROUTE_SHUTTLE
 
 
 ## What building this road would take, with the reason it cannot be built yet.
@@ -81,7 +95,7 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 		refusal = str(found.get("reason", "不可达"))
 	elif sim.settlement(a).is_empty() or sim.settlement(b).is_empty():
 		refusal = "两端都要是已建立的据点"
-	elif not road_between(sim, a, b).is_empty():
+	elif _link_blocks(sim, a, b, variant):
 		refusal = "两地已有运输连接"
 	elif variant == "sea":
 		refusal = _sea_refusal(sim, a, b)
@@ -94,13 +108,21 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 	found.upkeep = float(spec.upkeep)
 	found.capacity = int(spec.capacity)
 	found.closure_chance = float(spec.closure_chance_per_day)
-	var land: bool = variant != "sea"
+	var land: bool = variant != "sea" and variant != Keys.ROUTE_SHUTTLE
 	var length: float = float(found.get("distance", 0.0))
 	var laying: int = Routes._build_days(spec, length)
 	if land:
 		laying = ceili(float(laying) / (1.0 + Research.bonus(sim, "road_build")))
 	found.build_days = laying
 	return found
+
+
+## A road or sea route may be built where only a shuttle line flies; a shuttle needs the pair free.
+static func _link_blocks(sim: RefCounted, a: int, b: int, variant: String) -> bool:
+	var existing: Dictionary = road_between(sim, a, b)
+	if existing.is_empty():
+		return false
+	return variant == Keys.ROUTE_SHUTTLE or not is_shuttle(existing)
 
 
 ## Whichever end has the materials builds the terminals: a new outpost may have none to spare.
@@ -295,6 +317,8 @@ static func dispatch(sim: RefCounted) -> void:
 
 
 static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
+	if is_shuttle(r):
+		return float(r.capacity) * (1.0 + Research.bonus(sim, "shuttle_capacity"))
 	var key: String = (
 		"sea_capacity" if str(r.get("variant", "valley")) == "sea" else "road_capacity"
 	)
@@ -318,6 +342,8 @@ static func _depot_bonus(sim: RefCounted, r: Dictionary) -> float:
 ## Days one way today: the road's length never changes, but trains and ships get faster.
 static func road_days(sim: RefCounted, r: Dictionary) -> int:
 	var key: String = "sea_speed" if str(r.get("variant", "valley")) == "sea" else "road_speed"
+	if is_shuttle(r):
+		key = "shuttle_speed"
 	var share: float = maxf(FASTEST_TRAVEL_SHARE, 1.0 - Research.bonus(sim, key))
 	return maxi(1, ceili(float(r.days) * share))
 
@@ -334,7 +360,7 @@ static func _factory_need(sim: RefCounted, s: Dictionary, resource: String) -> f
 
 static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 	r.sent_today = 0.0
-	if WorldGen.road_blocked(r, int(sim.state.day)):
+	if bool(r.get("retired", false)) or WorldGen.road_blocked(r, int(sim.state.day)):
 		return
 	var cap: float = _road_capacity(sim, r)
 	var spec: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
@@ -500,6 +526,12 @@ static func closure_chance(sim: RefCounted, r: Dictionary) -> float:
 
 static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 	var day: int = int(sim.state.day)
+	if bool(r.get("retired", false)):
+		return
+	if is_shuttle(r) and _ground_link_open(sim, r):
+		r.retired = true
+		sim._log("%s ↔ %s 已有道路或航线，穿梭机航线停飞，不再收养护费。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
+		return
 	if WorldGen.road_building(r, day):
 		if int(r.ready_day) == day:
 			sim._log("线路建成：%s ↔ %s，开始通行。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
@@ -518,6 +550,20 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 		r.blocked_until = int(sim.state.day) + days
 		sim._log("工程公路落石封路，预计 %d 天后恢复；在途货物原地等待。" % days)
 		EventsV2.trigger(sim, "rockfall", int(r.a))
+
+
+## A finished road or sea route between the two ends of this shuttle line.
+static func _ground_link_open(sim: RefCounted, shuttle: Dictionary) -> bool:
+	for r: Dictionary in sim.state.roads:
+		if is_shuttle(r) or WorldGen.road_building(r, int(sim.state.day)):
+			continue
+		var same: bool = (
+			int(r.a) == int(shuttle.a) and int(r.b) == int(shuttle.b)
+			or int(r.a) == int(shuttle.b) and int(r.b) == int(shuttle.a)
+		)
+		if same:
+			return true
+	return false
 
 
 static func _place_name(sim: RefCounted, region: Variant) -> String:
@@ -601,6 +647,8 @@ static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
 	var r: Dictionary = sim.state.roads[road]
 	if str(r.get("variant", "valley")) == "sea":
 		return "海运航线无需铺装"
+	if is_shuttle(r):
+		return "穿梭机航线无需铺装"
 	if bool(r.get("paved", false)):
 		return "道路已经铺装"
 	if WorldGen.road_building(r, int(sim.state.day)):
@@ -650,7 +698,8 @@ static func largest_connected(sim: RefCounted) -> int:
 			var at: int = group[head]
 			head += 1
 			for r: Dictionary in sim.state.roads:
-				if WorldGen.road_blocked(r, int(sim.state.day)):
+				# The contract's network is roads and sea routes; a shuttle line is not part of it.
+				if is_shuttle(r) or WorldGen.road_blocked(r, int(sim.state.day)):
 					continue
 				var next: int = -1
 				if int(r.a) == at:
