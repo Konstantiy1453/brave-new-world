@@ -231,6 +231,13 @@ One line each: decision · reason · alternative rejected.
   the simplifier cannot reduce), the two heavy open-pit mines (the terraces are one 378,000-triangle
   mesh) and the heavy crystal mine's shaft (1.25 below grade, hidden by the ground). The model brief
   asks the modelling agent for closed low-poly crops, crowns and terraces.
+- Building icons (plan B6) are baked by `tests/art/bake_icons.gd` from each kind's model with its tint
+  and scale, under the map's daylight sun, fill and ambient, orthographic from the front right and
+  above, at 256 px scaled to 128 px with mipmaps; the build card shows them at 64 px and the building
+  column at 32 px (the SVG pictograms were 31 and 20 px, too small for a model) · the plan's recipe;
+  the 15 SVG pictograms stay for goods and as the fallback for a kind without a model. They are
+  lossless WebP, not the plan's PNG: the repository sends every PNG through Git LFS, whose GitHub host
+  the cloud session's network does not reach, and 15 KB icons gain nothing from LFS.
 - Town traffic is cosmetic and stops while the game is paused · vehicles moving during a pause read as time passing · ambient traffic during pauses.
 - The 3ds Max models are converted by `tests/art/convert_models.gd` from the FBX exports, per `tests/art/model_recipes.json`: thin parts dropped, parts grouped into ten colour slots by node name, fitted (4.0 units, great works 5.0, height ×1.3) and decimated to 4,500 triangles (great works 9,000) · the 1.9 plan's verified prototype; 53 runtime meshes in 25 s, 4.0 MB · importing the high-poly FBX directly (60k–200k triangles each).
 - Every kind follows the art team's `ASSET_MAPPING.json`; the 15 kinds with only gray models stand in with their mapped source model and a shell tint · the mapping names those sources and the gray files have no FBX · drawing them procedurally.

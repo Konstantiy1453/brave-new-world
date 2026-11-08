@@ -14,6 +14,7 @@ const META_SIZE: StringName = &"_ui_size"
 const META_COLOR: StringName = &"_ui_color"
 const META_FN: StringName = &"_ui_fn"
 const META_LAST: StringName = &"_ui_last"
+const BUILDING_ICONS: String = "res://assets/icons/buildings/"
 const LineChart = preload("res://ui/line_chart.gd")
 
 
@@ -289,12 +290,31 @@ static func portrait(parent: Node, who: String, width: int = 185, height: int = 
 
 
 static func icon(parent: Node, key: String, size: int = 27) -> TextureRect:
+	return _icon_from(parent, "res://assets/icons/" + key + ".svg", size)
+
+
+## A building's own icon, baked from its model (tests/art/bake_icons.gd); the SVG of `fallback`
+## (Labels.icon_key) for a kind without one.
+static func building_icon(
+	parent: Node, kind: String, fallback: String, size: int = 27
+) -> TextureRect:
+	var path: String = BUILDING_ICONS + kind + ".webp"
+	if not ResourceLoader.exists(path):
+		return _icon_from(parent, "res://assets/icons/" + fallback + ".svg", size)
+	var picture: TextureRect = _icon_from(parent, path, size)
+	# Drawn at a fraction of its 128 px: mipmaps keep the small sizes clean.
+	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	return picture
+
+
+static func _icon_from(parent: Node, path: String, size: int) -> TextureRect:
 	var p: TextureRect = _take(parent, "TextureRect")
-	var path: String = "res://assets/icons/" + key + ".svg"
 	if str(p.get_meta(META_LAST, "")) != path:
 		p.texture = load(path) if ResourceLoader.exists(path) else null
 		p.set_meta(META_LAST, path)
 	p.custom_minimum_size = Vector2(size, size)
 	p.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	p.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# Reused controls start from the default filter; building icons set their own.
+	p.texture_filter = CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	return p

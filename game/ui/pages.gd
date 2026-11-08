@@ -228,7 +228,7 @@ static func building_column(g, b):
 static func _underway_row(g, b, item: Dictionary, day: int):
 	var card = D.card(b)
 	var line = D.row(card)
-	D.icon(line, Labels.icon_key(g.sim.config, str(item.kind)), 20)
+	D.building_icon(line, str(item.kind), Labels.icon_key(g.sim.config, str(item.kind)), 32)
 	var building: bool = int(item.remaining) > 0
 	var left: int = int(item.remaining) if building else int(item.upgrade_days)
 	var words: String = Labels.building_name(g.sim.config, item.kind)
@@ -444,7 +444,7 @@ static func _building_groups(g, b, s: Dictionary):
 			continue
 		var open: bool = bool(g.expanded_kinds.get(kind, false))
 		var line = D.row(b)
-		D.icon(line, Labels.icon_key(g.sim.config, kind), 20)
+		D.building_icon(line, kind, Labels.icon_key(g.sim.config, kind), 32)
 		var words: String = (
 			"%s ×%d · 运营 %d"
 			% [Labels.building_name(g.sim.config, kind), group.rows.size(), group.running]
@@ -931,7 +931,7 @@ static func _build_card(g, b, key: String):
 	var refusal: String = str(forecast.disabled_reason)
 	var card = D.card(b)
 	var r = D.row(card)
-	D.icon(r, Labels.icon_key(g.sim.config, key), 31)
+	D.building_icon(r, key, Labels.icon_key(g.sim.config, key), 64)
 	var text = D.col(r)
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.label(text, spec.name, 20)

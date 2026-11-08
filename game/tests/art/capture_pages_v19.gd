@@ -1,7 +1,8 @@
 extends RefCounted
 ## Developer capture of the 1.9 money interface: the public services budget on the population page,
 ## the copy surcharge in the build list and the cash cover, administration and market floor lines
-## on the economy page, after a balanced colony has grown for two years.
+## on the economy page, after a balanced colony has grown for two years; and the settlement's
+## building column with the baked building icons.
 ##   godot --path game -- --dev --dev-script=res://tests/art/capture_pages_v19.gd [--days=1440]
 
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
@@ -33,6 +34,8 @@ static func run(g) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	# Captures of other days keep the default ones: economy_day1440.png next to economy.png.
 	var suffix: String = "" if days == DAYS else "_day%d" % days
+	# The settlement's building column with no dialog over it (baked building icons, plan B6).
+	await _capture(g, "settlement" + suffix)
 	for page: String in ["population", "build", "economy", "research", "career"]:
 		g.open_page(page)
 		await _capture(g, page + suffix)
