@@ -2,6 +2,7 @@ extends SceneTree
 ## Needs a real window. Plays a colony with the balanced bot, then captures the moving map at
 ## chosen moments: the globe by day and by night, the flat map, and a region at noon and at night.
 ## Options: --seed=260129 --days=900 --out=res://../evidence/v17/art/dynamics --size=1600x900
+## --terraform=3 draws the map as if that many terraforming stages were finished (render-only).
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -49,6 +50,20 @@ func run() -> void:
 	root.add_child(map)
 	map.setup(sim.geo)
 	map.sync_state(sim.state)
+	var stages: int = int(str(options.get("terraform", "0")))
+	if stages > 0:
+		var shown: Dictionary = sim.state.duplicate(true)
+		shown.settlements[0].buildings.append(
+			{
+				"kind": "terraforming",
+				"remaining": 0,
+				"level": stages,
+				"enabled": true,
+				"active": true,
+				"plot": -1
+			}
+		)
+		map.sync_state(shown)
 	map.set_visual_options(false, true, true)
 	map.sky.weather_time = float(options.weather)
 	while map.atlas_refining:

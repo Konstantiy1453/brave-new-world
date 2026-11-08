@@ -163,7 +163,7 @@ static func _commission_switch(g, c, row: Dictionary) -> void:
 	var current: int = int(row.commission)
 	var off = D.button(
 		line,
-		"不委托",
+		"关",
 		func(): g.act("research_commission", {"tech": tech, "level": 0}),
 		"外部实验室按研究点收费，只加在有自己团队的课题上",
 		"Commission_%s_0" % tech
@@ -171,11 +171,12 @@ static func _commission_switch(g, c, row: Dictionary) -> void:
 	off.toggle_mode = true
 	off.button_pressed = current == 0
 	D.font_size(off, 12)
+	var saved: PackedStringArray = []
 	for quote: Dictionary in quotes:
 		var level: int = int(quote.level)
 		var button = D.button(
 			line,
-			"委托 %d 级 · ¥ %.0f/日 · 预计提前 %d 天" % [level, float(quote.cost), int(quote.days_saved)],
+			"%d 级 · ¥ %.0f/日" % [level, float(quote.cost)],
 			func(): g.act("research_commission", {"tech": tech, "level": level}),
 			"按研究点付费，从公共现金按日支付（计入投资）；现金不够的那天暂停，不会欠债",
 			"Commission_%s_%d" % [tech, level]
@@ -183,6 +184,8 @@ static func _commission_switch(g, c, row: Dictionary) -> void:
 		button.toggle_mode = true
 		button.button_pressed = current == level
 		D.font_size(button, 12)
+		saved.append("%d 级 %d 天" % [level, int(quote.days_saved)])
+	D.label(c, "外部实验室委托，预计提前：" + "，".join(saved), 12, D.MUTED)
 	if current > 0:
 		var state: String = str(quotes[mini(current, quotes.size()) - 1].state)
 		if state == "no_team":

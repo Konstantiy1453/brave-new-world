@@ -33,7 +33,7 @@ static func run(g) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	# Captures of other days keep the default ones: economy_day1440.png next to economy.png.
 	var suffix: String = "" if days == DAYS else "_day%d" % days
-	for page: String in ["population", "build", "economy"]:
+	for page: String in ["population", "build", "economy", "research", "career"]:
 		g.open_page(page)
 		await _capture(g, page + suffix)
 	# The market rows sit below the fold of the economy page.
@@ -46,6 +46,20 @@ static func run(g) -> void:
 				scroll.scroll_vertical = int(label.global_position.y - box.global_position.y)
 				break
 		await _capture(g, "economy_market" + suffix)
+	# The commission switch sits under a running project's card on the research page.
+	g.open_page("research")
+	for _frame: int in range(3):
+		await g.get_tree().process_frame
+	var research: ScrollContainer = g.find_child("Page_research", true, false) as ScrollContainer
+	if research != null:
+		var holder: Control = research.get_child(0) as Control
+		for node: Node in research.find_children("Commission_*", "Button", true, false):
+			var button: Control = node as Control
+			research.scroll_vertical = int(
+				button.global_position.y - holder.global_position.y - 260.0
+			)
+			break
+		await _capture(g, "research_commission" + suffix)
 	g.get_tree().quit(0)
 
 
