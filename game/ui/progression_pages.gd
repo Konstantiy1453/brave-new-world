@@ -418,6 +418,35 @@ static func events(g, b):
 				D.label(b, str(row), 16, D.MUTED)
 
 
+## Career transfer after the award: idle public cash into career funds, at a loss, capped a year.
+static func _career_transfer(g, b) -> void:
+	var view: Dictionary = Career.transfer_preview(g.sim)
+	if not bool(view.open):
+		return
+	D.label(
+		b,
+		(
+			"生涯资金转存：公共现金 ¥ %.0f 换 ¥ 1 生涯资金，每年最多 ¥ %.0f；今年还可转 ¥ %.0f，累计已转 ¥ %.0f。"
+			% [float(view.rate), float(view.cap), float(view.room), float(view.transferred)]
+		),
+		17,
+		D.MUTED
+	)
+	if float(view.most) < 1.0:
+		return
+	var row = D.row(b)
+	var amount = D.spin(
+		row, "TransferAmount", 1, float(view.most), 1, minf(float(view.most), 10000.0)
+	)
+	D.button(
+		row,
+		"转存为生涯资金",
+		func(): g.act("career_transfer", {"amount": amount.value}),
+		"",
+		"CareerTransfer"
+	)
+
+
 static func career(g, b):
 	Career.ensure(g.sim)
 	var c: Dictionary = g.sim.state.career
@@ -435,6 +464,7 @@ static func career(g, b):
 	var row = D.row(b)
 	var amount = D.spin(row, "InvestAmount", 0, float(c.balance), 1, minf(float(c.balance), 500))
 	D.button(row, "注入当前星球", func(): g.career_action("invest", {"amount": amount.value}))
+	_career_transfer(g, b)
 	for old in c.managed:
 		var card = D.card(b)
 		D.label(card, "代管星球 %d · 种子 %s" % [old.id, str(old.seed)], 22, D.TEAL)

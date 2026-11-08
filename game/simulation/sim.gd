@@ -229,6 +229,8 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Logistics.upgrade_road(self, int(args.get("road", 0)))
 		"research_contract":
 			refusal = Research.set_contract(self, int(args.get("staff", 0)))
+		"career_transfer":
+			refusal = Career.transfer(self, float(args.get("amount", 0.0)))
 	return refusal
 
 

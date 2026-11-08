@@ -60,6 +60,7 @@ func run() -> void:
 	_market_view()
 	_mine_outlook()
 	_sinks()
+	_career_transfer()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -445,3 +446,48 @@ func _sinks() -> void:
 	broken.stats.sinks = [{"buildings": "lots"}]
 	check(Stats.validate(broken) != "", "a sink that is not a number is refused")
 	check(sim.audit().is_empty(), "the ledger balances")
+
+
+## Career transfer: after the award only, 2 : 1, capped a colony year, never into debt.
+func _career_transfer() -> void:
+	var sim: RefCounted = make()
+	var rules: Dictionary = sim.Career.cfg().transfer
+	fund(sim, 1.0e6)
+	check(sim.act("career_transfer", {"amount": 1000.0}) != "", "no transfer before the award")
+	sim.state.status = "success"
+	var cash: float = float(sim.state.cash)
+	var balance: float = float(sim.state.career.balance)
+	check(sim.act("career_transfer", {"amount": 1000.0}) == "", "a transfer after the award")
+	check(
+		is_equal_approx(cash - float(sim.state.cash), 1000.0 * float(rules.public_per_career)),
+		"public cash pays the rate"
+	)
+	check(
+		is_equal_approx(float(sim.state.career.balance) - balance, 1000.0),
+		"the career balance receives the amount"
+	)
+	check(
+		is_equal_approx(
+			float(sim.sinks_by_year()[0].get("transfer", 0.0)),
+			1000.0 * float(rules.public_per_career)
+		),
+		"the transfer is a sink"
+	)
+	var room: float = float(sim.Career.transfer_preview(sim).room)
+	check(is_equal_approx(room, float(rules.yearly_cap) - 1000.0), "the year's room shrinks")
+	check(sim.act("career_transfer", {"amount": room + 1.0}) != "", "the cap holds")
+	check(sim.act("career_transfer", {"amount": room}) == "", "up to the cap")
+	check(sim.audit().is_empty(), "the ledger balances")
+	var career_error: String = sim.Career.validate(sim.state)
+	check(career_error == "", "the career record stays conserved: " + career_error)
+	var tampered: Dictionary = sim.state.duplicate(true)
+	tampered.career.transferred = float(tampered.career.transferred) + 5.0
+	check(sim.Career.validate(tampered) != "", "a tampered transfer total is refused")
+	# The year by the colony's own clock; the career clock is not part of this check.
+	sim.state.day = 360
+	check(
+		is_equal_approx(float(sim.Career.transfer_preview(sim).room), float(rules.yearly_cap)),
+		"a new colony year opens the cap again"
+	)
+	drain(sim)
+	check(sim.act("career_transfer", {"amount": 10.0}) != "", "no transfer without the cash")

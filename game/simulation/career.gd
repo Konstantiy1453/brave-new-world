@@ -25,6 +25,9 @@ static func ensure(sim) -> void:
 		"last_local_day": int(sim.state.day),
 		"balance": 0.0,
 		"invested": 0.0,
+		"transferred": 0.0,
+		"transfer_year": -1,
+		"transfer_year_total": 0.0,
 		"milestones_paid": 0.0,
 		"managed": [],
 		"archives": [],
@@ -314,6 +317,57 @@ static func settle_month(sim, old: Dictionary, period: int) -> void:
 		sim.state.career.history.pop_front()
 
 
+## Career transfer (1.9) after the award: public cash buys career funds at `public_per_career`
+## to 1, up to `yearly_cap` of career funds per colony year. What a finished colony has no use for
+## goes with the player; it is not the main way to spend money.
+static func transfer_preview(sim) -> Dictionary:
+	var rules: Dictionary = cfg().transfer
+	var c: Dictionary = sim.state.get("career", {})
+	var used: float = 0.0
+	if int(c.get("transfer_year", -1)) == _year(sim):
+		used = float(c.get("transfer_year_total", 0.0))
+	var rate: float = float(rules.public_per_career)
+	var room: float = maxf(0.0, float(rules.yearly_cap) - used)
+	return {
+		"open": str(sim.state.status) == "success",
+		"rate": rate,
+		"cap": float(rules.yearly_cap),
+		"used": used,
+		"room": room,
+		"most": minf(room, maxf(0.0, float(sim.state.cash)) / rate),
+		"transferred": float(c.get("transferred", 0.0)),
+	}
+
+
+static func transfer(sim, amount: float) -> String:
+	ensure(sim)
+	if str(sim.state.status) != "success":
+		return "生涯资金转存在取得总督资格后开放"
+	if not is_finite(amount) or amount <= 0.0:
+		return "转存金额无效"
+	var view: Dictionary = transfer_preview(sim)
+	if amount > float(view.room) + 0.000001:
+		return "今年还可转存 ¥ %.0f 生涯资金" % float(view.room)
+	var cost: float = amount * float(view.rate)
+	if cost > float(sim.state.cash) + 0.000001:
+		return "公共现金不足：转存 ¥ %.0f 需要 ¥ %.0f" % [amount, cost]
+	var c: Dictionary = sim.state.career
+	if int(c.get("transfer_year", -1)) != _year(sim):
+		c.transfer_year = _year(sim)
+		c.transfer_year_total = 0.0
+	var received: float = (
+		sim._transfer("public", "external", cost, "career.transfer", false) / float(view.rate)
+	)
+	c.transfer_year_total = float(c.transfer_year_total) + received
+	c.transferred = float(c.get("transferred", 0.0)) + received
+	c.balance = float(c.balance) + received
+	return ""
+
+
+static func _year(sim) -> int:
+	return floori(float(sim.state.day) / float(cfg().calendar.year_days))
+
+
 static func invest(sim, amount: float) -> String:
 	ensure(sim)
 	if not is_finite(amount) or amount < 0:
@@ -590,6 +644,13 @@ static func _validate_common(s: Dictionary) -> String:
 		if absf(actual - expected) > 0.001:
 			return "代管账户不守恒"
 	paid_total += float(c.get("milestones_paid", 0.0))
+	for key: String in ["transferred", "transfer_year_total"]:
+		var value: Variant = c.get(key, 0.0)
+		if not (value is int or value is float) or not is_finite(float(value)) or value < 0:
+			return "生涯转存记录无效"
+	if not c.get("transfer_year", -1) is int and not c.get("transfer_year", -1) is float:
+		return "生涯转存记录无效"
+	paid_total += float(c.get("transferred", 0.0))
 	if absf(paid_total - float(c.balance) - float(c.invested)) > 0.001:
 		return "生涯分红转账不守恒"
 	for row in c.history:

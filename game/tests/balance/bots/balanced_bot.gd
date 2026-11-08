@@ -7,6 +7,7 @@ const YEAR_DAYS: int = 360
 
 func _init() -> void:
 	uses_services = true
+	uses_transfer = true
 
 
 ## A year past the award tells the harness what it needs about the time after it.

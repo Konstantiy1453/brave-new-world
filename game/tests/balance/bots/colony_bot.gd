@@ -78,6 +78,9 @@ const SWAP_FREE_BEDS: int = 35
 const SERVICES_UP_COVER: float = 120.0
 const SERVICES_DOWN_COVER: float = 45.0
 const SERVICES_REVIEW_PERIOD: int = 60
+## Career transfer (1.9): after the award, cash above this much cover goes to the career balance.
+const TRANSFER_COVER: float = 240.0
+const TRANSFER_REVIEW_PERIOD: int = 60
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -93,6 +96,7 @@ var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
 ## Whether this bot uses the public services budget (passive and sloppy players do not).
 var uses_services: bool = false
+var uses_transfer: bool = false
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -155,6 +159,7 @@ func on_day() -> void:
 	_research_contract()
 	_wages()
 	_public_services()
+	_career_transfer()
 
 
 ## Lands on the start that looks richest from orbit, among those with a farming partner in reach.
@@ -1189,6 +1194,21 @@ func _public_services() -> void:
 		act("policy", {"services": level + 1})
 	elif cover < SERVICES_DOWN_COVER and level > 0:
 		act("policy", {"services": level - 1})
+
+
+## After the award, money a finished colony has no use for goes to the career balance, keeping
+## `TRANSFER_COVER` days of expenses at home.
+func _career_transfer() -> void:
+	if not uses_transfer or today() % TRANSFER_REVIEW_PERIOD != 0:
+		return
+	if str(sim.state.status) != "success":
+		return
+	var cover: Dictionary = sim.cover_view()
+	var spare: float = float(sim.state.cash) - TRANSFER_COVER * float(cover.expense)
+	var view: Dictionary = sim.Career.transfer_preview(sim)
+	var amount: float = floorf(minf(float(view.room), spare / float(view.rate)))
+	if amount >= 1.0:
+		act("career_transfer", {"amount": amount})
 
 
 ## Raises pay only when people are staying away for lack of appeal, not for lack of beds or food.
