@@ -41,6 +41,8 @@ const COVER_AFTER_MEDIAN: float = 180.0
 const COVER_AFTER_P90: float = 365.0
 const ABSORPTION_LEAST: float = 0.8
 const ABSORPTION_YEARS: Array[int] = [2, 3, 4, 5, 6]
+const WINDFALL_COVER_DAY: int = 1440
+const WINDFALL_YEARS: Array[int] = [3, 4, 5]
 
 
 static func median(values: Array) -> float:
@@ -454,6 +456,74 @@ static func _cash_rows(rows: Array, runs: Array) -> void:
 		_verdict(lowest >= ABSORPTION_LEAST, lowest < INF)
 	)
 	_sinks_row(rows, group)
+	_windfall_row(rows, runs)
+
+
+## The windfall case (1.9): the balanced bot with and without ¥1,000,000 on day 1,080, on the same
+## seeds (normal, capital): award day, cover a year after the windfall, takeovers and where the extra
+## money went in years 4-6.
+static func _windfall_row(rows: Array, runs: Array) -> void:
+	var lucky: Array = select(runs, "windfall", "normal")
+	var seeds: Dictionary = {}
+	for run: Dictionary in lucky:
+		seeds[int(run.seed)] = true
+	var plain: Array = select(runs, "balanced", "normal").filter(
+		func(run: Dictionary) -> bool:
+			return str(run.opening) == "capital" and seeds.has(int(run.seed))
+	)
+	if lucky.is_empty() or plain.is_empty():
+		_row(rows, "Windfall", "no target", "not run", STATUS_NONE)
+		return
+	var parts: PackedStringArray = []
+	for pair: Array in [["without", plain], ["with", lucky]]:
+		var awards: Array = []
+		var covers: Array = []
+		var lost: int = 0
+		for run: Dictionary in pair[1]:
+			if int(run.award_day) > 0:
+				awards.append(float(run.award_day))
+			if int(run.failure_day) > 0:
+				lost += 1
+			for sample: Variant in run.get("cover_samples", []):
+				if int(sample[0]) == WINDFALL_COVER_DAY:
+					covers.append(float(sample[1]))
+		parts.append(
+			(
+				"%s: award %.0f, cover on day %d %.0f days, %d of %d taken over"
+				% [
+					pair[0],
+					median(awards),
+					WINDFALL_COVER_DAY,
+					median(covers),
+					lost,
+					pair[1].size()
+				]
+			)
+		)
+	var extra: Dictionary = {}
+	for run: Dictionary in lucky:
+		for year: int in WINDFALL_YEARS:
+			if year < run.get("sinks", []).size():
+				for sink: String in run.sinks[year]:
+					extra[sink] = float(extra.get(sink, 0.0)) + float(run.sinks[year][sink])
+	for run: Dictionary in plain:
+		for year: int in WINDFALL_YEARS:
+			if year < run.get("sinks", []).size():
+				for sink: String in run.sinks[year]:
+					extra[sink] = float(extra.get(sink, 0.0)) - float(run.sinks[year][sink])
+	var order: Array = extra.keys()
+	order.sort_custom(func(a: String, b: String) -> bool: return extra[a] > extra[b])
+	var spent: PackedStringArray = []
+	for sink: String in order.slice(0, 4):
+		spent.append("%s %+.0fk" % [sink, float(extra[sink]) / 1000.0 / maxf(1.0, lucky.size())])
+	parts.append("extra spending a run in years 4-6: " + ", ".join(spent))
+	_row(
+		rows,
+		"Windfall",
+		"¥1,000,000 on day 1,080, balanced, normal, capital (no target)",
+		"; ".join(parts),
+		STATUS_INFO
+	)
 
 
 ## Where the money went (1.9): per sink, the median over runs of the mean yearly spending in years

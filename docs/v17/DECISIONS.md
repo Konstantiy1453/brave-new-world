@@ -274,6 +274,20 @@ research-first games taken over.
   four such colonies (the fourth's income falls with at most 16% resting on dying seams), and in normal
   play by the balanced bot it shows for 0–390 of 3,600 days across six games; a fifth showed for 750 days
   in one of them · lowering the line to a fifth with the raw-only measure.
+- Payback bands (plan A2.2) are checked by `v19_payback` on the balanced bot's colony (seed 260129,
+  capital) with mines in year 6 only and factories in year 4 · in years 2 and 4 fresh markets and early
+  mining research make every mine faster than its band (light mines 47–67 days in year 2), and pushing
+  them into it would cost the opening about half again on its only income · asserting every year for
+  mines. Band edges have 5% slack, because the same seed builds a slightly different world on Windows.
+- Payback calibration: heavy mines cost iron 9,000 → 16,000, copper 12,000 → 19,200, crystal
+  16,000 → 25,600 with twice the upkeep; light mines iron 2,100 → 2,900, copper 2,900 → 3,100, crystal
+  4,300 → 5,200; renewables cheaper and stronger (tailings 6,000 → 4,200; sea copper 11,000 → 8,000 and
+  5 → 7 t a day; crystal vats 13,000 → 9,000 and 1.8 → 3.2 t); commerce ¥0.2 → 0.3 a customer;
+  foodworks 3,100 → 3,700; the forecast values a factory's materials and parts at the import price · every
+  checked payback now sits in its band · a shallower iron market (scale 6,000 → 4,000 barely moved year
+  4) and a cap on mining research bonuses (it would make the last mining techs do nothing).
+- The windfall case (balanced bot, ¥1,000,000 on day 1,080, normal, capital, the harness's seeds) is an
+  INFO row next to the balanced bot on the same seeds · the plan asks for a comparison, not a target.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.

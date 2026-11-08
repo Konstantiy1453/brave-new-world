@@ -938,10 +938,17 @@ static func build_forecast(
 		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
 	elif role == "factory":
 		var boost: float = _factory_boost(sim, {"kind": kind})
+		# What the colony builds with replaces imports: worth the import price, not the export one.
+		var local: Array = sim.config.economy.get("forecast_import_valued", [])
 		for good: String in spec.outputs:
 			var made: float = float(spec.outputs[good]) * boost
 			outputs[good] = made
-			revenue += made * Market.price(sim, good) * (1.0 - fee)
+			if good in local:
+				revenue += (
+					made * maxf(_import_price(sim, good), Market.price(sim, good) * (1.0 - fee))
+				)
+			else:
+				revenue += made * Market.price(sim, good) * (1.0 - fee)
 		for good: String in spec.inputs:
 			revenue -= float(spec.inputs[good]) * Market.price(sim, good) * (1.0 - fee)
 	elif role == "foodworks":
