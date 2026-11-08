@@ -7,7 +7,7 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **1.9-great-works-shuttle-linux** · 2026-11-08T20-29-06 · 2998 s wall clock. Source: balance harness.
+Run: **1.9-final-linux** · 2026-11-08T21-57-33 · 2921 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
@@ -24,12 +24,13 @@ Run: **1.9-great-works-shuttle-linux** · 2026-11-08T20-29-06 · 2998 s wall clo
 | Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 101%; x4.08 | PASS |
 | Export mix | no good > 60% after year 2 | median 28%, worst 35% | PASS |
 | Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 12 days, p90 102 days | PASS |
-| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 56 days, p90 150 days | PASS |
+| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 56 days, p90 127 days | PASS |
 | Services budget | used by the balanced bot (1.9 optional spending) | 6 of 9 runs, median 534 days paid | MISS |
 | Absorption | spending >= 80% of operating surplus in years 3-7 | y3 97%, y4 109%, y5 104%, y6 108%, y7 95% | PASS |
-| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 275k, recruitment 131k, upgrades 79k, services 28k, great_works 20k, commissions 10k, roads 7k | INFO |
+| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 275k, recruitment 131k, upgrades 79k, services 28k, great_works 20k, commissions 9k, roads 7k | INFO |
 | Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2849, cover on day 1440 50 days, 0 of 3 taken over; with: award 2769, cover on day 1440 71 days, 0 of 3 taken over; extra spending a run in years 4-6: services +598k, buildings +483k, commissions +151k, upgrades +34k | INFO |
-| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 1/21 (level 3), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 6/21 (level 1) | INFO |
+| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 1/21 (level 3), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 7/21 (level 1) | INFO |
+| Shuttle lines | rush runs that opened a short-range shuttle line (no target) | 8/9 runs, 20 lines, 20 stood down for a road or sea route | INFO |
 | Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 206 days; 54 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 50% | PASS |
 | Distrust | largest daily rise <= 0.8 | worst 0.38 | PASS |
 | Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 2.7% | PASS |
@@ -65,7 +66,7 @@ Run: **1.9-great-works-shuttle-linux** · 2026-11-08T20-29-06 · 2998 s wall clo
 ## History
 
 <!-- history:begin -->
-- 2026-11-08T20-29-06 · 1.9-great-works-shuttle-linux (quick): 19 targets met, 3 missed.
+- 2026-11-08T21-57-33 · 1.9-final-linux (quick): 19 targets met, 3 missed.
 - 2026-11-07T14-03-08 · 1.9-money-linux (quick): 20 targets met, 2 missed.
 - 2026-11-01T03-10-20 · v1.8.0 (full): 20 targets met, 2 missed.
 - 2026-11-01T02-21-34 · 1.8 fifth full (full): 20 targets met, 2 missed.

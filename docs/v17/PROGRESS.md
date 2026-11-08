@@ -83,8 +83,10 @@ area, figures here):
 - Shuttle, rush bot, the quick seeds and openings, 4 years: 8 of 9 games open shuttle lines, 13 lines
   carrying 146–510 t each; 12 stood down when the road to the same outpost opened. The harness has a
   "Shuttle lines" INFO row from `3c19e77` on.
-- A final quick harness at `3c19e77` (label `1.9-final-linux`) was started at the end of the session;
-  see `BALANCE.md` for whichever run is newest.
+- Final quick harness `1.9-final-linux` (commit `3c19e77`, 2026-11-08T21-57-33, 51 runs, 0 audit errors,
+  in `BALANCE.md`): the same as the run above except the emergency network stands in 7 of 21 runs and the
+  cover a year after the award is 56 / 127 days. Shuttle lines: 8 of 9 rush runs, 20 lines, all 20 stood
+  down when a road or sea route to the same settlement opened.
 
 ## Test results (Linux)
 
