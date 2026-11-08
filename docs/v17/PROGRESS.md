@@ -62,9 +62,10 @@ last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16
 
 ## Not done / open
 
-1. Windows: rebake the menu atlas with `tests/art/bake_menu_atlas.gd`, run the suites, export the EXE
-   and measure frame times on a real GPU (the cloud and flat-map shaders are the heaviest: about 20
-   texture reads a pixel on the flat map).
+1. Windows: re-record the capture fixtures (rules and save schema changed), rebake the menu atlas,
+   run every suite, export the EXE and measure frame times on a real GPU
+   (`tests/art/frame_time_probe.gd`; the cloud and flat-map shaders are the heaviest). Step by step,
+   with which way to fix each miss: `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md`.
 2. 16 building kinds still borrow a related model (their own exist only as gray models or are not
    made): deep_well, atmospheric_water, mine_copper, mine_crystal, tailings_plant, sea_copper,
    crystal_vat, hydroponic_farm, protein_plant, foodworks, smelter, machine_works, pharma_plant,

@@ -10,6 +10,8 @@ in the game, and the money balance. Read these before doing anything:
 2. `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` — the 1.9 plan (money, models, bar).
 3. `docs/v17/V18_BRIEF.md` — the 1.8 request and acceptance bar; every row still holds.
 4. `docs/v17/DECISIONS.md` — judgment calls already made. Add one line per new call.
+5. On the user's Windows PC: `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` — the
+   Windows-only checks (fixtures, menu atlas, all suites, EXE, frame times, full harness) and which way to fix misses.
 
 Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` is the 1.7 brief. Folders keep the name `v17`.
 
