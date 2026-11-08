@@ -211,6 +211,26 @@ One line each: decision · reason · alternative rejected.
 - `world_v16_terrain_identity` now checks vertices and normals, plus that the ground carries geography for the shader · the user asked for a smoother surface, so the baked v1.5 colours are no longer the reference; the geometry still is · keeping the colour hash and the rough look.
 - `world_v17_seam` measures the seam under the 1.8 lighting (spin, night and clouds off, clock frozen) · a terminator or a cloud edge on the seam column is not a seam bug · loosening its threshold.
 - Region day and night follow where the site is on the turning globe · one clock for the whole map; at night windows of working buildings, lamps and headlights light up · a separate regional clock.
+- The converter keeps each model within its triangle target: every colour slot starts at the finest
+  level of detail under its share, shares weighted by slot (metal and gold ×2, ore, concrete and water
+  ×0.5: thin structure vanishes first when simplified, bulky shapes keep their look); while a model is
+  over, the slot heaviest for its weight steps down; budget left over steps slots back up · the first
+  converter took the level nearest the target, so 26 of 53 models were over 4,500 triangles (field
+  station 17,074) while others lost their hero parts (field station's crops, the light mine's
+  headframe was at risk with equal shares) · equal shares. Two runs are byte-identical; the gallery
+  (`evidence/v17/art/gallery/`) was compared before and after.
+- Suite `v19_art` (plan B7) asserts per model: it loads, the registry's triangles and size match the
+  mesh, the triangle target, one surface per known colour slot (at most ten: the converter has ten
+  slots, the plan said eight), the footprint (4.2 units, great works 5.0, a recipe's own `fit`; kit
+  pieces sized by `scale` are not checked), standing on its datum and reaching at most 0.7 below it
+  (open pits 1.5); and that every building kind resolves to a model and assets/models stays under
+  12 MB. Levels of detail are printed, not asserted: 21 models have fewer than three on their heaviest
+  slot before and after this change, because the engine's simplifier stops on sharp-edged kit geometry ·
+  a failing check nobody can fix in the converter. A recipe's `exceptions` lets a model off a check
+  with its reason: field station, vertical farm, ranch and arcology (open crop strips and tree crowns
+  the simplifier cannot reduce), the two heavy open-pit mines (the terraces are one 378,000-triangle
+  mesh) and the heavy crystal mine's shaft (1.25 below grade, hidden by the ground). The model brief
+  asks the modelling agent for closed low-poly crops, crowns and terraces.
 - Town traffic is cosmetic and stops while the game is paused · vehicles moving during a pause read as time passing · ambient traffic during pauses.
 - The 3ds Max models are converted by `tests/art/convert_models.gd` from the FBX exports, per `tests/art/model_recipes.json`: thin parts dropped, parts grouped into ten colour slots by node name, fitted (4.0 units, great works 5.0, height ×1.3) and decimated to 4,500 triangles (great works 9,000) · the 1.9 plan's verified prototype; 53 runtime meshes in 25 s, 4.0 MB · importing the high-poly FBX directly (60k–200k triangles each).
 - Every kind follows the art team's `ASSET_MAPPING.json`; the 15 kinds with only gray models stand in with their mapped source model and a shell tint · the mapping names those sources and the gray files have no FBX · drawing them procedurally.

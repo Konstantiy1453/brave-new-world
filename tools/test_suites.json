@@ -14,6 +14,7 @@
     {"name": "v18_systems", "script": "res://tests/v18_systems.gd", "success": "V18_SYSTEMS_RESULT checks=\\d+ failures=0"},
     {"name": "v19_money", "script": "res://tests/v19_money.gd", "success": "V19_MONEY_RESULT checks=\\d+ failures=0"},
     {"name": "v19_payback", "script": "res://tests/v19_payback.gd", "success": "V19_PAYBACK_RESULT checks=\\d+ failures=0"},
+    {"name": "v19_art", "script": "res://tests/v19_art.gd", "success": "V19_ART_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

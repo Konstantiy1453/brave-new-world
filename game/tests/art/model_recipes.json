@@ -5,7 +5,8 @@
     "scale": "game units per source metre, instead of fit",
     "box": "source metres, Max axes [[x0, y0, z0], [x1, y1, z1]]; a part is kept when its centre is inside",
     "target": "triangles in the finest level of detail",
-    "vertical": "height multiplier after fitting"
+    "vertical": "height multiplier after fitting",
+    "slot_weights": "share of the triangle target by colour slot (1.0 when not listed): thin structure vanishes first when simplified"
   },
   "parameters": {
     "min_part_m": 1.2,
@@ -13,7 +14,8 @@
     "great_target": 9000,
     "fit": 4.0,
     "great_fit": 5.0,
-    "vertical": 1.3
+    "vertical": 1.3,
+    "slot_weights": {"metal": 2.0, "gold": 2.0, "ore": 0.5, "concrete": 0.5, "water": 0.5}
   },
   "packs": {
     "old": "art_reserve/max_highpoly_20261031/08_exports/highpoly_fbx",
@@ -47,7 +49,7 @@
     "logistics": {"source": "CC_LOGISTICS_HP_v002", "pack": "old", "state": "legacy"},
     "civic": {"source": "CC_CIVIC_HP_v001", "pack": "old", "state": "legacy"},
     "apartment": {"source": "CC_APARTMENT_HP_v002", "pack": "new", "state": "accepted"},
-    "arcology": {"source": "CC_ARCOLOGY_HP_v003", "pack": "new", "state": "accepted"},
+    "arcology": {"source": "CC_ARCOLOGY_HP_v003", "pack": "new", "state": "accepted", "exceptions": {"triangles": "about 60 open tree crowns of 528 triangles each; the simplifier cannot reduce open strips"}},
     "crew_quarters": {"source": "CC_CREW_QUARTERS_HP_v001", "pack": "new", "state": "accepted"},
     "frontier_lodge": {"source": "CC_FRONTIER_LODGE_HP_v002", "pack": "new", "state": "accepted"},
     "wind_farm": {"source": "CC_WIND_FARM_HP_v001", "pack": "new", "state": "accepted"},
@@ -57,16 +59,16 @@
     "desalination": {"source": "CC_DESALINATION_HP_v002", "pack": "new", "state": "wip"},
     "port": {"source": "CC_PORT_HP_v002", "pack": "new", "state": "wip"},
     "scrubber": {"source": "CC_SCRUBBER_HP_v003", "pack": "new", "state": "accepted"},
-    "mine_ore_heavy": {"source": "CC_MINE_ORE_HEAVY_HP_v004", "pack": "new", "state": "wip"},
-    "mine_copper_heavy": {"source": "CC_MINE_COPPER_HEAVY_HP_v004", "pack": "new", "state": "wip"},
-    "mine_crystal_heavy": {"source": "CC_MINE_CRYSTAL_HEAVY_HP_v003", "pack": "new", "state": "wip"},
+    "mine_ore_heavy": {"source": "CC_MINE_ORE_HEAVY_HP_v004", "pack": "new", "state": "wip", "exceptions": {"triangles": "the open pit's terraces are one 378,000-triangle mesh; wip, to be remodelled low-poly"}},
+    "mine_copper_heavy": {"source": "CC_MINE_COPPER_HEAVY_HP_v004", "pack": "new", "state": "wip", "exceptions": {"triangles": "the open pit's terraces are one 378,000-triangle mesh; wip, to be remodelled low-poly"}},
+    "mine_crystal_heavy": {"source": "CC_MINE_CRYSTAL_HEAVY_HP_v003", "pack": "new", "state": "wip", "exceptions": {"lowest": "the shaft reaches 1.25 units below grade, hidden by the ground; wip"}},
     "mine_ore_auto": {"source": "CC_MINE_ORE_AUTO_HP_v001", "pack": "new", "state": "accepted"},
     "mine_copper_auto": {"source": "CC_MINE_COPPER_AUTO_HP_v002", "pack": "new", "state": "accepted"},
     "mine_crystal_auto": {"source": "CC_MINE_CRYSTAL_AUTO_HP_v001", "pack": "new", "state": "accepted"},
-    "field_station": {"source": "CC_FIELD_STATION_HP_v002", "pack": "new", "state": "accepted"},
-    "ranch": {"source": "CC_RANCH_HP_v002", "pack": "new", "state": "accepted"},
+    "field_station": {"source": "CC_FIELD_STATION_HP_v002", "pack": "new", "state": "accepted", "exceptions": {"triangles": "open crop strips (500 triangles a row) and six silos; the simplifier cannot reduce open strips"}},
+    "ranch": {"source": "CC_RANCH_HP_v002", "pack": "new", "state": "accepted", "exceptions": {"triangles": "open crop strips and many parts of 1.2-2 m; the simplifier cannot reduce open strips"}},
     "aquafarm": {"source": "CC_AQUAFARM_HP_v001", "pack": "new", "state": "accepted"},
-    "vertical_farm": {"source": "CC_VERTICAL_FARM_HP_v003", "pack": "new", "state": "accepted"},
+    "vertical_farm": {"source": "CC_VERTICAL_FARM_HP_v003", "pack": "new", "state": "accepted", "exceptions": {"triangles": "open crop strips of 320 triangles a row; the simplifier cannot reduce open strips"}},
     "component_plant": {"source": "CC_COMPONENT_PLANT_HP_v001", "pack": "new", "state": "accepted"},
     "clinic": {"source": "CC_CLINIC_HP_v001", "pack": "new", "state": "accepted"},
     "school": {"source": "CC_SCHOOL_HP_v002", "pack": "new", "state": "accepted"},

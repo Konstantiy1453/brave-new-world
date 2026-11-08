@@ -1,7 +1,7 @@
 extends SceneTree
 ## Converts the 3ds Max exchange FBX files into the game's runtime meshes.
 ##   godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<dir>
-## <dir> holds `art_reserve/` as unpacked from the art release. Options: --only=id,id
+## <dir> holds `art_reserve/` as unpacked from the art release. Options: --only=id,id --explain
 ## Reads tests/art/model_recipes.json; writes assets/models/<id>.res (one surface per colour slot,
 ## with levels of detail), data/v17/models.json (the registry the map reads) and a report in
 ## evidence/v17/art. The sources are only read.
@@ -17,6 +17,8 @@ var params: Dictionary = {}
 var slot_rules: Array = []
 var drop_words: Array = []
 var report: Dictionary = {"models": {}, "failures": []}
+## --explain prints every surface's levels of detail and the one kept.
+var explain: bool = false
 
 
 func _initialize() -> void:
@@ -38,6 +40,7 @@ func run() -> void:
 	slot_rules = recipes.slots
 	drop_words = recipes.drop
 	var only: Array = []
+	explain = options.has("explain")
 	if options.has("only"):
 		only = Array(str(options.only).split(","))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
@@ -180,7 +183,7 @@ func _convert(id: String, recipe: Dictionary, source_root: String) -> Dictionary
 		"lowest": snappedf(box.position.y, 0.01),
 		"units_per_metre": snappedf(scale, 0.0001),
 		"surfaces": surfaces,
-		"recipe_hash": JSON.stringify(recipe, "", true).sha256_text().substr(0, 16),
+		"recipe_hash": _recipe_hash(recipe),
 		"parts_kept": kept.size(),
 		"parts_dropped": dropped,
 	}
@@ -189,7 +192,12 @@ func _convert(id: String, recipe: Dictionary, source_root: String) -> Dictionary
 	return entry
 
 
-## Merges each slot, then decimates every surface towards its share of the triangle target.
+## Merges each slot, then picks a level of detail for every surface so the model stays within the
+## triangle target. Shares are weighted by slot (`slot_weights`): thin structure vanishes first when
+## simplified, bulky shapes keep their look. The finest level under each surface's share first;
+## while the model is over, the surface heaviest for its weight steps down a level; then budget left
+## over steps surfaces back up, smallest weighted additions first. A model whose coarsest levels are
+## still over keeps them (the art suite names it).
 func _reduce(groups: Dictionary, target: int) -> ArrayMesh:
 	var slots: Array = groups.keys()
 	slots.sort()
@@ -203,18 +211,83 @@ func _reduce(groups: Dictionary, target: int) -> ArrayMesh:
 		full.add_surface(Mesh.PRIMITIVE_TRIANGLES, _positions_normals(arrays), [], {}, null, slot)
 	full.generate_lods(25.0, 60.0, [])
 	var share: float = minf(1.0, float(target) / maxf(1.0, float(total)))
+	var weights: Array[float] = []
+	for surface: int in range(full.get_surface_count()):
+		weights.append(
+			float(params.get("slot_weights", {}).get(full.get_surface_name(surface), 1.0))
+		)
+	var levels: Array = []
+	var chosen: Array[int] = []
+	for surface: int in range(full.get_surface_count()):
+		var options: Array = [full.get_surface_arrays(surface)[Mesh.ARRAY_INDEX]]
+		for lod: int in range(full.get_surface_lod_count(surface)):
+			options.append(full.get_surface_lod_indices(surface, lod))
+		options.sort_custom(
+			func(a: PackedInt32Array, b: PackedInt32Array) -> bool: return a.size() > b.size()
+		)
+		levels.append(options)
+		var want: int = maxi(
+			12, int((options[0] as PackedInt32Array).size() / 3 * share * weights[surface])
+		)
+		var pick: int = options.size() - 1
+		for index: int in range(options.size()):
+			if (options[index] as PackedInt32Array).size() / 3 <= want:
+				pick = index
+				break
+		chosen.append(pick)
+	var used: int = _level_triangles(levels, chosen)
+	while used > target:
+		var heaviest: int = -1
+		var most: float = 0.0
+		for surface: int in range(levels.size()):
+			var count: float = (
+				(levels[surface][chosen[surface]] as PackedInt32Array).size()
+				/ 3.0
+				/ weights[surface]
+			)
+			if chosen[surface] < (levels[surface] as Array).size() - 1 and count > most:
+				most = count
+				heaviest = surface
+		if heaviest < 0:
+			break
+		chosen[heaviest] += 1
+		used = _level_triangles(levels, chosen)
+	while true:
+		var cheapest: int = -1
+		var least: float = 0.0
+		var added: int = 0
+		for surface: int in range(levels.size()):
+			if chosen[surface] == 0:
+				continue
+			var extra: int = (
+				(levels[surface][chosen[surface] - 1] as PackedInt32Array).size() / 3
+				- (levels[surface][chosen[surface]] as PackedInt32Array).size() / 3
+			)
+			var cost: float = extra / weights[surface]
+			if used + extra <= target and (cheapest < 0 or cost < least):
+				cheapest = surface
+				least = cost
+				added = extra
+		if cheapest < 0:
+			break
+		chosen[cheapest] -= 1
+		used += added
+	if explain:
+		for surface: int in range(levels.size()):
+			var sizes: Array = []
+			for option: PackedInt32Array in levels[surface]:
+				sizes.append(option.size() / 3)
+			print(
+				(
+					"  LEVELS %-9s %s kept %d"
+					% [full.get_surface_name(surface), str(sizes), sizes[chosen[surface]]]
+				)
+			)
 	var reduced := ImporterMesh.new()
 	for surface: int in range(full.get_surface_count()):
-		var arrays: Array = full.get_surface_arrays(surface)
-		var best: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-		var want: int = maxi(12, int(best.size() / 3 * share))
-		for lod: int in range(full.get_surface_lod_count(surface)):
-			var candidate: PackedInt32Array = full.get_surface_lod_indices(surface, lod)
-			if absi(candidate.size() / 3 - want) < absi(best.size() / 3 - want):
-				best = candidate
 		reduced.add_surface(
 			Mesh.PRIMITIVE_TRIANGLES,
-			_compact(arrays, best),
+			_compact(full.get_surface_arrays(surface), levels[surface][chosen[surface]]),
 			[],
 			{},
 			null,
@@ -222,6 +295,20 @@ func _reduce(groups: Dictionary, target: int) -> ArrayMesh:
 		)
 	reduced.generate_lods(25.0, 60.0, [])
 	return reduced.get_mesh()
+
+
+## What the conversion depends on: a recipe's `exceptions` only excuse it from checks.
+static func _recipe_hash(recipe: Dictionary) -> String:
+	var used: Dictionary = recipe.duplicate(true)
+	used.erase("exceptions")
+	return JSON.stringify(used, "", true).sha256_text().substr(0, 16)
+
+
+static func _level_triangles(levels: Array, chosen: Array[int]) -> int:
+	var count: int = 0
+	for surface: int in range(levels.size()):
+		count += (levels[surface][chosen[surface]] as PackedInt32Array).size() / 3
+	return count
 
 
 func _positions_normals(arrays: Array) -> Array:

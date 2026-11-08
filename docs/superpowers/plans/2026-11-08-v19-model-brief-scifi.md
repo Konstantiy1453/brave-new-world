@@ -45,6 +45,12 @@ remade in this language last, so the town does not mix two eras.
 - Buildings also export `<ID>_CONSTRUCTION.fbx`: foundation, part-built frame, scaffold (a crane only for
   great works).
 - Nothing tied to a world: no terrain, no planet, nothing seed-dependent.
+- Keep it simplifiable. The converter reduces closed, connected shapes well; it cannot reduce open
+  strips or one huge mesh. Model crop rows as a few closed low boxes or wide strips (at most 60
+  triangles a row), tree crowns as closed low-poly shapes (at most 80), and pit terraces as a stepped
+  low-poly mesh (at most 3,000). Today the field station, vertical farm, ranch and arcology (open crop
+  and leaf strips) and the heavy open-pit mines (terraces of 378,000 triangles) stay over budget for
+  this reason; the game's art suite lists them as exceptions until they are remade.
 
 ## 3. Slot words (the converter's colour rules)
 

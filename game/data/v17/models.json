@@ -14,6 +14,12 @@
       "shell": "c9d4d6",
       "stand_in": "gray model only"
     },
+    "capital_district": {
+      "model": "arcology",
+      "scale": 0.9,
+      "shell": "d6cfbd",
+      "stand_in": "not modelled yet"
+    },
     "capital_hall": {
       "model": "capital_hall"
     },
@@ -57,6 +63,18 @@
     },
     "desalination": {
       "model": "desalination"
+    },
+    "emergency_net": {
+      "model": "hospital",
+      "scale": 1.05,
+      "shell": "c86a5a",
+      "stand_in": "not modelled yet"
+    },
+    "exchange": {
+      "model": "data_center",
+      "scale": 1.2,
+      "shell": "c9b98f",
+      "stand_in": "not modelled yet"
     },
     "farm": {
       "model": "greenhouse"
@@ -193,6 +211,12 @@
       "shell": "d9cfb8",
       "stand_in": "reuses the civic hall"
     },
+    "shipyard": {
+      "model": "lift_port",
+      "scale": 0.85,
+      "shell": "9fb3c4",
+      "stand_in": "not modelled yet"
+    },
     "smelter": {
       "model": "industry",
       "shell": "b98d6c",
@@ -202,6 +226,12 @@
       "model": "industry",
       "shell": "a39b8f",
       "stand_in": "gray model only"
+    },
+    "terraforming": {
+      "model": "climate_regulator",
+      "scale": 1.15,
+      "shell": "b8d0b0",
+      "stand_in": "not modelled yet"
     },
     "university": {
       "model": "university"
@@ -214,46 +244,16 @@
     },
     "wind_farm": {
       "model": "wind_farm"
-    },
-    "terraforming": {
-      "model": "climate_regulator",
-      "scale": 1.15,
-      "shell": "b8d0b0",
-      "stand_in": "not modelled yet"
-    },
-    "capital_district": {
-      "model": "arcology",
-      "scale": 0.9,
-      "shell": "d6cfbd",
-      "stand_in": "not modelled yet"
-    },
-    "exchange": {
-      "model": "data_center",
-      "scale": 1.2,
-      "shell": "c9b98f",
-      "stand_in": "not modelled yet"
-    },
-    "shipyard": {
-      "model": "lift_port",
-      "scale": 0.85,
-      "shell": "9fb3c4",
-      "stand_in": "not modelled yet"
-    },
-    "emergency_net": {
-      "model": "hospital",
-      "scale": 1.05,
-      "shell": "c86a5a",
-      "stand_in": "not modelled yet"
     }
   },
   "models": {
     "apartment": {
       "file": "res://assets/models/apartment.res",
       "lowest": 0.0,
-      "parts_dropped": 399.0,
-      "parts_kept": 254.0,
+      "parts_dropped": 399,
+      "parts_kept": 254,
       "recipe_hash": "94d172cbb3ae8e05",
-      "seconds": 0.454,
+      "seconds": 0.59,
       "size": [
         4.0,
         3.92,
@@ -270,16 +270,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4848.0,
+      "triangles": 4476,
       "units_per_metre": 0.0741
     },
     "aquafarm": {
       "file": "res://assets/models/aquafarm.res",
       "lowest": -0.38,
-      "parts_dropped": 52.0,
-      "parts_kept": 519.0,
+      "parts_dropped": 52,
+      "parts_kept": 519,
       "recipe_hash": "f8e64cc5a3192faf",
-      "seconds": 0.3,
+      "seconds": 0.343,
       "size": [
         3.41,
         0.67,
@@ -298,16 +298,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 3500.0,
+      "triangles": 4428,
       "units_per_metre": 0.0488
     },
     "arcology": {
       "file": "res://assets/models/arcology.res",
       "lowest": 0.0,
-      "parts_dropped": 236.0,
-      "parts_kept": 960.0,
+      "parts_dropped": 236,
+      "parts_kept": 960,
       "recipe_hash": "d3bd7c1023b2d22b",
-      "seconds": 0.891,
+      "seconds": 0.904,
       "size": [
         3.93,
         2.02,
@@ -325,16 +325,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 6949.0,
+      "triangles": 6949,
       "units_per_metre": 0.0305
     },
     "bridge_span": {
       "file": "res://assets/models/bridge_span.res",
       "lowest": 0.0,
-      "parts_dropped": 76.0,
-      "parts_kept": 44.0,
+      "parts_dropped": 76,
+      "parts_kept": 44,
       "recipe_hash": "2c1e76c0b321cf75",
-      "seconds": 0.199,
+      "seconds": 0.157,
       "size": [
         1.98,
         0.57,
@@ -348,16 +348,16 @@
         "metal",
         "shell"
       ],
-      "triangles": 2236.0,
+      "triangles": 2232,
       "units_per_metre": 0.09
     },
     "capital_hall": {
       "file": "res://assets/models/capital_hall.res",
       "lowest": 0.0,
-      "parts_dropped": 179.0,
-      "parts_kept": 242.0,
+      "parts_dropped": 179,
+      "parts_kept": 242,
       "recipe_hash": "4d5d4c430a2357e4",
-      "seconds": 0.411,
+      "seconds": 0.32,
       "size": [
         5.0,
         1.84,
@@ -376,16 +376,16 @@
         "shell",
         "water"
       ],
-      "triangles": 8440.0,
+      "triangles": 8948,
       "units_per_metre": 0.0446
     },
     "cargo_ship": {
       "file": "res://assets/models/cargo_ship.res",
       "lowest": -0.35,
-      "parts_dropped": 458.0,
-      "parts_kept": 118.0,
+      "parts_dropped": 458,
+      "parts_kept": 118,
       "recipe_hash": "c22cd1148844bce3",
-      "seconds": 0.315,
+      "seconds": 0.307,
       "size": [
         1.55,
         2.03,
@@ -403,16 +403,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 3496.0,
+      "triangles": 3899,
       "units_per_metre": 0.0714
     },
     "civic": {
       "file": "res://assets/models/civic.res",
       "lowest": 0.0,
-      "parts_dropped": 83.0,
-      "parts_kept": 99.0,
+      "parts_dropped": 83,
+      "parts_kept": 99,
       "recipe_hash": "755b624c7dc5ace7",
-      "seconds": 0.252,
+      "seconds": 0.27,
       "size": [
         4.0,
         0.94,
@@ -430,16 +430,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4256.0,
+      "triangles": 4462,
       "units_per_metre": 0.1176
     },
     "civic_center": {
       "file": "res://assets/models/civic_center.res",
       "lowest": 0.0,
-      "parts_dropped": 40.0,
-      "parts_kept": 279.0,
+      "parts_dropped": 40,
+      "parts_kept": 279,
       "recipe_hash": "55d30755d27c641a",
-      "seconds": 0.293,
+      "seconds": 0.292,
       "size": [
         4.0,
         0.96,
@@ -456,16 +456,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4480.0,
+      "triangles": 4482,
       "units_per_metre": 0.0606
     },
     "climate_regulator": {
       "file": "res://assets/models/climate_regulator.res",
       "lowest": 0.0,
-      "parts_dropped": 68.0,
-      "parts_kept": 394.0,
+      "parts_dropped": 68,
+      "parts_kept": 394,
       "recipe_hash": "6e075a203d27abb3",
-      "seconds": 0.217,
+      "seconds": 0.228,
       "size": [
         5.0,
         1.39,
@@ -483,16 +483,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 8784.0,
+      "triangles": 8916,
       "units_per_metre": 0.0446
     },
     "clinic": {
       "file": "res://assets/models/clinic.res",
       "lowest": 0.0,
-      "parts_dropped": 61.0,
-      "parts_kept": 139.0,
+      "parts_dropped": 61,
+      "parts_kept": 139,
       "recipe_hash": "df0ed0478763a7a0",
-      "seconds": 0.192,
+      "seconds": 0.175,
       "size": [
         4.0,
         0.83,
@@ -510,16 +510,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 5112.0,
+      "triangles": 4484,
       "units_per_metre": 0.1053
     },
     "component_plant": {
       "file": "res://assets/models/component_plant.res",
       "lowest": 0.0,
-      "parts_dropped": 263.0,
-      "parts_kept": 185.0,
+      "parts_dropped": 263,
+      "parts_kept": 185,
       "recipe_hash": "e344598092013596",
-      "seconds": 0.404,
+      "seconds": 0.362,
       "size": [
         4.0,
         1.07,
@@ -537,16 +537,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4142.0,
+      "triangles": 4488,
       "units_per_metre": 0.037
     },
     "construction": {
       "file": "res://assets/models/construction.res",
       "lowest": 0.0,
-      "parts_dropped": 153.0,
-      "parts_kept": 235.0,
+      "parts_dropped": 153,
+      "parts_kept": 235,
       "recipe_hash": "e7894d30773c6d5f",
-      "seconds": 0.57,
+      "seconds": 0.441,
       "size": [
         4.0,
         1.59,
@@ -563,16 +563,16 @@
         "metal",
         "shell"
       ],
-      "triangles": 4152.0,
+      "triangles": 4436,
       "units_per_metre": 0.0714
     },
     "construction_crane": {
       "file": "res://assets/models/construction_crane.res",
       "lowest": 0.0,
-      "parts_dropped": 162.0,
-      "parts_kept": 80.0,
+      "parts_dropped": 162,
+      "parts_kept": 80,
       "recipe_hash": "c1734e9c739cb495",
-      "seconds": 0.409,
+      "seconds": 0.388,
       "size": [
         3.6,
         2.63,
@@ -589,19 +589,19 @@
         "metal",
         "shell"
       ],
-      "triangles": 2256.0,
+      "triangles": 2444,
       "units_per_metre": 0.0728
     },
     "crew_quarters": {
       "file": "res://assets/models/crew_quarters.res",
       "lowest": 0.0,
-      "parts_dropped": 355.0,
-      "parts_kept": 230.0,
+      "parts_dropped": 355,
+      "parts_kept": 230,
       "recipe_hash": "8bcf39b5cb24d332",
-      "seconds": 0.308,
+      "seconds": 0.331,
       "size": [
         4.0,
-        0.63,
+        0.62,
         2.97
       ],
       "source": "CC_CREW_QUARTERS_HP_v001",
@@ -617,19 +617,19 @@
         "roof",
         "shell"
       ],
-      "triangles": 5408.0,
+      "triangles": 4232,
       "units_per_metre": 0.0645
     },
     "culture_center": {
       "file": "res://assets/models/culture_center.res",
       "lowest": 0.0,
-      "parts_dropped": 56.0,
-      "parts_kept": 291.0,
+      "parts_dropped": 56,
+      "parts_kept": 291,
       "recipe_hash": "f4b8202e6d71d355",
-      "seconds": 0.34,
+      "seconds": 0.257,
       "size": [
         4.0,
-        1.04,
+        1.03,
         3.26
       ],
       "source": "CC_CULTURE_CENTER_HP_v001",
@@ -644,16 +644,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4208.0,
+      "triangles": 4422,
       "units_per_metre": 0.0526
     },
     "data_center": {
       "file": "res://assets/models/data_center.res",
       "lowest": 0.0,
-      "parts_dropped": 90.0,
-      "parts_kept": 157.0,
+      "parts_dropped": 90,
+      "parts_kept": 157,
       "recipe_hash": "e13760afdcc216f5",
-      "seconds": 0.236,
+      "seconds": 0.199,
       "size": [
         4.0,
         0.52,
@@ -669,16 +669,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4744.0,
+      "triangles": 4483,
       "units_per_metre": 0.0526
     },
     "depleted_copper": {
       "file": "res://assets/models/depleted_copper.res",
       "lowest": 0.0,
-      "parts_dropped": 0.0,
-      "parts_kept": 46.0,
+      "parts_dropped": 0,
+      "parts_kept": 46,
       "recipe_hash": "dd583ef6b3d5bed7",
-      "seconds": 0.177,
+      "seconds": 0.194,
       "size": [
         1.58,
         0.74,
@@ -693,16 +693,16 @@
         "metal",
         "shell"
       ],
-      "triangles": 2512.0,
+      "triangles": 2932,
       "units_per_metre": 0.1863
     },
     "depleted_crystal": {
       "file": "res://assets/models/depleted_crystal.res",
       "lowest": 0.0,
-      "parts_dropped": 12.0,
-      "parts_kept": 33.0,
+      "parts_dropped": 12,
+      "parts_kept": 33,
       "recipe_hash": "18d3fcf4e3ea915d",
-      "seconds": 0.17,
+      "seconds": 0.198,
       "size": [
         1.58,
         0.46,
@@ -717,16 +717,16 @@
         "metal",
         "shell"
       ],
-      "triangles": 2928.0,
+      "triangles": 2640,
       "units_per_metre": 0.1863
     },
     "depleted_ore": {
       "file": "res://assets/models/depleted_ore.res",
       "lowest": 0.0,
-      "parts_dropped": 12.0,
-      "parts_kept": 35.0,
+      "parts_dropped": 12,
+      "parts_kept": 35,
       "recipe_hash": "0246e1e5eb71daf1",
-      "seconds": 0.171,
+      "seconds": 0.184,
       "size": [
         1.58,
         0.46,
@@ -741,16 +741,16 @@
         "metal",
         "shell"
       ],
-      "triangles": 2928.0,
+      "triangles": 2592,
       "units_per_metre": 0.1863
     },
     "desalination": {
       "file": "res://assets/models/desalination.res",
       "lowest": -0.25,
-      "parts_dropped": 101.0,
-      "parts_kept": 176.0,
+      "parts_dropped": 101,
+      "parts_kept": 176,
       "recipe_hash": "00fc227d2eb8cdfd",
-      "seconds": 0.369,
+      "seconds": 0.359,
       "size": [
         3.56,
         0.79,
@@ -770,16 +770,16 @@
         "shell",
         "water"
       ],
-      "triangles": 4821.0,
+      "triangles": 4497,
       "units_per_metre": 0.0302
     },
     "field_station": {
       "file": "res://assets/models/field_station.res",
       "lowest": 0.0,
-      "parts_dropped": 139.0,
-      "parts_kept": 192.0,
+      "parts_dropped": 139,
+      "parts_kept": 192,
       "recipe_hash": "7b1d48be0a5225eb",
-      "seconds": 0.305,
+      "seconds": 0.285,
       "size": [
         4.0,
         0.41,
@@ -797,16 +797,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 17074.0,
+      "triangles": 15220,
       "units_per_metre": 0.0351
     },
     "fission": {
       "file": "res://assets/models/fission.res",
       "lowest": 0.0,
-      "parts_dropped": 92.0,
-      "parts_kept": 178.0,
+      "parts_dropped": 92,
+      "parts_kept": 178,
       "recipe_hash": "86d9d234c825cb2b",
-      "seconds": 0.391,
+      "seconds": 0.389,
       "size": [
         4.0,
         2.2,
@@ -825,19 +825,19 @@
         "roof",
         "shell"
       ],
-      "triangles": 3908.0,
+      "triangles": 4456,
       "units_per_metre": 0.0303
     },
     "frontier_lodge": {
       "file": "res://assets/models/frontier_lodge.res",
       "lowest": 0.0,
-      "parts_dropped": 54.0,
-      "parts_kept": 309.0,
+      "parts_dropped": 54,
+      "parts_kept": 309,
       "recipe_hash": "8a97ac05b9fb1ddb",
-      "seconds": 0.293,
+      "seconds": 0.292,
       "size": [
         4.0,
-        1.09,
+        1.08,
         3.03
       ],
       "source": "CC_FRONTIER_LODGE_HP_v002",
@@ -851,16 +851,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4788.0,
+      "triangles": 4382,
       "units_per_metre": 0.069
     },
     "fusion": {
       "file": "res://assets/models/fusion.res",
       "lowest": 0.0,
-      "parts_dropped": 264.0,
-      "parts_kept": 318.0,
+      "parts_dropped": 264,
+      "parts_kept": 318,
       "recipe_hash": "6f1a354848a57553",
-      "seconds": 0.562,
+      "seconds": 0.73,
       "size": [
         4.0,
         1.17,
@@ -879,16 +879,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 5036.0,
+      "triangles": 4426,
       "units_per_metre": 0.0303
     },
     "geothermal": {
       "file": "res://assets/models/geothermal.res",
       "lowest": 0.0,
-      "parts_dropped": 125.0,
-      "parts_kept": 147.0,
+      "parts_dropped": 125,
+      "parts_kept": 147,
       "recipe_hash": "496cf94188520c45",
-      "seconds": 0.264,
+      "seconds": 0.342,
       "size": [
         4.0,
         0.72,
@@ -907,16 +907,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4889.0,
+      "triangles": 4292,
       "units_per_metre": 0.037
     },
     "greenhouse": {
       "file": "res://assets/models/greenhouse.res",
       "lowest": -0.02,
-      "parts_dropped": 312.0,
-      "parts_kept": 200.0,
+      "parts_dropped": 312,
+      "parts_kept": 200,
       "recipe_hash": "af01c3ddd995075f",
-      "seconds": 0.597,
+      "seconds": 0.634,
       "size": [
         3.76,
         1.26,
@@ -934,16 +934,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4082.0,
+      "triangles": 4438,
       "units_per_metre": 0.1212
     },
     "habitat": {
       "file": "res://assets/models/habitat.res",
       "lowest": 0.0,
-      "parts_dropped": 234.0,
-      "parts_kept": 117.0,
+      "parts_dropped": 234,
+      "parts_kept": 117,
       "recipe_hash": "a88243cab99b5288",
-      "seconds": 0.222,
+      "seconds": 0.266,
       "size": [
         4.0,
         1.63,
@@ -962,16 +962,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 3816.0,
+      "triangles": 4486,
       "units_per_metre": 0.1345
     },
     "harbor": {
       "file": "res://assets/models/harbor.res",
       "lowest": -0.08,
-      "parts_dropped": 140.0,
-      "parts_kept": 69.0,
+      "parts_dropped": 140,
+      "parts_kept": 69,
       "recipe_hash": "e4ae6165019130a1",
-      "seconds": 0.214,
+      "seconds": 0.275,
       "size": [
         5.6,
         2.69,
@@ -985,16 +985,16 @@
         "glass",
         "gold"
       ],
-      "triangles": 3648.0,
+      "triangles": 3724,
       "units_per_metre": 0.0636
     },
     "hospital": {
       "file": "res://assets/models/hospital.res",
       "lowest": 0.0,
-      "parts_dropped": 85.0,
-      "parts_kept": 531.0,
+      "parts_dropped": 85,
+      "parts_kept": 531,
       "recipe_hash": "a49e93b2e98ca6d7",
-      "seconds": 0.586,
+      "seconds": 0.669,
       "size": [
         4.0,
         1.14,
@@ -1011,16 +1011,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4804.0,
+      "triangles": 4498,
       "units_per_metre": 0.0444
     },
     "industry": {
       "file": "res://assets/models/industry.res",
       "lowest": 0.0,
-      "parts_dropped": 137.0,
-      "parts_kept": 147.0,
+      "parts_dropped": 137,
+      "parts_kept": 147,
       "recipe_hash": "84128a6d05da9d47",
-      "seconds": 0.374,
+      "seconds": 0.453,
       "size": [
         4.0,
         1.82,
@@ -1038,16 +1038,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4926.0,
+      "triangles": 4496,
       "units_per_metre": 0.0985
     },
     "landing_pods": {
       "file": "res://assets/models/landing_pods.res",
       "lowest": 0.0,
-      "parts_dropped": 96.0,
-      "parts_kept": 278.0,
+      "parts_dropped": 96,
+      "parts_kept": 278,
       "recipe_hash": "be31e90284213502",
-      "seconds": 0.366,
+      "seconds": 0.363,
       "size": [
         4.6,
         0.66,
@@ -1064,16 +1064,16 @@
         "green",
         "shell"
       ],
-      "triangles": 5456.0,
+      "triangles": 4142,
       "units_per_metre": 0.1
     },
     "lift_port": {
       "file": "res://assets/models/lift_port.res",
       "lowest": 0.0,
-      "parts_dropped": 188.0,
-      "parts_kept": 88.0,
+      "parts_dropped": 188,
+      "parts_kept": 88,
       "recipe_hash": "1385a402dfb46dc2",
-      "seconds": 0.208,
+      "seconds": 0.165,
       "size": [
         5.0,
         8.02,
@@ -1091,18 +1091,18 @@
         "roof",
         "shell"
       ],
-      "triangles": 8736.0,
+      "triangles": 8448,
       "units_per_metre": 0.0532
     },
     "logistics": {
       "file": "res://assets/models/logistics.res",
       "lowest": 0.0,
-      "parts_dropped": 224.0,
-      "parts_kept": 128.0,
+      "parts_dropped": 224,
+      "parts_kept": 128,
       "recipe_hash": "2e0fd79254a060f0",
-      "seconds": 0.22,
+      "seconds": 0.183,
       "size": [
-        4.0,
+        3.99,
         1.68,
         3.46
       ],
@@ -1119,19 +1119,19 @@
         "roof",
         "shell"
       ],
-      "triangles": 4264.0,
+      "triangles": 4396,
       "units_per_metre": 0.0909
     },
     "mine": {
       "file": "res://assets/models/mine.res",
-      "lowest": -0.12,
-      "parts_dropped": 38.0,
-      "parts_kept": 187.0,
+      "lowest": -0.1,
+      "parts_dropped": 38,
+      "parts_kept": 187,
       "recipe_hash": "09a01d76fd34d6da",
-      "seconds": 0.186,
+      "seconds": 0.19,
       "size": [
         4.0,
-        3.18,
+        3.17,
         3.57
       ],
       "source": "CC_MINING_HP_v002",
@@ -1147,16 +1147,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4706.0,
+      "triangles": 4470,
       "units_per_metre": 0.1096
     },
     "mine_copper_auto": {
       "file": "res://assets/models/mine_copper_auto.res",
-      "lowest": -0.01,
-      "parts_dropped": 92.0,
-      "parts_kept": 368.0,
+      "lowest": 0.0,
+      "parts_dropped": 92,
+      "parts_kept": 368,
       "recipe_hash": "55293c0ff6fd20ef",
-      "seconds": 0.448,
+      "seconds": 0.577,
       "size": [
         4.0,
         0.78,
@@ -1176,16 +1176,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4176.0,
+      "triangles": 4496,
       "units_per_metre": 0.0339
     },
     "mine_copper_heavy": {
       "file": "res://assets/models/mine_copper_heavy.res",
       "lowest": -0.63,
-      "parts_dropped": 112.0,
-      "parts_kept": 324.0,
+      "parts_dropped": 112,
+      "parts_kept": 324,
       "recipe_hash": "852ace1267dad478",
-      "seconds": 3.625,
+      "seconds": 3.566,
       "size": [
         4.0,
         1.0,
@@ -1204,16 +1204,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 7446.0,
+      "triangles": 7434,
       "units_per_metre": 0.0195
     },
     "mine_crystal_auto": {
       "file": "res://assets/models/mine_crystal_auto.res",
-      "lowest": 0.0,
-      "parts_dropped": 116.0,
-      "parts_kept": 365.0,
+      "lowest": -0.01,
+      "parts_dropped": 116,
+      "parts_kept": 365,
       "recipe_hash": "6521971c94b77a55",
-      "seconds": 0.437,
+      "seconds": 0.527,
       "size": [
         4.0,
         0.78,
@@ -1233,16 +1233,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4586.0,
+      "triangles": 4479,
       "units_per_metre": 0.0339
     },
     "mine_crystal_heavy": {
       "file": "res://assets/models/mine_crystal_heavy.res",
       "lowest": -1.25,
-      "parts_dropped": 70.0,
-      "parts_kept": 189.0,
+      "parts_dropped": 70,
+      "parts_kept": 189,
       "recipe_hash": "07efab7b973b12fa",
-      "seconds": 0.218,
+      "seconds": 0.201,
       "size": [
         4.0,
         3.5,
@@ -1261,16 +1261,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4314.0,
+      "triangles": 4462,
       "units_per_metre": 0.0385
     },
     "mine_ore_auto": {
       "file": "res://assets/models/mine_ore_auto.res",
       "lowest": 0.0,
-      "parts_dropped": 105.0,
-      "parts_kept": 337.0,
+      "parts_dropped": 105,
+      "parts_kept": 337,
       "recipe_hash": "d8c5ea41b126cbef",
-      "seconds": 0.428,
+      "seconds": 0.458,
       "size": [
         4.0,
         0.78,
@@ -1290,16 +1290,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4218.0,
+      "triangles": 4498,
       "units_per_metre": 0.0339
     },
     "mine_ore_heavy": {
       "file": "res://assets/models/mine_ore_heavy.res",
       "lowest": -0.63,
-      "parts_dropped": 105.0,
-      "parts_kept": 284.0,
+      "parts_dropped": 105,
+      "parts_kept": 284,
       "recipe_hash": "6ac94d44743e7daa",
-      "seconds": 3.298,
+      "seconds": 3.156,
       "size": [
         4.0,
         1.0,
@@ -1318,19 +1318,19 @@
         "roof",
         "shell"
       ],
-      "triangles": 6567.0,
+      "triangles": 6555,
       "units_per_metre": 0.0195
     },
     "port": {
       "file": "res://assets/models/port.res",
-      "lowest": 0.0,
-      "parts_dropped": 351.0,
-      "parts_kept": 141.0,
+      "lowest": 0.01,
+      "parts_dropped": 351,
+      "parts_kept": 141,
       "recipe_hash": "070aa5bc4dfc9cb0",
-      "seconds": 0.308,
+      "seconds": 0.325,
       "size": [
-        4.0,
-        1.07,
+        3.99,
+        1.06,
         3.03
       ],
       "source": "CC_PORT_HP_v002",
@@ -1346,16 +1346,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4114.0,
+      "triangles": 4492,
       "units_per_metre": 0.027
     },
     "power": {
       "file": "res://assets/models/power.res",
       "lowest": 0.0,
-      "parts_dropped": 128.0,
-      "parts_kept": 158.0,
+      "parts_dropped": 128,
+      "parts_kept": 158,
       "recipe_hash": "25e62b87d4a1cdbb",
-      "seconds": 0.221,
+      "seconds": 0.235,
       "size": [
         4.0,
         1.89,
@@ -1374,16 +1374,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4928.0,
+      "triangles": 4392,
       "units_per_metre": 0.1143
     },
     "ranch": {
       "file": "res://assets/models/ranch.res",
       "lowest": 0.0,
-      "parts_dropped": 59.0,
-      "parts_kept": 403.0,
+      "parts_dropped": 59,
+      "parts_kept": 403,
       "recipe_hash": "a71cd98195972cd1",
-      "seconds": 0.26,
+      "seconds": 0.278,
       "size": [
         4.0,
         0.43,
@@ -1400,16 +1400,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 6996.0,
+      "triangles": 6630,
       "units_per_metre": 0.037
     },
     "research": {
       "file": "res://assets/models/research.res",
       "lowest": 0.0,
-      "parts_dropped": 289.0,
-      "parts_kept": 78.0,
+      "parts_dropped": 289,
+      "parts_kept": 78,
       "recipe_hash": "04ca4c9b22e21d22",
-      "seconds": 0.343,
+      "seconds": 0.356,
       "size": [
         4.0,
         1.67,
@@ -1428,16 +1428,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 4322.0,
+      "triangles": 4390,
       "units_per_metre": 0.1156
     },
     "road_closure": {
       "file": "res://assets/models/road_closure.res",
       "lowest": 0.0,
-      "parts_dropped": 10.0,
-      "parts_kept": 37.0,
+      "parts_dropped": 10,
+      "parts_kept": 37,
       "recipe_hash": "d6608d33ac083229",
-      "seconds": 0.172,
+      "seconds": 0.158,
       "size": [
         1.9,
         0.37,
@@ -1450,16 +1450,16 @@
         "gold",
         "shell"
       ],
-      "triangles": 1184.0,
+      "triangles": 1344,
       "units_per_metre": 0.1008
     },
     "route_gate": {
       "file": "res://assets/models/route_gate.res",
       "lowest": 0.0,
-      "parts_dropped": 6.0,
-      "parts_kept": 21.0,
+      "parts_dropped": 6,
+      "parts_kept": 21,
       "recipe_hash": "3f1f10ab9b714de7",
-      "seconds": 0.168,
+      "seconds": 0.2,
       "size": [
         2.6,
         1.22,
@@ -1475,16 +1475,16 @@
         "gold",
         "metal"
       ],
-      "triangles": 1840.0,
+      "triangles": 1900,
       "units_per_metre": 0.1718
     },
     "school": {
       "file": "res://assets/models/school.res",
       "lowest": 0.0,
-      "parts_dropped": 96.0,
-      "parts_kept": 416.0,
+      "parts_dropped": 96,
+      "parts_kept": 416,
       "recipe_hash": "13765d6a0d53d67d",
-      "seconds": 0.455,
+      "seconds": 0.476,
       "size": [
         4.0,
         0.62,
@@ -1501,16 +1501,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 3721.0,
+      "triangles": 4358,
       "units_per_metre": 0.0513
     },
     "scrubber": {
       "file": "res://assets/models/scrubber.res",
       "lowest": 0.0,
-      "parts_dropped": 323.0,
-      "parts_kept": 78.0,
+      "parts_dropped": 323,
+      "parts_kept": 78,
       "recipe_hash": "6224cb7dee7b6bf9",
-      "seconds": 0.305,
+      "seconds": 0.28,
       "size": [
         4.0,
         3.59,
@@ -1529,7 +1529,7 @@
         "roof",
         "shell"
       ],
-      "triangles": 3583.0,
+      "triangles": 4399,
       "units_per_metre": 0.0625
     },
     "street_lamp": {
@@ -1538,7 +1538,7 @@
       "parts_dropped": 4,
       "parts_kept": 14,
       "recipe_hash": "12d5b0044d1a3c01",
-      "seconds": 0.175,
+      "seconds": 0.172,
       "size": [
         1.08,
         1.71,
@@ -1553,19 +1553,19 @@
         "gold",
         "metal"
       ],
-      "triangles": 508,
+      "triangles": 584,
       "units_per_metre": 0.24
     },
     "university": {
       "file": "res://assets/models/university.res",
       "lowest": 0.0,
-      "parts_dropped": 97.0,
-      "parts_kept": 475.0,
+      "parts_dropped": 97,
+      "parts_kept": 475,
       "recipe_hash": "22898f698bfb2a1f",
-      "seconds": 0.581,
+      "seconds": 0.598,
       "size": [
         5.0,
-        0.79,
+        0.78,
         3.89
       ],
       "source": "CC_UNIVERSITY_HP_v001",
@@ -1579,19 +1579,19 @@
         "roof",
         "shell"
       ],
-      "triangles": 8500.0,
+      "triangles": 8552,
       "units_per_metre": 0.0463
     },
     "vertical_farm": {
       "file": "res://assets/models/vertical_farm.res",
       "lowest": 0.0,
-      "parts_dropped": 882.0,
-      "parts_kept": 327.0,
+      "parts_dropped": 882,
+      "parts_kept": 327,
       "recipe_hash": "370e119c8746a3c9",
-      "seconds": 0.635,
+      "seconds": 0.666,
       "size": [
         4.0,
-        2.83,
+        2.82,
         3.49
       ],
       "source": "CC_VERTICAL_FARM_HP_v003",
@@ -1607,16 +1607,16 @@
         "roof",
         "shell"
       ],
-      "triangles": 10082.0,
+      "triangles": 8098,
       "units_per_metre": 0.083
     },
     "water": {
       "file": "res://assets/models/water.res",
       "lowest": 0.0,
-      "parts_dropped": 208.0,
-      "parts_kept": 90.0,
+      "parts_dropped": 208,
+      "parts_kept": 90,
       "recipe_hash": "133ac2655bddf0ed",
-      "seconds": 0.333,
+      "seconds": 0.391,
       "size": [
         4.0,
         1.15,
@@ -1636,16 +1636,16 @@
         "shell",
         "water"
       ],
-      "triangles": 4628.0,
+      "triangles": 4435,
       "units_per_metre": 0.1111
     },
     "wind_farm": {
       "file": "res://assets/models/wind_farm.res",
       "lowest": 0.0,
-      "parts_dropped": 151.0,
-      "parts_kept": 171.0,
+      "parts_dropped": 151,
+      "parts_kept": 171,
       "recipe_hash": "5dbce29b018e3bd4",
-      "seconds": 0.387,
+      "seconds": 0.405,
       "size": [
         4.0,
         2.5,
@@ -1664,7 +1664,7 @@
         "roof",
         "shell"
       ],
-      "triangles": 3735.0,
+      "triangles": 4498,
       "units_per_metre": 0.0153
     }
   },
