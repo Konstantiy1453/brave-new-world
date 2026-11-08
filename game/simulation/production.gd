@@ -209,6 +209,8 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 			for existing: Dictionary in place.buildings:
 				if existing.kind == kind:
 					return "每颗星球只能建设一座"
+	if d.has("requires_local") and not _has_finished(s, str(d.requires_local)):
+		return "需要先在本据点建成" + str(sim.config.buildings[d.requires_local].name)
 	if (
 		str(d.role) == "farm"
 		and not d.has("fertility_floor")
@@ -228,6 +230,13 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 
 
 ## A working port can buy what a building site lacks, at import price.
+static func _has_finished(s: Dictionary, kind: String) -> bool:
+	for b: Dictionary in s.buildings:
+		if b.kind == kind and int(b.remaining) <= 0:
+			return true
+	return false
+
+
 static func _port_ready(s: Dictionary) -> bool:
 	for b: Dictionary in s.buildings:
 		if str(b.kind) == "port" and int(b.remaining) <= 0 and bool(b.get("active", false)):
@@ -489,7 +498,10 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		if role == "mine":
 			cost_factor = maxf(0.2, cost_factor + Research.bonus(sim, "mine_upkeep"))
 		sim._public_expense(
-			float(d.maintenance) * cost_factor, "upkeep.facility", "external", b.kind
+			float(level_rule(sim, b).get("maintenance", d.maintenance)) * cost_factor,
+			"upkeep.facility",
+			"external",
+			b.kind
 		)
 		if eff <= 0.001:
 			continue
@@ -542,9 +554,12 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			"farm":
 				var climate: float = farm_climate(sim, int(s.region))
 				var field: Dictionary = Sites.plot_of(sim, s, b)
-				var soil: float = maxf(
-					float(field.get("fertility", reg.fertility)),
-					float(d.get("fertility_floor", 0.0))
+				var soil: float = (
+					maxf(
+						float(field.get("fertility", reg.fertility)),
+						float(d.get("fertility_floor", 0.0))
+					)
+					+ Megaprojects.fertility_bonus(sim)
 				)
 				var amount: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
@@ -918,8 +933,12 @@ static func build_forecast(
 			revenue += made * Market.price(sim, good) * (1.0 - fee)
 	elif role == "farm":
 		var climate: float = farm_climate(sim, region)
-		var soil: float = maxf(
-			float(ground.get("fertility", reg.fertility)), float(spec.get("fertility_floor", 0.0))
+		var soil: float = (
+			maxf(
+				float(ground.get("fertility", reg.fertility)),
+				float(spec.get("fertility_floor", 0.0))
+			)
+			+ Megaprojects.fertility_bonus(sim)
 		)
 		var rate: float = (
 			float(spec.rate)

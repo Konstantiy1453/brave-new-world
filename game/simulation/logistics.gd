@@ -74,6 +74,8 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 	var found: Dictionary = route_between(sim, a, b, variant)
 	if bool(found.reachable):
 		found.cost = float(found.cost) * maxf(0.3, 1.0 + Research.bonus(sim, "road_cost"))
+		if variant == "sea":
+			found.cost = float(found.cost) * maxf(0.3, 1.0 + Research.bonus(sim, "sea_route_cost"))
 	var refusal: String = ""
 	if not found.reachable:
 		refusal = str(found.get("reason", "不可达"))

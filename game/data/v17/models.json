@@ -214,6 +214,36 @@
     },
     "wind_farm": {
       "model": "wind_farm"
+    },
+    "terraforming": {
+      "model": "climate_regulator",
+      "scale": 1.15,
+      "shell": "b8d0b0",
+      "stand_in": "not modelled yet"
+    },
+    "capital_district": {
+      "model": "arcology",
+      "scale": 0.9,
+      "shell": "d6cfbd",
+      "stand_in": "not modelled yet"
+    },
+    "exchange": {
+      "model": "data_center",
+      "scale": 1.2,
+      "shell": "c9b98f",
+      "stand_in": "not modelled yet"
+    },
+    "shipyard": {
+      "model": "lift_port",
+      "scale": 0.85,
+      "shell": "9fb3c4",
+      "stand_in": "not modelled yet"
+    },
+    "emergency_net": {
+      "model": "hospital",
+      "scale": 1.05,
+      "shell": "c86a5a",
+      "stand_in": "not modelled yet"
     }
   },
   "models": {

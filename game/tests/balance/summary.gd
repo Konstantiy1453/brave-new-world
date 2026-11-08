@@ -42,6 +42,9 @@ const COVER_AFTER_P90: float = 365.0
 const ABSORPTION_LEAST: float = 0.8
 const ABSORPTION_YEARS: Array[int] = [2, 3, 4, 5, 6]
 const WINDFALL_COVER_DAY: int = 1440
+const LATE_WORKS: Array[String] = [
+	"terraforming", "capital_district", "exchange", "shipyard", "emergency_net"
+]
 const WINDFALL_YEARS: Array[int] = [3, 4, 5]
 
 
@@ -457,6 +460,32 @@ static func _cash_rows(rows: Array, runs: Array) -> void:
 	)
 	_sinks_row(rows, group)
 	_windfall_row(rows, runs)
+	_great_works_row(rows, runs)
+
+
+## Late great works (1.9): in how many runs of the bots that build them each one stands at the end,
+## and its highest level. A work nobody builds is a candidate to drop (plan A2.7).
+static func _great_works_row(rows: Array, runs: Array) -> void:
+	var builders: Array = runs.filter(
+		func(run: Dictionary) -> bool: return str(run.bot) in ["balanced", "rush", "windfall"]
+	)
+	var parts: PackedStringArray = []
+	for kind: String in LATE_WORKS:
+		var count: int = 0
+		var highest: int = 0
+		for run: Dictionary in builders:
+			var level: int = int(run.get("great_works", {}).get(kind, 0))
+			if level > 0:
+				count += 1
+				highest = maxi(highest, level)
+		parts.append("%s %d/%d (level %d)" % [kind, count, builders.size(), highest])
+	_row(
+		rows,
+		"Late great works",
+		"standing at the end, balanced, rush and windfall runs (no target)",
+		", ".join(parts),
+		STATUS_INFO if not builders.is_empty() else STATUS_NONE
+	)
 
 
 ## The windfall case (1.9): the balanced bot with and without ¥1,000,000 on day 1,080, on the same

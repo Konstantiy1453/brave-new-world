@@ -40,6 +40,10 @@ var blobs: Dictionary = {"checkpoint": PackedByteArray(), "archives": {}}
 ## What finished technologies add up to. Derived from state, rebuilt when the list grows.
 var tech_effects: Dictionary = {}
 var tech_effects_count: int = -1
+## The great works' effect totals for one day of one state (Megaprojects.effect).
+var great_effects: Dictionary = {}
+var great_effects_day: int = -1
+var great_effects_state: Dictionary = {}
 
 
 func _init() -> void:

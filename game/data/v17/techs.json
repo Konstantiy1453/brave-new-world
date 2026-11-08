@@ -2023,6 +2023,71 @@
       "effects": {
         "research_speed": 0.3
       }
+    },
+    "terraforming": {
+      "name": "行星改造",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 5,
+      "cost": 1600.0,
+      "funding": 46.0,
+      "weight": 3.0,
+      "requires": ["climate", "biosphere_seeding"],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程行星改造计划：三期工程让全星球更温和、更湿润、更肥沃。",
+      "effects": {}
+    },
+    "capital_district": {
+      "name": "首府新区规划",
+      "category": "society",
+      "branch": "society",
+      "tier": 4,
+      "cost": 1000.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": ["capital_planning"],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程首府新区：建在首府，最多 5 级，每级加床位、吸引力并减少行政开支。",
+      "effects": {}
+    },
+    "offworld_exchange": {
+      "name": "星际交易所",
+      "category": "society",
+      "branch": "society",
+      "tier": 5,
+      "cost": 1600.0,
+      "funding": 46.0,
+      "weight": 3.0,
+      "requires": ["lift_port", "commerce_law"],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程星际交易所：所有出口市场的容量 +50%。",
+      "effects": {}
+    },
+    "orbital_shipyard": {
+      "name": "轨道船坞",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 4,
+      "cost": 1000.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": ["lift_port"],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程轨道船坞：远征和海运更便宜，船更快。",
+      "effects": {}
+    },
+    "emergency_network": {
+      "name": "行星应急网",
+      "category": "society",
+      "branch": "society",
+      "tier": 4,
+      "cost": 1000.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": ["civic_planning"],
+      "minimum_staff": 3,
+      "description": "解锁巨型工程行星应急网：事件损失和道路封闭减少。",
+      "effects": {}
     }
   },
   "always_dealt": [

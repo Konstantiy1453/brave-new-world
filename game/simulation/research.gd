@@ -39,7 +39,8 @@ static func ensure(sim: RefCounted) -> void:
 	ensure_state(sim.state)
 
 
-## What finished technologies add up to for one effect, as a fraction. 0 when nothing touches it.
+## What finished technologies and great works add up to for one effect, as a fraction. 0 when
+## nothing touches it.
 static func bonus(sim: RefCounted, key: String) -> float:
 	var done: Array = sim.state.research.completed
 	if int(sim.tech_effects_count) != done.size():
@@ -50,7 +51,7 @@ static func bonus(sim: RefCounted, key: String) -> float:
 				totals[name] = float(totals.get(name, 0.0)) + float(effects[name])
 		sim.tech_effects = totals
 		sim.tech_effects_count = done.size()
-	return float(sim.tech_effects.get(key, 0.0))
+	return float(sim.tech_effects.get(key, 0.0)) + Megaprojects.effect(sim, key)
 
 
 static func _roll(r: Dictionary) -> float:

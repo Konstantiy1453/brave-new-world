@@ -13,6 +13,14 @@ const Keys = preload("res://simulation/keys.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
 const ResearchBot = preload("res://tests/balance/bots/research_first_bot.gd")
+const Megaprojects = preload("res://simulation/megaprojects.gd")
+const Logistics = preload("res://simulation/logistics.gd")
+const Sites = preload("res://simulation/sites.gd")
+const EventsV2 = preload("res://simulation/events_v2.gd")
+const Production = preload("res://simulation/production.gd")
+const LATE_WORKS: Array[String] = [
+	"terraforming", "capital_district", "exchange", "shipyard", "emergency_net"
+]
 
 const SEED: int = 260129
 const SAVE_PATH: String = "user://v19_money.save"
@@ -65,6 +73,7 @@ func run() -> void:
 	_career_transfer()
 	_commissions()
 	_old_schema_save()
+	_great_works()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -632,3 +641,132 @@ func _old_schema_save() -> void:
 		int(SaveIo.read_header(again).get("version", 0)) == SaveIo.SCHEMA,
 		"as a schema 5 file of its own"
 	)
+
+
+## A finished great work in the first settlement, at a level; the day's effect totals refreshed.
+func _place_work(sim: RefCounted, kind: String, level: int) -> Dictionary:
+	var work: Dictionary = _fake(kind)
+	work.level = level
+	work.upgrade_days = 0
+	sim.state.settlements[0].buildings.append(work)
+	sim.great_effects_day = -1
+	return work
+
+
+## The late great works (plan A2.7): unlocked by tier 4-5 technologies, each with its effect.
+func _great_works() -> void:
+	var sim: RefCounted = make()
+	var place: Dictionary = sim.state.settlements[0]
+	var region: int = int(place.region)
+	var rules: Dictionary = sim.config.megaprojects
+	for kind: String in LATE_WORKS:
+		var tech: String = str(sim.config.buildings[kind].requires_tech)
+		check(
+			int(sim.config.techs[tech].tier) >= 4 and bool(sim.config.buildings[kind].megaproject),
+			"%s is a great work unlocked in tier 4-5" % kind
+		)
+		check(kind in Megaprojects.KINDS, "%s counts toward the great works milestone" % kind)
+	check(sim.config.techs.size() >= 100, "the pool keeps at least 100 technologies")
+	sim.state.research.completed.append("capital_district")
+	fund(sim, 1.0e6)
+	var refusal: String = Production.build_refusal(sim, region, "capital_district")
+	check(
+		refusal.contains(str(sim.config.buildings.capital_hall.name)),
+		"the capital district needs the capital hall in its town: " + refusal
+	)
+	# Exchange: every market holds 50% more before the price falls.
+	var before: float = Market.factor_at(sim, "ore", 3000.0)
+	_place_work(sim, "exchange", 1)
+	check(Market.factor_at(sim, "ore", 3000.0) > before, "the exchange deepens the markets")
+	# Shipyard: cheaper expeditions and sea routes, faster ships.
+	var expedition: float = Sites.expedition_cash(sim)
+	var sea_days: int = Logistics.road_days(sim, {"variant": "sea", "days": 10})
+	_place_work(sim, "shipyard", 1)
+	check(
+		is_equal_approx(
+			Sites.expedition_cash(sim),
+			expedition * (1.0 + float(rules.shipyard.effects.expedition_cost))
+		),
+		"the shipyard cuts the expedition's cost"
+	)
+	check(Logistics.road_days(sim, {"variant": "sea", "days": 10}) < sea_days, "ships are faster")
+	# Emergency network: fewer closures, smaller losses, shorter closures from events.
+	var closure: float = Logistics.closure_chance(sim, {"variant": "engineered"})
+	place.stock.food = 500.0
+	_place_work(sim, "emergency_net", 1)
+	check(
+		Logistics.closure_chance(sim, {"variant": "engineered"}) < closure,
+		"the emergency network makes closures rarer"
+	)
+	EventsV2._apply_colony(sim, place, {"lose_goods": {"food": 100.0}})
+	check(
+		is_equal_approx(
+			500.0 - float(place.stock.food),
+			100.0 * (1.0 + float(rules.emergency_net.effects.event_losses))
+		),
+		"and an event takes less"
+	)
+	# Capital district, level 3: beds, appeal in its town, cheaper administration.
+	var admin: float = sim._admin_cost()
+	sim.Population.refresh(sim, place)
+	var beds: int = int(place.housing)
+	_place_work(sim, "capital_district", 3)
+	sim.Population.refresh(sim, place)
+	check(
+		int(place.housing) - beds == 3 * int(rules.capital_district.beds),
+		"three district levels add their beds"
+	)
+	var parts: Dictionary = sim.Population.attractiveness(sim, place).parts
+	check(
+		is_equal_approx(
+			float(parts.get("district", 0.0)), 3 * float(rules.capital_district.appeal)
+		),
+		"and their appeal shows in the breakdown"
+	)
+	check(sim._admin_cost() < admin, "and administration costs less")
+	# Terraforming, two stages: warmer or cooler toward the comfortable band, wetter, more fertile.
+	var reg: Dictionary = sim.state.world.regions[region]
+	var shift: Dictionary = Megaprojects.climate(sim, region)
+	var work: Dictionary = _place_work(sim, "terraforming", 2)
+	var terraformed: Dictionary = Megaprojects.climate(sim, region)
+	var gap: float = float(rules.terraforming.comfort_temperature) - float(reg.temperature)
+	check(
+		(
+			absf(float(terraformed.temperature) - float(shift.temperature)) <= 2.0 + 0.0001
+			and signf(float(terraformed.temperature) - float(shift.temperature)) == signf(gap)
+		),
+		"two stages move the climate up to 2 C toward the comfortable band"
+	)
+	check(
+		is_equal_approx(
+			float(terraformed.rainfall),
+			float(shift.rainfall) * pow(1.0 + float(rules.terraforming.rainfall_step), 2)
+		),
+		"and bring more rain"
+	)
+	check(
+		is_equal_approx(
+			Megaprojects.fertility_bonus(sim), 2.0 * float(rules.terraforming.fertility_step)
+		),
+		"and richer soil"
+	)
+	check(
+		is_equal_approx(
+			float(Production.level_rule(sim, work).get("maintenance", 0.0)),
+			float(sim.config.upgrades.terraforming[0].maintenance)
+		),
+		"the second stage has its own upkeep"
+	)
+	work.level = 1
+	sim.state.research.completed.append("terraforming")
+	fund(sim, 1.0e6)
+	var index: int = place.buildings.find(work)
+	var next: Dictionary = sim.upgrade_preview(region, index)
+	check(
+		(
+			int(next.get("level", 0)) == 2
+			and is_equal_approx(float(next.cost), float(sim.config.upgrades.terraforming[0].cost))
+		),
+		"the next stage is an upgrade at its own price"
+	)
+	check(Megaprojects.count(sim) >= 5, "five finished kinds count for the milestone")

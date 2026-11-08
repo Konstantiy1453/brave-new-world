@@ -85,6 +85,12 @@ const TRANSFER_REVIEW_PERIOD: int = 60
 ## below the floor.
 const COMMISSION_FLOOR_COVER: float = 45.0
 const COMMISSION_REVIEW_PERIOD: int = 30
+## Late great works (1.9): built, staged and levelled from this much cash cover once unlocked.
+const LATE_WORKS: Array[String] = [
+	"capital_district", "exchange", "terraforming", "shipyard", "emergency_net"
+]
+const LATE_WORKS_COVER: float = 150.0
+const LATE_WORK_TECH_VALUE: float = 6.0
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -105,6 +111,7 @@ var uses_commissions: bool = false
 ## Commission every running project, not only the one the charter needs next.
 var commission_all: bool = false
 var commission_cover: float = 90.0
+var uses_great_works: bool = false
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -168,6 +175,7 @@ func on_day() -> void:
 	_wages()
 	_public_services()
 	_commissions()
+	_late_great_works()
 	_career_transfer()
 
 
@@ -399,7 +407,16 @@ func _card_value(row: Dictionary) -> float:
 		value += 30.0
 	if id in HOUSING_TECHS and _short_of_ground():
 		value += 30.0
+	if uses_great_works and _unlocks_late_work(id):
+		value += LATE_WORK_TECH_VALUE
 	return value
+
+
+func _unlocks_late_work(tech: String) -> bool:
+	for kind: String in LATE_WORKS:
+		if str(sim.config.buildings[kind].requires_tech) == tech:
+			return true
+	return false
 
 
 ## Everything between here and the technology the final stage cannot do without.
@@ -1205,6 +1222,46 @@ func _public_services() -> void:
 		act("policy", {"services": level - 1})
 
 
+## Late great works from `LATE_WORKS_COVER` days of cash cover: the next one unlocked and not
+## yet standing, or the next stage or level of one that is. One step a review.
+func _late_great_works() -> void:
+	if not uses_great_works or today() % COMMISSION_REVIEW_PERIOD != 0:
+		return
+	if cash_cover() < LATE_WORKS_COVER:
+		return
+	for place: Dictionary in _places():
+		for index: int in range(place.buildings.size()):
+			var b: Dictionary = place.buildings[index]
+			if not b.kind in LATE_WORKS:
+				continue
+			var rule: Dictionary = sim.upgrade_preview(int(place.region), index)
+			if not rule.is_empty() and rule.disabled_reason == "":
+				act("upgrade", {"region": int(place.region), "index": index})
+				return
+	for kind: String in LATE_WORKS:
+		if not sim._has(str(sim.config.buildings[kind].requires_tech)) or _anywhere(kind):
+			continue
+		var at: int = _hall_town() if kind == "capital_district" else home
+		if at < 0:
+			continue
+		if int(sim.Sites.free_counts(sim, at).general) <= 0:
+			at = _roomiest()
+		if at < 0 or sim.free_workers(sim.settlement(at)) < int(sim.config.buildings[kind].jobs):
+			continue
+		if _affordable(at, kind, 0.0):
+			act("build", {"region": at, "kind": kind})
+			return
+
+
+## The settlement with the capital hall, or -1.
+func _hall_town() -> int:
+	for place: Dictionary in _places():
+		for b: Dictionary in place.buildings:
+			if b.kind == "capital_hall" and int(b.remaining) <= 0:
+				return int(place.region)
+	return -1
+
+
 ## Commissions on what the charter needs next (or on every running project), by cash cover.
 func _commissions() -> void:
 	if not uses_commissions or today() % COMMISSION_REVIEW_PERIOD != 0:
@@ -1343,6 +1400,9 @@ func _upgrades(reserve: float) -> void:
 
 
 func _upgrade_worthwhile(place: Dictionary, building: Dictionary, rule: Dictionary) -> bool:
+	# Great works grow by their own rule, from cash cover (_late_great_works).
+	if bool(sim.config.buildings[building.kind].get("megaproject", false)):
+		return false
 	var extra_jobs: int = int(rule.get("jobs", 0))
 	match str(building.kind):
 		"mine_ore", "mine_copper", "mine_crystal":

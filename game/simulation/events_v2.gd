@@ -615,8 +615,11 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 		s.workers = int(s.workers) - trained
 		s.scientists = int(s.scientists) + trained
 		sim._reconcile_jobs(s)
+	# The planetary emergency network (1.9) cuts what an event takes and how long it closes roads.
+	var kept: float = maxf(0.0, 1.0 + sim.Research.bonus(sim, "event_losses"))
 	for good: String in option.get("lose_goods", {}):
-		sim._consume(s, good, minf(float(option.lose_goods[good]), float(s.stock[good])))
+		var lost: float = float(option.lose_goods[good]) * kept
+		sim._consume(s, good, minf(lost, float(s.stock[good])))
 	if option.has("set_wage"):
 		sim.state.policy.wage = float(option.set_wage)
 	if option.has("distrust"):
@@ -639,10 +642,13 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 			int(road.blocked_until), int(sim.state.day) + int(option.shorten_closure)
 		)
 	if int(option.get("close_roads", 0)) > 0:
+		var closed: int = ceili(
+			int(option.close_roads) * maxf(0.0, 1.0 + sim.Research.bonus(sim, "event_closures"))
+		)
 		for road: Dictionary in sim.state.roads:
 			if int(road.a) == int(s.region) or int(road.b) == int(s.region):
 				road.blocked_until = maxi(
-					int(road.get("blocked_until", 0)), int(sim.state.day) + int(option.close_roads)
+					int(road.get("blocked_until", 0)), int(sim.state.day) + closed
 				)
 	if option.has("revise_deposits"):
 		_revise_deposits(sim, s, option.revise_deposits)

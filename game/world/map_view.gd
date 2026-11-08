@@ -83,6 +83,10 @@ func sync_state(data: Dictionary) -> void:
 	state = data
 	if world.is_empty():
 		return
+	var stages: float = float(_terraforming_stages())
+	for material: ShaderMaterial in [globe_shader, flat_shader]:
+		if material != null:
+			material.set_shader_parameter("terraform", stages)
 	var markers_now: String = _marker_signature()
 	if markers_now != marker_signature:
 		marker_signature = markers_now
@@ -457,6 +461,15 @@ func freeze_motion() -> void:
 
 
 ## Feeds the visual clock to every map shader. In planet frames: the shaders never turn anything.
+## Terraforming stages finished, read from the state the map was given (0-3).
+func _terraforming_stages() -> int:
+	for s: Dictionary in state.get("settlements", []):
+		for b: Dictionary in s.get("buildings", []):
+			if str(b.kind) == "terraforming" and int(b.get("remaining", 0)) <= 0:
+				return int(b.get("level", 1))
+	return 0
+
+
 func _apply_sky() -> void:
 	var sun: Vector3 = sky.sun_local()
 	if not day_night_enabled:

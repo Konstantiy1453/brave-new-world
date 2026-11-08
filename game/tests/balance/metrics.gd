@@ -125,11 +125,23 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.events_off = state.get("events_v2", {}).get("off", []).size()
 	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
 	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
+	record.great_works = _great_works(sim)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
 		record.reinvested_share = _reinvested / _operating_surplus
 	return record
+
+
+## Finished great works at the end of the run, by kind, with their level.
+func _great_works(sim: RefCounted) -> Dictionary:
+	var built: Dictionary = {}
+	for s: Dictionary in sim.state.settlements:
+		for b: Dictionary in s.buildings:
+			var spec: Dictionary = sim.config.buildings.get(b.kind, {})
+			if bool(spec.get("megaproject", false)) and int(b.remaining) <= 0:
+				built[str(b.kind)] = int(b.get("level", 1))
+	return built
 
 
 func _categories(sim: RefCounted) -> int:

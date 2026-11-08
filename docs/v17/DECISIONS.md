@@ -288,6 +288,25 @@ research-first games taken over.
   4) and a cap on mining research bonuses (it would make the last mining techs do nothing).
 - The windfall case (balanced bot, ¥1,000,000 on day 1,080, normal, capital, the harness's seeds) is an
   INFO row next to the balanced bot on the same seeds · the plan asks for a comparison, not a target.
+- Late great works (plan A2.7) at the plan's prices and times. Their effects are colony-wide bonus keys
+  that code already reads through `Research.bonus` (`market_depth`, `expedition_cost`, `closure`,
+  `admin`, `sea_speed`) plus three new ones (`sea_route_cost`, `event_losses`, `event_closures`), totalled
+  once a day in `Megaprojects.effect` · one path for technologies and great works, no per-call scan of
+  every building · a separate hook in every module.
+- Terraforming stages and capital-district levels are upgrades of one building, each level with its
+  own upkeep (`maintenance` in a level rule) · the existing upgrade flow, costs and saves serve them ·
+  separate buildings per stage. The district stands in the town with the capital hall
+  (`requires_local`), and its beds and appeal stay in that town; the administration saving is
+  colony-wide.
+- The globe and flat map draw each terraforming stage through the same palette inputs the rules change
+  (1 °C toward 20 °C, more rain), with rain drawn at 3 points a stage more than the rules' 5% and a
+  slightly clearer sea · a stage the player paid ¥120,000 or more for should show from orbit.
+- Bots: balanced and rush build, stage and level the late works from 150 days of cash cover, one step
+  every 30 days, and value the techs that unlock them a little in research; the generic upgrade logic
+  leaves great works alone · the plan's rule · letting cash alone decide.
+- The five new works use recoloured stand-ins (climate regulator, arcology, data centre, lift port,
+  hospital) marked "not modelled yet" in `models.json` and `model_recipes.json` · the plan's interim
+  kitbash until the 3ds Max task models them.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.

@@ -1269,6 +1269,93 @@
       ],
       "requires_tech": "capital_planning",
       "model": "university"
+    },
+    "terraforming": {
+      "name": "行星改造计划",
+      "category": "great",
+      "role": "great",
+      "cost": 120000.0,
+      "materials": 600.0,
+      "parts": 200.0,
+      "days": 240,
+      "jobs": 24,
+      "power": 30.0,
+      "water": 10.0,
+      "maintenance": 60.0,
+      "description": "三期工程依次建成：大气调和、水循环、土壤培育。每期全星球气温向宜居带靠近 1 °C、降水 ×1.05、农田肥力 +0.04。后两期在设施上升级。",
+      "megaproject": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "requires_tech": "terraforming"
+    },
+    "capital_district": {
+      "name": "首府新区",
+      "category": "great",
+      "role": "great",
+      "cost": 60000.0,
+      "materials": 400.0,
+      "parts": 120.0,
+      "days": 120,
+      "jobs": 12,
+      "power": 12.0,
+      "water": 6.0,
+      "maintenance": 30.0,
+      "description": "建在有行星议会大厦的首府。每级 +120 床位、首府吸引力 +0.05、行政开支 -2%；最多 5 级，每级造价是上一级的 1.4 倍。",
+      "megaproject": true,
+      "site_kinds": [
+        "residential"
+      ],
+      "requires_local": "capital_hall",
+      "requires_tech": "capital_district"
+    },
+    "exchange": {
+      "name": "星际交易所",
+      "category": "great",
+      "role": "great",
+      "cost": 150000.0,
+      "materials": 700.0,
+      "parts": 260.0,
+      "days": 200,
+      "jobs": 24,
+      "power": 20.0,
+      "water": 4.0,
+      "maintenance": 90.0,
+      "description": "所有出口市场的容量 +50%：同样的出口量，价格跌得更慢。",
+      "megaproject": true,
+      "requires_tech": "offworld_exchange"
+    },
+    "shipyard": {
+      "name": "轨道船坞",
+      "category": "great",
+      "role": "great",
+      "cost": 90000.0,
+      "materials": 600.0,
+      "parts": 240.0,
+      "days": 180,
+      "jobs": 30,
+      "power": 30.0,
+      "water": 6.0,
+      "maintenance": 60.0,
+      "description": "远征和海运航线的造价 -30%；船速 +25%。",
+      "megaproject": true,
+      "requires_tech": "orbital_shipyard"
+    },
+    "emergency_net": {
+      "name": "行星应急网",
+      "category": "great",
+      "role": "great",
+      "cost": 100000.0,
+      "materials": 600.0,
+      "parts": 220.0,
+      "days": 200,
+      "jobs": 20,
+      "power": 20.0,
+      "water": 6.0,
+      "maintenance": 70.0,
+      "description": "事件造成的物资损失 -30%；道路封闭的机会和事件封路的天数 -50%。",
+      "megaproject": true,
+      "requires_tech": "emergency_network"
     }
   },
   "contract": {
@@ -1425,7 +1512,39 @@
       "rainfall": 1.1,
       "radius_degrees": 35.0
     },
-    "capital_hall": {}
+    "capital_hall": {},
+    "terraforming": {
+      "comfort_temperature": 20.0,
+      "temperature_step": 1.0,
+      "rainfall_step": 0.05,
+      "fertility_step": 0.04
+    },
+    "capital_district": {
+      "beds": 120,
+      "appeal": 0.05,
+      "effects": {
+        "admin": -0.02
+      }
+    },
+    "exchange": {
+      "effects": {
+        "market_depth": 0.5
+      }
+    },
+    "shipyard": {
+      "effects": {
+        "expedition_cost": -0.3,
+        "sea_route_cost": -0.3,
+        "sea_speed": 0.2
+      }
+    },
+    "emergency_net": {
+      "effects": {
+        "event_losses": -0.3,
+        "closure": -0.5,
+        "event_closures": -0.5
+      }
+    }
   },
   "upgrades": {
     "mine_ore": [
@@ -1550,6 +1669,64 @@
         "parts": 16.0,
         "days": 36,
         "capacity": 1.5
+      }
+    ],
+    "terraforming": [
+      {
+        "level": 2,
+        "tech": "terraforming",
+        "cost": 200000.0,
+        "materials": 800.0,
+        "parts": 260.0,
+        "days": 300,
+        "maintenance": 90.0
+      },
+      {
+        "level": 3,
+        "tech": "terraforming",
+        "cost": 320000.0,
+        "materials": 1000.0,
+        "parts": 320.0,
+        "days": 360,
+        "maintenance": 120.0
+      }
+    ],
+    "capital_district": [
+      {
+        "level": 2,
+        "tech": "capital_district",
+        "cost": 84000.0,
+        "materials": 460.0,
+        "parts": 140.0,
+        "days": 120,
+        "maintenance": 60.0
+      },
+      {
+        "level": 3,
+        "tech": "capital_district",
+        "cost": 117600.0,
+        "materials": 520.0,
+        "parts": 160.0,
+        "days": 120,
+        "maintenance": 90.0
+      },
+      {
+        "level": 4,
+        "tech": "capital_district",
+        "cost": 164640.0,
+        "materials": 580.0,
+        "parts": 180.0,
+        "days": 120,
+        "maintenance": 120.0
+      },
+      {
+        "level": 5,
+        "tech": "capital_district",
+        "cost": 230496.0,
+        "materials": 640.0,
+        "parts": 200.0,
+        "days": 120,
+        "maintenance": 150.0
       }
     ]
   },

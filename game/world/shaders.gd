@@ -301,6 +301,7 @@ uniform sampler2D lights : filter_linear_mipmap, repeat_enable;
 uniform sampler3D noise3d : filter_linear, repeat_enable;
 uniform vec3 sun_local = vec3(0.6, 0.3, 0.7);
 uniform vec3 camera_local = vec3(0.0, 0.0, 10.0);
+uniform float terraform = 0.0;
 uniform float ice_latitude = 76.0;
 uniform float season = 0.0;
 uniform float relief = 1.0;
@@ -328,7 +329,12 @@ void fragment() {
 	float h = geo_height(g.a) + n2 * 0.004;
 	float t = g.r * 100.0 - 50.0 + season * sign(lat) * 7.0 * abs(lat) / 90.0;
 	float coast = smoothstep(-0.0015, 0.0015, h);
-	vec3 base = mix(sea_color(h, n1), land_color(h, t, g.g, g.b, n1, n2), coast);
+	// Terraforming (1.9): each stage moves the land 1 C toward the comfortable band, adds rain
+	// (drawn a little stronger than the rules' 5% so a stage shows from orbit) and clears the sea.
+	float tt = t + clamp(20.0 - t, -terraform, terraform);
+	float wet = min(1.0, g.g * (1.0 + 0.05 * terraform) + 0.03 * terraform);
+	vec3 sea = mix(sea_color(h, n1), vec3(0.08, 0.36, 0.52), 0.06 * terraform);
+	vec3 base = mix(sea, land_color(h, tt, wet, g.b, n1, n2), coast);
 	float ice = ice_cover(lat, n1, n2, ice_latitude + (1.0 - coast) * 2.0, season);
 	base = to_linear(mix(base, ice_color(n2), ice));
 	// Relief from the height field, lit by the real sun.
@@ -442,6 +448,7 @@ uniform float season = 0.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
 uniform float cloud_opacity = 0.22;
+uniform float terraform = 0.0;
 """
 		+ GEOGRAPHY_GLSL
 		+ CLOUDS_GLSL
@@ -456,7 +463,12 @@ void fragment() {
 	float h = geo_height(g.a) + n2 * 0.004;
 	float t = g.r * 100.0 - 50.0 + season * sign(lat) * 7.0 * abs(lat) / 90.0;
 	float coast = smoothstep(-0.0015, 0.0015, h);
-	vec3 base = mix(sea_color(h, n1), land_color(h, t, g.g, g.b, n1, n2), coast);
+	// Terraforming (1.9): each stage moves the land 1 C toward the comfortable band, adds rain
+	// (drawn a little stronger than the rules' 5% so a stage shows from orbit) and clears the sea.
+	float tt = t + clamp(20.0 - t, -terraform, terraform);
+	float wet = min(1.0, g.g * (1.0 + 0.05 * terraform) + 0.03 * terraform);
+	vec3 sea = mix(sea_color(h, n1), vec3(0.08, 0.36, 0.52), 0.06 * terraform);
+	vec3 base = mix(sea, land_color(h, tt, wet, g.b, n1, n2), coast);
 	base = mix(base, ice_color(n2), ice_cover(lat, n1, n2, ice_latitude + (1.0 - coast) * 2.0, season));
 	// Cartographic hill shading from the north-west.
 	vec2 texel = 1.0 / vec2(textureSize(atlas, 0));

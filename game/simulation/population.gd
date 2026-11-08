@@ -148,6 +148,9 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 	var learned: float = Research.bonus(sim, "appeal")
 	if learned > 0.0:
 		parts.tech = learned
+	var district: float = Megaprojects.district_appeal(sim, s)
+	if district > 0.0:
+		parts.district = district
 	for shortage: Dictionary in s.shortages:
 		if shortage.key in [Keys.SH_POWER, Keys.SH_WATER]:
 			parts.shortages = float(rules.shortage)
@@ -491,6 +494,7 @@ static func refresh(sim: RefCounted, s: Dictionary) -> void:
 			and b.get("enabled", true)
 		):
 			s.housing += habitat_beds(sim, b)
+	s.housing += Megaprojects.district_beds(sim, s)
 	s.food_days = float(s.stock.food) / maxf(0.001, float(s.population) * food_rate(sim))
 	if s.housing < s.population:
 		sim._short(s, Keys.SH_HOUSING)

@@ -161,6 +161,7 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 	"wage": "工资政策",
 	"services": "生活服务",
 	"budget": "公共服务预算",
+	"district": "首府新区",
 	"pollution": "污染",
 	"shortages": "水电短缺",
 	"company": "公司审查",
