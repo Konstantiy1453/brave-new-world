@@ -59,6 +59,33 @@ seed 260129: day 2,304 → 2,174; capital, seed 20261029: 2,706 → 3,042). Both
 missed the main contract deadline (days 3,091 and 3,248). With 3 seeds a cell all of this may be noise: a
 full run (10 seeds, 3 difficulties) on Windows is still to do.
 
+## Late great works and the shuttle: quick harness and probes (Linux)
+
+Quick harness `1.9-great-works-shuttle-linux` (commit `c5cb6d0`, 2026-11-08T20-29-06, 51 runs, 0 audit
+errors): balanced award median day 2,694 (9/9), research-first 77 techs by day 2,403, cover from day 720
+to the award 12 / 102 days (median / p90) — the same as the run before the great-works bots, because the
+bots before the award are unchanged. After the award the cover is 56 / 150 days (was 18 / 148): the bots
+now save for the next great work. Absorption 95–109% in years 3–7, wage lever +23%, determinism 3/3.
+Late great works standing at the end: emergency network 6 of 21 runs, capital district 1 (level 3),
+terraforming, exchange and shipyard none. Takeovers 4 of 27 (two research-first, two rush; the rush runs
+spent nothing on late works, so this is run-to-run spread, not the change). Misses, the same three as
+before: openings (research-first is best with every opening), sloppy (needs hard difficulty, which only
+full runs play), services budget (6 of 9 runs; the row asks for 8).
+
+Developer probes (`tests/balance/bots/balanced_bot.gd` and `rush_bot.gd`, scripts in the session's scratch
+area, figures here):
+
+- 15 years, balanced bot, seed 42, after the bots learned to clear ground in any full town (`3c19e77`):
+  all five works are built — emergency network from day 2,850, capital district 3,480 (level 5),
+  shipyard 4,250, exchange 4,720, terraforming started 5,250. Seed 20261029 (award day 3,033): district
+  level 5 and the emergency network started by day 5,400; its shipyard was unlocked on day 5,337. The
+  tier 4–5 technology chains (6–8 techs) set the pace; the harness ends 2–3 years after the award.
+- Shuttle, rush bot, the quick seeds and openings, 4 years: 8 of 9 games open shuttle lines, 13 lines
+  carrying 146–510 t each; 12 stood down when the road to the same outpost opened. The harness has a
+  "Shuttle lines" INFO row from `3c19e77` on.
+- A final quick harness at `3c19e77` (label `1.9-final-linux`) was started at the end of the session;
+  see `BALANCE.md` for whichever run is newest.
+
 ## Test results (Linux)
 
 Headless suites, after the late great works (commit `c5cb6d0`): 36 pass, 4 fail — the same 4, with the
@@ -93,11 +120,19 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
    whenever converted models change.
    The plan's menu and award images wait for key art in the new look (requested in the model brief).
 5. Money: every plan A2 item is in; what is left is measurement. The full harness run (10 seeds, 3
-   difficulties) is for the Windows run; after it, a late great work that stands in no run is a
-   candidate to drop (plan A2.7), which is the user's call.
+   difficulties) is for the Windows run. No late great work is dropped: the harness ends before the
+   late chains finish, and a 15-year game builds all five (DECISIONS.md).
 6. The README still describes the 1.8.0 release; its 「后期钱会花不完」 limitation (in
    `docs/HISTORICAL_README_1.8.md`) is answered in the 1.9 release notes once the full run confirms the
    money rows.
+7. **Found, not fixed: a won colony can still be taken over.** Balanced bot, seed 260129, capital
+   opening: awarded on day 2,527, then taken over by the company on day 3,787 while holding ¥498,000,
+   for "持续住房或就业不足" — its capital (1,090 people) has 486 idle workers for 357 jobs and no free
+   ground, because new homes took the ground as it grew. The bot from before this session's changes is
+   taken over the same way (day 4,043), so the cause is older than the great-works work. The 10-year
+   harness never sees it. Ways out, for the user to choose: a bot that keeps ground for jobs and clears
+   it for workplaces when idle workers pile up (what a careful player does); or a softer company rule
+   after the award (premise change); or both.
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.
