@@ -85,16 +85,29 @@ static func upgrade_preview(sim: RefCounted, region: int, index: int) -> Diction
 		return {}
 	var rule: Dictionary = rules[step].duplicate(true)
 	rule.disabled_reason = ""
+	# A great work's next stage or level buys what the warehouse lacks at import price, as its
+	# first stage did (1.9); every other upgrade is built from local stock.
+	var great: bool = bool(sim.config.buildings[b.kind].get("megaproject", false))
+	rule.supply_cost = _supply_train_cost(sim, s, rule) if great else 0.0
+	var total: float = float(rule.cost) + float(rule.supply_cost)
 	if not sim._has(rule.tech):
 		rule.disabled_reason = "需要技术：" + str(sim.config.techs[rule.tech].name)
 	elif int(b.remaining) > 0:
 		rule.disabled_reason = "设施尚在施工"
 	elif int(b.upgrade_days) > 0:
 		rule.disabled_reason = "升级施工中"
-	elif float(sim.state.cash) < float(rule.cost):
-		rule.disabled_reason = "公共资金不足：需要 %.0f" % float(rule.cost)
+	elif float(sim.state.cash) < total:
+		rule.disabled_reason = (
+			"公共资金不足：需要 %.0f（含工程物资采购）" % total
+			if float(rule.supply_cost) > 0.0
+			else "公共资金不足：需要 %.0f" % float(rule.cost)
+		)
 	elif (
-		float(s.stock.materials) < float(rule.materials) or float(s.stock.parts) < float(rule.parts)
+		not great
+		and (
+			float(s.stock.materials) < float(rule.materials)
+			or float(s.stock.parts) < float(rule.parts)
+		)
 	):
 		rule.disabled_reason = "本地仓库不足：需要 %.0f 建材 / %.0f 部件" % [rule.materials, rule.parts]
 	return rule
@@ -108,6 +121,8 @@ static func upgrade(sim: RefCounted, region: int, index: int) -> String:
 		return rule.disabled_reason
 	var s: Dictionary = sim.settlement(region)
 	var b: Dictionary = s.buildings[index]
+	if float(rule.supply_cost) > 0.0:
+		_buy_supply_train(sim, s, rule)
 	sim._transfer("public", "external", float(rule.cost), "invest.upgrade", false, b.kind)
 	consume(sim, s, "materials", float(rule.materials))
 	consume(sim, s, "parts", float(rule.parts))

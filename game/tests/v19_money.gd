@@ -693,7 +693,8 @@ func _great_works() -> void:
 	check(Logistics.road_days(sim, {"variant": "sea", "days": 10}) < sea_days, "ships are faster")
 	# Emergency network: fewer closures, smaller losses, shorter closures from events.
 	var closure: float = Logistics.closure_chance(sim, {"variant": "engineered"})
-	place.stock.food = 500.0
+	Production.consume(sim, place, "food", float(place.stock.food))
+	Production.produce(sim, place, "food", 500.0, "test")
 	_place_work(sim, "emergency_net", 1)
 	check(
 		Logistics.closure_chance(sim, {"variant": "engineered"}) < closure,
@@ -769,6 +770,43 @@ func _great_works() -> void:
 			and is_equal_approx(float(next.cost), float(sim.config.upgrades.terraforming[0].cost))
 		),
 		"the next stage is an upgrade at its own price"
+	)
+	# The stage buys what the warehouse lacks at import price, as the first stage did.
+	Production.consume(sim, place, "materials", float(place.stock.materials))
+	Production.consume(sim, place, "parts", float(place.stock.parts))
+	next = sim.upgrade_preview(region, index)
+	var supply: float = (
+		(
+			float(next.materials) * float(sim.config.prices.materials)
+			+ float(next.parts) * float(sim.config.prices.parts)
+		)
+		* (1.0 + float(sim.config.economy.port_fee))
+	)
+	check(
+		str(next.disabled_reason) == "" and is_equal_approx(float(next.supply_cost), supply),
+		"with an empty warehouse the stage buys its materials and parts at import price"
+	)
+	var cash: float = float(sim.state.cash)
+	check(sim.act("upgrade", {"region": region, "index": index}) == "", "and starts")
+	check(
+		is_equal_approx(cash - float(sim.state.cash), float(next.cost) + supply),
+		"for its price and the supplies"
+	)
+	check(
+		int(work.upgrade_days) > 0 and float(place.stock.materials) >= 0.0,
+		"the stage is under way and the warehouse is not overdrawn"
+	)
+	var audit: Array = sim.audit()
+	check(audit.is_empty(), "the ledger balances after the purchase: " + str(audit))
+	# Every other upgrade is still built from local stock.
+	var homes: Dictionary = _fake("habitat")
+	place.buildings.append(homes)
+	homes.upgrade_days = 0
+	sim.state.research.completed.append(str(sim.config.upgrades.habitat[0].tech))
+	var plain: Dictionary = sim.upgrade_preview(region, place.buildings.find(homes))
+	check(
+		float(plain.supply_cost) == 0.0 and str(plain.disabled_reason) != "",
+		"an ordinary upgrade with an empty warehouse waits for local stock"
 	)
 	check(Megaprojects.count(sim) >= 5, "five finished kinds count for the milestone")
 

@@ -501,11 +501,15 @@ static func _building_row(g, b, s: Dictionary, index: int):
 	)
 	var upgrade: Dictionary = g.sim.upgrade_preview(int(s.region), index)
 	if not upgrade.is_empty() and g.sim.state.research.completed.has(upgrade.tech):
+		var supply: float = float(upgrade.get("supply_cost", 0.0))
+		var note: String = str(upgrade.disabled_reason)
+		if note == "" and supply > 0.0:
+			note = "含工程物资采购 ¥ %.0f：本地仓库缺的建材和部件按进口价买入" % supply
 		var raise_level = D.button(
 			b,
-			"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost)],
+			"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost) + supply],
 			func(): g.act("upgrade", {"region": g.selected, "index": index}),
-			str(upgrade.disabled_reason)
+			note
 		)
 		D.font_size(raise_level, 13)
 		raise_level.custom_minimum_size.y = 28
