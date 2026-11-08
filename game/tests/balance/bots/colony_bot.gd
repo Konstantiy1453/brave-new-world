@@ -1374,22 +1374,38 @@ func _with_supplies(forecast: Dictionary) -> float:
 
 
 ## Where a late great work can stand, by the rules and not the money: a town of the kind it needs
-## with a plot for it; the capital district only in the hall's town, whose ground is cleared when
-## it is full. -1 when there is none.
+## with a plot for it, home first; when every such town is full, the first with a public factory to
+## pull down for it. The capital district goes only in the hall's town, cleared the same way. -1
+## when there is none.
 func _late_work_site(kind: String) -> int:
 	if kind == "capital_district":
 		return _hall_town()
-	var kinds: Array = sim.config.buildings[kind].get("site_kinds", [])
 	var towns: Array[int] = [home]
 	for place: Dictionary in _places():
 		if int(place.region) != home:
 			towns.append(int(place.region))
+	var fallback: int = -1
 	for region: int in towns:
 		var place: Dictionary = sim.settlement(region)
-		if not kinds.is_empty() and not str(place.get("kind", "")) in kinds:
+		var spec: Dictionary = sim.build_preview(region, kind)
+		var ground: Dictionary = sim.state.world.regions[region]
+		if sim.Production._place_refusal(place, ground, spec) != "":
 			continue
 		if sim.Sites.find_plot(sim, region, kind) >= 0:
 			return region
+		if fallback < 0 and _public_factory(place) >= 0:
+			fallback = region
+	return fallback
+
+
+## The first public factory in a town, which a great work may replace; -1 when there is none.
+func _public_factory(place: Dictionary) -> int:
+	for index: int in range(place.buildings.size()):
+		var building: Dictionary = place.buildings[index]
+		if str(building.get("owner", "public")) != "public" or int(building.remaining) > 0:
+			continue
+		if sim.Production.role_of(sim, str(building.kind)) == "factory":
+			return index
 	return -1
 
 

@@ -350,12 +350,20 @@ research-first games taken over.
   runs before the day's other building; after the award they save for the next one (new investment
   waits) and chase its technologies (value +40, a paid redraw when none is on offer; before the award
   only the unlocking technology counts, +6, as in the 1.9 phase 4 bots, which keeps the payback seed's
-  colony unchanged). The district's ground in the hall's town is cleared by pulling down a public
-  factory, and the district goes on that plot at once; a step refused for anything but money is left
-  alone for 360 days. No crews are waited for: great works need none to work. The generic upgrade logic
+  colony unchanged). When no town that may hold a work has a free plot (seed 42 had none left in any
+  town by day 4,500), the first such town with a public factory pulls it down and the work goes on that
+  plot at once; the district does the same in the hall's town. A step refused for anything but money is
+  left alone for 360 days. No crews are waited for: great works need none to work. The generic upgrade logic
   leaves great works alone · the plan's "150 days of cover" was never reached in 1.9 (cover peaked at
   124–142 days while expenses grow with the colony), so no run built any work
   (`1.9-great-works-linux`: 0 of 21) · the plan's cover rule as written.
+- No late great work is dropped although three stood in no run of the quick harness
+  (`1.9-great-works-shuttle-linux`: emergency network 6 of 21, capital district 1, the others 0): the
+  harness ends two to three years after the award, before the 6–8-technology chains of the shipyard,
+  exchange and terraforming finish, and in a 15-year game (balanced bot, seed 42) all five are built
+  (emergency network day 2,850, district 3,480 to level 5, shipyard 4,250, exchange 4,720,
+  terraforming 5,250) · the plan's "drop any project nobody builds", which assumed the harness reaches
+  the late game.
 - The five new works use recoloured stand-ins (climate regulator, arcology, data centre, lift port,
   hospital) marked "not modelled yet" in `models.json` and `model_recipes.json` · the plan's interim
   kitbash until the 3ds Max task models them.
