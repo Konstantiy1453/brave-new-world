@@ -497,7 +497,26 @@ func _transfer(
 		Stats.money(state, "invest", key, amount)
 	elif to == "public":
 		Stats.money(state, "funding", key, amount)
+	if from == "public":
+		Stats.sink(state, _sink_of(key, detail), amount)
 	return amount
+
+
+## Which money sink a payment from public cash feeds (1.9 spending by sink), or "" for none.
+## Building and upgrading a great work count as great works.
+func _sink_of(key: String, detail: String) -> String:
+	var sink: String = str(config.economy.get("money_sinks", {}).get(key, ""))
+	if (
+		(sink == Keys.SINK_BUILDINGS or sink == Keys.SINK_UPGRADES)
+		and bool(config.buildings.get(detail, {}).get("megaproject", false))
+	):
+		return Keys.SINK_GREAT_WORKS
+	return sink
+
+
+## Spending by sink, one dictionary per 360-day year, for the economy page and the harness.
+func sinks_by_year() -> Array:
+	return state.get("stats", {}).get("sinks", [])
 
 
 func _public_expense(amount: float, key: String, to: String, detail: String = "") -> void:

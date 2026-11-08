@@ -5,6 +5,8 @@ const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
+## Years of spending by sink on the economy page, this year included.
+const SINK_YEARS: int = 4
 const RES = {
 	"ore": "铁矿",
 	"copper": "铜矿",
@@ -1131,6 +1133,7 @@ static func economy(g, b):
 		_money_column(g, capital, "近 30 日投资（不计经营）", totals.invest, D.MUTED)
 		_money_column(g, capital, "近 30 日外来资金（不计经营）", totals.funding, D.MUTED)
 	_goods_table(b, totals.goods)
+	_sinks_table(g, b)
 	D.label(
 		b,
 		"出口价格：出口越多价格越低，停售后缓慢恢复；最低按基准的 %.0f%% 结算" % (float(g.sim.market_rules.floor) * 100.0),
@@ -1254,6 +1257,33 @@ static func _money_column(g, parent, title: String, amounts: Dictionary, color: 
 		)
 	if rest > 0.0:
 		D.label(c, "其他  ¥ %s" % g.money(rest), 15, D.MUTED)
+
+
+## 「钱花在哪」: spending by sink in the colony's last few years, this year so far on the right.
+static func _sinks_table(g, b) -> void:
+	var years: Array = g.sim.sinks_by_year()
+	if years.is_empty():
+		return
+	var first: int = maxi(0, years.size() - SINK_YEARS)
+	var c = D.card(b)
+	D.label(c, "钱花在哪：每年投入（不含工资、维护等日常开支；最右一列为今年至今）", 17, D.TEAL)
+	var table = D.grid(c, years.size() - first + 1)
+	D.label(table, "去向", 15, D.MUTED, false)
+	for year: int in range(first, years.size()):
+		D.label(table, "第 %d 年" % (year + 1), 15, D.MUTED, false)
+	for sink: String in Labels.SINK_NAMES:
+		var used: bool = false
+		for year: int in range(first, years.size()):
+			used = used or float(years[year].get(sink, 0.0)) > 0.0
+		if not used:
+			continue
+		var name = D.label(table, str(Labels.SINK_NAMES[sink]), 15, D.INK, false)
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for year: int in range(first, years.size()):
+			var cell = D.label(
+				table, "¥ " + g.money(float(years[year].get(sink, 0.0))), 15, D.INK, false
+			)
+			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 static func _goods_table(b, goods: Dictionary):

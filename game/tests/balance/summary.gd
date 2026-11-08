@@ -6,6 +6,8 @@ const STATUS_MISS: String = "MISS"
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
+## A measurement with no target: shown in the table, counted neither as met nor as missed.
+const STATUS_INFO: String = "INFO"
 const AWARD_BANDS: Dictionary = {
 	"easy": [1800, 2520],
 	"normal": [2160, 2880],
@@ -450,6 +452,43 @@ static func _cash_rows(rows: Array, runs: Array) -> void:
 		"spending >= 80% of operating surplus in years 3-7",
 		", ".join(parts),
 		_verdict(lowest >= ABSORPTION_LEAST, lowest < INF)
+	)
+	_sinks_row(rows, group)
+
+
+## Where the money went (1.9): per sink, the median over runs of the mean yearly spending in years
+## 3-7, largest first.
+static func _sinks_row(rows: Array, group: Array) -> void:
+	var names: Dictionary = {}
+	for run: Dictionary in group:
+		for year: Variant in run.get("sinks", []):
+			for sink: String in year:
+				names[sink] = true
+	var medians: Dictionary = {}
+	for sink: String in names:
+		var per_run: Array = []
+		for run: Dictionary in group:
+			var years: Array = run.get("sinks", [])
+			var total: float = 0.0
+			var counted: int = 0
+			for year: int in ABSORPTION_YEARS:
+				if year < years.size():
+					total += float(years[year].get(sink, 0.0))
+					counted += 1
+			if counted > 0:
+				per_run.append(total / counted)
+		medians[sink] = median(per_run)
+	var order: Array = medians.keys()
+	order.sort_custom(func(a: String, b: String) -> bool: return medians[a] > medians[b])
+	var parts: PackedStringArray = []
+	for sink: String in order:
+		parts.append("%s %.0fk" % [sink, float(medians[sink]) / 1000.0])
+	_row(
+		rows,
+		"Spending by sink",
+		"balanced, normal: median a year in years 3-7 (no target)",
+		", ".join(parts) if not parts.is_empty() else "nothing recorded",
+		STATUS_INFO if not group.is_empty() else STATUS_NONE
 	)
 
 

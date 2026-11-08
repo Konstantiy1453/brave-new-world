@@ -10,6 +10,7 @@ const EXPORTED: int = 2
 const IMPORTED: int = 3
 const SHIPPED: int = 4
 const FLOW_COLUMNS: int = 5
+const YEAR_DAYS: int = 360
 const NUMBER_COLUMNS: Array[String] = [
 	"income", "expense", "invest", "funding", "arrivals", "departures"
 ]
@@ -17,7 +18,24 @@ const NUMBER_COLUMNS: Array[String] = [
 
 static func ensure_state(state: Dictionary) -> void:
 	if not state.has("stats"):
-		state.stats = {"today": _blank(), "days": [], "goods_days": []}
+		state.stats = {"today": _blank(), "days": [], "goods_days": [], "sinks": []}
+	if not state.stats.has("sinks"):
+		state.stats.sinks = []
+
+
+## Spending by sink (1.9): one dictionary of sums per 360-day year of the colony, kept for the
+## whole game so the economy page can say where the money went.
+static func sink(state: Dictionary, name: String, amount: float) -> void:
+	if name == "" or amount <= 0.0 or not state.has("stats"):
+		return
+	if not state.stats.has("sinks"):
+		state.stats.sinks = []
+	var years: Array = state.stats.sinks
+	var year: int = maxi(0, floori(float(state.day) / YEAR_DAYS))
+	while years.size() <= year:
+		years.append({})
+	var row: Dictionary = years[year]
+	row[name] = float(row.get(name, 0.0)) + amount
 
 
 static func _blank() -> Dictionary:
@@ -45,6 +63,11 @@ static func validate(candidate: Dictionary) -> String:
 				return "统计数据无效"
 	for row: Variant in stats.days:
 		if not (row.get("cash") is float or row.get("cash") is int):
+			return "统计数据无效"
+	if not stats.get("sinks", []) is Array:
+		return "统计数据无效"
+	for row: Variant in stats.get("sinks", []):
+		if not row is Dictionary or not _numbers_only(row):
 			return "统计数据无效"
 	var goods_rows: Array = stats.goods_days.duplicate()
 	goods_rows.append(stats.today.get("goods"))

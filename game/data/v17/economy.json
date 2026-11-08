@@ -68,6 +68,15 @@
     "admin_preview_residents": 100,
     "mine_warning_days": 360,
     "mine_warning_share": 0.33,
+    "money_sinks": {
+      "invest.build": "buildings",
+      "invest.upgrade": "upgrades",
+      "invest.road": "roads",
+      "recruit": "recruitment",
+      "services.budget": "services",
+      "research.commission": "commissions",
+      "career.transfer": "transfer"
+    },
     "construction_stock": {
       "materials": 70.0,
       "parts": 24.0

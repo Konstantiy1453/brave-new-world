@@ -15,6 +15,17 @@ const RESOURCE_NAMES: Dictionary = {
 	"machinery": "精密机械",
 	"pharma": "药品",
 }
+## Money sinks on the economy page, in display order.
+const SINK_NAMES: Dictionary = {
+	"buildings": "建设",
+	"great_works": "巨型工程",
+	"upgrades": "升级",
+	"roads": "道路",
+	"recruitment": "招募",
+	"services": "公共服务",
+	"commissions": "委托研究",
+	"transfer": "生涯转存",
+}
 const SITE_KIND_NAMES: Dictionary = {
 	Keys.SITE_RESIDENTIAL: "居住据点",
 	Keys.SITE_FRONTIER: "边疆据点",

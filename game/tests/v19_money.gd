@@ -59,6 +59,7 @@ func run() -> void:
 	_admin_view()
 	_market_view()
 	_mine_outlook()
+	_sinks()
 	print("V19_MONEY_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -406,3 +407,41 @@ func _mine_outlook() -> void:
 		float(outlook.share) > 0.0 and float(outlook.share) < 1.0,
 		"ore from tailings, which never run out, dilutes the risk"
 	)
+
+
+## Spending by sink: each payment from public cash lands in its year and its sink.
+func _sinks() -> void:
+	var sim: RefCounted = make()
+	fund(sim, 1.0e6)
+	var region: int = int(sim.state.settlements[0].region)
+	var built: String = sim.act("build", {"region": region, "kind": "farm"})
+	var years: Array = sim.sinks_by_year()
+	check(
+		built == "" and float(years[0].get(Keys.SINK_BUILDINGS, 0.0)) > 0.0,
+		"building lands under buildings in year 1: " + built
+	)
+	sim._transfer("public", "external", 100.0, "invest.build", false, "university")
+	check(
+		is_equal_approx(float(sim.sinks_by_year()[0].get(Keys.SINK_GREAT_WORKS, 0.0)), 100.0),
+		"a great work's construction lands under great works"
+	)
+	sim._transfer("public", "external", 40.0, "invest.upgrade", false, "university")
+	check(
+		is_equal_approx(float(sim.sinks_by_year()[0].get(Keys.SINK_GREAT_WORKS, 0.0)), 140.0),
+		"and so does its upgrade"
+	)
+	sim._transfer("public", "external", 25.0, "import.food", true)
+	var keys: int = sim.sinks_by_year()[0].size()
+	check(keys == 2, "running costs are not a sink")
+	sim.state.day = 400
+	sim._transfer("public", "external", 60.0, "recruit", false, "workers")
+	years = sim.sinks_by_year()
+	check(
+		years.size() == 2 and is_equal_approx(float(years[1].get("recruitment", 0.0)), 60.0),
+		"day 400 is the second year"
+	)
+	check(Stats.validate(sim.state) == "", "a state with sinks validates")
+	var broken: Dictionary = sim.state.duplicate(true)
+	broken.stats.sinks = [{"buildings": "lots"}]
+	check(Stats.validate(broken) != "", "a sink that is not a number is refused")
+	check(sim.audit().is_empty(), "the ledger balances")

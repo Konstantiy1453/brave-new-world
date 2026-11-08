@@ -60,3 +60,8 @@ const SOURCE_IMPORT: String = "import"
 const COVER_SHORT: String = "short"
 const COVER_NORMAL: String = "normal"
 const COVER_IDLE: String = "idle"
+
+## Money sinks (1.9 spending by sink). The rest come from `money_sinks` in economy.json.
+const SINK_BUILDINGS: String = "buildings"
+const SINK_UPGRADES: String = "upgrades"
+const SINK_GREAT_WORKS: String = "great_works"

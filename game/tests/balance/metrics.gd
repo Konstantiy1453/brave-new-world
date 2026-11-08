@@ -124,6 +124,7 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.distinct_events = _distinct_events(state)
 	record.events_off = state.get("events_v2", {}).get("off", []).size()
 	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
+	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
