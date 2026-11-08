@@ -32,6 +32,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Paybacks | New suite `v19_payback` (plan bands; mines in year 6, factories in year 4); heavy mines dearer with twice the upkeep, renewables cheaper and stronger, commerce ¥0.3, foodworks dearer, processors valued at the import price | automated tests (`v19_payback` 39 checks) |
 | Windfall case | Harness case: the balanced bot with ¥1,000,000 on day 1,080, compared on the same seeds | balance harness |
 | Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); bots build them from 150 days of cover; harness INFO row; stand-in models | automated tests (`v19_money` 130 checks), screenshot viewed (`terraform_compare.png`) |
+| Shuttle | Short-range shuttle line from the start: straight hop ≤ 3,500 km, pads in 10 days, 1–2 days a trip, 4 t a day, ¥8,000 + ¥2/km, ¥40 a day, 30× a road's fee; stands down when a road or sea route opens; not part of the contract network; cyan arcs on the maps, a pad and a flying craft in the region | automated tests (`v19_money` 149 checks), screenshots viewed (`evidence/v17/art/shuttle/`) |
 | Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
 
 ## Money: quick harness on Linux (3 seeds, standard)
@@ -81,7 +82,11 @@ last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16
    institute, park, commerce; the five late great works use stand-ins too. 7 models are used before
    their final visual review (`state: wip` in `data/v17/models.json`), 8 kinds still use the older
    generic models (`state: legacy`).
-3. Road vehicles are procedural: no truck or car model was delivered.
+3. Road vehicles, the shuttle and its pad are procedural until modelled. The brief for the 3ds Max agent
+   (near-future colony look, the shuttle and vehicles first, then the stand-ins, the great works, the
+   `wip` and `legacy` models) is `docs/superpowers/plans/2026-11-08-v19-model-brief-scifi.md`; the game
+   already uses `shuttle`, `shuttle_pad` and `vehicle_truck` / `vehicle_van` / `vehicle_bus` once they
+   are converted.
 4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
 5. Money: every plan A2 item is in; what is left is measurement. The full harness run (10 seeds, 3
    difficulties) is for the Windows run; after it, a late great work that stands in no run is a

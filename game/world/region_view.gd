@@ -1128,19 +1128,14 @@ func _build_shuttle_pad(
 	var day: int = int(state.get("day", 0))
 	var spot: Vector2 = _pad_spot(finish, direction)
 	var pad := Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
-	_cylinder(
-		buildings_root, pad + Vector3(0, .04, 0), 1.3, .08, _mat("shuttle_pad", Color("4a575e"))
+	var modelled: MeshInstance3D = ModelArt.instance(
+		"shuttle_pad", func(slot: String) -> Material: return _art_material(slot, {}, true)
 	)
-	_cylinder(
-		buildings_root,
-		pad + Vector3(0, .085, 0),
-		1.0,
-		.012,
-		_mat("shuttle_mark", Color("e6b45a"), 0.0, .5, .4)
-	)
-	var light := _mat("shuttle_light", SHUTTLE_COLOR, 0.0, .4, 1.4)
-	for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
-		_cylinder(buildings_root, pad + Vector3(corner.x, .16, corner.y), .05, .18, light, 6)
+	if modelled != null:
+		modelled.position = pad
+		buildings_root.add_child(modelled)
+	else:
+		_plain_pad(pad)
 	var building: bool = Geo.road_building(route, day)
 	if not building:
 		region_gates.append({"end": spot})
@@ -1188,6 +1183,23 @@ func _pad_spot(finish: Vector2, direction: Vector2) -> Vector2:
 				continue
 			return at
 	return finish
+
+
+## The pad drawn until the `shuttle_pad` model exists: a deck, a touchdown ring, corner lights.
+func _plain_pad(pad: Vector3) -> void:
+	_cylinder(
+		buildings_root, pad + Vector3(0, .04, 0), 1.3, .08, _mat("shuttle_pad", Color("4a575e"))
+	)
+	_cylinder(
+		buildings_root,
+		pad + Vector3(0, .085, 0),
+		1.0,
+		.012,
+		_mat("shuttle_mark", Color("e6b45a"), 0.0, .5, .4)
+	)
+	var light := _mat("shuttle_light", SHUTTLE_COLOR, 0.0, .4, 1.4)
+	for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+		_cylinder(buildings_root, pad + Vector3(corner.x, .16, corner.y), .05, .18, light, 6)
 
 
 func _shuttle_craft() -> Node3D:
@@ -1434,10 +1446,21 @@ func _build_traffic(stops: Array, offset: float, region: int) -> void:
 	traffic.setup(int(world.seed) * 31 + region, 2 + working / 2 + region_gates.size() * 2)
 
 
+## A traffic vehicle: the `vehicle_<kind>` model with its slot colours once one is delivered, a
+## procedural one until then.
 func _vehicle_mesh(kind: String) -> ArrayMesh:
 	var key: String = "vehicle|" + kind
 	if baked_models.has(key):
 		return baked_models[key]
+	var model: ArrayMesh = ModelArt.mesh("vehicle_" + kind)
+	if model != null:
+		var tinted: ArrayMesh = model.duplicate() as ArrayMesh
+		for index: int in range(tinted.get_surface_count()):
+			tinted.surface_set_material(
+				index, _art_material(tinted.surface_get_name(index), {}, true)
+			)
+		baked_models[key] = tinted
+		return tinted
 	var root := Node3D.new()
 	add_child(root)
 	_build_vehicle(root, kind)
