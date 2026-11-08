@@ -25,6 +25,15 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
 | Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line, in this order, for export income leaning on mines with under 360 days of reserves, counting goods made from their ore (a third or more of the month's export value; the share also shows on the economy page), for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 56 checks, `ui_contract`), developer probe (`tests/balance/mine_probe.gd`, normal play and `--hands-off=1080`), screenshots viewed (`evidence/v17/art/pages/economy*.png`, `economy_day1440.png`) |
 
+| Spending by sink | Every payment from public cash is summed by sink and colony year (`state.stats.sinks`); economy page 「钱花在哪」 for the last four years; harness INFO row | automated tests (`v19_money`), screenshots viewed |
+| Career transfer | After the award, public cash buys career funds at 2 : 1, up to ¥200,000 a colony year; career page control; bots move cash above 240 days of cover | automated tests (`v19_money`) |
+| Commissioned research | Levels 1/2 on a project its own team works on, ¥100–450 a point by tier, ×1.25 per other commission; research-page switch with cost and days saved; optional spending (this and services) only from cash beyond two days of bills | automated tests (`v19_money`), screenshot viewed (`research_commission.png`) |
+| Saves | Schema 5 in `ColonyCharter/v19`; 1.8 and 1.7 saves are read from their own folders, upgraded on load with a log line, and never written | automated tests (`v19_money`; the Windows-recorded save suites are for the Windows run) |
+| Paybacks | New suite `v19_payback` (plan bands; mines in year 6, factories in year 4); heavy mines dearer with twice the upkeep, renewables cheaper and stronger, commerce ¥0.3, foodworks dearer, processors valued at the import price | automated tests (`v19_payback` 39 checks) |
+| Windfall case | Harness case: the balanced bot with ¥1,000,000 on day 1,080, compared on the same seeds | balance harness |
+| Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); bots build them from 150 days of cover; harness INFO row; stand-in models | automated tests (`v19_money` 130 checks), screenshot viewed (`terraform_compare.png`) |
+| Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
+
 ## Money: quick harness on Linux (3 seeds, standard)
 
 | | 1.8.0 on Linux | first pass (plan values) | gentle | stronger variant | **kept: gentle, homes exempt** |
@@ -69,13 +78,14 @@ last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16
 2. 16 building kinds still borrow a related model (their own exist only as gray models or are not
    made): deep_well, atmospheric_water, mine_copper, mine_crystal, tailings_plant, sea_copper,
    crystal_vat, hydroponic_farm, protein_plant, foodworks, smelter, machine_works, pharma_plant,
-   institute, park, commerce. 7 models are used before their final visual review (`wip` in
-   `data/v17/models.json`).
+   institute, park, commerce; the five late great works use stand-ins too. 7 models are used before
+   their final visual review (`state: wip` in `data/v17/models.json`), 8 kinds still use the older
+   generic models (`state: legacy`).
 3. Road vehicles are procedural: no truck or car model was delivered.
 4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
-5. Money: commissioned research, career transfer and the late great works (plan A2.6a, A2.6c, A2.7), the
-   payback suite (A2.2), spending per sink and the windfall row (A2.9) and 「钱花在哪」 on the economy page
-   (A2.10) are not done; a full harness run (10 seeds, 3 difficulties) is still to do.
+5. Money: every plan A2 item is in; what is left is measurement. The full harness run (10 seeds, 3
+   difficulties) is for the Windows run; after it, a late great work that stands in no run is a
+   candidate to drop (plan A2.7), which is the user's call.
 6. The README still describes the 1.8.0 release; its 「后期钱会花不完」 limitation (in
    `docs/HISTORICAL_README_1.8.md`) is answered in the 1.9 release notes once the full run confirms the
    money rows.
