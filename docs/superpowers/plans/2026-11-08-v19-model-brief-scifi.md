@@ -129,6 +129,15 @@ direction above while finishing them (radiators, sealed cabs on the machinery, p
 光伏储能站 `power`, 教学研究所 `lab`, 净水泵站 `water`. Keep each one's footprint and main volume (the game's
 layouts are built around them); change the skin and details.
 
+### P1 — key art for the menu and the award (four renders)
+
+The release's beauty renders are layout views on grey terrain in the old look, so the game does not use
+them yet. Render four images in the new look, 1920 × 1080 PNG, into `09_previews/key_art/`: the colony
+at dusk with lit windows and street lights; a cargo shuttle landing on its pad at the edge of town; the
+capital district's towers with the terraforming stacks behind; a hydroponic vault interior. No text, no
+logos, no recognisable planet map (the game shows them next to the player's own world and must not
+suggest it is that world). The game scales them to 1600 × 900 JPG.
+
 ### Later
 
 Upgrade add-ons for levels 2–3 (mines, habitat, lab, port, farm, processor); people (a few colonists in

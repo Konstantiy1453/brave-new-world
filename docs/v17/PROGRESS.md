@@ -20,7 +20,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Clouds | Animated clouds on latitude winds, cross-faded layers, drifting cyclones with eyes and arms, day/night cloud lighting, twilight tint, atmosphere rim lit by the sun | screenshots viewed |
 | Region dynamics | Day and night from the site's place on the globe; lit windows, lamp pools, headlights; trucks, vans and buses on the service roads; smoke from working plants; drifting cloud shadows; rippling water; smooth cargo motion on globe and flat map | screenshots viewed |
 | Settings | 「地图画面」: spin, day/night with lights, clouds/weather (off hides clouds) | automated tests (ui_contract) |
-| Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (25 s, 4.0 MB); all 56 building kinds drawn with models (40 own, 16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts | automated conversion; contact sheets and region showcase viewed (`evidence/v17/art/gallery/`, `showcase_*.png`) |
+| Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (34 s, 3.9 MB, two runs byte-identical); each model within its triangle target, shares weighted by colour slot (47 of 53; six with open crop strips, tree crowns or a dense pit are recorded exceptions); all 61 building kinds drawn with models (16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts; suite `v19_art` checks budgets, slots, footprints and depth (plan B7) | automated tests (`v19_art` 479 checks), contact sheets viewed before and after the budget pass (`evidence/v17/art/gallery/`), region showcase viewed (`showcase_*.png`) |
 | Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
 | Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
 | Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line, in this order, for export income leaning on mines with under 360 days of reserves, counting goods made from their ore (a third or more of the month's export value; the share also shows on the economy page), for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 56 checks, `ui_contract`), developer probe (`tests/balance/mine_probe.gd`, normal play and `--hands-off=1080`), screenshots viewed (`evidence/v17/art/pages/economy*.png`, `economy_day1440.png`) |
@@ -31,8 +31,9 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Saves | Schema 5 in `ColonyCharter/v19`; 1.8 and 1.7 saves are read from their own folders, upgraded on load with a log line, and never written | automated tests (`v19_money`; the Windows-recorded save suites are for the Windows run) |
 | Paybacks | New suite `v19_payback` (plan bands; mines in year 6, factories in year 4); heavy mines dearer with twice the upkeep, renewables cheaper and stronger, commerce ¥0.3, foodworks dearer, processors valued at the import price | automated tests (`v19_payback` 39 checks) |
 | Windfall case | Harness case: the balanced bot with ¥1,000,000 on day 1,080, compared on the same seeds | balance harness |
-| Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); bots build them from 150 days of cover; harness INFO row; stand-in models | automated tests (`v19_money` 130 checks), screenshot viewed (`terraform_compare.png`) |
+| Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); later stages and levels buy missing materials and parts at import price, as the first stage does; bots build each step when cash pays for it with its supplies and keeps 10 days of expenses (60 before the award), save for the next one after the award and chase its technologies; harness INFO row; stand-in models | automated tests (`v19_money` 155 checks, `v19_payback` unchanged), developer probe (balanced bot, 10 years: emergency network on seeds 260129 and 42, capital district on 42), screenshot viewed (`terraform_compare.png`) |
 | Shuttle | Short-range shuttle line from the start: straight hop ≤ 3,500 km, pads in 10 days, 1–2 days a trip, 4 t a day, ¥8,000 + ¥2/km, ¥40 a day, 30× a road's fee; stands down when a road or sea route opens; not part of the contract network; cyan arcs on the maps, a pad and a flying craft in the region | automated tests (`v19_money` 149 checks), screenshots viewed (`evidence/v17/art/shuttle/`) |
+| Building icons | `tests/art/bake_icons.gd` renders every kind's model (tint, scale, the map's daylight) to `assets/icons/buildings/<kind>.webp` (lossless), 128 px with mipmaps; build card 64 px, building column 32 px; goods keep their SVG pictograms | screenshots viewed (`evidence/v17/art/pages/settlement.png`, `build.png`), automated tests (`ui_contract`, `v16_ui_tests`) |
 | Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
 
 ## Money: quick harness on Linux (3 seeds, standard)
@@ -60,15 +61,16 @@ full run (10 seeds, 3 difficulties) on Windows is still to do.
 
 ## Test results (Linux)
 
-Headless suites, after the money readouts: 35 pass, 4 fail — the same 4 as the untouched 1.8.0 source
-on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`: Windows-recorded fixtures and
-world hashes do not reproduce on the Linux build). `v19_money` (48 checks) passes; `ui_contract` now
-also checks that the economy page shows the cover, administration and floor lines;
-`v17_contract_population` follows the 1.9 administration rule. Of the `review_*` tools,
-`review_save_nested` passes; the others fail on both versions on their hard-coded `D:` output paths (they
-then wait for the runner's 540 s timeout, so the last run was stopped after two of them). Window suites,
-last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` and
-`v16_scroll_probe` fail on the same fixture-loading errors as 1.8.0 on Linux.
+Headless suites, after the late great works (commit `c5cb6d0`): 36 pass, 4 fail — the same 4, with the
+same failing checks, as the untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`,
+`world_v16_seed`: Windows-recorded fixtures and world hashes do not reproduce on the Linux build).
+`v19_money` (155 checks) and `v19_payback` (39 checks) pass; `ui_contract` checks the economy page's
+cover, administration and floor lines; `v17_contract_population` follows the 1.9 administration rule. Of
+the `review_*` tools, `review_save_nested` passes; the others fail on both versions on their hard-coded
+`D:` output paths (they then wait for the runner's 540 s timeout, so they were not run this time). Window
+suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` and
+`v16_scroll_probe` fail with the same script errors as 1.8.0 on Linux (22 and 8, counted on both): the
+1.6 acceptance fixture they load does not rebuild its world on the Linux build.
 
 ## Not done / open
 
@@ -87,7 +89,9 @@ last run before the readouts: `world_v16_visual` and `world_v17_seam` pass; `v16
    `wip` and `legacy` models) is `docs/superpowers/plans/2026-11-08-v19-model-brief-scifi.md`; the game
    already uses `shuttle`, `shuttle_pad` and `vehicle_truck` / `vehicle_van` / `vehicle_bus` once they
    are converted.
-4. Building icons are still the SVG set (the 1.9 plan's baked icons are not done).
+4. Building icons are baked from the models; re-run `tests/art/bake_icons.gd` (window) and the import
+   whenever converted models change.
+   The plan's menu and award images wait for key art in the new look (requested in the model brief).
 5. Money: every plan A2 item is in; what is left is measurement. The full harness run (10 seeds, 3
    difficulties) is for the Windows run; after it, a late great work that stands in no run is a
    candidate to drop (plan A2.7), which is the user's call.

@@ -238,6 +238,11 @@ One line each: decision · reason · alternative rejected.
   the 15 SVG pictograms stay for goods and as the fallback for a kind without a model. They are
   lossless WebP, not the plan's PNG: the repository sends every PNG through Git LFS, whose GitHub host
   the cloud session's network does not reach, and 15 KB icons gain nothing from LFS.
+- The plan's images (B6: up to ten beauty renders behind the menu and on the stage and award screens)
+  are not used: the seven suggested renders are layout views on grey terrain in the present-day look
+  the user has since asked to move away from, and a picture behind the menu would hide the turning
+  globe the 1.9 request was about. The model brief asks for four key-art renders in the new look ·
+  the plan's list as written.
 - Town traffic is cosmetic and stops while the game is paused · vehicles moving during a pause read as time passing · ambient traffic during pauses.
 - The 3ds Max models are converted by `tests/art/convert_models.gd` from the FBX exports, per `tests/art/model_recipes.json`: thin parts dropped, parts grouped into ten colour slots by node name, fitted (4.0 units, great works 5.0, height ×1.3) and decimated to 4,500 triangles (great works 9,000) · the 1.9 plan's verified prototype; 53 runtime meshes in 25 s, 4.0 MB · importing the high-poly FBX directly (60k–200k triangles each).
 - Every kind follows the art team's `ASSET_MAPPING.json`; the 15 kinds with only gray models stand in with their mapped source model and a shell tint · the mapping names those sources and the gray files have no FBX · drawing them procedurally.
