@@ -280,12 +280,19 @@ research-first games taken over.
   them into it would cost the opening about half again on its only income · asserting every year for
   mines. Band edges have 5% slack, because the same seed builds a slightly different world on Windows.
 - Payback calibration: heavy mines cost iron 9,000 → 16,000, copper 12,000 → 19,200, crystal
-  16,000 → 25,600 with twice the upkeep; light mines iron 2,100 → 2,900, copper 2,900 → 3,100, crystal
-  4,300 → 5,200; renewables cheaper and stronger (tailings 6,000 → 4,200; sea copper 11,000 → 8,000 and
+  16,000 → 25,600 with twice the upkeep; light mines keep their 1.8 costs; renewables cheaper and stronger (tailings 6,000 → 4,200; sea copper 11,000 → 8,000 and
   5 → 7 t a day; crystal vats 13,000 → 9,000 and 1.8 → 3.2 t); commerce ¥0.2 → 0.3 a customer;
   foodworks 3,100 → 3,700; the forecast values a factory's materials and parts at the import price · every
   checked payback now sits in its band · a shallower iron market (scale 6,000 → 4,000 barely moved year
   4) and a cap on mining research bonuses (it would make the last mining techs do nothing).
+- Light mines keep their 1.8 costs (2,100 / 2,900 / 4,300) · dearer light mines (2,900 / 3,100 / 5,200)
+  cut the wage lever from +23% to +3% in `lever_probe.gd`: the opening's cash buys the houses that let
+  wages matter; with 1.8 costs the lever is +23% and light mines still pay back in band in year 6
+  (72 / 87 / 92 days) · dearer light mines for a closer year-4 band.
+- Research-first commissions what the charter needs next at 90 days of cover (level 2 at 180), like the
+  balanced bot, and every bot reviews commissions every 10 days · commissioning every running project
+  from 60 days and reviewing monthly spent ¥40k–376k a year and lost 5 of 9 research-first games to the
+  contract deadline (`1.9-phase2-linux`) · a weaker commission rule in the game.
 - The windfall case (balanced bot, ¥1,000,000 on day 1,080, normal, capital, the harness's seeds) is an
   INFO row next to the balanced bot on the same seeds · the plan asks for a comparison, not a target.
 - Late great works (plan A2.7) at the plan's prices and times. Their effects are colony-wide bonus keys

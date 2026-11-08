@@ -84,7 +84,7 @@ const TRANSFER_REVIEW_PERIOD: int = 60
 ## Commissioned research (1.9): level 1 from this much cover, level 2 from twice it, all stopped
 ## below the floor.
 const COMMISSION_FLOOR_COVER: float = 45.0
-const COMMISSION_REVIEW_PERIOD: int = 30
+const COMMISSION_REVIEW_PERIOD: int = 10
 ## Late great works (1.9): built, staged and levelled from this much cash cover once unlocked.
 const LATE_WORKS: Array[String] = [
 	"capital_district", "exchange", "terraforming", "shipyard", "emergency_net"
