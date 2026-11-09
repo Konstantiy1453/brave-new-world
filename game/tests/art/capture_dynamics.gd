@@ -2,8 +2,11 @@ extends SceneTree
 ## Needs a real window. Plays a colony with the balanced bot, then captures the moving map at
 ## chosen moments: the globe by day and by night, the flat map, and a region at noon and at night.
 ## Options: --seed=260129 --days=900 --out=res://../evidence/v17/art/dynamics --size=1600x900
-## --terraform=3 draws the map as if that many terraforming stages were finished (render-only).
-## --shuttle adds a render-only shuttle line from the home town to the second settlement.
+## --terraform=3 draws the map as if that many terraforming stages were finished (render-only);
+## --district=5 adds a finished capital district at that level to the home town (render-only);
+## --shots=works frames the terraforming programme and the district in the home region.
+## --shuttle adds a render-only shuttle line from the home town to the second settlement;
+## --shots=shuttle then frames its pad with the craft parked, and the craft in flight.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -63,12 +66,15 @@ func run() -> void:
 			shown.roads.append(line)
 			map.sync_state(shown)
 		print("CAPTURE_DYNAMICS shuttle line=%s" % str(not line.is_empty()))
-	if stages > 0:
+	var levels: int = int(str(options.get("district", "0")))
+	for work: Array in [["terraforming", stages], ["capital_district", levels]]:
+		if int(work[1]) <= 0:
+			continue
 		shown.settlements[0].buildings.append(
 			{
-				"kind": "terraforming",
+				"kind": str(work[0]),
 				"remaining": 0,
-				"level": stages,
+				"level": int(work[1]),
 				"enabled": true,
 				"active": true,
 				"plot": -1
@@ -114,6 +120,10 @@ func run() -> void:
 			map.local_yaw = 0.68 + view * PI * 0.5
 			map.smooth_yaw = map.local_yaw
 			await _shot("region_side_%d" % view)
+	if wanted.contains("shuttle"):
+		await _shuttle_shots(home)
+	if wanted.contains("works"):
+		await _works_shots(home)
 	if wanted == "all" or wanted.contains("showcase"):
 		await _showcase(sim, home)
 	var file := FileAccess.open(folder + "/report.json", FileAccess.WRITE)
@@ -139,6 +149,48 @@ func _shuttle_line(sim: RefCounted) -> Dictionary:
 			if bool(line.reachable):
 				return line
 	return {}
+
+
+## Close views of the first shuttle line's pad in the home region: parked, then in flight.
+func _shuttle_shots(home: Dictionary) -> void:
+	map.show_region(int(home.id))
+	while map.region_busy:
+		await process_frame
+	_set_local_time(home, 0.4)
+	if map.shuttle_flights.is_empty():
+		report.failures.append("no shuttle line in the home region")
+		return
+	var flight: Dictionary = map.shuttle_flights[0]
+	map.local_pitch = 0.62
+	map.smooth_pitch = 0.62
+	for shot: Array in [["shuttle_parked", 2.0, 6.5], ["shuttle_flying", 21.5, 11.0]]:
+		flight.clock = float(shot[1])
+		map._fly(0.0)
+		# The region camera stands 4 units to the right of its pivot (room for the side panels).
+		var right := Vector3(cos(map.local_yaw), 0.0, -sin(map.local_yaw))
+		map.camera_pivot = (flight.craft as Node3D).position - right * 4.0
+		map.local_distance = float(shot[2])
+		map.smooth_distance = float(shot[2])
+		await _shot(str(shot[0]))
+
+
+## Close views of the late great works standing in the home region, with their stages or levels.
+func _works_shots(home: Dictionary) -> void:
+	map.show_region(int(home.id))
+	while map.region_busy:
+		await process_frame
+	_set_local_time(home, 0.4)
+	map.local_pitch = 0.7
+	map.smooth_pitch = 0.7
+	var right := Vector3(cos(map.local_yaw), 0.0, -sin(map.local_yaw))
+	for node: Node in map.buildings_root.get_children():
+		var kind: String = str(node.get_meta("building_kind", ""))
+		if not kind in ["terraforming", "capital_district"]:
+			continue
+		map.camera_pivot = (node as Node3D).position - right * 4.0
+		map.local_distance = 15.0
+		map.smooth_distance = 15.0
+		await _shot("work_" + kind)
 
 
 ## Hour angle 0 is local noon at the site, PI local midnight.

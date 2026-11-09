@@ -3,7 +3,8 @@
 Started 2026-11-07 from the user's request after a friend compared the 1.8 demo with TerraGenesis:
 the planet should turn, show day and night with lit towns and roads at night, the surface looked
 too rough, and the map needs moving elements such as clouds (Plague Inc. / Rebel Inc. style). The
-3ds Max models uploaded the same day (release `art-assets-20261107`) are placed in the game. Balance
+3ds Max models uploaded the same day (release `art-assets-20261107`) and the near-future set delivered on
+2026-11-09 (release `art-assets-20261109`) are placed in the game. Balance
 work follows `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` Part A.
 
 Evidence labels as in `CLAUDE.md`. Everything below ran in a Linux cloud container (Godot 4.5.1
@@ -20,7 +21,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Clouds | Animated clouds on latitude winds, cross-faded layers, drifting cyclones with eyes and arms, day/night cloud lighting, twilight tint, atmosphere rim lit by the sun | screenshots viewed |
 | Region dynamics | Day and night from the site's place on the globe; lit windows, lamp pools, headlights; trucks, vans and buses on the service roads; smoke from working plants; drifting cloud shadows; rippling water; smooth cargo motion on globe and flat map | screenshots viewed |
 | Settings | 「地图画面」: spin, day/night with lights, clouds/weather (off hides clouds) | automated tests (ui_contract) |
-| Models | `tests/art/convert_models.gd` turns the FBX exports into 53 runtime meshes (34 s, 3.9 MB, two runs byte-identical); each model within its triangle target, shares weighted by colour slot (47 of 53; six with open crop strips, tree crowns or a dense pit are recorded exceptions); all 61 building kinds drawn with models (16 stand-ins for unfinished models); construction site and crane, closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts; suite `v19_art` checks budgets, slots, footprints and depth (plan B7) | automated tests (`v19_art` 479 checks), contact sheets viewed before and after the budget pass (`evidence/v17/art/gallery/`), region showcase viewed (`showcase_*.png`) |
+| Models | `tests/art/convert_models.gd` turns the FBX exports of releases `art-assets-20261107` and `art-assets-20261109` into 122 runtime meshes (49 s, 6.9 MB, two runs byte-identical); each model within its triangle target, shares weighted by colour slot (five with open crop strips, tree crowns or glass panes are recorded exceptions); all 61 building kinds drawn with their own models but `service`; 36 kinds with their own construction state, the rest with the shared site kit; terraforming stages and district levels drawn as they are finished; shuttle (parked and in flight), its pad, trucks, vans and buses modelled; closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts; suite `v19_art` checks budgets, slots, footprints, depth, construction states and stages (plan B7) | automated tests (`v19_art` 1,063 checks), contact sheets viewed (`evidence/v17/art/gallery/`), region, shuttle and great-work captures viewed (`evidence/v17/art/models_1109*/`) |
 | Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
 | Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
 | Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line, in this order, for export income leaning on mines with under 360 days of reserves, counting goods made from their ore (a third or more of the month's export value; the share also shows on the economy page), for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 56 checks, `ui_contract`), developer probe (`tests/balance/mine_probe.gd`, normal play and `--hands-off=1080`), screenshots viewed (`evidence/v17/art/pages/economy*.png`, `economy_day1440.png`) |
@@ -107,17 +108,15 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
    run every suite, export the EXE and measure frame times on a real GPU
    (`tests/art/frame_time_probe.gd`; the cloud and flat-map shaders are the heaviest). Step by step,
    with which way to fix each miss: `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md`.
-2. 16 building kinds still borrow a related model (their own exist only as gray models or are not
-   made): deep_well, atmospheric_water, mine_copper, mine_crystal, tailings_plant, sea_copper,
-   crystal_vat, hydroponic_farm, protein_plant, foodworks, smelter, machine_works, pharma_plant,
-   institute, park, commerce; the five late great works use stand-ins too. 7 models are used before
-   their final visual review (`state: wip` in `data/v17/models.json`), 8 kinds still use the older
-   generic models (`state: legacy`).
-3. Road vehicles, the shuttle and its pad are procedural until modelled. The brief for the 3ds Max agent
-   (near-future colony look, the shuttle and vehicles first, then the stand-ins, the great works, the
-   `wip` and `legacy` models) is `docs/superpowers/plans/2026-11-08-v19-model-brief-scifi.md`; the game
-   already uses `shuttle`, `shuttle_pad` and `vehicle_truck` / `vehicle_van` / `vehicle_bus` once they
-   are converted.
+2. Models: the 2026-11-09 delivery is in the game (every kind's own model and most construction states,
+   the great works' stages and levels, the shuttle, its pad and the vehicles). Still to model, per the
+   brief: `service` (the private enterprise's site; the commerce arcade stands in), the level 2–3
+   upgrade add-ons, colonists, and four key-art renders for the menu and award screens. The 25 kinds
+   modelled before 1.9's brief (apartment, arcology, clinic, …) keep their present-day look and have
+   no construction state of their own.
+3. The converted models and icons are committed. Converting again is only needed after a new delivery; on the
+   user's PC `--source=D:\勇敢新世界` finds every `art_reserve/` pack, then re-bake the icons (window) and
+   run the import.
 4. Building icons are baked from the models; re-run `tests/art/bake_icons.gd` (window) and the import
    whenever converted models change.
    The plan's menu and award images wait for key art in the new look (requested in the model brief).

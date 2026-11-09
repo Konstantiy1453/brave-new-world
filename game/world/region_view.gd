@@ -1128,15 +1128,18 @@ func _build_shuttle_pad(
 	var day: int = int(state.get("day", 0))
 	var spot: Vector2 = _pad_spot(finish, direction)
 	var pad := Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
+	var building: bool = Geo.road_building(route, day)
+	var deck: String = "shuttle_pad"
+	if building and ModelArt.mesh("shuttle_pad_construction") != null:
+		deck = "shuttle_pad_construction"
 	var modelled: MeshInstance3D = ModelArt.instance(
-		"shuttle_pad", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		deck, func(slot: String) -> Material: return _art_material(slot, {}, true)
 	)
 	if modelled != null:
 		modelled.position = pad
 		buildings_root.add_child(modelled)
 	else:
 		_plain_pad(pad)
-	var building: bool = Geo.road_building(route, day)
 	if not building:
 		region_gates.append({"end": spot})
 		var craft: Node3D = _shuttle_craft()
@@ -1202,11 +1205,22 @@ func _plain_pad(pad: Vector3) -> void:
 		_cylinder(buildings_root, pad + Vector3(corner.x, .16, corner.y), .05, .18, light, 6)
 
 
+## The `shuttle` model, legs down, and `shuttle_flight`, legs up, under one node that flies; the
+## models face +z, so the craft is turned with `model_front`. A simple lifting body without them.
 func _shuttle_craft() -> Node3D:
-	var modelled: MeshInstance3D = ModelArt.instance(
-		"shuttle", func(slot: String) -> Material: return _art_material(slot, {}, true)
-	)
-	if modelled != null:
+	var material_for: Callable = func(slot: String) -> Material:
+		return _art_material(slot, {}, true)
+	var parked: MeshInstance3D = ModelArt.instance("shuttle", material_for)
+	if parked != null:
+		var modelled := Node3D.new()
+		modelled.set_meta("model_front", true)
+		parked.name = "Parked"
+		modelled.add_child(parked)
+		var flying: MeshInstance3D = ModelArt.instance("shuttle_flight", material_for)
+		if flying != null:
+			flying.name = "Flying"
+			flying.visible = false
+			modelled.add_child(flying)
 		return modelled
 	var craft := Node3D.new()
 	var hull := _mat("shuttle_hull", Color("d9dee0"), .3, .45)
@@ -1257,8 +1271,16 @@ func _fly(elapsed: float) -> void:
 				facing = -facing
 		craft.visible = phase != 3
 		craft.position = at
+		# Legs come up once clear of the pad and go down just before touching it.
+		var flying: Node3D = craft.get_node_or_null("Flying") as Node3D
+		if flying != null:
+			var low: bool = phase == 0 or (phase == 1 and share < .3) or (phase == 5 and share > .7)
+			flying.visible = not low
+			(craft.get_node("Parked") as Node3D).visible = low
 		if facing.length() > 0.01:
-			craft.look_at(at + facing.normalized(), Vector3.UP)
+			craft.look_at(
+				at + facing.normalized(), Vector3.UP, bool(craft.get_meta("model_front", false))
+			)
 
 
 ## Sails in, berths, sails out, waits beyond the horizon; `elapsed` is seconds of town time.
@@ -1347,8 +1369,9 @@ static func _street_yaw(x: float, street_x: float) -> float:
 	return 0.0
 
 
-## The building's model; a construction site while it is being built; a closed mine once the
-## deposit under it is worked out.
+## The building's model; its own construction state while it is being built (the shared site kit
+## for kinds without one); a closed mine once the deposit under it is worked out. A great work's
+## finished stages or levels (`addons` in the registry) stand on its frame.
 func _dress_building(
 	model: MeshInstance3D,
 	building: Dictionary,
@@ -1362,14 +1385,18 @@ func _dress_building(
 	var great: bool = (
 		Rules.read("economy").buildings.get(str(building.kind), {}).get("role", "") == "great"
 	)
+	var own_site: bool = false
 	if not complete:
-		id = "construction"
-		scale = 1.2 if great else 1.0
+		var site: String = str(art.get("construction", ""))
+		own_site = site != "" and ModelArt.mesh(site) != null
+		id = site if own_site else "construction"
+		if not own_site:
+			scale = 1.2 if great else 1.0
 	elif art.has("ore") and _plot_depleted(building):
 		id = "depleted_" + str(art.ore)
-	var dressed: MeshInstance3D = ModelArt.instance(
-		id, func(slot: String) -> Material: return _art_material(slot, art, active)
-	)
+	var material_for: Callable = func(slot: String) -> Material:
+		return _art_material(slot, art, active)
+	var dressed: MeshInstance3D = ModelArt.instance(id, material_for)
 	if dressed == null:
 		return
 	dressed.rotation.y = yaw
@@ -1377,7 +1404,18 @@ func _dress_building(
 	# Seated on the pad top; a pit's floor on the ground.
 	dressed.position.y = .08 + _pit_depth(art, complete)
 	model.add_child(dressed)
-	if not complete and great:
+	if complete and id == str(art.model):
+		var addons: Array = art.get("addons", [])
+		for index: int in range(mini(int(building.get("level", 1)) - 1, addons.size())):
+			var stage: MeshInstance3D = ModelArt.instance(str(addons[index]), material_for)
+			if stage == null:
+				continue
+			stage.rotation.y = yaw
+			stage.scale = dressed.scale
+			stage.position.y = dressed.position.y
+			model.add_child(stage)
+	# A construction state of its own brings its scaffold, and a great work's its crane.
+	if not complete and great and not own_site:
 		var crane: MeshInstance3D = ModelArt.instance(
 			"construction_crane",
 			func(slot: String) -> Material: return _art_material(slot, {}, true)

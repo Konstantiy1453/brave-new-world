@@ -1,5 +1,9 @@
 # Colony Charter — model brief for the 3ds Max agent: near-future colony look, the shuttle, vehicles and the missing models
 
+**Status 2026-11-09:** P0–P3 delivered as release `art-assets-20261109` (41 game ids, 37 construction states, the
+shuttle's flight state) and converted into the game. Still open: `service`, the level 2–3 upgrade add-ons, colonists,
+and the four key-art renders (§4, P1 key art).
+
 This is the brief for the modelling agent (the user pastes it to Codex, as with the 1.9 plan's §C2 brief,
 which still holds for everything this brief does not change). It sets one art direction for every new model,
 adds the short-range shuttle and the road vehicles, and lists what is still missing in priority order.

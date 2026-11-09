@@ -243,6 +243,28 @@ One line each: decision · reason · alternative rejected.
   the user has since asked to move away from, and a picture behind the menu would hide the turning
   globe the 1.9 request was about. The model brief asks for four key-art renders in the new look ·
   the plan's list as written.
+- The 2026-11-09 delivery (release `art-assets-20261109`: 41 game ids, 37 construction states, the shuttle's
+  flight state, all checksums matching the delivery check) is converted as its own pack, one model id per game
+  id, so every building kind but `service` has its own model; the six older generic models no kind used any
+  more (`mine`, `greenhouse`, `research`, `industry`, `logistics`, `civic`) are retired, and `service` stands
+  in with the commerce arcade · ids per model family, kept for old models.
+- A construction state is fitted in its building's frame (`like`), so the site stands exactly where the
+  building will, and replaces the shared site kit while the building is built; a great work's state brings its
+  own crane, so no extra crane is added. Kinds without one keep the kit · fitting each state on its own, which
+  moves sites whose scaffold sticks out.
+- Terraforming stages and capital-district levels are cut from one FBX by their part groups (`include` /
+  `exclude` on `_stage2`, `_stage3`, `_level2`…`_level5`) in one frame and drawn on the base as each stage or
+  level is finished; the base and its add-ons share the great-work budget (5,000 + 2,500 + 1,500 and
+  3,000 + 4 × 1,500 triangles, both under 9,000) · one mesh per level, which would repeat the base five times.
+- The shuttle and its pad are scaled at 0.09 units a metre (a 45 m building's scale), the road vehicles at
+  0.11 (the length of the procedural vehicles they replace), all at true height, the vehicles seated on their
+  lowest kept vertex. The flight model (legs up) is drawn once clear of the pad; the craft flies nose first
+  (`look_at` with the model's front). Vehicle budgets: truck 1,000, van 1,200, bus 1,600 — the brief's
+  800–1,200 is below what the simplifier reaches on the van and bus (950 and 1,390) without stripping their
+  bodies · the brief's numbers.
+- The hydroponic farm converts at 6,000 triangles, a recorded exception: its glass vaults are hundreds of
+  panes the simplifier cannot reduce below 4,688, and squeezing to 4,500 strips every other part bare.
+- The new heavy mines are no longer dug below the ground, so their open-pit flags and old exceptions are gone.
 - Town traffic is cosmetic and stops while the game is paused · vehicles moving during a pause read as time passing · ambient traffic during pauses.
 - The 3ds Max models are converted by `tests/art/convert_models.gd` from the FBX exports, per `tests/art/model_recipes.json`: thin parts dropped, parts grouped into ten colour slots by node name, fitted (4.0 units, great works 5.0, height ×1.3) and decimated to 4,500 triangles (great works 9,000) · the 1.9 plan's verified prototype; 53 runtime meshes in 25 s, 4.0 MB · importing the high-poly FBX directly (60k–200k triangles each).
 - Every kind follows the art team's `ASSET_MAPPING.json`; the 15 kinds with only gray models stand in with their mapped source model and a shell tint · the mapping names those sources and the gray files have no FBX · drawing them procedurally.

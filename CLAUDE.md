@@ -37,7 +37,8 @@ and only reads the user's 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v18` and
 
 `art_reserve/` belongs to a separate 3ds Max modelling task. Do not touch it and do not stage it. The models reach
 the game only through `game/tests/art/convert_models.gd` (recipes in `game/tests/art/model_recipes.json`), which
-reads an unpacked copy of the `art-assets-20261107` release outside the repository and writes
+reads unpacked copies of the `art-assets-20261107` and `art-assets-20261109` releases outside the repository
+(`--source=<dir>[,<dir>]`, each holding `art_reserve/`; on the user's PC the project root holds all of it) and writes
 `game/assets/models/*.res` and `game/data/v17/models.json`. No FBX, MAX or texture goes under `game/`.
 **Stage explicit paths; never `git add -A`.**
 
@@ -67,7 +68,8 @@ fixtures and world hashes were recorded on Windows (`v17_saves`, `v17_tutorial`,
 the `review_*` tools need their original `D:` paths. Model conversion and captures:
 
 ```bash
-godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<unpacked art release>
+godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<release 20261107>,<release 20261109>
+xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/bake_icons.gd
 xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/model_gallery.gd
 xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/capture_dynamics.gd -- --days=900
 ```

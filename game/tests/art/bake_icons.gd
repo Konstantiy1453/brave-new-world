@@ -64,6 +64,13 @@ func run() -> void:
 			func(slot: String) -> Material: return map._art_material(slot, entry, true)
 		)
 		art.scale = Vector3.ONE * float(entry.get("scale", 1.0))
+		# A great work with stages or levels is shown complete.
+		for addon: String in entry.get("addons", []):
+			var stage: MeshInstance3D = ModelArt.instance(
+				addon, func(slot: String) -> Material: return map._art_material(slot, entry, true)
+			)
+			if stage != null:
+				art.add_child(stage)
 		viewport.add_child(art)
 		_frame(camera, art)
 		for _frame_index: int in range(3):
@@ -107,6 +114,9 @@ func _light(viewport: SubViewport) -> void:
 ## Looks at the model from `VIEW` with an orthographic size that just holds its bounds.
 func _frame(camera: Camera3D, art: MeshInstance3D) -> void:
 	var box: AABB = art.get_aabb()
+	for child: Node in art.get_children():
+		if child is MeshInstance3D:
+			box = box.merge((child as MeshInstance3D).get_aabb())
 	box = AABB(box.position * art.scale, box.size * art.scale)
 	var centre: Vector3 = box.get_center()
 	var direction: Vector3 = VIEW.normalized()
