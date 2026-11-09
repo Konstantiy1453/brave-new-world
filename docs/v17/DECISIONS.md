@@ -451,8 +451,9 @@ Format as above: the call · why · what was rejected. Branch `v17-ui-redesign`,
 - Facility views are baked from the models (`tests/art/bake_facility_views.gd`, window): late
   afternoon, the model on a concrete pad, a driveway to a road with kerbs and lane marks, a vehicle at
   town scale, two street lamps with their own small lights, pipes and a tank for works, an ore heap and
-  conveyor for mines, low neighbours fading into haze; 616 × 280 lossy WebP, 792 KB for 61 kinds · the
-  brief's grounded look · a live 3D viewport per page, or models on display plinths.
+  conveyor for mines, low neighbours fading into haze; 616 × 280 lossy WebP, 792 KB for 61 kinds,
+  imported lossy at 0.82 with mipmaps (1.3 MB in the pack, against 7.3 MB lossless) · the brief's
+  grounded look · a live 3D viewport per page, or models on display plinths.
 - Research: four directions side by side, each with its colour, icon and team. A topic reads, top to
   bottom: state tag, level and points, name, effect, the facilities it unlocks with their icons, the
   charter mark, progress, then its actions. Active, available and waiting-for-a-prerequisite topics

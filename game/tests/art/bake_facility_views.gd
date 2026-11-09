@@ -5,7 +5,7 @@ extends SceneTree
 ## for working kinds the pipes, tank, conveyor or stockpile that tie them to the ground. The light
 ## is late afternoon going to dusk, with lit windows; materials are the game's matte slot colours.
 ## Writes assets/art/facilities/<kind>.webp (lossy) at 616 x 280. Run the import afterwards, with
-## mipmaps on in each new .import file.
+## mipmaps on and lossy compression (quality 0.82) in each new .import file.
 ## Options: --out=res://assets/art/facilities --only=kind,kind
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
