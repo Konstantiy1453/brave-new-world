@@ -93,6 +93,13 @@ area, figures here):
 
 ## Test results (Linux)
 
+Interface pass (branch `v17-ui-redesign`, code at `6c69c6c`): the 42 headless suites other than the
+`review_*` tools, 38 pass and 4 fail. The 4 are the same as on untouched `origin/v17` (`d9ef9dc`), run the
+same day in a scratch worktree, with the same failing checks and counts (`v17_saves` 97 checks / 1 failure,
+`v17_tutorial` 237 / 0 plus its 1.6-save script error, `v18_systems` 78 / 3, `world_v16_seed`). New
+`v19_ui`: 64 checks pass. Of the `review_*` tools, `review_save_nested` passes and the rest fail on their
+`D:` paths, as before. Window suites were not re-run.
+
 Headless suites at commit `3c19e77`: 37 pass, 4 fail — the same 4, with the same failing checks, as the
 untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`:
 Windows-recorded fixtures and world hashes do not reproduce on the Linux build). `v19_money` (155 checks),
