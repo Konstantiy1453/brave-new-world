@@ -35,8 +35,9 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); later stages and levels buy missing materials and parts at import price, as the first stage does; bots build each step when cash pays for it with its supplies and keeps 10 days of expenses (60 before the award), save for the next one after the award and chase its technologies; harness INFO row; stand-in models | automated tests (`v19_money` 155 checks, `v19_payback` unchanged), developer probe (balanced bot, 10 years: emergency network on seeds 260129 and 42, capital district on 42), screenshot viewed (`terraform_compare.png`) |
 | Shuttle | Short-range shuttle line from the start: straight hop ≤ 3,500 km, pads in 10 days, 1–2 days a trip, 4 t a day, ¥8,000 + ¥2/km, ¥40 a day, 30× a road's fee; stands down when a road or sea route opens; not part of the contract network; cyan arcs on the maps, a pad and a flying craft in the region | automated tests (`v19_money` 149 checks), screenshots viewed (`evidence/v17/art/shuttle/`) |
 | Building icons | `tests/art/bake_icons.gd` renders every kind's model (tint, scale, the map's daylight) to `assets/icons/buildings/<kind>.webp` (lossless), 128 px with mipmaps; build card 64 px, building column 32 px; goods keep their SVG pictograms | screenshots viewed (`evidence/v17/art/pages/settlement.png`, `build.png`), automated tests (`ui_contract`, `v16_ui_tests`) |
-| Playtest preview | `ColonyCharter-1.9.0-preview-20261109-Windows-x64.zip` (54 MB: EXE, pack, licences, 预览版说明.md, CHANGELOG, PLAYTEST) exported in the cloud from commit `f7311cb` with the official 4.5.1 templates; no test material in the pack; the pack boots, lands, builds and runs 40 days with a clean audit on the Linux engine. The EXE has not been run on Windows | exported EXE (pack smoke-tested on Linux, not on Windows), screenshots viewed |
+| Playtest preview | `ColonyCharter-1.9.0-preview-20261109-Windows-x64.zip` (54 MB: EXE, pack, licences, 预览版说明.md, CHANGELOG, PLAYTEST) exported in the cloud from commit `f7311cb` with the official 4.5.1 templates; no test material in the pack; the pack boots, lands, builds and runs 40 days with a clean audit on the Linux engine. The EXE has not been run on Windows. Second preview with the interface pass: `ColonyCharter-1.9.0-preview-20261109-ui-Windows-x64.zip` (55 MB) from branch `v17-ui-redesign` at `7141d6a` (pull request #1, not yet merged into `v17`); its pack boots, lands, builds, runs 40 days with a clean audit, and orders a building and shows the research topics through the new pages on the Linux engine. Not run on Windows either | exported EXE (pack smoke-tested on Linux, not on Windows), screenshots viewed |
 | Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
+| Interface pass (branch `v17-ui-redesign`, for review) | One style system in `ui/design.gd`: a neutral foundation in the 1.8 colours, a research variant (turquoise, cyan, yellow) and an industrial one (charcoal, gray-teal, muted gold); cached style boxes; skins reset on every reuse; fine borders with cut corners, focus ring, type scale (no text under 14 px on the two pages). Construction page in three parts (`ui/build_page.gd`: catalogue with quick orders, the chosen facility with a baked view of it at work, ledger with verdict and main order); 61 facility views (`tests/art/bake_facility_views.gd`). Research page (`ui/research_page.gd`): direction colours and icons, topic state tags, effects, unlock icons, progress, actions. The modal frame, navigation, facility list, production management and facility column follow their variant; the tutorial outline stays above dialogs. Decisions in `DECISIONS.md` (1.9: interface pass) | automated tests (new `v19_ui` 64 checks; `ui_contract`, `v16_ui_tests` 20, `v17_research` 144, `v17_bugs` 43, `v17_tutorial` 237 checks as before), source-project window: 34 captures and 52 checks (`ui/capture_suite_ui19.gd`: 4 window sizes × 3 text sizes, every action scrolled into view, keyboard focus, tooltip, page switching), screenshots viewed (`evidence/v17/ui19/`, a selection in `docs/v17/ui19/`). The two reference images were not available in the session; human playtest NOT_RUN |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
@@ -92,6 +93,13 @@ area, figures here):
 
 ## Test results (Linux)
 
+Interface pass (branch `v17-ui-redesign`, code at `6c69c6c`): the 42 headless suites other than the
+`review_*` tools, 38 pass and 4 fail. The 4 are the same as on untouched `origin/v17` (`d9ef9dc`), run the
+same day in a scratch worktree, with the same failing checks and counts (`v17_saves` 97 checks / 1 failure,
+`v17_tutorial` 237 / 0 plus its 1.6-save script error, `v18_systems` 78 / 3, `world_v16_seed`). New
+`v19_ui`: 64 checks pass. Of the `review_*` tools, `review_save_nested` passes and the rest fail on their
+`D:` paths, as before. Window suites were not re-run.
+
 Headless suites at commit `3c19e77`: 37 pass, 4 fail — the same 4, with the same failing checks, as the
 untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`:
 Windows-recorded fixtures and world hashes do not reproduce on the Linux build). `v19_money` (155 checks),
@@ -135,6 +143,10 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
    harness never sees it. Ways out, for the user to choose: a bot that keeps ground for jobs and clears
    it for workplaces when idle workers pile up (what a careful player does); or a softer company rule
    after the award (premise change); or both.
+8. Interface pass: compare both pages with the two reference images (`S2-kasako-inspired-research.png`,
+   `S1c-kasako-construction-dark-muted.png`, not available in the cloud session) and tune `PALETTES` in
+   `ui/design.gd`, the only place the colours live; look at both pages on Windows with a real GPU at 100%
+   and 125% display scaling; merge the pull request after review.
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.

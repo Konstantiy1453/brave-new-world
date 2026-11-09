@@ -48,6 +48,16 @@ const TOP_GOODS: Array[String] = [
 const MONTH_DAYS: float = 30.0
 const COLUMN_LEFT: int = 170
 const COLUMN_WIDTH: int = 300
+## Pages drawn in a module's variant (design.gd); every other page stays neutral.
+const PAGE_VARIANTS: Dictionary = {
+	"research": D.RESEARCH,
+	"build": D.INDUSTRY,
+	"buildings": D.INDUSTRY,
+	"manage": D.INDUSTRY,
+}
+## The pages that lay out side by side get a wider panel, up to this, inside the window.
+const WIDE_PAGES: Array[String] = ["build", "research"]
+const WIDE_MODAL: int = 1320
 var sim = Sim.new()
 var map: Node3D
 var ui: Control
@@ -72,6 +82,8 @@ var site_filter: int = 0
 var announced_event: int = 0
 var build_category: String = "all"
 var build_plots: Dictionary = {}
+## The facility the construction page shows in detail; the first listed one when it is not listed.
+var build_selected: String = ""
 var expanded_kinds: Dictionary = {}
 var coach: PanelContainer
 var tutorial_on: bool = true
@@ -113,7 +125,12 @@ var modal_title: Label
 var modal_close: Button
 var modal_pages: VBoxContainer
 var modal_footer: Label
+var modal_rule_accent: ColorRect
+var modal_rule_line: ColorRect
 var page_boxes: Dictionary = {}
+var nav_buttons: Dictionary = {}
+## The map view the left navigation marks while no page is open: "planet" or "flat".
+var map_mode: String = "planet"
 var autosave_task: int = -1
 var autosave_snapshot: Dictionary = {}
 
@@ -201,8 +218,7 @@ func build_shell():
 		)
 		action.custom_minimum_size = Vector2(62, 26)
 		action.add_theme_font_size_override("font_size", 14)
-		for style_name in ["normal", "hover", "pressed"]:
-			action.add_theme_stylebox_override(style_name, D.box(Color("1a3042"), D.TEAL, 5))
+		D.skin(action, "chip")
 	_build_resource_table(h)
 	var clockbox = D.col(h)
 	date_label = D.label(clockbox, "", 17, D.GOLD, false)
@@ -232,7 +248,7 @@ func build_shell():
 	var v = D.col(nav_scroll)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_theme_constant_override("separation", 4)
-	D.label(v, "指 挥 中 枢", 13, D.MUTED, false)
+	D.label(v, "指 挥 中 枢", D.CAPTION, D.MUTED, false)
 	for entry in [
 		["球面总览", "planet"],
 		["平铺地图", "flat"],
@@ -254,6 +270,9 @@ func build_shell():
 		var nav_button = D.button(v, entry[0], func(): navigate(key), "", "Nav_" + key)
 		D.font_size(nav_button, 16)
 		nav_button.custom_minimum_size.y = 34
+		nav_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		nav_buttons[key] = nav_button
+	_mark_nav()
 	var right = PanelContainer.new()
 	ui.add_child(right)
 	right.anchor_left = 1
@@ -281,17 +300,16 @@ func build_shell():
 	bottom.offset_right = -20
 	bottom.offset_top = -94
 	bottom.offset_bottom = -20
-	bottom.add_theme_stylebox_override("panel", D.box(Color("132333"), Color("304756"), 10))
 	var foot = D.row(bottom)
 	var mission_title = D.label(foot, "任务\n链路", 14, D.TEAL, false)
 	mission = D.label(foot, "", 17)
 	mission.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var guide_button = D.button(foot, "行动指南", func(): open_page("guide"))
 	guide_button.custom_minimum_size.y = 30
-	guide_button.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 7))
+	D.skin(guide_button, "chip")
 	var collapse = Button.new()
 	collapse.text = "收起"
-	collapse.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 7))
+	D.skin(collapse, "chip")
 	foot.add_child(collapse)
 	collapse.pressed.connect(
 		func():
@@ -361,9 +379,8 @@ func _build_column() -> void:
 	column_panel.offset_right = COLUMN_LEFT + COLUMN_WIDTH
 	column_panel.offset_top = 115
 	column_panel.offset_bottom = -116
-	column_panel.add_theme_stylebox_override(
-		"panel", D.box(Color(0.07, 0.14, 0.2, 0.94), Color("304756"), 10)
-	)
+	# The settlement's facilities belong to construction and production: the industrial variant.
+	D.panel_style(column_panel, "panel", D.INDUSTRY)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	column_panel.add_child(scroll)
@@ -623,17 +640,21 @@ func confirm_site_name(_typed: String = ""):
 func open_fix(fix: Dictionary):
 	if fix.has("category"):
 		build_category = str(fix.category)
+	if fix.has("kind"):
+		build_selected = str(fix.kind)
 	open_page(str(fix.page))
 
 
 func navigate(page: String):
 	if page == "planet":
 		local_view = false
+		map_mode = "planet"
 		map.show_planet()
 		map_hint.text = "球面总览  ·  右键旋转  ·  滚轮缩放"
 		refresh_sidebar()
 	elif page == "flat":
 		local_view = false
+		map_mode = "flat"
 		map.show_flat()
 		map_hint.text = "平铺地图  ·  右键/中键平移  ·  滚轮缩放"
 		refresh_sidebar()
@@ -644,6 +665,8 @@ func navigate(page: String):
 		refresh_sidebar()
 	else:
 		open_page(page)
+		return
+	_mark_nav()
 
 
 func settlement() -> Dictionary:
@@ -689,6 +712,7 @@ func refresh():
 	if not state.get("event", {}).is_empty():
 		hint = "! 待处理通讯：" + str(state.event.get("title", "事件")) + "  ·  打开左侧通讯事件"
 	mission.text = steps[0] + "\n" + hint
+	_mark_nav()
 	refresh_sidebar()
 
 
@@ -826,9 +850,12 @@ func refresh_sidebar():
 	column_panel.visible = settled and column_open
 	column_tab.visible = settled and not column_open
 	if column_panel.visible:
+		var previous: String = D.variant()
+		D.use(D.INDUSTRY)
 		D.begin(column_box)
 		Pages.building_column(self, column_box)
 		D.finish(column_box)
+		D.use(previous)
 
 
 func act(action: String, args: Dictionary = {}):
@@ -888,10 +915,21 @@ func _build_modal_host():
 	modal_panel = PanelContainer.new()
 	center.add_child(modal_panel)
 	var outer = D.col(modal_panel)
+	outer.add_theme_constant_override("separation", 10)
 	var head = D.row(outer)
-	modal_title = D.label(head, "", 27, D.INK, false)
+	modal_title = D.label(head, "", 26, D.INK, false)
 	modal_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	modal_close = D.button(head, "关闭  ×", close_modal, "", "ModalClose")
+	modal_title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	modal_close = D.button(head, "关闭  ×", close_modal, "关闭面板（Esc）", "ModalClose")
+	# Under the title: a short accent stroke on a fine line, the frame's one geometric detail.
+	var rule = D.row(outer)
+	rule.add_theme_constant_override("separation", 0)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	modal_rule_accent = D.rule(rule, D.TEAL, 2)
+	modal_rule_accent.custom_minimum_size.x = 72
+	modal_rule_accent.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	modal_rule_line = D.rule(rule)
+	modal_rule_line.size_flags_vertical = Control.SIZE_SHRINK_END
 	modal_pages = VBoxContainer.new()
 	modal_pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_child(modal_pages)
@@ -906,6 +944,7 @@ func _page_box(key: String) -> VBoxContainer:
 		scroll.custom_minimum_size = Vector2(0, PAGE_HEIGHT)
 		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.add_theme_stylebox_override("panel", D.style("scroll_area", D.NEUTRAL))
 		modal_pages.add_child(scroll)
 		var box = D.col(scroll)
 		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -922,7 +961,12 @@ func modal(title: String, width: int = 960, closable: bool = true, key: String =
 	overlay = modal_root
 	modal_root.visible = true
 	modal_root.move_to_front()
+	if WIDE_PAGES.has(key):
+		width = maxi(width, WIDE_MODAL)
+	# Never wider than the window at the chosen text size.
+	width = mini(width, int(ui.get_viewport_rect().size.x) - 40)
 	modal_panel.custom_minimum_size = Vector2(width, MODAL_HEIGHT)
+	_style_modal(page_variant(key))
 	modal_title.text = title
 	modal_close.visible = closable
 	modal_footer.text = (
@@ -931,7 +975,7 @@ func modal(title: String, width: int = 960, closable: bool = true, key: String =
 	modal_feedback = modal_footer
 	modal_box = _page_box(key)
 	if is_instance_valid(coach) and coach.visible:
-		coach.move_to_front()
+		coach.keep_on_top()
 	if panel_pause:
 		if not paused:
 			resume_on_close = true
@@ -941,15 +985,43 @@ func modal(title: String, width: int = 960, closable: bool = true, key: String =
 	return modal_box
 
 
+## The modal frame in a page's variant: panel, title, close button, rule and footer.
+func _style_modal(variant: String) -> void:
+	D.panel_style(modal_panel, "modal", variant)
+	modal_title.add_theme_color_override("font_color", D.tone("text", variant))
+	D.skin(modal_close, "plain", variant)
+	modal_rule_accent.color = D.tone("primary", variant)
+	modal_rule_line.color = D.tone("line", variant)
+	modal_footer.add_theme_color_override("font_color", D.tone("gold", variant))
+
+
+func page_variant(page: String) -> String:
+	return str(PAGE_VARIANTS.get(page, D.NEUTRAL))
+
+
+## The left navigation marks the open page, or the map view when no page is open.
+func _mark_nav() -> void:
+	var active: String = map_mode
+	if local_view:
+		active = "region"
+	if is_instance_valid(overlay) and nav_buttons.has(current_page):
+		active = current_page
+	for key: String in nav_buttons:
+		D.skin(nav_buttons[key], "row_on" if key == active else "row", D.NEUTRAL)
+
+
 func populate_current_page():
 	if not is_instance_valid(overlay) or current_page.is_empty():
 		return
+	var previous: String = D.variant()
+	D.use(page_variant(current_page))
 	D.begin(modal_box)
 	if current_page in ["research", "company", "events", "career", "manage"]:
 		ProgressionPages.populate(self, modal_box, current_page)
 	else:
 		Pages.populate(self, modal_box, current_page)
 	D.finish(modal_box)
+	D.use(previous)
 
 
 func open_page(page: String):
@@ -971,6 +1043,7 @@ func open_page(page: String):
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
+	_mark_nav()
 	coach.note_page(page)
 	populate_current_page()
 
@@ -1018,9 +1091,9 @@ func show_menu():
 		b.disabled = tutorial_on
 		b.custom_minimum_size.y = 34
 		D.font_size(b, 15)
-		b.add_theme_stylebox_override("normal", D.box(Color("1a3042"), Color("304756"), 10))
-		b.add_theme_stylebox_override("pressed", D.box(Color("31565e"), D.TEAL, 10))
-		b.add_theme_stylebox_override("hover", D.box(Color("264553"), D.TEAL, 10))
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		# A choice among several: the selected one shows the chosen style and keeps its text.
+		D.skin(b, "chip")
 	var teach = D.button(
 		v,
 		"新手引导：开（使用引导专用星球）" if tutorial_on else "新手引导：关",
@@ -1032,8 +1105,7 @@ func show_menu():
 	)
 	D.font_size(teach, 15)
 	teach.custom_minimum_size.y = 34
-	var launch = D.button(v, "新建殖民远征  →", start_game, "", "NewGame")
-	launch.add_theme_stylebox_override("normal", D.box(Color("1a3042"), D.TEAL, 10))
+	D.button(v, "新建殖民远征  →", start_game, "", "NewGame", "primary")
 	var resume = D.row(v)
 	var latest: String = _latest_save()
 	var summary: String = _save_summary(latest)
@@ -1165,6 +1237,7 @@ func _begin_world(seed_value: Variant, opening: String, scale_id: int, level: St
 	resume_on_close = false
 	build_category = "all"
 	build_plots = {}
+	build_selected = ""
 	expanded_kinds = {}
 	announced_event = 0
 	_hide_overlay()

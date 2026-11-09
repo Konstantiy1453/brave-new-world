@@ -2,6 +2,8 @@ extends RefCounted
 ## Developer capture: every main page at each resolution and text size, from the source project.
 ## Fixtures are data/v17/acceptance_*.save (tests/make_fixtures_v17.gd writes them).
 ## Options: --qa-sizes=1920x1080,1280x720  --qa-fonts=18,16  --qa-pages=economy,build
+## --qa-fixtures=<folder> loads the saves from there (tests/make_fixtures_v17.gd --out=<folder>):
+## the recorded ones carry the world hash of the machine that made them.
 
 const SIZES: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]
 const FONTS: Array[int] = [18, 16, 20]
@@ -73,7 +75,10 @@ static func run(g, folder: String) -> void:
 static func _capture_page(
 	g, folder: String, page: String, size: Vector2i, font_px: int, report: Dictionary
 ) -> void:
-	var path: String = "res://data/v17/acceptance_%s.save" % str(PAGES[page])
+	var fixtures: String = _option("--qa-fixtures=")
+	if fixtures == "":
+		fixtures = "res://data/v17"
+	var path: String = "%s/acceptance_%s.save" % [fixtures.trim_suffix("/"), str(PAGES[page])]
 	var error: String = g.sim.load_game(path)
 	if error != "":
 		report.failures.append(path + ": " + error)

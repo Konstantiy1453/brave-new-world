@@ -3,6 +3,7 @@ const D = preload("res://ui/design.gd")
 const WG = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
+const BuildPage = preload("res://ui/build_page.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -636,7 +637,7 @@ static func populate(g, b, page):
 		"contract":
 			contract(g, b)
 		"build":
-			build(g, b)
+			BuildPage.build(g, b)
 		"buildings":
 			buildings(g, b)
 		"name_site":
@@ -862,167 +863,6 @@ static func _contract_stage(g, b, stage: Dictionary, current: int):
 			fix.custom_minimum_size.y = 30
 		elif not goal_row.ok:
 			D.label(line, str(text.hint), 15, D.MUTED, false)
-
-
-static func build(g, b):
-	D.label(b, g.sim.state.world.regions[g.selected].name + " / 建设目录", 23, D.TEAL)
-	var s: Dictionary = g.settlement()
-	if s.is_empty():
-		D.label(b, "请先在这里建立据点。", 18, D.GOLD)
-		return
-	D.label(
-		b,
-		(
-			"%s。工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。空闲工程队 %d · 公共资金 ¥ %s · 建材 %.0f t · 部件 %.0f t"
-			% [
-				str(Labels.SITE_KIND_NAMES.get(s.kind, "")),
-				g.sim.free_workers(s),
-				g.money(g.sim.state.cash),
-				s.stock.materials,
-				s.stock.parts
-			]
-		),
-		17,
-		D.MUTED
-	)
-	var filters = D.row(b)
-	_category_button(g, filters, "all", "全部")
-	for key: String in Labels.BUILD_CATEGORIES:
-		_category_button(g, filters, key, str(Labels.BUILD_CATEGORIES[key]))
-	for category: String in Labels.BUILD_CATEGORIES:
-		if g.build_category != "all" and g.build_category != category:
-			continue
-		D.label(b, str(Labels.BUILD_CATEGORIES[category]), 19, D.TEAL)
-		for key: String in g.sim.config.buildings:
-			var spec: Dictionary = g.sim.config.buildings[key]
-			if str(spec.get("category", "")) != category:
-				continue
-			# What the colony has not discovered, or this kind of settlement cannot hold, stays off the list.
-			if (
-				spec.has("requires_tech")
-				and not g.sim.state.research.completed.has(spec.requires_tech)
-			):
-				continue
-			if spec.has("site_kinds") and not spec.site_kinds.has(str(s.kind)):
-				continue
-			_build_card(g, b, key)
-
-
-static func _category_button(g, parent, key: String, text: String):
-	var button = D.button(
-		parent,
-		text,
-		func():
-			g.build_category = key
-			g.populate_current_page(),
-		"",
-		"Cat_" + key
-	)
-	D.font_size(button, 15)
-	button.custom_minimum_size.y = 32
-	button.add_theme_color_override("font_color", D.GOLD if g.build_category == key else D.INK)
-
-
-static func _build_card(g, b, key: String):
-	var spec: Dictionary = g.sim.build_preview(g.selected, key)
-	var choices: Array = g.sim.plot_choices(g.selected, key)
-	var plot: int = _chosen_plot(g, key, choices)
-	var forecast: Dictionary = g.sim.build_forecast(g.selected, key, plot)
-	var refusal: String = str(forecast.disabled_reason)
-	var card = D.card(b)
-	var r = D.row(card)
-	D.building_icon(r, key, Labels.icon_key(g.sim.config, key), 64)
-	var text = D.col(r)
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	D.label(text, spec.name, 20)
-	D.label(
-		text,
-		"¥ %d · 建材 %d · 部件 %d · %d 天" % [spec.cost, spec.materials, spec.parts, spec.days],
-		16,
-		D.GOLD
-	)
-	D.label(
-		text,
-		(
-			"岗位 %d（空闲工程队 %d） · 电 %.0f · 水 %.0f · 维护 ¥ %.1f/日"
-			% [
-				int(forecast.jobs),
-				int(forecast.free_workers),
-				spec.power,
-				spec.water,
-				spec.maintenance
-			]
-		),
-		15,
-		D.MUTED
-	)
-	var outcome: String = _forecast_text(forecast)
-	if outcome != "":
-		D.label(text, outcome, 15, D.TEAL)
-	var order = D.button(
-		r,
-		"下达建设",
-		func(): g.act("build", {"site": g.selected, "kind": key, "plot": plot}),
-		refusal,
-		"Build_" + key
-	)
-	order.disabled = refusal != ""
-	if choices.size() > 1 and str(choices[0].kind) != "general":
-		var names: Array = []
-		var picked: int = 0
-		for index: int in range(choices.size()):
-			names.append(Labels.plot(choices[index]))
-			if int(choices[index].index) == plot:
-				picked = index
-		D.option(
-			card,
-			"Plot_" + key,
-			names,
-			picked,
-			func(id):
-				g.build_plots[key] = int(choices[id].index)
-				g.populate_current_page()
-		)
-	D.label(card, str(spec.description), 15, D.MUTED)
-	if float(spec.get("copy_surcharge", 0.0)) > 0.0:
-		D.label(
-			card,
-			(
-				"第 %d 座：资金 +%.0f%%（同类设施越多越贵）"
-				% [int(spec.copy_number), float(spec.copy_surcharge) * 100.0]
-			),
-			15,
-			D.MUTED
-		)
-	if bool(spec.get("megaproject", false)):
-		D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 15, D.TEAL)
-	if refusal != "":
-		D.label(card, refusal, 15, D.GOLD)
-
-
-## The plot the player picked for this kind if it is still free, otherwise the best one.
-static func _chosen_plot(g, key: String, choices: Array) -> int:
-	if choices.is_empty():
-		return -1
-	var wanted: int = int(g.build_plots.get(key, -1))
-	for row: Dictionary in choices:
-		if int(row.index) == wanted:
-			return wanted
-	return int(choices[0].index)
-
-
-static func _forecast_text(forecast: Dictionary) -> String:
-	var parts: PackedStringArray = []
-	for good: String in forecast.outputs:
-		parts.append("%s %.1f t/日" % [RES.get(good, good), float(forecast.outputs[good])])
-	if float(forecast.revenue_per_day) != 0.0:
-		parts.append("收入 ¥ %.0f/日" % float(forecast.revenue_per_day))
-	parts.append("净 ¥ %+.0f/日" % float(forecast.net_per_day))
-	if float(forecast.payback_days) > 0.0:
-		parts.append("约 %.0f 日回本" % float(forecast.payback_days))
-	if float(forecast.reserve_days) >= 0.0:
-		parts.append("储量够挖 %.0f 日" % float(forecast.reserve_days))
-	return " · ".join(parts)
 
 
 ## The public services budget: an optional running cost that keeps people, by level.

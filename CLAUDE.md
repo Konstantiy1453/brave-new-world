@@ -72,6 +72,10 @@ godot --headless --path game --script res://tests/art/convert_models.gd -- --sou
 xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/bake_icons.gd
 xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/model_gallery.gd
 xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/capture_dynamics.gd -- --days=900
+xvfb-run -a godot --path game --rendering-driver opengl3 --script res://tests/art/bake_facility_views.gd
+# Interface captures (construction and research, every size and text size); on Linux make the fixtures first
+godot --headless --path game --script res://tests/make_fixtures_v17.gd -- --out=<folder> --only=midgame
+xvfb-run -a godot --path game --rendering-driver opengl3 -- --dev --dev-script=res://ui/capture_suite_ui19.gd --qa-out=<folder> --qa-fixtures=<folder>
 ```
 
 `gdformat` and `gdlint` are in the Python 3.12 Scripts folder and may not be on PATH. Git is at
