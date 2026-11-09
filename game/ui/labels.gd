@@ -396,17 +396,17 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 static func fix(entry: Dictionary) -> Dictionary:
 	match str(entry.get("key", "")):
 		Keys.SH_POWER:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "power"}
 		Keys.SH_WATER:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "water"}
 		Keys.SH_HOUSING:
 			return {"text": "处理", "page": "build", "category": "people"}
 		Keys.SH_STARVING:
-			return {"text": "处理", "page": "build", "category": "food"}
+			return {"text": "处理", "page": "build", "category": "food", "kind": "farm"}
 		Keys.SH_DEPLETED, Keys.SH_PROCESSOR_INPUT:
 			return {"text": "处理", "page": "build", "category": "extraction"}
 		Keys.SH_NO_PORT, Keys.SH_PORT_FULL:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "port"}
 		Keys.SH_JOBS_WORKERS, Keys.SH_JOBS_SPECIALISTS:
 			return {"text": "处理", "page": "population"}
 		Keys.SH_POLLUTION:
