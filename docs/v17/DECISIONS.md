@@ -265,6 +265,13 @@ One line each: decision · reason · alternative rejected.
 - The hydroponic farm converts at 6,000 triangles, a recorded exception: its glass vaults are hundreds of
   panes the simplifier cannot reduce below 4,688, and squeezing to 4,500 strips every other part bare.
 - The new heavy mines are no longer dug below the ground, so their open-pit flags and old exceptions are gone.
+- A playtest preview can be exported in the cloud: the official Godot 4.5.1 export templates (SHA512 checked
+  against `tools/godot-SHA512-SUMS.txt`), the repository's `Windows Desktop` preset, then
+  `tools/package_v17.py --label=preview-<date>`, which reads the version, save schema and world generator
+  from the source and puts the players' note `docs/v17/PREVIEW.md` in the zip in place of the developers'
+  README. The pack is booted and played for 40 days with the Linux engine; the EXE itself is first run on
+  Windows by the user · waiting for the Windows sheet before anyone can play 1.9. The release build and its
+  checks (frame times, EXE drive) stay with the Windows sheet.
 - Town traffic is cosmetic and stops while the game is paused · vehicles moving during a pause read as time passing · ambient traffic during pauses.
 - The 3ds Max models are converted by `tests/art/convert_models.gd` from the FBX exports, per `tests/art/model_recipes.json`: thin parts dropped, parts grouped into ten colour slots by node name, fitted (4.0 units, great works 5.0, height ×1.3) and decimated to 4,500 triangles (great works 9,000) · the 1.9 plan's verified prototype; 53 runtime meshes in 25 s, 4.0 MB · importing the high-poly FBX directly (60k–200k triangles each).
 - Every kind follows the art team's `ASSET_MAPPING.json`; the 15 kinds with only gray models stand in with their mapped source model and a shell tint · the mapping names those sources and the gray files have no FBX · drawing them procedurally.

@@ -1,7 +1,13 @@
-"""Packages build\\v17 and the 1.7 source into delivery\\v17, after checking the export is clean."""
+"""Packages build\\v17 and the source into delivery\\v17, after checking the export is clean.
+
+The version, save schema and world generator are read from the source. `--label=preview-20261109`
+names a preview (ColonyCharter-1.9.0-preview-20261109-...), which carries the players' preview note
+(docs/v17/PREVIEW.md) in place of the developers' README."""
 from pathlib import Path
+import argparse
 import hashlib
 import json
+import re
 import struct
 import subprocess
 import zipfile
@@ -9,7 +15,24 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build" / "v17"
 OUT = ROOT / "delivery" / "v17"
-VERSION = "1.8.0"
+
+
+def source_value(relative, pattern):
+    """The first group of `pattern` in a source file: one place for each number."""
+    match = re.search(pattern, (ROOT / relative).read_text(encoding="utf-8"), re.MULTILINE)
+    if not match:
+        raise SystemExit(f"{pattern} not found in {relative}")
+    return match.group(1)
+
+
+ARGS = argparse.ArgumentParser(description=__doc__)
+ARGS.add_argument("--label", default="", help="appended to the version, e.g. preview-20261109")
+LABEL = ARGS.parse_args().label
+VERSION = source_value("game/project.godot", r'^config/version="([^"]+)"') + (
+    f"-{LABEL}" if LABEL else ""
+)
+SAVE_SCHEMA = int(source_value("game/simulation/save_io.gd", r"^const SCHEMA: int = (\d+)"))
+WORLD_GENERATOR = source_value("game/world/world_gen.gd", r'^const VERSION := "([^"]+)"')
 GAME_ZIP = OUT / f"ColonyCharter-{VERSION}-Windows-x64.zip"
 SOURCE_ZIP = OUT / f"ColonyCharter-{VERSION}-Source.zip"
 # Nothing used only for testing belongs in the export.
@@ -76,7 +99,10 @@ def package_game():
         for path in sorted(BUILD.iterdir()):
             if path.is_file() and path.suffix in {".exe", ".pck", ".txt"}:
                 archive.write(path, path.name)
-        archive.write(ROOT / "README.md", "中文说明.md")
+        if LABEL:
+            archive.write(ROOT / "docs" / "v17" / "PREVIEW.md", "预览版说明.md")
+        else:
+            archive.write(ROOT / "README.md", "中文说明.md")
         archive.write(ROOT / "CHANGELOG.md", "CHANGELOG.md")
         archive.write(ROOT / "docs" / "v17" / "PLAYTEST.md", "PLAYTEST.md")
 
@@ -118,8 +144,8 @@ def identity():
         "version": VERSION,
         "commit": commit_id(),
         "engine": "Godot 4.5.1-stable, GL Compatibility, Windows x64",
-        "save_schema": 4,
-        "world_generator": "CC-GEO-2.2",
+        "save_schema": SAVE_SCHEMA,
+        "world_generator": WORLD_GENERATOR,
         "files": {
             path.name: {"sha256": digest(path), "bytes": path.stat().st_size}
             for path in [
