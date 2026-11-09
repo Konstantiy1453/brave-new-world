@@ -70,11 +70,18 @@ func _kinds(registry: Dictionary, buildings: Dictionary) -> void:
 	var kinds: Array = buildings.keys()
 	kinds.append("service")
 	for kind: String in _sorted(kinds):
-		var model: String = str(registry.kinds.get(kind, {}).get("model", ""))
+		var entry: Dictionary = registry.kinds.get(kind, {})
+		var model: String = str(entry.get("model", ""))
 		check(
 			model == "procedural" or registry.models.has(model),
 			"%s resolves to a model (%s)" % [kind, model]
 		)
+		# Its own construction state and a great work's stages or levels, when it has them.
+		var extra: Array = entry.get("addons", []).duplicate()
+		if entry.has("construction"):
+			extra.append(str(entry.construction))
+		for other: String in extra:
+			check(registry.models.has(other), "%s: %s is converted" % [kind, other])
 
 
 func _model(
@@ -86,7 +93,9 @@ func _model(
 	if mesh == null:
 		return
 	var great: bool = bool(recipe.get("great", false))
-	var budget: int = int(recipe.get("target", params.great_target if great else params.target))
+	# The recipe's own target, never above the plan's 4,500 (great works 9,000).
+	var plan_limit: int = int(params.great_target if great else params.target)
+	var budget: int = mini(int(recipe.get("target", plan_limit)), plan_limit)
 	var triangles: int = 0
 	var heaviest: int = 0
 	var names: Array = []
@@ -139,7 +148,14 @@ func _model(
 			"%s: footprint within %.1f (%.2f)" % [id, limit, maxf(box.size.x, box.size.z)]
 		)
 	var floor_limit: float = PIT_LOWEST if pits.has(id) else LOWEST
-	check(box.position.y <= SIZE_SLACK, "%s stands on its ground datum" % id)
+	# A stage or level (a recipe with `include`) stands on its base model, not on the ground.
+	if not recipe.has("include"):
+		check_unless(
+			excused,
+			"datum",
+			box.position.y <= SIZE_SLACK,
+			"%s stands on its ground datum (%.2f)" % [id, box.position.y]
+		)
 	check_unless(
 		excused,
 		"lowest",

@@ -1,7 +1,8 @@
 extends SceneTree
 ## Converts the 3ds Max exchange FBX files into the game's runtime meshes.
-##   godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<dir>
-## <dir> holds `art_reserve/` as unpacked from the art release. Options: --only=id,id --explain
+##   godot --headless --path game --script res://tests/art/convert_models.gd -- --source=<dir>[,<dir>]
+## Each <dir> holds `art_reserve/` as unpacked from an art release; a recipe's FBX is taken from the
+## first that has it. Options: --only=id,id --explain
 ## Reads tests/art/model_recipes.json; writes assets/models/<id>.res (one surface per colour slot,
 ## with levels of detail), data/v17/models.json (the registry the map reads) and a report in
 ## evidence/v17/art. The sources are only read.
@@ -19,6 +20,10 @@ var drop_words: Array = []
 var report: Dictionary = {"models": {}, "failures": []}
 ## --explain prints every surface's levels of detail and the one kept.
 var explain: bool = false
+## Folders the FBX exports are looked for in, in order.
+var roots: PackedStringArray = []
+## Placement of each converted model in game units, by id: what `like` recipes reuse.
+var frames: Dictionary = {}
 
 
 func _initialize() -> void:
@@ -40,6 +45,7 @@ func run() -> void:
 	slot_rules = recipes.slots
 	drop_words = recipes.drop
 	var only: Array = []
+	roots = str(options.source).split(",", false)
 	explain = options.has("explain")
 	if options.has("only"):
 		only = Array(str(options.only).split(","))
@@ -51,7 +57,7 @@ func run() -> void:
 		if not only.is_empty() and not only.has(id):
 			continue
 		var started: int = Time.get_ticks_msec()
-		var entry: Dictionary = _convert(id, recipes.models[id], str(options.source))
+		var entry: Dictionary = _convert(id, recipes.models[id])
 		if entry.is_empty():
 			continue
 		entry.seconds = (Time.get_ticks_msec() - started) / 1000.0
@@ -70,6 +76,10 @@ func run() -> void:
 			)
 		)
 	registry.kinds = recipes.kinds
+	# Models whose recipe is gone leave the registry; their files go with them.
+	for id: String in registry.models.keys():
+		if not recipes.models.has(id):
+			registry.models.erase(id)
 	var file := FileAccess.open(REGISTRY, FileAccess.WRITE)
 	file.store_string(JSON.stringify(registry, "  ", true))
 	file.close()
@@ -101,52 +111,32 @@ func _read_registry() -> Dictionary:
 	return registry
 
 
-func _convert(id: String, recipe: Dictionary, source_root: String) -> Dictionary:
-	var path: String = source_root.path_join(str(recipes.packs[recipe.pack])).path_join(
-		str(recipe.source) + ".fbx"
-	)
-	if not FileAccess.file_exists(path):
-		report.failures.append("%s: missing %s" % [id, path])
+func _convert(id: String, recipe: Dictionary) -> Dictionary:
+	var path: String = _source_file(recipe)
+	if path == "":
+		report.failures.append("%s: missing %s.fbx" % [id, str(recipe.source)])
 		return {}
-	var document := FBXDocument.new()
-	var state := FBXState.new()
-	if document.append_from_file(path, state) != OK:
+	var parts: Array = _load_parts(path)
+	if parts.is_empty():
 		report.failures.append("%s: cannot read %s" % [id, path])
 		return {}
-	var scene: Node = document.generate_scene(state)
-	var parts: Array = []
-	_collect(scene, Transform3D.IDENTITY, parts)
-	scene.free()
-	parts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a.key) < str(b.key))
+	var chosen: Dictionary = _candidates(recipe, parts)
+	var candidates: Array = chosen.kept
+	var dropped: int = int(chosen.dropped)
 	var kept: Array = []
-	var dropped: int = 0
-	var min_part: float = float(recipe.get("min_part_m", params.min_part_m))
-	for part: Dictionary in parts:
-		if recipe.has("box") and not _inside(part.aabb, recipe.box):
-			continue
-		if _dropped(str(part.name).to_lower(), part.aabb, min_part):
-			dropped += 1
-			continue
-		kept.append(part)
+	for part: Dictionary in candidates:
+		if _selected(str(part.name).to_lower(), recipe):
+			kept.append(part)
 	if kept.is_empty():
 		report.failures.append("%s: nothing kept" % id)
 		return {}
-	var whole: AABB = kept[0].aabb
-	for part: Dictionary in kept:
-		whole = whole.merge(part.aabb)
+	var frame: Dictionary = _frame(id, recipe, candidates)
+	if frame.is_empty():
+		report.failures.append("%s: no frame from %s" % [id, str(recipe.get("like", ""))])
+		return {}
 	var great: bool = bool(recipe.get("great", false))
-	var scale: float
-	if recipe.has("scale"):
-		scale = float(recipe.scale)
-	else:
-		var fit: float = float(recipe.get("fit", params.great_fit if great else params.fit))
-		scale = fit / maxf(whole.size.x, whole.size.z)
-	var lift: float = float(recipe.get("vertical", params.vertical))
-	var scaling := Vector3(scale, scale * lift, scale)
-	# Centred on the footprint; the ground stays at the source's ground datum, so footings and
-	# shafts may reach below it.
-	var centre := Vector3(whole.get_center().x, 0.0, whole.get_center().z)
-	var place := Transform3D(Basis.from_scale(scaling), -centre * scaling)
+	var scale: float = float(frame.scale)
+	var place: Transform3D = frame.place
 	var groups: Dictionary = {}
 	var slot_parts: Dictionary = {}
 	for part: Dictionary in kept:
@@ -159,7 +149,7 @@ func _convert(id: String, recipe: Dictionary, source_root: String) -> Dictionary
 		(groups[slot] as SurfaceTool).append_from(part.mesh, int(part.surface), place * part.xform)
 		slot_parts[slot] = int(slot_parts[slot]) + 1
 	var target: int = int(recipe.get("target", params.great_target if great else params.target))
-	var mesh: ArrayMesh = _reduce(groups, target)
+	var mesh: ArrayMesh = _reduce(groups, target, bool(recipe.get("seat", false)))
 	var out: String = OUT_DIR + "/" + id + ".res"
 	var error: int = ResourceSaver.save(mesh, out, ResourceSaver.FLAG_COMPRESS)
 	if error != OK:
@@ -192,13 +182,110 @@ func _convert(id: String, recipe: Dictionary, source_root: String) -> Dictionary
 	return entry
 
 
+## The recipe's FBX in the first source folder that has it; empty when none does.
+func _source_file(recipe: Dictionary) -> String:
+	for root: String in roots:
+		var path: String = root.path_join(str(recipes.packs[recipe.pack])).path_join(
+			str(recipe.source) + ".fbx"
+		)
+		if FileAccess.file_exists(path):
+			return path
+	return ""
+
+
+## Every mesh surface of an FBX with its transform and bounds, in a stable order.
+func _load_parts(path: String) -> Array:
+	var document := FBXDocument.new()
+	var state := FBXState.new()
+	if document.append_from_file(path, state) != OK:
+		return []
+	var scene: Node = document.generate_scene(state)
+	var parts: Array = []
+	_collect(scene, Transform3D.IDENTITY, parts)
+	scene.free()
+	parts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a.key) < str(b.key))
+	return parts
+
+
+## The parts inside the recipe's box that are neither too small nor named for dropping, and how
+## many inside it were dropped: {kept, dropped}.
+func _candidates(recipe: Dictionary, parts: Array) -> Dictionary:
+	var kept: Array = []
+	var dropped: int = 0
+	var min_part: float = float(recipe.get("min_part_m", params.min_part_m))
+	for part: Dictionary in parts:
+		if recipe.has("box") and not _inside(part.aabb, recipe.box):
+			continue
+		if _dropped(str(part.name).to_lower(), part.aabb, min_part):
+			dropped += 1
+			continue
+		kept.append(part)
+	return {"kept": kept, "dropped": dropped}
+
+
+## A recipe's `include` keeps only parts named with one of its words, `exclude` leaves out parts
+## named with any of its words: how a model's stages and levels become their own meshes.
+static func _selected(name: String, recipe: Dictionary) -> bool:
+	for word: String in recipe.get("exclude", []):
+		if name.contains(word):
+			return false
+	var include: Array = recipe.get("include", [])
+	if include.is_empty():
+		return true
+	for word: String in include:
+		if name.contains(word):
+			return true
+	return false
+
+
+## Where a model sits in game units: fitted on the longer side of every candidate part (before
+## `include` and `exclude`, so a model's stages share one frame), centred on the footprint, the
+## ground at the source's ground datum. A recipe with `like` takes the frame of that recipe's model,
+## so a construction state stands exactly where its building will. Empty when that model's source
+## is missing.
+func _frame(id: String, recipe: Dictionary, candidates: Array) -> Dictionary:
+	if recipe.has("like"):
+		var other: String = str(recipe.like)
+		if not frames.has(other):
+			var model: Dictionary = recipes.models.get(other, {})
+			var path: String = _source_file(model) if not model.is_empty() else ""
+			if path == "":
+				return {}
+			var others: Array = _candidates(model, _load_parts(path)).kept
+			if others.is_empty():
+				return {}
+			frames[other] = _frame_of(model, others)
+		return frames[other]
+	frames[id] = _frame_of(recipe, candidates)
+	return frames[id]
+
+
+func _frame_of(recipe: Dictionary, candidates: Array) -> Dictionary:
+	var whole: AABB = candidates[0].aabb
+	for part: Dictionary in candidates:
+		whole = whole.merge(part.aabb)
+	var great: bool = bool(recipe.get("great", false))
+	var scale: float
+	if recipe.has("scale"):
+		scale = float(recipe.scale)
+	else:
+		var fit: float = float(recipe.get("fit", params.great_fit if great else params.fit))
+		scale = fit / maxf(whole.size.x, whole.size.z)
+	var lift: float = float(recipe.get("vertical", params.vertical))
+	var scaling := Vector3(scale, scale * lift, scale)
+	# Centred on the footprint; the ground stays at the source's ground datum, so footings and
+	# shafts may reach below it (`seat` lowers a model onto it after reduction instead).
+	var centre := Vector3(whole.get_center().x, 0.0, whole.get_center().z)
+	return {"scale": scale, "place": Transform3D(Basis.from_scale(scaling), -centre * scaling)}
+
+
 ## Merges each slot, then picks a level of detail for every surface so the model stays within the
 ## triangle target. Shares are weighted by slot (`slot_weights`): thin structure vanishes first when
 ## simplified, bulky shapes keep their look. The finest level under each surface's share first;
 ## while the model is over, the surface heaviest for its weight steps down a level; then budget left
 ## over steps surfaces back up, smallest weighted additions first. A model whose coarsest levels are
 ## still over keeps them (the art suite names it).
-func _reduce(groups: Dictionary, target: int) -> ArrayMesh:
+func _reduce(groups: Dictionary, target: int, seat: bool = false) -> ArrayMesh:
 	var slots: Array = groups.keys()
 	slots.sort()
 	var full := ImporterMesh.new()
@@ -283,15 +370,26 @@ func _reduce(groups: Dictionary, target: int) -> ArrayMesh:
 					% [full.get_surface_name(surface), str(sizes), sizes[chosen[surface]]]
 				)
 			)
+	var kept: Array = []
+	var lowest: float = INF
+	for surface: int in range(full.get_surface_count()):
+		var arrays: Array = _compact(
+			full.get_surface_arrays(surface), levels[surface][chosen[surface]]
+		)
+		for vertex: Vector3 in arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array:
+			lowest = minf(lowest, vertex.y)
+		kept.append(arrays)
+	# Seated models rest their lowest kept vertex on the ground: reduction can drop the lowest.
+	if seat and is_finite(lowest):
+		for arrays: Array in kept:
+			var moved: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			for index: int in range(moved.size()):
+				moved[index] = moved[index] - Vector3(0.0, lowest, 0.0)
+			arrays[Mesh.ARRAY_VERTEX] = moved
 	var reduced := ImporterMesh.new()
 	for surface: int in range(full.get_surface_count()):
 		reduced.add_surface(
-			Mesh.PRIMITIVE_TRIANGLES,
-			_compact(full.get_surface_arrays(surface), levels[surface][chosen[surface]]),
-			[],
-			{},
-			null,
-			full.get_surface_name(surface)
+			Mesh.PRIMITIVE_TRIANGLES, kept[surface], [], {}, null, full.get_surface_name(surface)
 		)
 	reduced.generate_lods(25.0, 60.0, [])
 	return reduced.get_mesh()
