@@ -169,6 +169,13 @@ func _show_step() -> void:
 		outline.get_parent().move_child(outline, -1)
 
 
+## Keeps the panel and its outline above a dialog that has just opened over them.
+func keep_on_top() -> void:
+	move_to_front()
+	if is_instance_valid(outline) and outline.get_parent() != null:
+		outline.get_parent().move_child(outline, -1)
+
+
 func _update_next_button() -> void:
 	next_button.text = "下一步"
 	next_button.visible = reviewing or _done()
