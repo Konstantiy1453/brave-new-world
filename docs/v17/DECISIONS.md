@@ -414,3 +414,61 @@ research-first games taken over.
 - The market page prices 100 t ahead (`market.json` `preview_tonnes`) and shows the floor price; the
   administration line shows the step for 100 more residents (`admin_preview_residents`) and one more
   settlement · the plan's wording · per-tonne and per-resident slopes, unreadable for cheap goods.
+
+## 1.9: interface pass (2026-11-09)
+
+Format as above: the call · why · what was rejected. Branch `v17-ui-redesign`, for review as a pull request.
+
+- One style system in `ui/design.gd` with three variants: neutral (the shell and every other page, in
+  the 1.8 colours), research (turquoise, cyan and yellow on deep teal) and industry (charcoal,
+  gray-teal, muted gold) for construction, the facility list, production management and the facility
+  column · the requested direction: research keeps its lively look, construction takes the darker one,
+  and a colour means the same thing on every page · a global darkening or desaturation filter.
+- A page's variant is set around its drawing (`D.use`), and the semantic colours INK, MUTED, TEAL,
+  GOLD and RED resolve through it, so the existing page code follows without rewrites. Every reused
+  button, card, bar and the shared frame is restyled or reset on each pass (`META_SKIN`) · a theme per
+  page, which rebuilds resources and leaves stale overrides on shared controls.
+- Style boxes are built once per variant and role and cached; a control is only touched when its role,
+  variant or colour changes · building them on each refresh.
+- Shared geometry: 1 px borders, two cut corners (`corner_detail = 1`), a 3 px bar for selected rows
+  and running topics, a 2 px focus ring in each variant's pale gold; no glow, bevel or gloss.
+- The modal frame (panel, title, close button, rule, footer) takes each page's variant. Construction
+  and research open up to 1,320 wide, never wider than the window less 40 at the chosen text size ·
+  960, which leaves no room for three columns.
+- Construction is three parts: the catalogue (category chips; a row per facility with a small 「建设」
+  that orders it on its current plot), the chosen facility (a baked view, what it is, its plot, what
+  keeps it running) and its ledger (what building takes against what the colony holds, what it gives
+  back, the verdict and the main order) · the requested three-part layout · one card per facility,
+  which hides the comparison.
+- Each catalogue row keeps `Build_<kind>`, so the tutorial's outline, the scripted EXE drive and the
+  tests find the same control; the row is `Pick_<kind>` and the main order `BuildSelected`. Both orders
+  are the same `build` action with the same plot.
+- The first listed facility shows until the player picks one; the pick survives filters and page
+  visits; a shortage's 「处理」 opens its category on the facility that answers it (power, water, farm,
+  port; homes depend on the settlement kind, so housing opens on the category) · resetting the pick.
+- The ledger marks a cash shortfall red and a stock shortfall gold (a port can buy what is missing);
+  the simulation's refusal is the verdict, so the page never decides what can be built.
+- Facility views are baked from the models (`tests/art/bake_facility_views.gd`, window): late
+  afternoon, the model on a concrete pad, a driveway to a road with kerbs and lane marks, a vehicle at
+  town scale, two street lamps with their own small lights, pipes and a tank for works, an ore heap and
+  conveyor for mines, low neighbours fading into haze; 616 × 280 lossy WebP, 792 KB for 61 kinds · the
+  brief's grounded look · a live 3D viewport per page, or models on display plinths.
+- Research: four directions side by side, each with its colour, icon and team. A topic reads, top to
+  bottom: state tag, level and points, name, effect, the facilities it unlocks with their icons, the
+  charter mark, progress, then its actions. Active, available and waiting-for-a-prerequisite topics
+  differ by frame and by tag text, not by colour alone; finished topics are listed per direction under
+  a 「✓ 已完成」 tag.
+- Direction colours: industry orange, construction yellow, agriculture green, society blue; they mark a
+  direction only. Turquoise is active, selected and progress; cyan is what a topic opens; yellow is
+  money, points and the charter mark.
+- Text sizes: frame title 26, page heading 22, section 19, body 17, secondary 15, caption 14. The
+  research page's 12–13 px text is gone · density from small text.
+- Status glyphs are ones the game font has (✓ × ● ○ ★); it has no ✕ or ▸.
+- The page box stays the direct child of its ScrollContainer (`v16_scroll_probe` relies on it); scroll
+  areas keep a 10 px gap to their bar through a `panel` style rather than a wrapper.
+- A reused unnamed button drops the name a keyed button gave it, so `find_child` never finds a stale
+  `Card_*` or `Build_*`.
+- The reference images named in the request were not in this session (nothing uploaded, nothing in the
+  repository); the look follows the written direction · guessing pixel values from file names.
+- Capture fixtures recorded on Windows do not load on Linux (world hash). `make_fixtures_v17.gd --out=`
+  writes a local set and both capture suites take `--qa-fixtures=` · overwriting the recorded set.

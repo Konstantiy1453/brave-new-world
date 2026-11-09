@@ -37,6 +37,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Building icons | `tests/art/bake_icons.gd` renders every kind's model (tint, scale, the map's daylight) to `assets/icons/buildings/<kind>.webp` (lossless), 128 px with mipmaps; build card 64 px, building column 32 px; goods keep their SVG pictograms | screenshots viewed (`evidence/v17/art/pages/settlement.png`, `build.png`), automated tests (`ui_contract`, `v16_ui_tests`) |
 | Playtest preview | `ColonyCharter-1.9.0-preview-20261109-Windows-x64.zip` (54 MB: EXE, pack, licences, 预览版说明.md, CHANGELOG, PLAYTEST) exported in the cloud from commit `f7311cb` with the official 4.5.1 templates; no test material in the pack; the pack boots, lands, builds and runs 40 days with a clean audit on the Linux engine. The EXE has not been run on Windows | exported EXE (pack smoke-tested on Linux, not on Windows), screenshots viewed |
 | Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
+| Interface pass (branch `v17-ui-redesign`, for review) | One style system in `ui/design.gd`: a neutral foundation in the 1.8 colours, a research variant (turquoise, cyan, yellow) and an industrial one (charcoal, gray-teal, muted gold); cached style boxes; skins reset on every reuse; fine borders with cut corners, focus ring, type scale (no text under 14 px on the two pages). Construction page in three parts (`ui/build_page.gd`: catalogue with quick orders, the chosen facility with a baked view of it at work, ledger with verdict and main order); 61 facility views (`tests/art/bake_facility_views.gd`). Research page (`ui/research_page.gd`): direction colours and icons, topic state tags, effects, unlock icons, progress, actions. The modal frame, navigation, facility list, production management and facility column follow their variant; the tutorial outline stays above dialogs. Decisions in `DECISIONS.md` (1.9: interface pass) | automated tests (new `v19_ui` 64 checks; `ui_contract`, `v16_ui_tests` 20, `v17_research` 144, `v17_bugs` 43, `v17_tutorial` 237 checks as before), source-project window: 34 captures and 52 checks (`ui/capture_suite_ui19.gd`: 4 window sizes × 3 text sizes, every action scrolled into view, keyboard focus, tooltip, page switching), screenshots viewed (`evidence/v17/ui19/`, a selection in `docs/v17/ui19/`). The two reference images were not available in the session; human playtest NOT_RUN |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
@@ -135,6 +136,10 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
    harness never sees it. Ways out, for the user to choose: a bot that keeps ground for jobs and clears
    it for workplaces when idle workers pile up (what a careful player does); or a softer company rule
    after the award (premise change); or both.
+8. Interface pass: compare both pages with the two reference images (`S2-kasako-inspired-research.png`,
+   `S1c-kasako-construction-dark-muted.png`, not available in the cloud session) and tune `PALETTES` in
+   `ui/design.gd`, the only place the colours live; look at both pages on Windows with a real GPU at 100%
+   and 125% display scaling; merge the pull request after review.
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.
