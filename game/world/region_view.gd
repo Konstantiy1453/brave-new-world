@@ -1,9 +1,8 @@
-extends "res://world/building_models.gd"
-## The regional terrain, water, nature and colony scene. Terrain is sampled once per load into a
-## height field; everything placed on the ground afterwards reads that field. Trees, rocks and
-## free plots are instanced; each building kind is one baked mesh.
+extends "res://world/region_ground.gd"
+## The colony scene on the regional ground (region_ground.gd): buildings on their terraces, the
+## service lanes and roads, route gates, harbour, shuttle pads, traffic, lamps and smoke. Free
+## plots are instanced; each building kind is one baked mesh.
 
-const Rules = preload("res://simulation/rules.gd")
 const Traffic = preload("res://world/traffic.gd")
 const ModelArt = preload("res://world/model_art.gd")
 ## Deck height of the bridge model above its origin, in game units (5.03 m at 0.09 units a metre).
@@ -18,17 +17,10 @@ const SHUTTLE_REACH: float = 30.0
 ## Building roles whose working plants send up steam or smoke.
 const SMOKE_ROLES: Array[String] = ["factory", "harvest", "great"]
 const SMOKE_KINDS: Array[String] = ["geothermal", "fission", "fusion", "smelter", "processor"]
-## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
-const OLD_FIELD: Dictionary = {
-	"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0, "rows": 2
-}
-const WIDE_FIELD: Dictionary = {
-	"res": 112, "width": 96.0, "depth": 72.0, "trees": 360, "gate": 44.0, "rows": 3
-}
-## Rows of triangles between frames: one long block here is what a cold region's worst frame was.
-const TRIANGLE_ROWS: int = 24
-const EDGE_MARGIN: float = 1.5
-const RIVER_STEP: float = 0.5
+## Service lanes run between the rows of plots, half a slot from each; a building's spur stops at
+## the front of its pad, so nothing drives into it.
+const LANE_OFFSET: float = 3.0
+const PAD_FRONT: float = 2.55
 const PLOT_COLORS: Dictionary = {
 	"general": Color("8c9a94"),
 	"farm": Color("7f9a5c"),
@@ -55,18 +47,6 @@ const LEGACY_SLOTS: Array[Vector2] = [
 	Vector2(9, 9),
 ]
 
-var field_res: int = int(OLD_FIELD.res)
-var field_width: float = float(OLD_FIELD.width)
-var field_depth: float = float(OLD_FIELD.depth)
-var half_width: float = field_width / 2.0
-var half_depth: float = field_depth / 2.0
-var river_steps: int = int(field_depth / RIVER_STEP)
-var tree_count: int = int(OLD_FIELD.trees)
-var gate_reach: float = float(OLD_FIELD.gate)
-var rows_per_frame: int = int(OLD_FIELD.rows)
-var height_field := PackedFloat32Array()
-var forest_field := PackedFloat32Array()
-var field_has_sea: bool = false
 var baked_models: Dictionary = {}
 var road_tool: SurfaceTool
 var road_sections: int = 0
@@ -84,548 +64,6 @@ var ship_route: Array = []
 var shuttle_flights: Array = []
 var ship_clock: float = 0.0
 var _wet_run: Dictionary = {}
-
-
-## The town grew beside the fixed river in old worlds; in generated worlds plots avoid the rivers.
-func _town_offset() -> float:
-	if Geo.is_generated(str(world.version)):
-		return 0.0
-	return 12.0 if world.regions[selected_region].river else 0.0
-
-
-func _sample_ground(x: float, z: float) -> float:
-	var ll := _local_coordinate(x, z)
-	var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
-	return _ground_from_geo(x, z, g, ll)
-
-
-func _ground(x: float, z: float) -> float:
-	if height_field.size() != (field_res + 1) * (field_res + 1):
-		return _sample_ground(x, z)
-	var fx: float = clampf((x / field_width + 0.5) * field_res, 0.0, field_res - 0.001)
-	var fz: float = clampf((z / field_depth + 0.5) * field_res, 0.0, field_res - 0.001)
-	var ix: int = int(fx)
-	var iz: int = int(fz)
-	var tx: float = fx - ix
-	var tz: float = fz - iz
-	var row: int = iz * (field_res + 1) + ix
-	var next: int = row + field_res + 1
-	return lerpf(
-		lerpf(height_field[row], height_field[row + 1], tx),
-		lerpf(height_field[next], height_field[next + 1], tx),
-		tz
-	)
-
-
-func _ground_from_geo(x: float, z: float, g: Dictionary, ll: Vector2) -> float:
-	var reg: Dictionary = world.regions[selected_region]
-	if not bool(g.land):
-		return (
-			-1.0 + float(g.height) * 30.0
-			if str(world.version) == "CC-GEO-1.4"
-			else (float(g.height) - region_ground) * 30.0
-		)
-	var detail: float = noise.get_noise_2d(x * .65, z * .65) * .33
-	var raw: float = (float(g.height) - region_ground) * 30.0 + detail
-	# Planned development terraces blend smoothly into the actual regional relief.
-	var town_center := Vector2(_town_offset(), 0)
-	var d: float = Vector2(x, z).distance_to(town_center)
-	var blend: float = smoothstep(9.0, 18.0, d)
-	var height: float = lerpf(.25, raw, blend)
-	if reg.river and str(world.version) == "CC-GEO-1.4":
-		var river_x: float = (Geo.river_lon(ll.x) - float(reg.lon)) * 4.0
-		var river_dist: float = absf(x - river_x)
-		if river_dist < 2.8:
-			height = lerpf(-.55, height, smoothstep(.9, 2.8, river_dist))
-	elif str(world.version) != "CC-GEO-1.4":
-		var p := Vector2(x, z)
-		for segment in local_river_segments:
-			var a: Vector2 = segment.a
-			var b: Vector2 = segment.b
-			var t: float = clampf((p - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
-			var distance: float = p.distance_to(a.lerp(b, t))
-			var width: float = segment.width
-			if distance < width * 2:
-				var water: float = lerpf(segment.ya, segment.yb, t)
-				height = lerpf(water - .28, height, smoothstep(width * .72, width * 2, distance))
-		for lake in local_lakes:
-			var distance: float = p.distance_to(lake.center)
-			if distance < lake.radius * 1.25:
-				height = lerpf(
-					lake.height - .4,
-					height,
-					smoothstep(lake.radius * .8, lake.radius * 1.25, distance)
-				)
-	return height
-
-
-func _water_height_at(x: float, z: float, margin: float = 1.0) -> float:
-	var point := Vector2(x, z)
-	var result: float = -INF
-	for segment in local_river_segments:
-		var a: Vector2 = segment.a
-		var b: Vector2 = segment.b
-		var t: float = clampf((point - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
-		if point.distance_to(a.lerp(b, t)) < float(segment.width) * margin:
-			result = maxf(result, lerpf(segment.ya, segment.yb, t))
-	for lake in local_lakes:
-		if point.distance_to(lake.center) < float(lake.radius) * margin:
-			result = maxf(result, lake.height)
-	return result
-
-
-func _local_coordinate(x: float, z: float) -> Vector2:
-	var reg: Dictionary = world.regions[selected_region]
-	var lat: float = float(reg.get("canonical_lat", reg.lat)) - z / 4.0
-	var lon: float = float(reg.get("canonical_lon", reg.lon)) + x / 4.0
-	return Geo.project_coordinate(lat, lon, world)
-
-
-## Worlds whose generator spreads plots further out get the larger field.
-func _fit_field() -> void:
-	var overrides: Dictionary = Rules.read("geography").get("overrides", {})
-	var rules: Dictionary = overrides.get(str(world.get("version", "")), {})
-	var field: Dictionary = WIDE_FIELD if rules.get("plots", {}).has("slot_x") else OLD_FIELD
-	field_res = int(field.res)
-	field_width = float(field.width)
-	field_depth = float(field.depth)
-	half_width = field_width / 2.0
-	half_depth = field_depth / 2.0
-	river_steps = int(field_depth / RIVER_STEP)
-	tree_count = int(field.trees)
-	gate_reach = float(field.gate)
-	rows_per_frame = int(field.rows)
-
-
-func _point_to_local(lat: float, lon: float) -> Vector2:
-	var reg: Dictionary = world.regions[selected_region]
-	var ll: Vector2 = Geo.unproject_coordinate(lat, lon, world)
-	return Vector2(
-		wrapf(ll.y - float(reg.get("canonical_lon", reg.lon)), -180, 180) * 4.0,
-		(float(reg.get("canonical_lat", reg.lat)) - ll.x) * 4.0
-	)
-
-
-func _clip_segment(a: Vector2, b: Vector2) -> Vector2:
-	# Liang-Barsky against the exact local ground bounds; returns segment t's.
-	var d := b - a
-	var low: float = 0
-	var high: float = 1
-	var p: Array = [-d.x, d.x, -d.y, d.y]
-	var q: Array = [a.x + half_width, half_width - a.x, a.y + half_depth, half_depth - a.y]
-	for i in range(4):
-		if absf(float(p[i])) < .000001:
-			if float(q[i]) < 0:
-				return Vector2(-1, -1)
-		else:
-			var t: float = float(q[i]) / float(p[i])
-			if float(p[i]) < 0:
-				low = maxf(low, t)
-			else:
-				high = minf(high, t)
-			if low > high:
-				return Vector2(-1, -1)
-	return Vector2(low, high)
-
-
-func _prepare_local_rivers() -> void:
-	local_river_segments.clear()
-	local_lakes.clear()
-	height_field = PackedFloat32Array()
-	var reg: Dictionary = world.regions[selected_region]
-	region_ground = float(Geo.sample_geo(reg.lat, reg.lon, noise, str(world.version)).height)
-	if str(world.version) == "CC-GEO-1.4":
-		return
-	var rivers: Array = render_rivers
-	for river_index in range(rivers.size()):
-		var river = rivers[river_index]
-		var coordinates: Array = river.coordinates
-		var heights: Array = river.heights
-		# Water only runs downhill: each point may not stand above the one upstream of it.
-		var water_level: float = INF
-		for i in range(coordinates.size() - 1):
-			var ca = coordinates[i]
-			var cb = coordinates[i + 1]
-			var a := _point_to_local(float(ca[0]), float(ca[1]))
-			var b := _point_to_local(float(cb[0]), float(cb[1]))
-			var ha: float = minf(water_level, _river_height(heights, i, ca))
-			var hb: float = minf(ha, _river_height(heights, i + 1, cb))
-			water_level = hb
-			if a.distance_to(b) > 60:
-				continue
-			var clip := _clip_segment(a, b)
-			if clip.x < 0:
-				continue
-			var wa: float = (
-				.45 + .18 * float(i) / maxi(1, coordinates.size() - 1) + .035 * sin(float(i) * .51)
-			)
-			var wb: float = (
-				.45
-				+ .18 * float(i + 1) / maxi(1, coordinates.size() - 1)
-				+ .035 * sin(float(i + 1) * .51)
-			)
-			local_river_segments.append(
-				{
-					"a": a.lerp(b, clip.x),
-					"b": a.lerp(b, clip.y),
-					"ya": (lerpf(ha, hb, clip.x) - region_ground) * 30.0 + .04,
-					"yb": (lerpf(ha, hb, clip.y) - region_ground) * 30.0 + .04,
-					"width": maxf(wa, wb),
-					"width_a": wa,
-					"width_b": wb,
-					"river_index": river_index
-				}
-			)
-	for lake in world.get("lakes", []):
-		var center := _point_to_local(float(lake.lat), float(lake.lon))
-		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
-		if absf(center.x) > half_width - radius or absf(center.y) > half_depth - radius:
-			continue
-		var h: float = float(lake.get("height", float(lake.get("elevation", 0)) / 4300.0))
-		local_lakes.append(
-			{"center": center, "radius": radius, "height": (h - region_ground) * 30.0 + .04}
-		)
-
-
-func _river_height(heights: Array, index: int, ll: Array) -> float:
-	if index < heights.size():
-		return float(heights[index])
-	return float(Geo.sample_geo(float(ll[0]), float(ll[1]), noise, str(world.version)).height)
-
-
-func _forest_chance(g: Dictionary) -> float:
-	if not bool(g.land) or str(g.get("biome", "")) in ["alpine", "desert", "tundra"]:
-		return 0.0
-	return (
-		clampf((float(g.rainfall) - .23) * 1.45, 0, .86) * smoothstep(-2, 10, float(g.temperature))
-	)
-
-
-func _build_terrain(token: int) -> bool:
-	var reg: Dictionary = world.regions[selected_region]
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var resolution: int = field_res
-	var vertices: PackedVector3Array = []
-	var colors: PackedColorArray = []
-	vertices.resize((resolution + 1) * (resolution + 1))
-	colors.resize(vertices.size())
-	var heights := PackedFloat32Array()
-	heights.resize(vertices.size())
-	var forests := PackedFloat32Array()
-	forests.resize(vertices.size())
-	terrain_unique_samples = 0
-	field_has_sea = false
-	for iz in range(resolution + 1):
-		for ix in range(resolution + 1):
-			var x: float = (float(ix) / resolution - .5) * field_width
-			var z: float = (float(iz) / resolution - .5) * field_depth
-			var ll := _local_coordinate(x, z)
-			var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
-			terrain_unique_samples += 1
-			field_has_sea = field_has_sea or not bool(g.land)
-			# The ground shader colours from data, as the globe does: temperature, rainfall,
-			# wet banks and height. See world/shaders.gd.
-			var data: Color = Shaders.encode(
-				float(g.height), float(g.temperature), float(g.rainfall), 0.0
-			)
-			data.b = 1.0 if is_finite(_water_height_at(x, z, 1.9)) else 0.0
-			var index: int = iz * (resolution + 1) + ix
-			colors[index] = data
-			var height: float = _ground_from_geo(x, z, g, ll)
-			heights[index] = height
-			forests[index] = _forest_chance(g)
-			vertices[index] = Vector3(x, height, z)
-		if iz % rows_per_frame == 0:
-			region_progress.emit(true, float(iz) / resolution * .9)
-			await get_tree().process_frame
-			if token != region_load_token:
-				return false
-	height_field = heights
-	forest_field = forests
-	# Preserve the original triangles and flat normals; only sampling is shared.
-	for iz in range(resolution):
-		for ix in range(resolution):
-			for corner in [
-				Vector2i(0, 0),
-				Vector2i(1, 0),
-				Vector2i(0, 1),
-				Vector2i(1, 0),
-				Vector2i(1, 1),
-				Vector2i(0, 1)
-			]:
-				var index: int = (iz + corner.y) * (resolution + 1) + ix + corner.x
-				st.set_color(colors[index])
-				st.add_vertex(vertices[index])
-		if iz % TRIANGLE_ROWS == TRIANGLE_ROWS - 1:
-			await get_tree().process_frame
-			if token != region_load_token:
-				return false
-
-	st.generate_normals()
-	var terrain := MeshInstance3D.new()
-	terrain.mesh = st.commit()
-	terrain.material_override = _terrain_material(bool(reg.river))
-	surface.add_child(terrain)
-	# Geological section of a floating regional cutaway, deliberately no debug grid.
-	var border := SurfaceTool.new()
-	border.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var edges: Array = [
-		Vector2(-half_width, -half_depth),
-		Vector2(half_width, -half_depth),
-		Vector2(half_width, half_depth),
-		Vector2(-half_width, half_depth)
-	]
-	for e in range(4):
-		for k in range(80):
-			var a: Vector2 = edges[e].lerp(edges[(e + 1) % 4], float(k) / 80)
-			var b: Vector2 = edges[e].lerp(edges[(e + 1) % 4], float(k + 1) / 80)
-			var top_a := Vector3(a.x, _ground(a.x, a.y), a.y)
-			var top_b := Vector3(b.x, _ground(b.x, b.y), b.y)
-			var bottom: float = minf(-4.0, minf(top_a.y, top_b.y) - 3.0)
-			for v in [
-				top_a,
-				Vector3(a.x, bottom, a.y),
-				top_b,
-				top_b,
-				Vector3(a.x, bottom, a.y),
-				Vector3(b.x, bottom, b.y)
-			]:
-				border.add_vertex(v)
-	border.generate_normals()
-	var skirt := MeshInstance3D.new()
-	skirt.mesh = border.commit()
-	skirt.material_override = _mat("strata", Color("283a3e"), .15, .95)
-	surface.add_child(skirt)
-	_build_river()
-	_build_sea()
-	_build_nature()
-	# Thin survey corner lights frame the playable terrain without a grid.
-	for x in [-27.5, 27.5]:
-		for z in [-22.5, 22.5]:
-			var h: float = _ground(x, z)
-			_cylinder(
-				surface,
-				Vector3(x, h + .35, z),
-				.065,
-				.7,
-				_mat("survey", Color("71ccbe"), .3, .6, .8),
-				8
-			)
-
-	return true
-
-
-## One ground material per river setting: the uniforms carry the clock, not the region.
-func _terrain_material(river: bool) -> ShaderMaterial:
-	var key: String = "terrain_ground_" + str(river)
-	if not mats.has(key):
-		var material := ShaderMaterial.new()
-		material.shader = Shaders.shader("terrain")
-		material.set_shader_parameter("noise3d", Shaders.noise_texture())
-		material.set_shader_parameter("river_tint", 1.0 if river else 0.0)
-		mats[key] = material
-	terrain_shader = mats[key]
-	return mats[key]
-
-
-## One ribbon per river, so a winding channel is one mesh rather than one node per bend.
-func _build_river() -> void:
-	if str(world.version) == "CC-GEO-1.4":
-		if world.regions[selected_region].river:
-			_build_legacy_river()
-		return
-	var ribbons: Dictionary = {}
-	for segment in local_river_segments:
-		var key: int = int(segment.river_index)
-		if not ribbons.has(key):
-			var fresh := SurfaceTool.new()
-			fresh.begin(Mesh.PRIMITIVE_TRIANGLES)
-			ribbons[key] = fresh
-		var st: SurfaceTool = ribbons[key]
-		var a: Vector2 = segment.a
-		var b: Vector2 = segment.b
-		var normal: Vector2 = (b - a).normalized().orthogonal()
-		var side_a: Vector2 = normal * float(segment.width_a)
-		var side_b: Vector2 = normal * float(segment.width_b)
-		var aa := Vector3(a.x - side_a.x, segment.ya, a.y - side_a.y)
-		var ab := Vector3(a.x + side_a.x, segment.ya, a.y + side_a.y)
-		var ba := Vector3(b.x - side_b.x, segment.yb, b.y - side_b.y)
-		var bb := Vector3(b.x + side_b.x, segment.yb, b.y + side_b.y)
-		for vertex in [aa, ab, ba, ab, bb, ba]:
-			st.add_vertex(vertex)
-	var material: Material = _water_material("river", Color("224f59"))
-	for key: int in ribbons:
-		var st: SurfaceTool = ribbons[key]
-		st.generate_normals()
-		_mesh(surface, st.commit(), Vector3.ZERO, material)
-	for lake in local_lakes:
-		_cylinder(
-			surface,
-			Vector3(lake.center.x, lake.height, lake.center.y),
-			lake.radius,
-			.025,
-			_water_material("lake", Color("2e798a")),
-			40
-		)
-
-
-func _build_legacy_river() -> void:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var reg: Dictionary = world.regions[selected_region]
-	for i in range(river_steps):
-		var z: float = -half_depth + i * RIVER_STEP
-		var nz: float = z + RIVER_STEP
-		var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0
-		var nx: float = (Geo.river_lon(float(reg.lat) - nz / 4.0) - float(reg.lon)) * 4.0
-		for v in [
-			Vector3(x - 1.35, -.24, z),
-			Vector3(x + 1.35, -.24, z),
-			Vector3(nx - 1.35, -.24, nz),
-			Vector3(x + 1.35, -.24, z),
-			Vector3(nx + 1.35, -.24, nz),
-			Vector3(nx - 1.35, -.24, nz)
-		]:
-			st.add_vertex(v)
-	st.generate_normals()
-	var river := MeshInstance3D.new()
-	river.mesh = st.commit()
-	river.material_override = _mat("river", Color("2a818b"), .42, .19)
-	surface.add_child(river)
-	for lane in [-.7, .25, .85]:
-		var points: Array[Vector3] = []
-		for i in range(river_steps):
-			var z: float = -half_depth + i * RIVER_STEP
-			var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0 + lane
-			points.append(Vector3(x, -.225, z))
-		_line(surface, points, Color(.4, .7, .72, .4), .2)
-
-
-## One plane at sea level; the terrain itself draws the shoreline where it rises through it.
-func _build_sea() -> void:
-	if not field_has_sea:
-		return
-	var sea_height: float = (
-		-.72 if str(world.version) == "CC-GEO-1.4" else -region_ground * 30.0 + .04
-	)
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(field_width, field_depth)
-	var sea := _mesh(
-		surface, plane, Vector3(0, sea_height, 0), _water_material("sea", Color("285e76"))
-	)
-	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
-
-## Moving water: rippling normals over the same colours as before.
-func _water_material(kind: String, tint: Color) -> ShaderMaterial:
-	var key: String = "water_" + kind
-	if not mats.has(key):
-		var material := ShaderMaterial.new()
-		material.shader = Shaders.shader("water")
-		material.set_shader_parameter("noise3d", Shaders.noise_texture())
-		material.set_shader_parameter("tint", tint)
-		mats[key] = material
-	return mats[key]
-
-
-func _instanced(mesh: Mesh, material: Material, placed: Array) -> MultiMeshInstance3D:
-	var multi := MultiMesh.new()
-	multi.transform_format = MultiMesh.TRANSFORM_3D
-	multi.use_colors = true
-	multi.mesh = mesh
-	multi.instance_count = placed.size()
-	for index: int in range(placed.size()):
-		multi.set_instance_transform(index, placed[index][0])
-		multi.set_instance_color(index, placed[index][1])
-	var node := MultiMeshInstance3D.new()
-	node.multimesh = multi
-	node.material_override = material
-	return node
-
-
-func _tree_mesh() -> ArrayMesh:
-	var trunk := CylinderMesh.new()
-	trunk.top_radius = .055
-	trunk.bottom_radius = .055
-	trunk.height = .5
-	trunk.radial_segments = 6
-	var crown := CylinderMesh.new()
-	crown.top_radius = 0
-	crown.bottom_radius = .35
-	crown.height = 1.0
-	crown.radial_segments = 9
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.append_from(trunk, 0, Transform3D(Basis.IDENTITY, Vector3(0, .25, 0)))
-	st.append_from(crown, 0, Transform3D(Basis.IDENTITY, Vector3(0, .65, 0)))
-	return st.commit()
-
-
-func _natural_material(key: String, roughness: float) -> StandardMaterial3D:
-	var material := _mat(key, Color.WHITE, 0.0, roughness)
-	material.vertex_color_use_as_albedo = true
-	return material
-
-
-func _forest_at(x: float, z: float) -> float:
-	var fx: int = clampi(roundi((x / field_width + 0.5) * field_res), 0, field_res)
-	var fz: int = clampi(roundi((z / field_depth + 0.5) * field_res), 0, field_res)
-	return forest_field[fz * (field_res + 1) + fx]
-
-
-func _near_plot(x: float, z: float) -> bool:
-	for plot: Dictionary in world.regions[selected_region].get("plots", []):
-		if absf(float(plot.x) - x) < 2.8 and absf(float(plot.z) - z) < 2.8:
-			return true
-	return false
-
-
-func _build_nature() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(world.seed) + selected_region * 173
-	var reg: Dictionary = world.regions[selected_region]
-	var center := Vector2(_town_offset(), 0)
-	var trees: Array = []
-	var rocks: Array = []
-	for i in range(tree_count):
-		var x: float = rng.randf_range(-half_width + EDGE_MARGIN, half_width - EDGE_MARGIN)
-		var z: float = rng.randf_range(-half_depth + EDGE_MARGIN, half_depth - EDGE_MARGIN)
-		if (
-			Vector2(x, z).distance_to(center) < 13.0
-			or _ground(x, z) < -.4
-			or is_finite(_water_height_at(x, z, 1.8))
-			or _near_plot(x, z)
-		):
-			continue
-		var height: float = rng.randf_range(.55, 1.8)
-		var turn: float = rng.randf() * TAU
-		var base := Vector3(x, _ground(x, z), z)
-		if rng.randf() < _forest_at(x, z):
-			var scaled := Basis(Vector3.UP, turn).scaled(Vector3(height, height, height))
-			trees.append(
-				[Transform3D(scaled, base), Color("304f45").lightened(float(i % 4) * .035)]
-			)
-		else:
-			var flat := Basis(Vector3.UP, turn).scaled(Vector3(1.3, .6, 1.0) * height * .38)
-			rocks.append([Transform3D(flat, base + Vector3(0, height * .17, 0)), Color("7c8174")])
-	# A visible geological exposure marks actual mineral-bearing ground.
-	if float(reg.deposits.ore) > 6000:
-		for _i: int in range(16):
-			var x: float = -16 + rng.randf_range(-3.4, 3.4)
-			var z: float = -10 + rng.randf_range(-2.5, 2.5)
-			var size: float = rng.randf_range(.4, 1.2)
-			var seam := Basis.IDENTITY.scaled(Vector3(1.5, .55, 1.0) * size)
-			rocks.append([Transform3D(seam, Vector3(x, _ground(x, z) + .3, z)), Color("9b735a")])
-	if not trees.is_empty():
-		surface.add_child(_instanced(_tree_mesh(), _natural_material("tree", .9), trees))
-	if not rocks.is_empty():
-		var pebble := SphereMesh.new()
-		pebble.radius = 1.0
-		pebble.height = 2.0
-		pebble.radial_segments = 6
-		pebble.rings = 3
-		surface.add_child(_instanced(pebble, _natural_material("rock", .95), rocks))
 
 
 func _building_signature() -> String:
@@ -773,14 +211,31 @@ func _build_colony() -> void:
 	smoke_emitters.clear()
 	var stops: Array = []
 	var pools: Array = []
+	# Generated towns are laid out on the plot grid: lanes between the rows, spurs to each pad.
+	var lanes: bool = Geo.is_generated(str(world.version))
+	var street_ends := Vector2(-12.0, 12.0)
 	if int(settlement.get("base_housing", 0)) > 0:
 		_build_base_housing(offset, int(settlement.base_housing))
-		stops.append({"end": Vector2(offset - 6.0, 0.0), "z": 0.0, "kind": "base", "active": true})
+		var pods: Vector2 = _pods_position(offset)
+		if lanes:
+			var reach: Dictionary = _access(pods)
+			stops.append(
+				{
+					"end": reach.front,
+					"via": Vector2(pods.x, float(reach.lane)),
+					"z": float(reach.lane),
+					"kind": "base",
+					"active": true
+				}
+			)
+		else:
+			stops.append({"end": pods, "z": 0.0, "kind": "base", "active": true})
 	var roles: Dictionary = Rules.read("economy").buildings
 	var buildings: Array = settlement.get("buildings", [])
 	for i in range(buildings.size()):
 		var b: Dictionary = buildings[i]
 		var slot: Vector2 = _building_spot(i, b, offset)
+		var reach: Dictionary = _access(slot) if lanes and int(b.get("plot", -1)) >= 0 else {}
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0
 		var active: bool = b.get("enabled", true) and b.get("active", true) and complete
 		var model := MeshInstance3D.new()
@@ -793,18 +248,35 @@ func _build_colony() -> void:
 		model.position = Vector3(slot.x, _ground(slot.x, slot.y), slot.y)
 		model.set_meta("building_kind", str(b.kind))
 		buildings_root.add_child(model)
+		var yaw: float = _street_yaw(slot.x, offset) if reach.is_empty() else float(reach.yaw)
 		if not art.is_empty():
-			_dress_building(model, b, art, active, complete, _street_yaw(slot.x, offset))
+			_dress_building(model, b, art, active, complete, yaw)
 		elif not complete:
 			_construction_frame(model)
-		_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
-		stops.append({"end": slot, "z": slot.y, "kind": str(b.kind), "active": active})
+		if reach.is_empty():
+			_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
+			stops.append({"end": slot, "z": slot.y, "kind": str(b.kind), "active": active})
+		else:
+			var lane: float = float(reach.lane)
+			var front: Vector2 = reach.front
+			_road(Vector3(offset, 0, lane), Vector3(slot.x, 0, lane))
+			_road(Vector3(slot.x, 0, lane), Vector3(front.x, 0, front.y))
+			street_ends = Vector2(minf(street_ends.x, lane), maxf(street_ends.y, lane))
+			stops.append(
+				{
+					"end": front,
+					"via": Vector2(slot.x, lane),
+					"z": lane,
+					"kind": str(b.kind),
+					"active": active
+				}
+			)
 		if active:
 			pools.append([model.position, 2.6])
 			var role: String = str(roles.get(str(b.kind), {}).get("role", ""))
 			if role in SMOKE_ROLES or str(b.kind) in SMOKE_KINDS:
 				_add_smoke(model)
-	_road(Vector3(offset, 0, -12), Vector3(offset, 0, 12))
+	_road(Vector3(offset, 0, street_ends.x), Vector3(offset, 0, street_ends.y))
 	for z in [-10, -5, 0, 5, 10]:
 		var p := Vector3(offset + 1.1, _ground(offset + 1.1, z), z)
 		pools.append([p, 1.3])
@@ -841,7 +313,8 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 	var root := Node3D.new()
 	root.name = "LandingLivingCapsules"
 	root.set_meta("base_housing", capacity)
-	root.position = Vector3(offset - 6.0, _ground(offset - 6.0, 0), 0)
+	var spot: Vector2 = _pods_position(offset)
+	root.position = Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
 	buildings_root.add_child(root)
 	var pods: MeshInstance3D = ModelArt.instance(
 		"landing_pods", func(slot: String) -> Material: return _art_material(slot, {}, true)
@@ -851,7 +324,7 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 		pods.position.y = .08
 		root.add_child(pods)
 		_base_housing_label(root, capacity)
-		_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
+		_pods_road(offset)
 		return
 	var shell := _mat("basehousing", Color("c4b69a"), .45, .55)
 	var dark := _mat("darkmetal", Color("354954"), .65, .38)
@@ -874,7 +347,30 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 			_box(root, Vector3(x, .32, z), Vector3(.7, .34, .14), dark)
 	_box(root, Vector3(0, .37, 1.28), Vector3(1.2, .13, .5), shell)
 	_base_housing_label(root, capacity)
-	_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
+	_pods_road(offset)
+
+
+## Where the landing pods stand: beside the street on older worlds, on a cell of their own on
+## generated ones (region_ground.gd `pods_spot`).
+func _pods_position(offset: float) -> Vector2:
+	if not Geo.is_generated(str(world.version)):
+		return Vector2(offset - 6.0, 0.0)
+	if terrace_region != selected_region:
+		_prepare_terraces()
+	return pods_spot
+
+
+## The landing pods' road: straight in on older worlds, by the lane and a spur on generated ones.
+func _pods_road(offset: float) -> void:
+	if not Geo.is_generated(str(world.version)):
+		_road(Vector3(offset, 0, 0), Vector3(offset - 6.0, 0, 0))
+		return
+	var spot: Vector2 = _pods_position(offset)
+	var reach: Dictionary = _access(spot)
+	var lane: float = float(reach.lane)
+	var front: Vector2 = reach.front
+	_road(Vector3(offset, 0, lane), Vector3(spot.x, 0, lane))
+	_road(Vector3(spot.x, 0, lane), Vector3(front.x, 0, front.y))
 
 
 func _base_housing_label(root: Node3D, capacity: int) -> void:
@@ -919,16 +415,18 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 		else Vector2(0, signf(direction.y))
 	)
 	var start := Vector2(offset, 0)
+	if Geo.is_generated(str(world.version)) and absf(direction.x) > 0.5:
+		start.y = LANE_OFFSET
 	var finish := start + direction * gate_reach
 	finish.x = clampf(finish.x, -half_width + 2.0, half_width - 2.0)
 	finish.y = clampf(finish.y, -half_depth + 2.0, half_depth - 2.0)
 	if str(route.get("variant", "")) == "shuttle":
-		_build_shuttle_pad(route, finish, direction, to)
+		_build_shuttle_pad(route, finish, direction, to, start)
 		return
 	_road(Vector3(start.x, 0, start.y), Vector3(finish.x, 0, finish.y))
 	var day: int = int(state.get("day", 0))
 	if not Geo.road_building(route, day) and not Geo.road_blocked(route, day):
-		region_gates.append({"end": finish})
+		region_gates.append({"end": finish, "junction": start})
 	var gate := Vector3(finish.x, _ground(finish.x, finish.y), finish.y)
 	var blocked: bool = Geo.road_blocked(route, int(state.get("day", 0)))
 	# The gantry spans the road: across it is x when the road runs along z.
@@ -982,14 +480,12 @@ func _road(a: Vector3, b: Vector3) -> void:
 
 func _road_section(a: Vector3, b: Vector3) -> void:
 	_note_bridge(a, b)
-	a.y = _ground(a.x, a.z) + .16
-	b.y = _ground(b.x, b.z) + .16
-	a.y = maxf(a.y, _water_height_at(a.x, a.z, 1.5) + .24)
-	b.y = maxf(b.y, _water_height_at(b.x, b.z, 1.5) + .24)
 	var along := Vector2(b.x - a.x, b.z - a.z)
 	if along.length() < .001:
 		return
 	var side: Vector2 = along.normalized().orthogonal() * .36
+	a.y = _road_level(a, side)
+	b.y = _road_level(b, side)
 	var aa := Vector3(a.x - side.x, a.y, a.z - side.y)
 	var ab := Vector3(a.x + side.x, a.y, a.z + side.y)
 	var ba := Vector3(b.x - side.x, b.y, b.z - side.y)
@@ -997,6 +493,18 @@ func _road_section(a: Vector3, b: Vector3) -> void:
 	for vertex: Vector3 in [aa, ba, ab, ab, ba, bb]:
 		road_tool.add_vertex(vertex)
 	road_sections += 1
+
+
+## A road's deck at a point: on the ground, over water as a bridge. In generated towns it rides
+## on the higher of its two edges, so a lane across a slope never sinks into the bank.
+func _road_level(at: Vector3, side: Vector2) -> float:
+	var level: float = _ground(at.x, at.z)
+	if Geo.is_generated(str(world.version)):
+		level = maxf(
+			level,
+			maxf(_ground(at.x + side.x, at.z + side.y), _ground(at.x - side.x, at.z - side.y))
+		)
+	return maxf(level + .16, _water_height_at(at.x, at.z, 1.5) + .24)
 
 
 func _finish_roads() -> void:
@@ -1062,7 +570,7 @@ func _build_harbor(settlement: Dictionary, offset: float) -> void:
 	ship_route.clear()
 	if not field_has_sea or not _harbor_wanted(settlement):
 		return
-	var sea_level: float = -region_ground * 30.0 + .04
+	var sea_level: float = sea_level()
 	var town := Vector2(offset, 0.0)
 	var best: Dictionary = {}
 	for step: int in range(24):
@@ -1123,7 +631,7 @@ func _harbor_wanted(settlement: Dictionary) -> bool:
 ## A shuttle line lands on a lit pad at the edge of town, where the service lane ends. The craft
 ## is the `shuttle` model once one is delivered, a simple lifting body until then.
 func _build_shuttle_pad(
-	route: Dictionary, finish: Vector2, direction: Vector2, to: Dictionary
+	route: Dictionary, finish: Vector2, direction: Vector2, to: Dictionary, junction: Vector2
 ) -> void:
 	var day: int = int(state.get("day", 0))
 	var spot: Vector2 = _pad_spot(finish, direction)
@@ -1141,7 +649,7 @@ func _build_shuttle_pad(
 	else:
 		_plain_pad(pad)
 	if not building:
-		region_gates.append({"end": spot})
+		region_gates.append({"end": spot, "junction": junction})
 		var craft: Node3D = _shuttle_craft()
 		buildings_root.add_child(craft)
 		var away: Vector2 = spot + direction * SHUTTLE_REACH
@@ -1361,6 +869,18 @@ func _art_base(active: bool, pit_depth: float = 0.0) -> ArrayMesh:
 
 
 ## Turns a building's front (+z) towards the main street.
+## A building on the plot grid is reached from the lane between its row and the next row towards
+## the middle of town, by a short spur that stops at the front of its pad, and it faces that lane
+## (the models' front is +z). Vehicles wait at the spur's end, never inside the building.
+static func _access(slot: Vector2) -> Dictionary:
+	var side: float = -1.0 if slot.y > 0.0 else 1.0
+	return {
+		"lane": slot.y + side * LANE_OFFSET,
+		"front": Vector2(slot.x, slot.y + side * PAD_FRONT),
+		"yaw": 0.0 if side > 0.0 else PI,
+	}
+
+
 static func _street_yaw(x: float, street_x: float) -> float:
 	if x < street_x - 0.5:
 		return PI * 0.5

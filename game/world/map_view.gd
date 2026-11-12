@@ -6,10 +6,17 @@ const DAY_AMBIENT: Color = Color("8aacbe")
 const NIGHT_AMBIENT: Color = Color("4a6a96")
 const DAY_SKY: Color = Color("080f1c")
 const NIGHT_SKY: Color = Color("03070f")
+## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
+## that hides the landscape's far edge: it begins and is complete this far from the eye.
+const REGION_DAY_AIR: Color = Color("6b8291")
+const REGION_DUSK_AIR: Color = Color("8a6b5b")
+const REGION_NIGHT_AIR: Color = Color("070b13")
+const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
 const SUN_ENERGY: float = 1.12
 
 var environment: Environment
 var fill_light: DirectionalLight3D
+var star_field: MultiMeshInstance3D
 ## A site the camera keeps in view while the spin eases out after a click.
 var focus_site: int = -1
 ## 0 by full day, 1 by full night, at the selected site: lamps and windows read this.
@@ -217,6 +224,10 @@ func show_region(id: int) -> void:
 			old_cached = true
 	if not old_cached:
 		_clear_node(surface)
+	if region_cache.has(id) and str(region_cache[id].get("terraces", "")) != terrace_signature(id):
+		# A plot has come to light since this ground was cut: cut it again with its terrace.
+		_clear_node(region_cache[id].surface)
+		region_cache.erase(id)
 	last_region_cached = region_cache.has(id)
 	if last_region_cached:
 		var entry: Dictionary = region_cache[id]
@@ -265,6 +276,7 @@ func show_region(id: int) -> void:
 			"lakes": local_lakes.duplicate(true),
 			"heights": height_field,
 			"forests": forest_field,
+			"terraces": terrace_signature(id),
 		}
 	signature = _building_signature()
 	if buildings_root == null or str(surface.get_meta("building_signature", "")) != signature:
@@ -577,6 +589,7 @@ func _light_day_scene() -> void:
 		environment.background_color = DAY_SKY
 	if fill_light != null:
 		fill_light.light_energy = .18
+	_region_air(1.0, 0.0)
 
 
 ## The site's sky: east is +x, north is -z, as the regional ground is laid out.
@@ -601,6 +614,33 @@ func _aim_region_sun() -> void:
 		environment.background_color = NIGHT_SKY.lerp(DAY_SKY, daylight)
 	if fill_light != null:
 		fill_light.light_energy = lerpf(.85, .18, daylight)
+	var dusk: float = smoothstep(-0.12, 0.04, height) * (1.0 - smoothstep(0.04, 0.3, height))
+	_region_air(daylight, dusk * 0.55)
+
+
+## A generated region stands under its own sky: the horizon takes the time of day and the far
+## landscape fades into it, so no edge of the ground shows. The globe, the flat map and older
+## worlds keep the dark of space and the stars.
+func _region_air(daylight: float, dusk: float) -> void:
+	var landscape: bool = (
+		mode == "region" and not world.is_empty() and Geo.is_generated(str(world.version))
+	)
+	if star_field != null:
+		star_field.visible = not landscape
+	if environment == null:
+		return
+	environment.fog_enabled = landscape
+	if not landscape:
+		return
+	var air: Color = REGION_NIGHT_AIR.lerp(REGION_DAY_AIR, daylight).lerp(REGION_DUSK_AIR, dusk)
+	environment.background_color = air
+	environment.fog_mode = Environment.FOG_MODE_DEPTH
+	environment.fog_light_color = air
+	environment.fog_light_energy = 1.0
+	environment.fog_sun_scatter = 0.0
+	environment.fog_density = 1.0
+	environment.fog_depth_begin = REGION_HAZE.x
+	environment.fog_depth_end = REGION_HAZE.y
 
 
 func _build_environment() -> void:
@@ -670,6 +710,7 @@ func _build_stars() -> void:
 	var stars := MultiMeshInstance3D.new()
 	stars.multimesh = mm
 	add_child(stars)
+	star_field = stars
 
 
 func _exit_tree() -> void:
