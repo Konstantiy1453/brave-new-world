@@ -395,10 +395,20 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 	if key in ["invest.build", "invest.upgrade", "wages.public", "upkeep.facility"]:
 		return "%s · %s" % [name, building_name(config, detail)]
 	if key == "invest.road":
-		return "%s · 铺装" % name
+		return "%s · %s" % [name, road_level_name(config, detail)]
 	if key == "research.funding":
 		return "%s · %s" % [name, str(config.techs.get(detail, {}).get("name", detail))]
 	return "%s · %s" % [name, detail]
+
+
+## A link level named by its id in the ledger: 「铺装路面」, 「中型货运码头」.
+static func road_level_name(config: Dictionary, id: String) -> String:
+	var levels: Dictionary = config.get("road_levels", {})
+	for kind: String in ["land", "sea"]:
+		for step: Dictionary in levels.get(kind, []):
+			if str(step.get("id", "")) == id:
+				return str(step.name)
+	return "线路升级"
 
 
 ## The shortcut beside a shortage: what to do about it and where.

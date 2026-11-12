@@ -256,7 +256,37 @@ func _knowledge() -> void:
 		sim.tick()
 	view = sim.site_view(far)
 	check(float(view.band) == 0.12, "after the survey the band is 12%")
-	check(sim.act("survey", {"site": far}) != "", "a surveyed site needs no second team")
+	fund(sim, 10000.0)
+	var levels: Array = sim.Sites.survey_levels(sim)
+	var last_band: float = float(view.band)
+	var last_days: int = int(sim.progression_geo().survey.days)
+	for level: int in range(2, levels.size() + 1):
+		var next: Dictionary = sim.Sites.next_survey(sim, far)
+		check(int(next.level) == level, "survey %d is offered" % level)
+		check(
+			float(next.band) < last_band and int(next.days) > last_days,
+			"it narrows further and takes longer (%.2f, %d days)" % [float(next.band), next.days]
+		)
+		var cash: float = float(sim.state.cash)
+		check(sim.act("survey", {"site": far}) == "", "a further survey can be sent")
+		check(
+			is_equal_approx(float(sim.state.cash), cash - float(next.cost)),
+			"it costs what the button says"
+		)
+		for _day: int in range(int(next.days)):
+			sim.tick()
+		view = sim.site_view(far)
+		check(float(view.band) == float(next.band), "and leaves the band it promised")
+		holds = true
+		for good: String in view.deposits:
+			var row: Dictionary = view.deposits[good]
+			holds = holds and float(row.low) <= float(reg.deposits[good]) + 0.01
+			holds = holds and float(row.high) >= float(reg.deposits[good]) - 0.01
+		check(holds, "the narrower band still holds the true tonnage")
+		last_band = float(next.band)
+		last_days = int(next.days)
+	check(not bool(sim.Sites.next_survey(sim, far).narrows), "surveys stop at the last level")
+	check(sim.act("survey", {"site": far}) != "", "a site surveyed to the last level needs no team")
 	grant(sim, "survey")
 	check(float(sim.site_view(far).band) == 0.0, "with survey technology the figures are exact")
 	check(sim.audit().is_empty(), "surveys pass the audit")
@@ -284,8 +314,9 @@ func _deep_and_hidden() -> void:
 	grant(sim, "prospecting")
 	var cost: float = sim.Sites.survey_cost(sim)
 	check(cost == float(sim.progression_geo().survey.cost) * 0.5, "prospecting halves survey cost")
+	var quoted: Dictionary = sim.Sites.next_survey(sim, with_hidden)
 	check(sim.act("survey", {"site": with_hidden}) == "", "prospecting survey is accepted")
-	for _day: int in range(int(sim.progression_geo().survey.days)):
+	for _day: int in range(int(quoted.days)):
 		sim.tick()
 	var after: float = float(regions[with_hidden].deposits.ore)
 	after += (
@@ -516,7 +547,7 @@ func _road_network() -> void:
 	check(waiting, "cargo on the closed road waits")
 	grant(sim, "paved_roads")
 	check(sim.act("upgrade_road", {"road": 1}) == "", "a chosen road can be paved")
-	for _day: int in range(int(sim.config.road_upgrade.build_days) + 1):
+	for _day: int in range(int(sim.config.road_levels.land[1].build_days) + 1):
 		sim.tick()
 	check(bool(sim.state.roads[1].get("paved", false)), "and only that one")
 	check(not bool(sim.state.roads[0].get("paved", false)), "the other is untouched")
@@ -643,20 +674,15 @@ func _islands() -> void:
 	var ported: bool = false
 	for b: Dictionary in sim.settlement(island).buildings:
 		ported = ported or b.kind == "port"
+	check(ported, "a landing by sea brings its own freight station")
 	var quote: Dictionary = sim.road_quote(home, island, "sea")
-	check(str(quote.get("refusal", "")) != "" or ported, "a sea route waits for ports at both ends")
-	for place: int in [home, island]:
-		if not ported or place == home:
-			var town: Dictionary = sim.settlement(place)
-			town.buildings.append(sim._building("port", 0))
-			town.buildings.back().plot = sim.Sites.find_plot(sim, place, "port")
-			sim._refresh(town)
+	check(str(quote.get("refusal", "")) == "", "two coastal towns can open a pair of cargo docks")
 	var sailing: String = sim.act("connect", {"a": home, "b": island, "variant": "sea"})
-	check(sailing == "", "a sea route between two ports: " + sailing)
+	check(sailing == "", "a sea link between two coastal towns: " + sailing)
 	var lane: Dictionary = sim.state.roads[0]
 	check(str(lane.variant) == "sea", "it is a sea route")
 	check(int(lane.build_days) > 0, "a shipping lane takes time to open as well")
-	check(sim.act("upgrade_road", {"road": 0}) != "", "a sea route cannot be paved")
+	check(sim.act("upgrade_road", {"road": 0}) != "", "its docks are not enlarged before it opens")
 	finish_roads(sim)
 	check(Logistics.largest_connected(sim) == 2, "sea routes connect settlements")
 	sim._consume(sim.settlement(island), "food", float(sim.settlement(island).stock.food))

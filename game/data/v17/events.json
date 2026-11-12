@@ -3,11 +3,15 @@
   "calendar": "30日/月，360日/年",
   "units": {
     "money": "公共资金",
-    "goods": "吨",
+    "goods": "百吨（界面按吨显示，即 ×100）",
     "duration_days": "从选择后次日起的完整日数，0为持续生效",
     "cooldown_days": "days before the same definition can open again",
     "pay": "public money at a recent income of reference_income or less; scales up with income",
-    "chance": "share of runs in which this definition is in the deck at all"
+    "chance": "share of runs in which this definition is in the deck at all",
+    "tech_gift": "a gift technology (techs.json gift: true) handed over when the option is chosen; it cannot be researched",
+    "land_road": "condition: a finished road (not a sea link or shuttle line) at the place",
+    "sea_link": "condition: a finished pair of cargo docks (sea link) at the place",
+    "lacks_tech": "condition: the colony does not have this technology yet"
   },
   "sampling": {
     "interval_days": 20,
@@ -4654,6 +4658,153 @@
             }
           ],
           "default": "done",
+          "deadline_days": 18
+        }
+      }
+    },
+    "red_ball_loop": {
+      "version": 1,
+      "type": "chain",
+      "category": "opportunity",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 900,
+      "weight": 3,
+      "conditions": {
+        "min_day": 360,
+        "land_road": true,
+        "lacks_tech": "red_ball_express"
+      },
+      "nodes": {
+        "start": {
+          "title": "车头上的红球",
+          "text": "车队里有位退伍的老调度，翻出一本卷了边的旧手册：两条单行环线，车头漆上红球，昼夜不停，司机分三班，路上只给红球车让行。他说很久以前，有支军队就是这样把补给追上了前线。他想在你的路上试一个月。",
+          "choices": [
+            {
+              "id": "trial",
+              "label": "拨款试运行一个月",
+              "pay": 300,
+              "effects": [
+                {
+                  "kind": "road_capacity",
+                  "factor": 0.85,
+                  "duration_days": 30,
+                  "maintenance": 0.0
+                }
+              ],
+              "next": "adopted",
+              "delay": 30
+            },
+            {
+              "id": "later",
+              "label": "路上太忙，以后再说",
+              "ending": "暂缓试验"
+            }
+          ],
+          "default": "later",
+          "deadline_days": 20
+        },
+        "adopted": {
+          "title": "红球快运",
+          "text": "一个月下来，单程时间少了将近两成，起初抱怨排班的司机现在抢着给车头补漆。老调度把手册重新装订，封面上写了四个字：红球快运。",
+          "choices": [
+            {
+              "id": "adopt",
+              "label": "定为全殖民地的运输制度",
+              "tech_gift": "red_ball_express",
+              "ending": "红球快运"
+            }
+          ],
+          "default": "adopt",
+          "deadline_days": 18
+        }
+      }
+    },
+    "retired_freighters": {
+      "version": 1,
+      "type": "short",
+      "category": "opportunity",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 900,
+      "weight": 3,
+      "conditions": {
+        "min_day": 400,
+        "sea_link": true,
+        "lacks_tech": "fast_freighters"
+      },
+      "nodes": {
+        "start": {
+          "title": "两艘退役的快船",
+          "text": "母星一家船公司要淘汰两艘高速货轮，船壳还好，只是烧油太凶，在那边已经不划算。经纪人在电话里说得很直接：船白送，你只付拖航费，前提是你的码头给它们排得上泊位。",
+          "choices": [
+            {
+              "id": "tow",
+              "label": "付拖航费，接船",
+              "pay": 500,
+              "tech_gift": "fast_freighters",
+              "ending": "高速货轮入列"
+            },
+            {
+              "id": "pass",
+              "label": "婉拒，油价太贵",
+              "ending": "婉拒快船"
+            }
+          ],
+          "default": "pass",
+          "deadline_days": 24
+        }
+      }
+    },
+    "stranded_bulker": {
+      "version": 1,
+      "type": "chain",
+      "category": "opportunity",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 900,
+      "weight": 3,
+      "conditions": {
+        "min_day": 700,
+        "sea_link": true,
+        "lacks_tech": "bulk_freighters"
+      },
+      "nodes": {
+        "start": {
+          "title": "外海搁浅的散货船",
+          "text": "一艘大型散货船在外海搁浅，船东算过账，宁可把它送人也不想付打捞费。码头的工程队去看了一趟，回来说船底破了三处，拖回来补好要一个多月，还得搭上不少建材，可那船舱大得能装下半个仓库。",
+          "choices": [
+            {
+              "id": "salvage",
+              "label": "打捞并修复",
+              "pay": 400,
+              "goods_cost": {
+                "materials": 30.0
+              },
+              "next": "refloated",
+              "delay": 40
+            },
+            {
+              "id": "leave",
+              "label": "任它在礁上解体",
+              "ending": "放弃打捞"
+            }
+          ],
+          "default": "leave",
+          "deadline_days": 20
+        },
+        "refloated": {
+          "title": "大船进港",
+          "text": "涨潮那天，修好的散货船被拖船顶进港池，码头上的人都跑出来看。船长是从轮机舱里提拔的，他说这船吃水深，只跑最忙的那条航线。",
+          "choices": [
+            {
+              "id": "commission",
+              "label": "编入航线",
+              "tech_gift": "bulk_freighters",
+              "ending": "散货船入列"
+            }
+          ],
+          "default": "commission",
           "deadline_days": 18
         }
       }

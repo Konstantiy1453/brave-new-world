@@ -294,7 +294,8 @@ static func _research_contract(g, b, v: Dictionary):
 ## What each direction has finished, with its colour, so the page also reads as a record.
 static func _finished(b, columns: Array) -> void:
 	for column: Dictionary in columns:
-		if column.finished.is_empty():
+		var gifts: Array = column.get("gifts", [])
+		if column.finished.is_empty() and gifts.is_empty():
 			continue
 		var line = D.row(b)
 		line.add_theme_constant_override("separation", 8)
@@ -303,12 +304,13 @@ static func _finished(b, columns: Array) -> void:
 		var text: Label = D.label(
 			line,
 			(
-				"%s %d / %d：%s"
+				"%s %d / %d：%s%s"
 				% [
 					column.name,
 					column.finished.size(),
 					int(column.pool),
-					"、".join(PackedStringArray(column.finished))
+					"、".join(PackedStringArray(column.finished)),
+					"；事件赠予：" + "、".join(PackedStringArray(gifts)) if not gifts.is_empty() else ""
 				]
 			),
 			D.SMALL,

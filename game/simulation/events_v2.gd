@@ -19,6 +19,14 @@ const EFFECT_KINDS: Array[String] = [
 ]
 const PAUSE_ALL: String = "all"
 const PAUSE_CRITICAL: String = "critical"
+## How a gift technology's effects read on an event card: the name, and -1 where a bonus makes the
+## number smaller (trips get shorter).
+const GIFT_EFFECTS: Dictionary = {
+	"road_speed": ["陆路单程时间", -1.0],
+	"road_capacity": ["道路运力", 1.0],
+	"sea_speed": ["航程时间", -1.0],
+	"sea_capacity": ["航线运力", 1.0],
+}
 
 static var _definitions: Dictionary = {}
 
@@ -177,6 +185,12 @@ static func _matches_colony(sim, s: Dictionary, c: Dictionary) -> bool:
 		return false
 	if bool(c.get("road", false)) and not _has_road_at(sim, int(s.region)):
 		return false
+	if bool(c.get("land_road", false)) and not _has_road_at(sim, int(s.region), "land"):
+		return false
+	if bool(c.get("sea_link", false)) and not _has_road_at(sim, int(s.region), "sea"):
+		return false
+	if c.has("lacks_tech") and sim.state.research.completed.has(str(c.lacks_tech)):
+		return false
 	if bool(c.get("hidden_deposit", false)) and not _has_hidden(site):
 		return false
 	return true
@@ -189,11 +203,18 @@ static func _project_running(sim) -> bool:
 	return false
 
 
-static func _has_road_at(sim, region: int) -> bool:
+## A finished link at this place; `kind` "land" counts only roads, "sea" only cargo docks.
+static func _has_road_at(sim, region: int, kind: String = "") -> bool:
 	for road: Dictionary in sim.state.roads:
 		var ready: bool = int(road.get("ready_day", 0)) < int(sim.state.day)
-		if ready and (int(road.a) == region or int(road.b) == region):
-			return true
+		if not ready or (int(road.a) != region and int(road.b) != region):
+			continue
+		var variant: String = str(road.get("variant", "valley"))
+		if kind == "sea" and variant != "sea":
+			continue
+		if kind == "land" and variant in ["sea", "shuttle"]:
+			continue
+		return true
 	return false
 
 
@@ -630,6 +651,8 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 		sim.Pollution.add_points(sim, float(option.pollution))
 	if option.has("research_lead"):
 		sim.Research.add_lead(sim, str(option.research_lead))
+	if option.has("tech_gift"):
+		sim.Research.grant(sim, str(option.tech_gift))
 	if float(option.get("research_points", 0.0)) > 0.0:
 		sim.Research.add_progress(sim, float(option.research_points))
 	if bool(option.get("found_enterprise", false)):
@@ -913,6 +936,9 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	if option.has("research_lead"):
 		var lead: Dictionary = sim.config.techs.get(str(option.research_lead), {})
 		parts.append("科研候选增加「%s」" % str(lead.get("name", "")))
+	if option.has("tech_gift"):
+		var gift: Dictionary = sim.config.techs.get(str(option.tech_gift), {})
+		parts.append("获得技术「%s」（无法研究，只能由事件获得）：%s" % [str(gift.get("name", "")), _effect_text(gift)])
 	if option.has("set_wage"):
 		parts.append("工资恢复到 %.1f 倍" % float(option.set_wage))
 	if int(option.get("close_roads", 0)) > 0:
@@ -1011,6 +1037,16 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	if option.get("sell_rights", false):
 		parts.append("独家后续调查权转让，放弃该现场后续研究成果")
 	return "；".join(parts)
+
+
+## What a gift technology's effects do, in words: 「陆路单程时间 -20%，道路运力 +10%」.
+static func _effect_text(tech: Dictionary) -> String:
+	var words: PackedStringArray = []
+	for key: String in tech.get("effects", {}):
+		var named: Array = GIFT_EFFECTS.get(key, [key, 1.0])
+		var value: float = float(tech.effects[key]) * float(named[1]) * 100.0
+		words.append("%s %+.0f%%" % [str(named[0]), value])
+	return "，".join(words)
 
 
 ## Cheap per-frame query: builds no view and allocates nothing.

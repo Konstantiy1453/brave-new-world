@@ -174,7 +174,7 @@ func on_day() -> void:
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
-	_pave_busy_roads(reserve)
+	_upgrade_busy_links(reserve)
 	_megaprojects(reserve)
 	_ports(reserve)
 	_goal_projects(reserve)
@@ -616,15 +616,16 @@ func _shuttle_to(from: int, site: int, reserve: float) -> void:
 		act("connect", {"a": from, "b": site, "variant": sim.Keys.ROUTE_SHUTTLE})
 
 
-## A road that runs full holds up everything behind it.
-func _pave_busy_roads(reserve: float) -> void:
-	if not sim._has(str(sim.config.road_upgrade.tech)):
-		return
+## A link that runs full holds up everything behind it: pave or widen the road, or enlarge the
+## docks, when the next level is open and the money is there.
+func _upgrade_busy_links(reserve: float) -> void:
 	for road: Dictionary in sim.state.roads:
-		if bool(road.get("paved", false)) or str(road.get("variant", "")) in ["sea", "shuttle"]:
+		if float(road.sent_today) <= float(road.capacity):
 			continue
-		var cost: float = float(road.cost) * float(sim.config.road_upgrade.cost_factor)
-		if float(road.sent_today) > float(road.capacity) and float(sim.state.cash) > cost + reserve:
+		var step: Dictionary = sim.Logistics.next_level(sim, road)
+		if step.is_empty() or str(step.refusal) != "":
+			continue
+		if float(sim.state.cash) > float(step.cost) + reserve:
 			act("upgrade_road", {"road": int(road.id)})
 			return
 

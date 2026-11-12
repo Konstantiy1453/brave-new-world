@@ -7,6 +7,7 @@ const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
+const Research = preload("res://simulation/research.gd")
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
@@ -190,7 +191,7 @@ static func goal_value(sim: RefCounted, key: String) -> float:
 		"population":
 			return population_total(sim)
 		"technologies":
-			return sim.state.research.completed.size()
+			return Research.researched(sim.state)
 		"employment":
 			return _employment(sim)
 		"housed":
@@ -338,7 +339,7 @@ static func _check_milestones(sim: RefCounted) -> void:
 			"megaprojects":
 				reached = Megaprojects.count(sim) >= int(milestone.target)
 			"technologies":
-				reached = sim.state.research.completed.size() >= int(milestone.target)
+				reached = Research.researched(sim.state) >= int(milestone.target)
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)

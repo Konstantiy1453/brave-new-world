@@ -14,6 +14,28 @@ const SHUTTLE_CYCLE_S: Array[float] = [16.0, 3.0, 5.0, 14.0, 5.0, 3.0]
 const SHUTTLE_HOVER: float = 2.4
 const SHUTTLE_CRUISE: float = 9.0
 const SHUTTLE_REACH: float = 30.0
+## Cargo docks by level (small, medium, large): the model each would use, and how much bigger
+## the standard quay is drawn while that model has not been delivered.
+const DOCK_MODELS: Array[String] = ["harbor", "dock_medium", "dock_large"]
+const DOCK_GROWTH: Array[float] = [1.0, 1.25, 1.5]
+## Gift technologies (1.9) the town shows: [technology, model, stand-in model, stand-in scale].
+## The bulk carrier is drawn before the fast freighter when the colony has both.
+const GIFT_SHIPS: Array = [
+	["bulk_freighters", "ship_bulk", "cargo_ship", 1.25],
+	["fast_freighters", "ship_fast", "cargo_ship", 0.9]
+]
+## The quay's search for a shore: headings tried, step length, how far it keeps from plot
+## centres and from the main street, the height above the sea that counts as a cliff, and what
+## a crowded or steep shore costs against a farther one (units of reach).
+const HARBOR_HEADINGS: int = 48
+const HARBOR_STEP: float = 0.5
+const HARBOR_PLOT_CLEAR: float = 5.0
+const HARBOR_STREET_CLEAR: float = 2.0
+const HARBOR_CLIFF: float = 1.5
+const HARBOR_CLIFF_COST: float = 6.0
+const HARBOR_CROWDED: float = 1000.0
+const RED_BALL_TECH: String = "red_ball_express"
+const RED_BALL_SHELL: String = "b8322a"
 ## Building roles whose working plants send up steam or smoke.
 const SMOKE_ROLES: Array[String] = ["factory", "harvest", "great"]
 const SMOKE_KINDS: Array[String] = ["geothermal", "fission", "fusion", "smelter", "processor"]
@@ -85,17 +107,25 @@ func _building_signature() -> String:
 				)
 			var route_state: Array = []
 			for road: Dictionary in state.get("roads", []):
-				route_state.append(
-					[
-						int(road.get("a", -1)),
-						int(road.get("b", -1)),
-						Geo.road_blocked(road, int(state.get("day", 0)))
-					]
+				(
+					route_state
+					. append(
+						[
+							int(road.get("a", -1)),
+							int(road.get("b", -1)),
+							Geo.road_blocked(road, int(state.get("day", 0))),
+							int(road.get("level", 1)),
+						]
+					)
 				)
+			var gifts: Array = []
+			for tech: String in [RED_BALL_TECH, "fast_freighters", "bulk_freighters"]:
+				gifts.append(_has_tech(tech))
 			return (
 				JSON.stringify(visible_status)
 				+ JSON.stringify(route_state)
 				+ str(settlement.get("base_housing", 0))
+				+ str(gifts)
 			)
 	return "unsettled"
 
@@ -564,47 +594,44 @@ func _build_bridges() -> void:
 
 
 ## A coastal town with a port or a sea route gets a quay at its nearest shore and a cargo ship
-## that sails in, berths and leaves.
+## that sails in, berths and leaves. Enlarged docks (1.9) use their own model once one is
+## delivered (`dock_medium`, `dock_large`), and until then a bigger quay and ship.
 func _build_harbor(settlement: Dictionary, offset: float) -> void:
 	ship = null
 	ship_route.clear()
 	if not field_has_sea or not _harbor_wanted(settlement):
 		return
-	var sea_level: float = sea_level()
-	var town := Vector2(offset, 0.0)
-	var best: Dictionary = {}
-	for step: int in range(24):
-		var heading := Vector2.RIGHT.rotated(TAU * float(step) / 24.0)
-		var last_land: Vector2 = town
-		for reach: int in range(4, int(maxf(half_width, half_depth)) - 2):
-			var at: Vector2 = town + heading * float(reach)
-			if absf(at.x) > half_width - 3.0 or absf(at.y) > half_depth - 3.0:
-				break
-			if _ground(at.x, at.y) < sea_level - .1:
-				if best.is_empty() or reach < int(best.reach):
-					best = {"reach": reach, "shore": last_land, "heading": heading}
-				break
-			last_land = at
+	var best: Dictionary = _harbor_shore(Vector2(offset, 0.0), sea_level())
 	if best.is_empty():
 		return
+	var sea_level: float = sea_level()
 	var heading: Vector2 = best.heading
 	var shore: Vector2 = best.shore
+	var level: int = _dock_level()
+	var model: String = DOCK_MODELS[level - 1]
+	var grown: float = 1.0
+	if not ModelArt.registry().get("models", {}).has(model):
+		model = "harbor"
+		grown = DOCK_GROWTH[level - 1]
 	var quay: MeshInstance3D = ModelArt.instance(
-		"harbor", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		model, func(slot: String) -> Material: return _art_material(slot, {}, true)
 	)
 	if quay == null:
 		return
 	quay.position = Vector3(shore.x, maxf(_ground(shore.x, shore.y), sea_level) - .05, shore.y)
 	# The quay's sea side is the model's -z: turn it to face the open water.
 	quay.rotation.y = atan2(-heading.x, -heading.y)
+	quay.scale = Vector3.ONE * grown
 	buildings_root.add_child(quay)
+	var calling: Array = _gift_ship()
 	var vessel: MeshInstance3D = ModelArt.instance(
-		"cargo_ship", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		str(calling[0]), func(slot: String) -> Material: return _art_material(slot, {}, true)
 	)
 	if vessel == null:
 		return
+	vessel.scale = Vector3.ONE * sqrt(grown) * float(calling[1])
 	var side := Vector2(-heading.y, heading.x)
-	var berth: Vector2 = shore + heading * 2.4 + side * 0.6
+	var berth: Vector2 = shore + heading * 2.4 * grown + side * 0.6
 	var offing: Vector2 = berth + heading * 30.0 + side * 6.0
 	offing.x = clampf(offing.x, -half_width + 3.0, half_width - 3.0)
 	offing.y = clampf(offing.y, -half_depth + 3.0, half_depth - 3.0)
@@ -614,6 +641,68 @@ func _build_harbor(settlement: Dictionary, offset: float) -> void:
 	ship = vessel
 	buildings_root.add_child(vessel)
 	_sail(0.0)
+
+
+func _has_tech(tech: String) -> bool:
+	return state.get("research", {}).get("completed", []).has(tech)
+
+
+## The ship that calls here: a gift freighter's model once delivered (a resized cargo ship until
+## then), or the standard cargo ship. [model, scale]
+func _gift_ship() -> Array:
+	for gift: Array in GIFT_SHIPS:
+		if not _has_tech(str(gift[0])):
+			continue
+		if ModelArt.registry().get("models", {}).has(str(gift[1])):
+			return [str(gift[1]), 1.0]
+		return [str(gift[2]), float(gift[3])]
+	return ["cargo_ship", 1.0]
+
+
+## Where the quay goes: the nearest point of shore, walked out from the town in small steps, that
+## leaves room for the plots and the street and is not a cliff top. A crowded or steep shore is
+## taken only when there is no other. {shore, heading} or empty.
+func _harbor_shore(town: Vector2, sea_level: float) -> Dictionary:
+	var plots: Array = []
+	for plot: Dictionary in world.regions[selected_region].get("plots", []):
+		plots.append(Vector2(float(plot.x), float(plot.z)))
+	var best: Dictionary = {}
+	var reach_limit: float = maxf(half_width, half_depth) - 2.0
+	for step: int in range(HARBOR_HEADINGS):
+		var heading := Vector2.RIGHT.rotated(TAU * float(step) / HARBOR_HEADINGS)
+		var last_land: Vector2 = town
+		var reach: float = HARBOR_STEP
+		while reach < reach_limit:
+			var at: Vector2 = town + heading * reach
+			if absf(at.x) > half_width - 3.0 or absf(at.y) > half_depth - 3.0:
+				break
+			if _ground(at.x, at.y) < sea_level - .1:
+				var cost: float = reach
+				var crowded: bool = absf(last_land.x - town.x) < HARBOR_STREET_CLEAR
+				for centre: Vector2 in plots:
+					crowded = crowded or centre.distance_to(last_land) < HARBOR_PLOT_CLEAR
+				if crowded:
+					cost += HARBOR_CROWDED
+				var height: float = _ground(last_land.x, last_land.y) - sea_level
+				cost += maxf(0.0, height - HARBOR_CLIFF) * HARBOR_CLIFF_COST
+				if best.is_empty() or cost < float(best.cost):
+					best = {"cost": cost, "shore": last_land, "heading": heading}
+				break
+			last_land = at
+			reach += HARBOR_STEP
+	return best
+
+
+## The biggest docks a finished sea link gives this town: 1 small, 2 medium, 3 large.
+func _dock_level() -> int:
+	var level: int = 1
+	var day: int = int(state.get("day", 0))
+	for route: Dictionary in state.get("roads", []):
+		if str(route.get("variant", "")) != "sea" or Geo.road_building(route, day):
+			continue
+		if int(route.get("a", -1)) == selected_region or int(route.get("b", -1)) == selected_region:
+			level = maxi(level, int(route.get("level", 1)))
+	return clampi(level, 1, DOCK_MODELS.size())
 
 
 func _harbor_wanted(settlement: Dictionary) -> bool:
@@ -995,13 +1084,35 @@ func _build_traffic(stops: Array, offset: float, region: int) -> void:
 		if bool(stop.active):
 			working += 1
 	traffic.vehicle_meshes = {
-		"truck": _vehicle_mesh("truck"), "van": _vehicle_mesh("van"), "bus": _vehicle_mesh("bus")
+		"truck": _red_ball_truck() if _has_tech(RED_BALL_TECH) else _vehicle_mesh("truck"),
+		"van": _vehicle_mesh("van"),
+		"bus": _vehicle_mesh("bus"),
 	}
 	traffic.surface_height = _road_height
 	traffic.street_x = offset
 	traffic.stops = stops
 	traffic.gates = region_gates.duplicate()
 	traffic.setup(int(world.seed) * 31 + region, 2 + working / 2 + region_gates.size() * 2)
+
+
+## Trucks of the red-ball express (a gift technology): their own model once one is delivered, the
+## standard truck painted red until then.
+func _red_ball_truck() -> ArrayMesh:
+	var key: String = "vehicle|truck_redball"
+	if baked_models.has(key):
+		return baked_models[key]
+	var model_id: String = "vehicle_truck_redball"
+	var art: Dictionary = {}
+	if not ModelArt.registry().get("models", {}).has(model_id):
+		model_id = "vehicle_truck"
+		art = {"shell": RED_BALL_SHELL}
+	if not ModelArt.registry().get("models", {}).has(model_id):
+		return _vehicle_mesh("truck")
+	var tinted: ArrayMesh = ModelArt.mesh(model_id).duplicate() as ArrayMesh
+	for index: int in range(tinted.get_surface_count()):
+		tinted.surface_set_material(index, _art_material(tinted.surface_get_name(index), art, true))
+	baked_models[key] = tinted
+	return tinted
 
 
 ## A traffic vehicle: the `vehicle_<kind>` model with its slot colours once one is delivered, a

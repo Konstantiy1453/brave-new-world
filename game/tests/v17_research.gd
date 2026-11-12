@@ -130,7 +130,9 @@ func _pool() -> void:
 		var t: Dictionary = techs[key]
 		per_category[t.category] = int(per_category.get(t.category, 0)) + 1
 		sound = sound and rules.categories.has(t.category)
-		sound = sound and float(t.cost) > 0.0 and float(t.weight) > 0.0
+		# A gift is never dealt: it weighs nothing in a draw (1.9).
+		var dealt: bool = not bool(t.get("gift", false))
+		sound = sound and float(t.cost) > 0.0 and (float(t.weight) > 0.0) == dealt
 		for req: String in t.requires:
 			sound = sound and techs.has(req) and int(techs[req].tier) <= int(t.tier)
 	check(sound, "every technology has a category, a cost and earlier prerequisites")
@@ -489,7 +491,7 @@ func _road_paving() -> void:
 	check(sim.act("upgrade_road") != "", "paving waits for the technology")
 	grant(sim, ["paved_roads"])
 	check(sim.act("upgrade_road") == "", "paving is accepted")
-	for _day: int in range(int(sim.config.road_upgrade.build_days) + 1):
+	for _day: int in range(int(sim.config.road_levels.land[1].build_days) + 1):
 		sim.tick()
 	check(int(route.capacity) == int(round(capacity * 1.5)), "paving adds 50% capacity")
 	check(int(route.days) == maxi(1, days - 1), "paving takes a day off the trip")

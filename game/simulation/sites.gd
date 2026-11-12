@@ -256,13 +256,39 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 	return counts
 
 
+## The ground surveys a site can have, closest last (1.9): each leaves a narrower band, costs more
+## and takes longer. Rules from before then have one.
+static func survey_levels(sim: RefCounted) -> Array:
+	var rules: Dictionary = sim.progression_geo().survey
+	return rules.get(
+		"levels", [{"band": float(rules.ground_band), "days": int(rules.days), "cost_factor": 1.0}]
+	)
+
+
+## How many ground surveys a site has had, up to the last level; a settlement counts as one.
+static func survey_level(sim: RefCounted, reg: Dictionary) -> int:
+	var level: int = int(reg.survey)
+	if level < 1 and not sim.settlement(int(reg.id)).is_empty():
+		level = 1
+	return mini(level, survey_levels(sim).size())
+
+
 static func _band(sim: RefCounted, reg: Dictionary) -> float:
+	return _band_at(sim, survey_level(sim, reg))
+
+
+## The band a site has after `level` ground surveys: from orbit at 0, exact with the survey
+## technology once a team has been there.
+static func _band_at(sim: RefCounted, level: int) -> float:
 	var rules: Dictionary = sim.progression_geo().survey
 	var opening: Dictionary = sim.config.openings[sim.state.advantage]
 	var sharper: float = float(opening.get("survey_band_factor", 1.0))
-	if int(reg.survey) >= 1 or not sim.settlement(int(reg.id)).is_empty():
-		return 0.0 if sim._has("survey") else float(rules.ground_band) * sharper
-	return float(rules.orbital_band) * sharper
+	if level < 1:
+		return float(rules.orbital_band) * sharper
+	if sim._has("survey"):
+		return 0.0
+	var levels: Array = survey_levels(sim)
+	return float(levels[mini(level, levels.size()) - 1].band) * sharper
 
 
 ## A true value seen through the survey band: `low..high` always holds it, off centre by a fixed
@@ -299,6 +325,8 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 		"archetype": reg.get("archetype", ""),
 		"band": band,
 		"survey": int(reg.survey),
+		"survey_level": survey_level(sim, reg),
+		"survey_levels": survey_levels(sim).size(),
 		"surveying": _surveying(sim, site),
 		"deposits": deposits,
 		"grades": grades,
@@ -336,20 +364,47 @@ static func survey_cost(sim: RefCounted) -> float:
 	return cost
 
 
-## Sends a ground survey team. With prospecting it also uncovers hidden deposits nearby.
-static func survey(sim: RefCounted, site: int) -> String:
+## What the next ground survey of a site would do: the level it reaches, the band it leaves, its
+## days and price, and why it cannot be sent now (`refusal`, empty if it can). `narrows` is false
+## once the site is known as closely as surveys go; with prospecting a team can still go to look
+## for hidden deposits nearby (`prospecting`), at the first level's days and price.
+static func next_survey(sim: RefCounted, site: int) -> Dictionary:
 	if site < 0 or site >= sim.state.world.regions.size():
-		return "请选择候选地点"
+		return {"refusal": "请选择候选地点", "narrows": false, "prospecting": false}
 	var reg: Dictionary = sim.state.world.regions[site]
-	if int(reg.survey) >= 1 and not sim._has("prospecting"):
-		return "此地点已完成地面勘察"
-	if _surveying(sim, site) > 0:
-		return "勘察队已在途中"
-	var cost: float = survey_cost(sim)
-	if float(sim.state.cash) < cost:
-		return "地面勘察需要 %.0f 资金" % cost
-	sim._transfer("public", "external", cost, "invest.survey", false)
-	sim.state.surveys.append({"site": site, "days": int(sim.progression_geo().survey.days)})
+	var levels: Array = survey_levels(sim)
+	var level: int = survey_level(sim, reg)
+	var narrows: bool = level < levels.size() and _band_at(sim, level) > 0.0
+	var step: Dictionary = levels[level] if narrows else levels[0]
+	var quote: Dictionary = {
+		"level": level + 1 if narrows else level,
+		"levels": levels.size(),
+		"narrows": narrows,
+		"prospecting": sim._has("prospecting"),
+		"band_now": _band_at(sim, level),
+		"band": _band_at(sim, level + 1) if narrows else _band_at(sim, level),
+		"days": int(step.days),
+		"cost": survey_cost(sim) * float(step.get("cost_factor", 1.0)),
+	}
+	var refusal: String = ""
+	if not narrows and not bool(quote.prospecting):
+		refusal = "此地点的储量估算已经精确" if float(quote.band_now) <= 0.0 else "此地点已勘察到最细"
+	elif _surveying(sim, site) > 0:
+		refusal = "勘察队已在途中"
+	elif float(sim.state.cash) < float(quote.cost):
+		refusal = "地面勘察需要 %.0f 资金" % float(quote.cost)
+	quote.refusal = refusal
+	return quote
+
+
+## Sends a ground survey team: each one narrows the estimates a step further and takes longer.
+## With prospecting it also uncovers hidden deposits nearby.
+static func survey(sim: RefCounted, site: int) -> String:
+	var quote: Dictionary = next_survey(sim, site)
+	if str(quote.refusal) != "":
+		return str(quote.refusal)
+	sim._transfer("public", "external", float(quote.cost), "invest.survey", false)
+	sim.state.surveys.append({"site": site, "days": int(quote.days)})
 	return ""
 
 
@@ -361,8 +416,19 @@ static func daily(sim: RefCounted) -> void:
 			keep.append(entry)
 			continue
 		var reg: Dictionary = sim.state.world.regions[int(entry.site)]
-		reg.survey = maxi(int(reg.survey), 1)
-		sim._log("%s地面勘察完成。" % reg.name)
+		var levels: int = survey_levels(sim).size()
+		reg.survey = mini(survey_level(sim, reg) + 1, levels)
+		var band: float = _band(sim, reg)
+		sim._log(
+			(
+				"%s地面勘察完成（第 %d 次）：储量与品位估算%s。"
+				% [
+					reg.name,
+					int(reg.survey),
+					"已精确" if band <= 0.0 else "约 ±%d%%" % roundi(band * 100.0)
+				]
+			)
+		)
 		if sim._has("prospecting"):
 			_reveal_nearby(sim, reg)
 	sim.state.surveys = keep

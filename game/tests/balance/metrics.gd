@@ -2,6 +2,7 @@ extends RefCounted
 ## Per-run metrics, read from Sim state after every simulated day.
 
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Research = preload("res://simulation/research.gd")
 const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
 const RESEARCH_WINDOW_FIRST_DAY: int = 360
 const RESEARCH_WINDOW_LAST_DAY: int = 1440
@@ -107,7 +108,7 @@ func sample(sim: RefCounted) -> void:
 				break
 	if state.status == "success" and int(record.award_day) < 0:
 		record.award_day = day
-		record.techs_by_award = state.research.completed.size()
+		record.techs_by_award = Research.researched(state)
 		record.scientist_share_at_award = _scientist_share(state)
 		record.categories_at_award = _categories(sim)
 	if state.status == "failed" and int(record.failure_day) < 0:
@@ -160,7 +161,8 @@ func _shuttle_lines(sim: RefCounted) -> Dictionary:
 func _categories(sim: RefCounted) -> int:
 	var seen: Dictionary = {}
 	for tech: String in sim.state.research.completed:
-		seen[str(sim.config.techs[tech].category)] = true
+		if not Research.is_gift(tech):
+			seen[str(sim.config.techs[tech].category)] = true
 	return seen.size()
 
 

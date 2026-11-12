@@ -405,8 +405,7 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 			action.custom_minimum_size.y = 28
 	D.label(b, "地块与矿藏", 14, D.TEAL)
 	_site_facts(g, b, known)
-	if g.sim.state.research.completed.has("prospecting"):
-		_survey_button(g, b, known)
+	_survey_button(g, b, known)
 
 
 ## One line per kind of building, those with problems first; individual controls on demand.
@@ -560,11 +559,17 @@ static func _share_text(row: Dictionary, band: float) -> String:
 	return "%d–%d%%" % [float(row.low) * 100.0, float(row.high) * 100.0]
 
 
-static func _site_facts(g, b, known: Dictionary):
+static func _site_facts(_g, b, known: Dictionary):
 	var band: float = float(known.band)
-	var quality: String = "精确数据" if band <= 0.0 else ("地面勘察 ±%d%%" % (band * 100.0))
-	if int(known.survey) == 0 and g.settlement().is_empty():
-		quality = "轨道估算 ±%d%%" % (band * 100.0)
+	var level: int = int(known.get("survey_level", known.survey))
+	var quality: String = "精确数据"
+	if band > 0.0 and level < 1:
+		quality = "轨道估算 ±%d%%" % roundi(band * 100.0)
+	elif band > 0.0:
+		quality = (
+			"地面勘察 %d / %d 次 · ±%d%%"
+			% [level, int(known.get("survey_levels", 1)), roundi(band * 100.0)]
+		)
 	D.label(b, quality, 15, D.TEAL)
 	D.label(
 		b,
@@ -618,21 +623,52 @@ static func _site_facts(g, b, known: Dictionary):
 		D.label(b, " · ".join(notes), 15, D.GOLD)
 
 
+## The next survey: what it costs, how long it takes and how close it brings the estimates.
 static func _survey_button(g, b, known: Dictionary):
 	if int(known.surveying) > 0:
 		D.label(b, "勘察队在途，余 %d 天" % int(known.surveying), 15, D.TEAL)
 		return
-	var deep: bool = g.sim.state.research.completed.has("prospecting")
-	if int(known.survey) >= 1 and not deep:
-		return
 	var at: int = int(known.id)
+	var next: Dictionary = g.sim.Sites.next_survey(g.sim, at)
+	if not bool(next.narrows) and not bool(next.prospecting):
+		return
+	var outcome: String = "找隐藏矿床"
+	var hint: String = "远程勘测：派队查找周边的隐藏矿床；储量估算已经勘察到最细。"
+	if bool(next.narrows):
+		var after: String = (
+			"精确" if float(next.band) <= 0.0 else "±%d%%" % roundi(float(next.band) * 100.0)
+		)
+		outcome = "→ " + after
+		hint = (
+			"第 %d / %d 次地面勘察：储量和品位的估算从 ±%d%% 缩小到 %s，勘察队 %d 天后回报。"
+			% [
+				int(next.level),
+				int(next.levels),
+				roundi(float(next.band_now) * 100.0),
+				after,
+				int(next.days)
+			]
+		)
+		if bool(next.prospecting):
+			hint += "有远程勘测技术，还会查找周边的隐藏矿床。"
+	if str(next.refusal) != "":
+		hint = str(next.refusal)
 	var button = D.button(
 		b,
-		"%s ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
+		(
+			"%s ¥ %s · %d 天 %s"
+			% [
+				"地面勘察" if bool(next.narrows) else "远程勘测",
+				Labels.amount_text(float(next.cost)),
+				int(next.days),
+				outcome
+			]
+		),
 		func(): g.act("survey", {"site": at}),
-		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。",
+		hint,
 		"SurveyButton"
 	)
+	button.disabled = str(next.refusal) != ""
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.font_size(button, 14)
 	button.custom_minimum_size = Vector2(60, 38)
@@ -1180,7 +1216,11 @@ static func transport(g, b):
 	D.label(b, "矿物向港口汇集，食品向居民流动。", 25, D.TEAL)
 	D.label(
 		b,
-		"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。两端都有货运站就能开航线。",
+		(
+			"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；"
+			+ "运力有限，陆路不会穿海。两地都靠海时，可以在两端各建一座小型货运码头开辟航线。"
+			+ "建成的线路还能升级：公路先铺装、再拓宽为四车道干线；码头可扩建为中型、大型。"
+		),
 		18,
 		D.MUTED
 	)
@@ -1196,9 +1236,8 @@ static func transport(g, b):
 		var z: int = int(other.region)
 		if z != a:
 			_road_options(g, b, a, z)
-	var paving: Dictionary = g.sim.config.road_upgrade
 	for road: Dictionary in state.roads:
-		_road_card(g, b, road, paving)
+		_road_card(g, b, road)
 	D.label(b, "累计运输 " + Labels.t(float(state.get("transported_total", 0))), 18, D.TEAL)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
@@ -1272,24 +1311,30 @@ static func _closure_text(chance: float) -> String:
 	return "封路 约每 %d 日一次" % roundi(1.0 / chance)
 
 
-static func _road_card(g, b, road: Dictionary, paving: Dictionary):
+## What a link is called on its card: the road with its surface, or the pair of docks.
+static func _link_title(g, road: Dictionary) -> String:
+	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
+	var level: String = g.sim.Logistics.level_name(g.sim, road)
+	if bool(road.get("retired", false)):
+		return "%s（已停飞：两地已有道路或航线）" % spec.name
+	if level == "":
+		return str(spec.name)
+	if g.sim.Logistics.is_sea(road):
+		return level
+	return "%s · %s" % [spec.name, level]
+
+
+static func _road_card(g, b, road: Dictionary):
 	var state: Dictionary = g.sim.state
 	var c = D.card(b)
-	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
 	var building: bool = WG.road_building(road, int(state.day))
 	var blocked: bool = WG.road_blocked(road, int(state.day)) and not building
-	var retired: bool = bool(road.get("retired", false))
 	D.label(
 		c,
 		(
-			"%s%s：%s ↔ %s"
+			"%s：%s ↔ %s"
 			% [
-				spec.name,
-				(
-					"（已停飞：两地已有道路或航线）"
-					if retired
-					else ("（已铺装）" if bool(road.get("paved", false)) else "")
-				),
+				_link_title(g, road),
 				state.world.regions[int(road.a)].name,
 				state.world.regions[int(road.b)].name
 			]
@@ -1321,7 +1366,22 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 			c, "在建 · %s 通车 · 还要 %d 天" % [Labels.short_date(int(road.ready_day)), left], 16, D.GOLD
 		)
 	if int(road.get("paving_until", 0)) > int(state.day):
-		D.label(c, "铺装中 · %s 完工" % Labels.short_date(int(road.paving_until)), 16, D.GOLD)
+		D.label(
+			c,
+			(
+				"升级为%s · %s 完工；施工期间照常通行"
+				% [
+					g.sim.Logistics.level_name(
+						g.sim,
+						road,
+						int(road.get("upgrade_to", g.sim.Logistics.link_level(road) + 1))
+					),
+					Labels.short_date(int(road.paving_until))
+				]
+			),
+			16,
+			D.GOLD
+		)
 	var moving: Dictionary = {}
 	for cargo: Dictionary in state.shipments:
 		if int(cargo.get("road", -1)) == int(road.id):
@@ -1331,23 +1391,56 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		for good: String in moving:
 			words.append("%s %s" % [RES.get(good, good), Labels.t(float(moving[good]))])
 		D.label(c, "在途：" + "、".join(words), 15, D.MUTED)
-	if (
-		state.research.completed.has(paving.tech)
-		and not bool(road.get("paved", false))
-		and not building
-		and int(road.get("paving_until", 0)) <= int(state.day)
-		and not str(road.get("variant", "valley")) in [Keys.ROUTE_SEA, Keys.ROUTE_SHUTTLE]
-	):
-		var id: int = int(road.id)
-		D.button(
-			c,
-			(
-				"铺装道路 · ¥ %.0f + 建材 %s"
-				% [float(road.cost) * float(paving.cost_factor), Labels.t(float(paving.materials))]
-			),
-			func(): g.act("upgrade_road", {"road": id}),
-			"运力 +50%，单程 -1 天，封路风险 -70%"
-		)
+	_level_row(g, c, road)
+
+
+## The link's next level: what it costs, what it gives, what it waits for, and the order.
+static func _level_row(g, c, road: Dictionary):
+	if g.sim.Logistics.is_shuttle(road):
+		return
+	var step: Dictionary = g.sim.Logistics.next_level(g.sim, road)
+	var level: int = g.sim.Logistics.link_level(road)
+	var top: int = g.sim.Logistics.level_steps(g.sim, road).size()
+	if int(road.get("paving_until", 0)) > int(g.sim.state.day):
+		D.label(c, "等级 %d / %d · 升级施工中" % [level, top], 15, D.MUTED)
+		return
+	if step.is_empty():
+		D.label(c, "等级 %d / %d · 已是最高等级" % [level, top], 15, D.MUTED)
+		return
+	var gains: PackedStringArray = ["运力 ×%.2f" % float(step.capacity)]
+	if int(step.days) != 0:
+		gains.append("单程 %+d 天" % int(step.days))
+	if float(step.closure) < 1.0:
+		gains.append("封路风险 -%d%%" % roundi((1.0 - float(step.closure)) * 100.0))
+	if float(step.upkeep) > 0.0:
+		gains.append("养护 +¥ %.1f/日" % float(step.upkeep))
+	var price: String = (
+		"¥ %s + 建材 %s" % [Labels.amount_text(float(step.cost)), Labels.t(float(step.materials))]
+	)
+	if float(step.parts) > 0.0:
+		price += " + 部件 %s" % Labels.t(float(step.parts))
+	var needs: String = ""
+	if str(step.tech) != "":
+		var tech_name: String = str(g.sim.config.techs[step.tech].name)
+		needs = (" · 技术「%s」%s" % [tech_name, "✓" if g.sim._has(str(step.tech)) else "未掌握"])
+	D.label(
+		c,
+		(
+			"等级 %d / %d · 下一级 %s：%s · 工期 %d 天 · %s%s"
+			% [level, top, str(step.name), price, int(step.build_days), "，".join(gains), needs]
+		),
+		15,
+		D.MUTED
+	)
+	var id: int = int(road.id)
+	var order: Button = D.button(
+		c,
+		"升级为" + str(step.name),
+		func(): g.act("upgrade_road", {"road": id}),
+		str(step.refusal),
+		"Upgrade_%d" % id
+	)
+	order.disabled = str(step.refusal) != ""
 
 
 static func enterprise(g, b):
@@ -1543,7 +1636,7 @@ static func settings(g, b):
 static func guide(_g, b):
 	D.label(b, "怎样经营一块殖民地", 25, D.GOLD)
 	var steps = [
-		"01  选址。卡片上的储量是估算，派勘察队可以缩小范围。星球有地球那么大：两个地点之间常常隔着几千公里。",
+		"01  选址。卡片上的储量是估算，派勘察队可以缩小范围；再派一次范围更窄，但更贵、更久。星球有地球那么大：两个地点之间常常隔着几千公里。",
 		"02  开矿出口。在矿床地块上建矿场，矿石到货运站自动卖出。货运站的吞吐是共用的，出口越多价格越低，别只卖一种。",
 		"03  住房和工作。床位满了没人来，没工作的人多了新移民也不来。工资影响吸引力，招募来得最快但越招越贵。",
 		"04  研究。每个类别一个课题，从候选里挑一张，再派研究团队。5 支团队的速度只有 10 支的 60%。候选不合意可以花钱重新调研。",

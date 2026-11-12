@@ -1470,11 +1470,11 @@
       ],
       "speed_km_per_day": 500.0,
       "min_days": 3,
-      "base_cost": 5000.0,
+      "base_cost": 6000.0,
       "cost_per_km": 0.5,
       "build_days": 60,
-      "reason": "沿海航线",
-      "name": "沿海航线",
+      "reason": "两端各建一座小型货运码头，货船往返；两地都要靠海，不需要轨道货运站",
+      "name": "小型货运码头 ×2",
       "fee_factor": 1.5
     },
     "shuttle": {
@@ -1752,14 +1752,76 @@
       }
     ]
   },
-  "road_upgrade": {
-    "tech": "paved_roads",
-    "cost_factor": 0.5,
-    "materials": 60.0,
-    "capacity": 1.5,
-    "days": -1,
-    "closure": 0.3,
-    "build_days": 60
+  "road_levels": {
+    "note": "Level 1 is a link as built. A land road is paved, then widened into a four-lane trunk road; a sea link's two small cargo docks are enlarged to medium and then large ones. Each step multiplies the link's capacity, adds days (negative: shorter trips), multiplies the closure chance and adds upkeep per day. Cost is cost + cost_factor x what the link cost to build; materials and parts (100 t) come from either end's warehouse. tech '' needs no technology. Traffic keeps moving while the work goes on. A shuttle line has no levels.",
+    "land": [
+      {
+        "id": "gravel",
+        "name": "砂石路面"
+      },
+      {
+        "id": "paved",
+        "name": "铺装路面",
+        "tech": "paved_roads",
+        "cost": 0.0,
+        "cost_factor": 0.5,
+        "materials": 60.0,
+        "parts": 0.0,
+        "capacity": 1.5,
+        "days": -1,
+        "closure": 0.3,
+        "upkeep": 0.0,
+        "build_days": 60
+      },
+      {
+        "id": "trunk",
+        "name": "四车道干线",
+        "tech": "road_machines",
+        "cost": 0.0,
+        "cost_factor": 0.6,
+        "materials": 120.0,
+        "parts": 10.0,
+        "capacity": 1.5,
+        "days": -1,
+        "closure": 0.5,
+        "upkeep": 2.0,
+        "build_days": 90
+      }
+    ],
+    "sea": [
+      {
+        "id": "dock_small",
+        "name": "小型货运码头"
+      },
+      {
+        "id": "dock_medium",
+        "name": "中型货运码头",
+        "tech": "",
+        "cost": 4000.0,
+        "cost_factor": 0.0,
+        "materials": 40.0,
+        "parts": 8.0,
+        "capacity": 1.5,
+        "days": -1,
+        "closure": 1.0,
+        "upkeep": 3.0,
+        "build_days": 45
+      },
+      {
+        "id": "dock_large",
+        "name": "大型货运码头",
+        "tech": "shipping",
+        "cost": 9000.0,
+        "cost_factor": 0.0,
+        "materials": 80.0,
+        "parts": 20.0,
+        "capacity": 1.6,
+        "days": -1,
+        "closure": 1.0,
+        "upkeep": 6.0,
+        "build_days": 75
+      }
+    ]
   },
   "site_rules": {
     "frontier_output": 0.15,
