@@ -117,6 +117,17 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
 `v16_scroll_probe` fail with the same script errors as 1.8.0 on Linux (22 and 8, counted on both): the
 1.6 acceptance fixture they load does not rebuild its world on the Linux build.
 
+Fix tips (branch `v17-fix-tips`, code at `5c50b0f`): of the 44 headless suites other than the `review_*`
+tools, 39 pass and 5 fail: the same 4 Windows-recorded ones as before (`v17_saves`, `v17_tutorial` with its 1.6-save
+script error, `v18_systems`, `world_v16_seed`) and `v19_payback` (light iron mine, item 9 below). New
+`v19_transport` (88 checks) and `v19_region` (15 checks) pass. Window suites under Xvfb:
+`world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` (24 script errors) and
+`v16_scroll_probe` (8) fail on their 1.6 fixture as before. Quick harness `fix-tips-5c50b0f`: 51 runs, 0
+audit errors (BALANCE.md). Exported pack `ColonyCharter-1.9.0-preview-20261112-Windows-x64.zip` from
+`fef2eb7`: on the Linux engine it boots, lands, builds, runs 40 days with a clean audit and opens the
+transport, construction, research and economy pages and the region with no script error; not run on
+Windows.
+
 ## Not done / open
 
 1. Windows: re-record the capture fixtures (rules and save schema changed), rebake the menu atlas,
@@ -157,13 +168,18 @@ suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interactio
 9. **Fix tips: `v19_payback` misses on the light iron mine** (63 days in year 6 on seed 260129, band
    70–150 with 5% slack). Since sea links need no freight station the balanced bot's colony settles
    another coast first and its iron market is not saturated in year 6 (5.57 against the 4.40 floor);
-   clean runs of the commit before gave 72 and 69 days. For the user to choose: a dearer light iron
-   mine (2,100 → about 2,250, to be checked against the labour lever), or payback bands asserted over
-   several seeds instead of one.
-10. Fix tips, models: `dock_medium`, `dock_large`, `ship_fast`, `ship_bulk` and `vehicle_truck_redball`
+   clean runs of the commit before gave 72 and 69 days, three variants of this change 59–64. A dearer
+   light iron mine (2,250) does not fix it (61 days on its own path, and two more checks missed), so the
+   single-seed year-6 figure follows the colony's path. Recommended, for the user to approve: assert
+   the payback bands over several seeds (median per kind) instead of one seed.
+10. **Fix tips: labour lever +6% (MISS) on the quick run** (+23% before). It is noise from the event
+    dice (probes in BALANCE.md, 1.9 fix tips: +15% and +16% on unchanged code with nudged dice, +35%
+    on this code without its extra deck rolls); its central value looks like about +15%, under the
+    20% bar. For the user: measure it over more seeds, then decide whether wages need a stronger pull.
+11. Fix tips, models: `dock_medium`, `dock_large`, `ship_fast`, `ship_bulk` and `vehicle_truck_redball`
     are drawn by stand-ins until delivered; the fix sheet lists them and the model fixes. The terrace
     pieces (`terrace_wall`, `terrace_stair`, `cliff_habitat`) need placement code once they arrive.
-11. Fix tips on Windows: look at the region scene's far landscape and haze and the town lights at
+12. Fix tips on Windows: look at the region scene's far landscape and haze and the town lights at
     100% and 125% scaling, and measure frame times with them (`tests/art/frame_time_probe.gd`).
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in

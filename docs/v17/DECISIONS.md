@@ -541,5 +541,13 @@ narrow the ranges over time, a model fix sheet and a technology tree overview.
 - `v19_payback` misses on the light iron mine (63 days in year 6, band 70–150): with docks that need no
   freight station the bot's colony settles another coast first and its iron market is not saturated in
   year 6 (price 5.57 against the 4.40 floor). Clean runs of the previous commit gave 72 and 69 days, so
-  the edge was already close. Left failing and reported · a dearer light iron mine (rejected in 1.9
-  money for the labour lever) or a wider band, which are the user's call.
+  the edge was already close. A dearer light iron mine (2,100 → 2,250) does not help: on its own path
+  the mine paid back in 61 days and two more checks missed (heavy iron mine 94, tailings 317 in year 4),
+  so one seed's year-6 figure follows the colony's path more than the mine's price. Left failing and
+  reported · asserting the bands over several seeds (a change to how plan A2.2 is measured, for the
+  user to approve) or tuning prices to one path.
+- The labour lever reads +6% on this run (MISS, +23% before). Probes show it is noise from the event
+  dice: unchanged code gives +15% and +16% with nudged event dice, and this code without its three
+  extra deck rolls gives +35% (BALANCE.md, 1.9 fix tips). Left as measured and reported · dealing new
+  events from a separate dice stream so old runs keep their sequence (it would pass by luck, not by
+  measuring better) or tuning wages to one draw.
