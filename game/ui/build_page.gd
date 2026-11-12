@@ -81,8 +81,8 @@ static func _build_header(g, b, s: Dictionary, region: Dictionary) -> void:
 	var supplies: String = "工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。"
 	D.stat(strip, "空闲工程队", str(g.sim.free_workers(s)), D.INK, "每项在建工程占用工程队，完工后释放")
 	D.stat(strip, "公共资金", "¥ " + g.money(g.sim.state.cash), D.GOLD)
-	D.stat(strip, "建材库存", "%.0f t" % float(s.stock.materials), D.INK, supplies)
-	D.stat(strip, "部件库存", "%.0f t" % float(s.stock.parts), D.INK, supplies)
+	D.stat(strip, "建材库存", Labels.t(float(s.stock.materials)), D.INK, supplies)
+	D.stat(strip, "部件库存", Labels.t(float(s.stock.parts)), D.INK, supplies)
 
 
 static func _build_catalogue(g, parent, shown: Array[String], chosen: String) -> void:
@@ -232,7 +232,12 @@ static func _build_facility(
 	D.pair(running, "维护", "¥ %.1f/日" % float(forecast.maintenance), D.INK, "", D.MUTED, "upkeep")
 	D.pair(running, "工资", "¥ %.0f/日" % float(forecast.wages_per_day), D.INK, "", D.MUTED, "crew")
 	for good: String in spec.get("inputs", {}):
-		D.pair(column, "消耗", "%s %.1f t/日" % [RES.get(good, good), float(spec.inputs[good])], D.INK)
+		D.pair(
+			column,
+			"消耗",
+			"%s %s" % [RES.get(good, good), Labels.per_day(float(spec.inputs[good]))],
+			D.INK
+		)
 	if float(spec.get("copy_surcharge", 0.0)) > 0.0:
 		D.label(
 			column,
@@ -274,9 +279,13 @@ static func _build_ledger(
 		D.pair(
 			rows,
 			str(RES[good]),
-			"%.0f t" % need,
+			Labels.t(need),
 			D.INK,
-			"库存 %.0f t" % have if have >= need else "库存 %.0f t · 缺 %.0f" % [have, need - have],
+			(
+				"库存 " + Labels.t(have)
+				if have >= need
+				else "库存 %s · 缺 %s" % [Labels.t(have), Labels.t(need - have)]
+			),
 			D.MUTED if have >= need else D.GOLD,
 			good
 		)
@@ -295,7 +304,7 @@ static func _build_ledger(
 		D.pair(
 			rows,
 			"产出",
-			"%s %.1f t/日" % [RES.get(good, good), float(forecast.outputs[good])],
+			"%s %s" % [RES.get(good, good), Labels.per_day(float(forecast.outputs[good]))],
 			D.TEAL,
 			"",
 			D.MUTED,

@@ -541,11 +541,17 @@ static func _site_filter(g, b) -> OptionButton:
 	)
 
 
-## Figures with their uncertainty: a range until the site has been surveyed well enough.
-static func _estimate_text(g, row: Dictionary, band: float) -> String:
+## Reserves with their uncertainty, in tonnes: a range until the site is surveyed well enough.
+static func _estimate_text(row: Dictionary, band: float) -> String:
 	if band <= 0.0:
-		return g.money(row.mid)
-	return "%s–%s" % [g.money(row.low), g.money(row.high)]
+		return Labels.amount_text(Labels.tonnes(float(row.mid)))
+	return (
+		"%s–%s"
+		% [
+			Labels.amount_text(Labels.tonnes(float(row.low))),
+			Labels.amount_text(Labels.tonnes(float(row.high)))
+		]
+	)
 
 
 static func _share_text(row: Dictionary, band: float) -> String:
@@ -563,11 +569,11 @@ static func _site_facts(g, b, known: Dictionary):
 	D.label(
 		b,
 		(
-			"耕作潜力  %s    水源  %s\n一座农场约产 %.0f t/日\n海拔  %d m    建设费 ×%.2f"
+			"耕作潜力  %s    水源  %s\n一座农场约产 %s\n海拔  %d m    建设费 ×%.2f"
 			% [
 				_share_text(known.fertility, band * 0.5),
 				_share_text(known.water, band * 0.5),
-				float(known.farm_yield),
+				Labels.per_day(float(known.farm_yield)),
 				known.elevation,
 				float(known.development)
 			]
@@ -577,10 +583,10 @@ static func _site_facts(g, b, known: Dictionary):
 	)
 	for key in ["ore", "copper", "crystal"]:
 		var row = D.row(b)
-		D.icon(row, key, 24)
+		D.tinted_icon(row, key, 24, Labels.GOOD_COLORS.get(key, Color.WHITE))
 		D.label(
 			row,
-			"%s储量  %s t" % [RES[key], _estimate_text(g, known.deposits[key], band)],
+			"%s储量  %s t" % [RES[key], _estimate_text(known.deposits[key], band)],
 			16,
 			D.INK,
 			false
@@ -796,12 +802,12 @@ static func contract(g, b):
 	D.label(
 		v,
 		(
-			"开局支持：¥ %.0f；食品 %.0f t、建材 %.0f t、部件 %.0f t。工程队 %d、研究团队 %d、未成年 %d。"
+			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。工程队 %d、研究团队 %d、未成年 %d。"
 			% [
 				float(op.cash) * capital,
-				op.food,
-				op.materials,
-				op.parts,
+				Labels.t(float(op.food)),
+				Labels.t(float(op.materials)),
+				Labels.t(float(op.parts)),
 				op.workers,
 				op.scientists,
 				op.children
@@ -1002,10 +1008,10 @@ static func economy(g, b):
 	for row_data: Dictionary in g.sim.market_view():
 		var arrow: String = {-1: "↓", 0: "→", 1: "↑"}[int(row_data.trend)]
 		var line: String = (
-			"%s  ¥ %.1f / t  %s（基准 %.1f，%.0f%%）"
+			"%s  %s  %s（基准 %.1f，%.0f%%）"
 			% [
 				RES.get(row_data.good, row_data.good),
-				row_data.price,
+				Labels.per_hundred(float(row_data.price)),
 				arrow,
 				row_data.base,
 				row_data.factor * 100.0
@@ -1015,9 +1021,9 @@ static func economy(g, b):
 			line += " · 市场已饱和：再多卖只能按底价结算"
 		else:
 			line += (
-				" · 再卖 %.0f t 后 ¥ %.1f · 底价 ¥ %.1f"
+				" · 再卖 %s 后 ¥ %.1f · 底价 ¥ %.1f"
 				% [
-					float(row_data.ahead_tonnes),
+					Labels.t(float(row_data.ahead_tonnes)),
 					float(row_data.ahead_price),
 					float(row_data.floor_price)
 				]
@@ -1032,10 +1038,18 @@ static func economy(g, b):
 				continue
 			var v = D.col(r)
 			v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			D.icon(v, key)
+			D.tinted_icon(v, key, 27, Labels.GOOD_COLORS.get(key, Color.WHITE))
+			var delta: float = float(s.stock_delta.get(key, 0))
 			D.label(
 				v,
-				RES[key] + "\n%.1f t\n%+.1f /日" % [s.stock.get(key, 0), s.stock_delta.get(key, 0)],
+				(
+					RES[key]
+					+ "\n"
+					+ Labels.t(float(s.stock.get(key, 0)))
+					+ "\n"
+					+ ("+" if delta >= 0.0 else "")
+					+ Labels.per_day(delta)
+				),
 				16
 			)
 		var lines: PackedStringArray = []
@@ -1156,7 +1170,9 @@ static func _goods_table(b, goods: Dictionary):
 		var name = D.label(table, str(RES[good]), 15, D.INK, false)
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		for amount: Variant in row:
-			var cell = D.label(table, "%.0f" % float(amount), 15, D.INK, false)
+			var cell = D.label(
+				table, Labels.amount_text(Labels.tonnes(float(amount))), 15, D.INK, false
+			)
 			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
@@ -1183,18 +1199,18 @@ static func transport(g, b):
 	var paving: Dictionary = g.sim.config.road_upgrade
 	for road: Dictionary in state.roads:
 		_road_card(g, b, road, paving)
-	D.label(b, "累计运输 %.0f t" % float(state.get("transported_total", 0)), 18, D.TEAL)
+	D.label(b, "累计运输 " + Labels.t(float(state.get("transported_total", 0))), 18, D.TEAL)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
 		D.label(
 			b,
 			(
-				"%s → %s   %s %.1f t  /  还有 %d 天抵达"
+				"%s → %s   %s %s  /  还有 %d 天抵达"
 				% [
 					state.world.regions[int(sh.from)].name,
 					state.world.regions[int(sh.to)].name,
 					RES.get(sh.resource, sh.resource),
-					sh.amount,
+					Labels.t(float(sh.amount)),
 					sh.remaining
 				]
 			),
@@ -1224,14 +1240,14 @@ static func _road_options(g, b, a: int, z: int):
 			. label(
 				c,
 				(
-					"%s：%.0f km · 工期 %d 天 · 单程 %d 天 · 建设 ¥ %.0f · 运力 %d t/日 · 养护 ¥ %.1f/日 · 封路 %s"
+					"%s：%.0f km · 工期 %d 天 · 单程 %d 天 · 建设 ¥ %.0f · 运力 %s · 养护 ¥ %.1f/日 · 封路 %s"
 					% [
 						spec.name,
 						float(quote.distance),
 						int(quote.build_days),
 						int(quote.days),
 						float(quote.cost),
-						int(quote.capacity),
+						Labels.per_day(float(quote.capacity)),
 						float(quote.upkeep),
 						risk,
 					]
@@ -1284,12 +1300,12 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	D.label(
 		c,
 		(
-			"%.0f km · 单程 %d 天 · 运力 %d t/日 · 今日已发 %.1f t · 养护 ¥ %.1f/日 · %s%s"
+			"%.0f km · 单程 %d 天 · 运力 %s · 今日已发 %s · 养护 ¥ %.1f/日 · %s%s"
 			% [
 				float(road.get("distance", 0.0)),
 				g.sim.Logistics.road_days(g.sim, road),
-				int(road.capacity),
-				float(road.sent_today),
+				Labels.per_day(float(road.capacity)),
+				Labels.t(float(road.sent_today)),
 				float(road.get("upkeep", 0.0)),
 				_closure_text(g.sim.Logistics.closure_chance(g.sim, road)),
 				" · 封路至 %s" % Labels.short_date(int(road.blocked_until)) if blocked else ""
@@ -1313,7 +1329,7 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	if not moving.is_empty():
 		var words: PackedStringArray = []
 		for good: String in moving:
-			words.append("%s %.0f t" % [RES.get(good, good), float(moving[good])])
+			words.append("%s %s" % [RES.get(good, good), Labels.t(float(moving[good]))])
 		D.label(c, "在途：" + "、".join(words), 15, D.MUTED)
 	if (
 		state.research.completed.has(paving.tech)
@@ -1326,8 +1342,8 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		D.button(
 			c,
 			(
-				"铺装道路 · ¥ %.0f + 建材 %.0f t"
-				% [float(road.cost) * float(paving.cost_factor), float(paving.materials)]
+				"铺装道路 · ¥ %.0f + 建材 %s"
+				% [float(road.cost) * float(paving.cost_factor), Labels.t(float(paving.materials))]
 			),
 			func(): g.act("upgrade_road", {"road": id}),
 			"运力 +50%，单程 -1 天，封路风险 -70%"

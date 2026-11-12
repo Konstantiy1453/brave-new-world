@@ -25,12 +25,15 @@ const V17_SAVE_AUTO: String = "/ColonyCharter/v17/autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
 const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
 const OLDER_SAVE_MANUAL: String = "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
-const AUTOSAVE_DAYS: int = 10
+## Autosaves land on every quarter of the calendar (progression.json time.autosave_days).
+const AUTOSAVE_FALLBACK_DAYS: int = 90
+## Days whose mean is the change shown after each amount in the top bar.
+const DAILY_WINDOW: int = 7
 const MODAL_HEIGHT: int = 690
 const PAGE_HEIGHT: int = 535
 const TOP_CELLS: Array = [
 	["money", "¥", "公共资金"],
-	["people", "人", "人口"],
+	["labour", "crew", "劳动力"],
 	["places", "据", "据点"],
 	["food", "food", "食品"],
 	["power", "power", "电力"],
@@ -350,7 +353,9 @@ func _build_resource_table(parent: Control) -> void:
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		top_stats.add_child(cell)
 		if ResourceLoader.exists("res://assets/icons/%s.svg" % str(row[1])):
-			D.icon(cell, str(row[1]), 20)
+			var mark: TextureRect = D.icon(cell, str(row[1]), 20)
+			# Iron, copper and crystal in their map colours, so the three read apart.
+			mark.self_modulate = Labels.GOOD_COLORS.get(str(row[0]), Color.WHITE)
 		else:
 			D.label(cell, str(row[1]), 15, D.GOLD, false)
 		var value: Label = D.label(cell, "", 16, D.INK, false)
@@ -438,7 +443,8 @@ func advance_time(delta: float):
 		sim.tick()
 		map.sync_state(sim.state)
 		refresh()
-		if sim.state.day - autosave_day >= AUTOSAVE_DAYS:
+		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
+		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
 			_begin_autosave()
 			autosave_day = sim.state.day
 		if sim.state.status != last_status and sim.state.status in ["success", "failed"]:
@@ -740,7 +746,9 @@ func _money_advice(window: Dictionary) -> String:
 func _refresh_top() -> Dictionary:
 	var state: Dictionary = sim.state
 	var window: Dictionary = sim.stats_window(int(MONTH_DAYS))
-	var scale: float = MONTH_DAYS / maxi(1, int(window.days))
+	# The figure after each amount is its change a day: the mean of the last week's days.
+	var week: Dictionary = sim.stats_window(DAILY_WINDOW)
+	var per_day: float = 1.0 / maxi(1, int(week.days))
 	var income: float = 0.0
 	var expense: float = 0.0
 	for key: String in window.income:
@@ -748,19 +756,22 @@ func _refresh_top() -> Dictionary:
 	for key: String in window.expense:
 		expense += float(window.expense[key])
 	var cover_line: String = Labels.cover_text(sim.cover_view())
+	var net_per_day: float = float(sim.summary().operating_average)
 	_set_cell(
 		"money",
 		float(state.cash),
-		(income - expense) * scale,
+		net_per_day,
 		(
 			(
-				"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
-				% [float(state.cash), income, expense]
+				"公共资金 ¥ %.0f\n后面的数字是每日经营结余（近 7 日平均）¥ %+.0f/日。\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；建设和融资不计入。"
+				% [float(state.cash), net_per_day, income, expense]
 			)
 			+ ("" if cover_line == "" else "\n" + cover_line)
 		)
 	)
 	var people: int = 0
+	var employed: int = 0
+	var children: int = 0
 	var power: float = 0.0
 	var power_used: float = 0.0
 	var water: float = 0.0
@@ -769,6 +780,8 @@ func _refresh_top() -> Dictionary:
 	var places: PackedStringArray = []
 	for s: Dictionary in state.settlements:
 		people += int(s.population)
+		employed += int(s.get("employed", 0))
+		children += int(s.get("children", 0))
 		power += float(s.power_supply)
 		power_used += float(s.power_demand)
 		water += float(s.water_supply)
@@ -781,12 +794,16 @@ func _refresh_top() -> Dictionary:
 		)
 		for good: String in TOP_GOODS:
 			stock[good] = float(stock.get(good, 0.0)) + float(s.stock.get(good, 0.0))
-	var moved: float = 0.0
-	for key: String in window.arrivals:
-		moved += float(window.arrivals[key])
-	for key: String in window.departures:
-		moved -= float(window.departures[key])
-	_set_cell("people", people, moved * scale, "人口 %d\n后面的数字是每月迁入减离开。" % people)
+	var labour: int = Stats.labour(state)
+	_set_cell(
+		"labour",
+		labour,
+		Stats.labour_change(state, DAILY_WINDOW),
+		(
+			"劳动力 %d：工程队和研究团队\n人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
+			% [labour, people, employed, children]
+		)
+	)
 	_set_cell_text(
 		"places",
 		"%d / %d" % [state.settlements.size(), Contract.settlement_cap(sim)],
@@ -798,25 +815,33 @@ func _refresh_top() -> Dictionary:
 	_set_cell_flow("power", power, power - power_used, "电力" + utility_note + "\n".join(places))
 	_set_cell_flow("water", water, water - water_used, "水" + utility_note + "\n".join(places))
 	for good: String in TOP_GOODS:
-		var flows: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		var flows: Array = week.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
 		var change: float = (
 			float(flows[Stats.PRODUCED])
 			+ float(flows[Stats.IMPORTED])
 			- float(flows[Stats.CONSUMED])
 			- float(flows[Stats.EXPORTED])
 		)
+		var month: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
 		_set_cell(
 			good,
-			float(stock.get(good, 0.0)),
-			change * scale,
-			Labels.flow_text(str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), flows)
+			Labels.tonnes(float(stock.get(good, 0.0))),
+			Labels.tonnes(change * per_day),
+			(
+				Labels.flow_text(
+					str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), month
+				)
+				+ "\n后面的数字是每日变化（近 7 日平均，吨）。"
+			)
 		)
 	return window
 
 
 func _set_cell(key: String, value: float, change: float, hint: String) -> void:
 	var sign_text: String = "+" if change >= 0.0 else ""
-	_set_cell_text(key, Labels.compact(value), sign_text + Labels.compact(change), change, hint)
+	_set_cell_text(
+		key, Labels.amount_text(value), sign_text + Labels.amount_text(change), change, hint
+	)
 
 
 ## Power and water: a rate, not a stock, so the sign is the surplus and red means somebody is short.

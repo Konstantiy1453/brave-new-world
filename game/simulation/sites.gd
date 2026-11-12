@@ -564,8 +564,12 @@ static func settle_refusal(
 	var kit: float = _kit_shortfall_cost(sim, src)
 	if kit > 0.0 and not Logistics._has_port(src):
 		return (
-			"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资；有货运站才能现买"
-			% [float(rules.materials), float(rules.parts), float(rules.food)]
+			"出发据点需备齐 %.0f t 建材、%.0f t 部件、%.0f t 食品作为前哨远征物资；有货运站才能现买"
+			% [
+				sim.tonnes(float(rules.materials)),
+				sim.tonnes(float(rules.parts)),
+				sim.tonnes(float(rules.food))
+			]
 		)
 	if sim.state.cash < fare + kit:
 		return "建立前哨需要 %.0f 资金（含 %.0f 物资采购）" % [fare + kit, kit]

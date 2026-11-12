@@ -102,7 +102,7 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 	if refusal == "" and float(sim.state.cash) < float(found.cost):
 		refusal = "路线投资需要 %.0f 资金" % float(found.cost)
 	if refusal == "" and _terminal_store(sim, a, b).is_empty():
-		refusal = "两端仓库都没有 %.0f 建材修建装卸设施" % TERMINAL_MATERIALS
+		refusal = "两端仓库都没有 %.0f t 建材修建装卸设施" % sim.tonnes(TERMINAL_MATERIALS)
 	found.refusal = refusal
 	var spec: Dictionary = sim.config.roads[variant]
 	found.upkeep = float(spec.upkeep)
@@ -172,7 +172,7 @@ static func connect_road(
 	sim._log(
 		(
 			"线路开工：%.0f km，工期 %d 天；建成后单程 %d 天，每天双向合计 %.0f 吨。"
-			% [float(r.distance), int(r.build_days), int(r.days), float(r.capacity)]
+			% [float(r.distance), int(r.build_days), int(r.days), sim.tonnes(float(r.capacity))]
 		)
 	)
 	return ""
@@ -663,7 +663,7 @@ static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
 		return "道路升级需要 %.0f 资金" % cost
 	var s: Dictionary = sim.settlement(int(r.a))
 	if float(s.stock.materials) < float(rules.materials):
-		return "起点仓库需要 %.0f 建材" % float(rules.materials)
+		return "起点仓库需要 %.0f t 建材" % sim.tonnes(float(rules.materials))
 	sim._transfer("public", "external", cost, "invest.road", false, "paved")
 	sim._consume(s, "materials", float(rules.materials))
 	r.paving_until = int(sim.state.day) + int(rules.build_days)
@@ -676,7 +676,7 @@ static func _finish_paving(sim: RefCounted, r: Dictionary) -> void:
 	r.paved = true
 	r.capacity = int(round(float(r.capacity) * float(rules.capacity)))
 	r.days = maxi(1, int(r.days) + int(rules.days))
-	sim._log("道路铺装完成：单程 %d 天，每天 %d 吨。" % [int(r.days), int(r.capacity)])
+	sim._log("道路铺装完成：单程 %d 天，每天 %.0f 吨。" % [int(r.days), sim.tonnes(float(r.capacity))])
 
 
 ## Settlements reachable from each other over open roads: the size of the largest group.

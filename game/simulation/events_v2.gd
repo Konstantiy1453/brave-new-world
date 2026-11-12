@@ -922,19 +922,31 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	for good: String in option.get("lose_goods", {}):
 		parts.append(
 			(
-				"损失至多 %.0f %s"
-				% [float(option.lose_goods[good]), str(sim.config.resources.get(good, good))]
+				"损失至多 %.0f t %s"
+				% [
+					sim.tonnes(float(option.lose_goods[good])),
+					str(sim.config.resources.get(good, good))
+				]
 			)
 		)
 	for key in option.get("goods_cost", {}):
 		parts.append(
-			"消耗 %.0f %s" % [float(option.goods_cost[key]), str(sim.config.resources.get(key, key))]
+			(
+				"消耗 %.0f t %s"
+				% [
+					sim.tonnes(float(option.goods_cost[key])),
+					str(sim.config.resources.get(key, key))
+				]
+			)
 		)
 	for key in option.get("goods_reward", {}):
 		parts.append(
 			(
-				"取得 %.0f %s"
-				% [float(option.goods_reward[key]), str(sim.config.resources.get(key, key))]
+				"取得 %.0f t %s"
+				% [
+					sim.tonnes(float(option.goods_reward[key])),
+					str(sim.config.resources.get(key, key))
+				]
 			)
 		)
 	if option.has("investigate"):
@@ -943,8 +955,13 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 		var b: Dictionary = sim.build_preview(int(inst.target_region), str(option.build))
 		parts.append(
 			(
-				"建设 %.0f 资金 / %.0f 建材 / %.0f 部件，%d 日"
-				% [float(b.cost), float(b.materials), float(b.parts), int(b.days)]
+				"建设 %.0f 资金 / %.0f t 建材 / %.0f t 部件，%d 日"
+				% [
+					float(b.cost),
+					sim.tonnes(float(b.materials)),
+					sim.tonnes(float(b.parts)),
+					int(b.days)
+				]
 			)
 		)
 		var place: Dictionary = sim.settlement(int(inst.target_region))
@@ -953,8 +970,12 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 	if option.has("order"):
 		parts.append(
 			(
-				"本地加工 %.0f 部件 × %.0f，到货付款，%d 日截止，航程 3 日"
-				% [float(option.order.amount), float(option.order.price), int(option.order.days)]
+				"本地加工 %.0f t 部件 × ¥%.0f/百吨，到货付款，%d 日截止，航程 3 日"
+				% [
+					sim.tonnes(float(option.order.amount)),
+					float(option.order.price),
+					int(option.order.days)
+				]
 			)
 		)
 	for effect in option.get("effects", []):
