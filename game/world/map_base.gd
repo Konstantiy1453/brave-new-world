@@ -39,6 +39,8 @@ var cloud_shader: ShaderMaterial
 var atmosphere_shader: ShaderMaterial
 var terrain_shader: ShaderMaterial
 var night_lights: ImageTexture
+## The settlements' night lights for the shaders (night_lights.gd town_uniforms).
+var town_lights: Dictionary = {}
 var lights_signature: String = ""
 ## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
 var sky: VisualClock = VisualClock.new()
@@ -97,9 +99,18 @@ func _cloud_coverage() -> float:
 
 
 ## The night-side light map shared by the globe and the flat map; empty until towns exist.
+## Hands the settlements' lights to a map shader: on every update and to a shader built later.
+func _apply_town_lights(material: ShaderMaterial) -> void:
+	if material == null or town_lights.is_empty():
+		return
+	material.set_shader_parameter("towns", town_lights.towns)
+	material.set_shader_parameter("town_style", town_lights.styles)
+	material.set_shader_parameter("town_count", int(town_lights.count))
+
+
 func _night_lights_texture() -> ImageTexture:
 	if night_lights == null:
-		night_lights = ImageTexture.create_from_image(NightLights.paint([], []))
+		night_lights = ImageTexture.create_from_image(NightLights.paint([]))
 	return night_lights
 
 

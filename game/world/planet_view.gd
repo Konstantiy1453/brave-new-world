@@ -74,6 +74,7 @@ func _build_planet() -> void:
 	globe_shader.set_shader_parameter("atlas", geography_atlas)
 	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	globe_shader.set_shader_parameter("lights", _night_lights_texture())
+	_apply_town_lights(globe_shader)
 	globe_shader.set_shader_parameter("ice_latitude", _ice_latitude())
 	var sphere := SphereMesh.new()
 	sphere.radius = 3
@@ -264,11 +265,14 @@ func _update_night_lights() -> void:
 		if Geo.road_building(road, day) or Geo.road_blocked(road, day):
 			continue
 		roads.append(road.get("coordinates", []))
-	var image: Image = NightLights.paint(towns, roads)
+	var image: Image = NightLights.paint(roads)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
 	else:
 		night_lights.update(image)
+	town_lights = NightLights.town_uniforms(towns)
+	for material: ShaderMaterial in [globe_shader, flat_shader]:
+		_apply_town_lights(material)
 
 
 func _update_markers() -> void:

@@ -36,6 +36,7 @@ func _build_flat() -> void:
 	material.set_shader_parameter("atlas", geography_atlas)
 	material.set_shader_parameter("noise3d", Shaders.noise_texture())
 	material.set_shader_parameter("lights", _night_lights_texture())
+	_apply_town_lights(material)
 	material.set_shader_parameter("ice_latitude", _ice_latitude())
 	material.set_shader_parameter("coverage", _cloud_coverage())
 	flat_shader = material

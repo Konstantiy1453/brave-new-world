@@ -62,6 +62,102 @@ vec3 ice_color(float n2) {
 }
 """
 
+## Settlements at night, as orbit photos show them: a bright core, an irregular built-up outline,
+## lit blocks on a street grid and ribbons of light along the arterial roads, with suburbs at the
+## ends of the arms as a town grows into a metropolis. A few numbers per town (night_lights.gd
+## town_uniforms); a street grid finer than a screen pixel is drawn as its mean glow, not shimmer.
+const TOWN_LIGHTS_GLSL: String = """
+const int MAX_TOWNS = 48;
+uniform vec4 towns[48];
+uniform vec4 town_style[48];
+uniform int town_count = 0;
+
+float town_hash(vec2 p) {
+	p = fract(p * vec2(234.34, 435.345));
+	p += dot(p, p + 34.23);
+	return fract(p.x * p.y);
+}
+
+float town_noise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = town_hash(i);
+	float b = town_hash(i + vec2(1.0, 0.0));
+	float c = town_hash(i + vec2(0.0, 1.0));
+	float d = town_hash(i + vec2(1.0, 1.0));
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float town_fbm(vec2 p) {
+	return town_noise(p) * 0.55 + town_noise(p * 2.1 + 3.7) * 0.3 + town_noise(p * 4.3 + 7.1) * 0.15;
+}
+
+// One settlement's warm and cold light at offset d (degrees east, north) from its centre.
+vec2 town_glow(vec2 d, vec4 town, vec4 style, float pixel) {
+	float radius = town.z;
+	float seed = town.w;
+	vec2 q = d / radius;
+	float r = length(q);
+	if (r > 2.6) {
+		return vec2(0.0);
+	}
+	float size = style.z;
+	float fray = town_fbm(q * 2.6 + seed);
+	float outline = 1.0 - smoothstep(0.42 + 0.25 * fray, 0.92 + 0.35 * fray, r);
+	float arms = 0.0;
+	for (int k = 0; k < 5; k++) {
+		float angle = seed * 11.7 + float(k) * 1.31 + town_hash(vec2(seed, float(k))) * 2.0;
+		vec2 direction = vec2(cos(angle), sin(angle));
+		float along = dot(q, direction);
+		float across = abs(dot(q, vec2(-direction.y, direction.x)));
+		float reach = 0.9 + size * 1.3;
+		float ribbon = (1.0 - smoothstep(0.02, 0.05 + 0.06 * size, across))
+			* step(0.0, along) * (1.0 - smoothstep(0.45 * reach, reach * 1.1, along));
+		float suburb = (1.0 - smoothstep(0.06, 0.18 + 0.22 * size, length(q - direction * reach * 0.85)))
+			* step(0.3 + float(k) * 0.13, size);
+		arms = max(arms, max(ribbon * 0.5, suburb * 0.75));
+	}
+	float density = max(outline * (1.0 - 0.6 * r), arms);
+	float cell_size = radius * mix(0.09, 0.04, size);
+	// Each town's streets run their own way; blocks go dark here and there (parks, yards, water).
+	float turn = seed * 2.39;
+	vec2 street = vec2(cos(turn) * d.x - sin(turn) * d.y, sin(turn) * d.x + cos(turn) * d.y);
+	vec2 grid = street / cell_size + seed;
+	vec2 cell = floor(grid);
+	float blocks = town_noise(cell * 0.33 + seed * 1.7);
+	float lit = step(1.0 - density * (0.65 + 0.55 * blocks), town_hash(cell));
+	vec2 jitter = vec2(town_hash(cell + 3.1), town_hash(cell + 5.7)) - 0.5;
+	float spread = 0.24 + 0.16 * town_hash(cell + 1.9);
+	float lamp = 1.0 - smoothstep(0.05, spread, length(fract(grid) - 0.5 - jitter * 0.55));
+	float sparkle = lit * lamp * (0.45 + 0.55 * town_hash(cell + 7.3));
+	float resolved = clamp(cell_size / max(pixel, 0.000001) * 0.35, 0.0, 1.0);
+	float streets = mix(density * 0.4, sparkle, resolved) + outline * 0.06;
+	float core = exp(-r * r * (14.0 - 7.0 * size)) * (0.5 + 0.8 * size);
+	float amount = (streets + core) * style.x;
+	return vec2(amount * (1.0 - style.y * 0.7), amount * style.y);
+}
+
+// Every settlement's light at a point on the map; pixel is the screen pixel in degrees.
+vec2 town_lights(float lat, float lon, float pixel) {
+	vec2 light = vec2(0.0);
+	for (int i = 0; i < MAX_TOWNS; i++) {
+		if (i >= town_count) {
+			break;
+		}
+		vec4 town = towns[i];
+		float east = lon - town.y;
+		east -= 360.0 * floor(east / 360.0 + 0.5);
+		vec2 d = vec2(east * cos(radians(town.x)), lat - town.x);
+		if (abs(d.y) > town.z * 2.6 || abs(d.x) > town.z * 2.6) {
+			continue;
+		}
+		light += town_glow(d, town, town_style[i], pixel);
+	}
+	return light;
+}
+"""
+
 ## Seam-safe equirectangular lookup: atan() jumps at the antimeridian, so the derivatives come
 ## from whichever copy of u is continuous there and the mip level stays right on both sides.
 const LOOKUP_GLSL: String = """
@@ -311,6 +407,7 @@ varying vec3 local_point;
 """
 		+ GEOGRAPHY_GLSL
 		+ LOOKUP_GLSL
+		+ TOWN_LIGHTS_GLSL
 		+ """
 void vertex() {
 	local_point = VERTEX;
@@ -365,12 +462,14 @@ void fragment() {
 	float spec = pow(max(dot(water_normal, halfway), 0.0), 400.0) * 0.4;
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
 	color += vec3(1.0, 0.92, 0.78) * spec * (1.0 - coast) * (1.0 - ice) * day;
-	// Towns and lit roads after sunset; the halo comes from a coarser mip of the same map.
+	// Lit roads after sunset (their halo from a coarser mip of the same map) and the towns.
 	vec2 point_light = textureGrad(lights, uv, ddx_uv, ddy_uv).rg;
 	vec2 halo = textureGrad(lights, uv, ddx_uv * 6.0, ddy_uv * 6.0).rg;
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
-	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.4 + halo.r * 6.0);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.0 + halo.g * 4.5);
+	float pixel = max(length(ddx_uv * vec2(360.0, 180.0)), length(ddy_uv * vec2(360.0, 180.0)));
+	vec2 city = dark > 0.001 ? town_lights(lat, (uv.x - 0.5) * 360.0, pixel) : vec2(0.0);
+	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.4 + halo.r * 6.0 + city.x * 1.7);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.0 + halo.g * 4.5 + city.y * 1.5);
 	ALBEDO = color + glow * dark;
 }
 """
@@ -452,6 +551,7 @@ uniform float terraform = 0.0;
 """
 		+ GEOGRAPHY_GLSL
 		+ CLOUDS_GLSL
+		+ TOWN_LIGHTS_GLSL
 		+ """
 void fragment() {
 	vec4 g = texture(atlas, UV);
@@ -486,8 +586,10 @@ void fragment() {
 	color = mix(color, vec3(0.88, 0.9, 0.94) * mix(1.0, 0.45, dark), cloud);
 	vec2 point_light = texture(lights, UV).rg;
 	vec2 halo = textureLod(lights, UV, 2.5).rg;
-	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.0 + halo.r * 5.0);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 1.6 + halo.g * 3.5);
+	float pixel = max(length(dFdx(UV) * vec2(360.0, 180.0)), length(dFdy(UV) * vec2(360.0, 180.0)));
+	vec2 city = dark > 0.001 ? town_lights(lat, lon, pixel) : vec2(0.0);
+	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.0 + halo.r * 5.0 + city.x * 1.5);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 1.6 + halo.g * 3.5 + city.y * 1.3);
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
 """
