@@ -473,3 +473,73 @@ Format as above: the call · why · what was rejected. Branch `v17-ui-redesign`,
   repository); the look follows the written direction · guessing pixel values from file names.
 - Capture fixtures recorded on Windows do not load on Linux (world hash). `make_fixtures_v17.gd --out=`
   writes a local set and both capture suites take `--qa-fixtures=` · overwriting the recorded set.
+
+## 1.9: fix tips (2026-11-12)
+
+The user's FIX_TIPS document after the interface preview: a bigger region scene with no visible ground
+edge and buildings cut into the slopes, no vehicles through buildings, satellite-style town lights that
+grow with a place, daily changes, goods in real tonnes, labour, quarterly autosave, metals told apart,
+cargo docks instead of the coastal route, road upgrades, event-only gift technologies, surveys that
+narrow the ranges over time, a model fix sheet and a technology tree overview.
+
+- Goods are kept in hundreds of tonnes and shown in tonnes (×100, `economy.json display.tonnes_per_unit`);
+  prices read per 100 t · rescaling every amount, rate, capacity, save and harness number by 100 (same
+  balance, every rule touched).
+- The top bar's change is the mean daily change over the last 7 days (money: the economy page's 7-day
+  operating net) · yesterday's change, which jumps with every shipment and payday.
+- Labour (劳动力) is crews plus research teams, the people who work · everyone, children and retirees
+  included.
+- Metals are told apart by their map colours on the top-bar icons and by the name first in the tooltip ·
+  new pictograms (the shapes already differ; colour was what was missing).
+- Autosave every 90 days of the calendar (quarters, `progression.json time.autosave_days`) · monthly.
+- The region scene changes (landscape, terraces, lanes, haze) apply to generated worlds only; 1.6
+  worlds keep their ground to the vertex (`world_v16_terrain_identity`) · one rule for both.
+- The ground runs 520 units past the field on a widening grid that follows the planet, under depth fog
+  and a sky colour · a bigger field (every vertex costs on the CPU) or a skirt down to a flat floor
+  (seen from low angles).
+- Each visible plot is cut into the slope as a level terrace (flat to 2.45 units, back to the natural
+  ground by 3.6), and the relief is compressed on a log curve (knee 5 units) so no pad sits on a pillar;
+  towns read as carved into hillsides · pads on stilts, or flattening the whole town.
+- The landing pods get a free hex cell of their own · the nearest general plot (they overlapped a
+  building).
+- Vehicles drive on service lanes between the rows of plots, stop at the front of each pad and leave by
+  the lanes' corners and junctions · collision checks at run time (cost, and still visible clipping).
+- Town lights are drawn in the globe and flat shaders from up to 48 towns (frayed outline, arms and
+  suburbs gated by size, a rotated street grid with dark blocks, a core; a metropolis at 3,000 people);
+  roads stay in the night-light texture · painting towns into the texture (blurry at globe scale and
+  repainted on every change).
+- A sea link is one link with two small cargo docks, one at each end, and one level for both · docks as
+  town buildings (one dock serving several links needs coast plots and its own capacity rules).
+- Sea links no longer need an orbital freight station at either end; the base cost rises from 5,000 to
+  6,000 for the two docks · keeping the station rule (the request makes the docks the terminal).
+- Each link level multiplies the capacity the link has (paved ×1.5, trunk ×1.5; medium docks ×1.5,
+  large ×1.6), takes a day off the trip, multiplies the closure chance and adds upkeep (trunk +2, medium
+  +3, large +6 a day) · fixed capacities per level (old paved roads would need their base capacity).
+- Medium docks need no technology, large ones 沿海航运; the trunk road needs 连续摊铺机 after paving ·
+  new technologies (they would change the deal of every run).
+- Older saves: `paved` reads as level 2; `paving_until` carries any upgrade under way, with
+  `upgrade_to` · a save migration.
+- Upgrade stores come from whichever end has all of them · always the first end (an island outpost
+  rarely has any).
+- Gift technologies carry `gift: true` and weight 0: never dealt, refused by research and by event
+  leads, left out of the re-deal price, the charter's technology goals and the harness's techs at award ·
+  counting them as research.
+- The three gift events use the default deck chance (65%), a 900-day cooldown, and open only where they
+  make sense (`land_road`, `sea_link`, `lacks_tech`) · always in the deck (that pushed the share of events
+  left out below 25% on some seeds).
+- Bots let the gift events default (no gift) · a gift policy for bots (another change of path for the
+  harness's colonies).
+- Bots upgrade any link that runs full once its next level is open and the money is there · paving only.
+- Ground surveys come in three steps (±12%, ±6%, ±3%; 15, 25, 40 days; ×1, ×1.5, ×2 the price), the first
+  as in 1.8; the survey technology still makes surveyed sites exact · one survey straight to exact figures.
+- The town view stands in for `dock_medium`, `dock_large`, `ship_bulk`, `ship_fast` and
+  `vehicle_truck_redball` with the existing quay and ship drawn larger and trucks painted red, until the
+  models arrive · drawing nothing new.
+- The quay walks out from the town in half-unit steps and takes the nearest shore clear of plots and the
+  street, avoiding cliff tops · the nearest shore from 4 units out (on a cliff-top coastal town it put
+  the quay in the town centre).
+- `v19_payback` misses on the light iron mine (63 days in year 6, band 70–150): with docks that need no
+  freight station the bot's colony settles another coast first and its iron market is not saturated in
+  year 6 (price 5.57 against the 4.40 floor). Clean runs of the previous commit gave 72 and 69 days, so
+  the edge was already close. Left failing and reported · a dearer light iron mine (rejected in 1.9
+  money for the labour lever) or a wider band, which are the user's call.
