@@ -666,3 +666,11 @@ events. The package offers two alternatives: the old events with new words only,
   ridge's survey through the old camp's papers, its water room, an agreement and a pilot hole). The
   check that applies every short event's options on a rich colony stocks every good, since the new
   events also ask for components and alloy.
+- The harness bots value an event option in money (`colony_bot._option_value`): payments and
+  rewards scaled as the game scales them, goods at their prices, and each effect over its days (a
+  year when it lasts) on the share of daily income its kind touches (all 1, export price 0.6, mines
+  0.45, processing 0.3, port and roads 0.2, power 0.15, farms and water 0.1, research and appeal
+  0.05), less its upkeep. The flat (factor − 1) × 500 per effect took every long cut the rewritten
+  events offer and turned 8 of 9 balanced awards into 6. With it, 8 of 9 again (BALANCE.md, 1.9
+  events rewrite) · scaling GPT's numbers down to suit the old bot (the user asked for bigger
+  stakes; the bot, not the events, misjudged them).

@@ -194,8 +194,11 @@ Windows.
     follows 240 days after it. For the user: move stages four and five a year as well?
 15. Events: GPT's rewrite is in (`docs/v17/events_rewrite/`, 106 events). Its 18 requests for new
     mechanics (node-level pauses, single-road effects, cancellable upkeep, casualty records, and so
-    on: `04_奖惩与开发交接.md`) are not built; GPT wrote fallbacks with today's effects. Playtest the
-    new stakes: GPT's own aim is a net 5–10% of income from events over ten years.
+    on: `04_奖惩与开发交接.md`) are not built; GPT wrote fallbacks with today's effects. Quick
+    harness: bots that weigh event costs by their days keep 8 of 9 balanced awards (median day
+    2,686), and income grows ×3.4 from year 2 to year 6 (×4.2 before the rewrite); with the old flat
+    valuation the bots took every long penalty and 3 of 9 were taken over. Playtest the new stakes:
+    GPT's own aim is a net 5–10% of income from events over ten years.
 16. Payback on one seed: with the new events, `v19_payback` misses the smelter (340 days, band
     120–300) and the food works (335, band 100–220) in year 4 on seed 260129, where before it
     missed only the light iron mine (63, band 70–150). Same proposal as item 9: assert the bands
