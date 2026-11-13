@@ -15,6 +15,7 @@ const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
+const Graphics = preload("res://ui/graphics.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
@@ -51,6 +52,11 @@ const TOP_GOODS: Array[String] = [
 const MONTH_DAYS: float = 30.0
 const COLUMN_LEFT: int = 170
 const COLUMN_WIDTH: int = 300
+## Research notices: width, distance from the top, how many at once, seconds on screen.
+const NOTICE_WIDTH: int = 460
+const NOTICE_TOP: int = 98
+const NOTICE_LIMIT: int = 3
+const NOTICE_SECONDS: float = 8.0
 ## Pages drawn in a module's variant (design.gd); every other page stays neutral.
 const PAGE_VARIANTS: Dictionary = {
 	"research": D.RESEARCH,
@@ -107,6 +113,10 @@ var seed_edit: LineEdit
 var size_option: OptionButton
 var accumulator: float = 0
 var toast_time: float = 0
+## Research notices: one card per finished technology under the top bar, for a few seconds.
+var notices: VBoxContainer
+var research_watch: Dictionary = {}
+var research_seen: int = 0
 var autosave_day: int = 0
 var session_seconds: float = 0
 var sample_frames: Array = []
@@ -120,6 +130,9 @@ var panel_pause: bool = true
 var visual_spin: bool = true
 var visual_day_night: bool = true
 var visual_weather: bool = true
+## Anti-aliasing level (Graphics.AA_LEVELS) and the free-plot rings in the region view.
+var visual_aa: String = Graphics.AA_DEFAULT
+var plot_marks: bool = false
 var resume_on_close: bool = false
 var dev_mode: bool = false
 var modal_root: Control
@@ -139,6 +152,7 @@ var autosave_snapshot: Dictionary = {}
 
 
 func _ready():
+	Graphics.start_choice()
 	Engine.max_fps = 60
 	dev_mode = OS.is_debug_build() or OS.get_cmdline_user_args().has("--dev")
 	sim.new_game(260129, "capital", 1)
@@ -174,7 +188,11 @@ func _ready():
 		visual_spin = bool(preferences.get_value("visual", "spin", true))
 		visual_day_night = bool(preferences.get_value("visual", "day_night", true))
 		visual_weather = bool(preferences.get_value("visual", "weather", true))
+		visual_aa = str(preferences.get_value("visual", "aa", Graphics.AA_DEFAULT))
+		plot_marks = bool(preferences.get_value("visual", "plot_marks", false))
 	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
+	Graphics.apply_anti_aliasing(get_viewport(), visual_aa)
+	map.set_plot_marks(plot_marks)
 	show_menu()
 	var args = OS.get_cmdline_user_args()
 	for a in args:
@@ -321,6 +339,16 @@ func build_shell():
 			collapse.text = "收起" if mission.visible else "展开任务"
 			bottom.offset_top = -94 if mission.visible else -70
 	)
+	notices = VBoxContainer.new()
+	notices.name = "Notices"
+	notices.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	notices.offset_left = -NOTICE_WIDTH / 2.0
+	notices.offset_right = NOTICE_WIDTH / 2.0
+	notices.offset_top = NOTICE_TOP
+	notices.offset_bottom = NOTICE_TOP + NOTICE_LIMIT * 140
+	notices.add_theme_constant_override("separation", 6)
+	notices.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(notices)
 	toast_label = D.label(ui, "", 18, D.GOLD)
 	toast_label.anchor_top = 1
 	toast_label.anchor_bottom = 1
@@ -414,6 +442,72 @@ func _process(delta):
 		toast_time -= delta
 		if toast_time <= 0:
 			toast_label.text = ""
+	_watch_research()
+
+
+## A technology finished since the last frame gets a notice; a new or loaded game only sets the
+## mark, so old work never floods the screen.
+func _watch_research() -> void:
+	var research: Dictionary = sim.state.get("research", {})
+	var done: Array = research.get("completed", [])
+	if not is_same(research, research_watch) or done.size() < research_seen:
+		research_watch = research
+		research_seen = done.size()
+		return
+	while research_seen < done.size():
+		notice_research(str(done[research_seen]))
+		research_seen += 1
+
+
+## 「科研完成：某某」 under the top bar, with what it does; a click opens the research page.
+func notice_research(tech: String) -> void:
+	var spec: Dictionary = sim.config.techs.get(tech, {})
+	if spec.is_empty() or notices == null:
+		return
+	var gift: bool = bool(spec.get("gift", false))
+	var panel := PanelContainer.new()
+	panel.name = "Notice_" + tech
+	panel.add_theme_stylebox_override("panel", D.style("card_on", D.RESEARCH))
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	panel.tooltip_text = "打开科研教育"
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(box)
+	var head := Label.new()
+	head.text = "◆ 获得赠予科技" if gift else "◆ 科研完成"
+	head.add_theme_color_override("font_color", D.GOLD)
+	head.add_theme_font_size_override("font_size", 15)
+	var title := Label.new()
+	title.text = str(spec.name)
+	title.add_theme_font_size_override("font_size", 22)
+	var effect := Label.new()
+	effect.text = str(spec.get("description", ""))
+	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	effect.add_theme_color_override("font_color", D.MUTED)
+	effect.add_theme_font_size_override("font_size", 15)
+	for label: Label in [head, title, effect]:
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(label)
+	panel.gui_input.connect(
+		func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed:
+				open_page("research")
+				panel.queue_free()
+	)
+	notices.add_child(panel)
+	# Above whatever page or dialog is open.
+	notices.get_parent().move_child(notices, -1)
+	while notices.get_child_count() > NOTICE_LIMIT:
+		var oldest: Node = notices.get_child(0)
+		notices.remove_child(oldest)
+		oldest.queue_free()
+	get_tree().create_timer(NOTICE_SECONDS, true).timeout.connect(
+		func():
+			if is_instance_valid(panel):
+				panel.queue_free()
+	)
 
 
 func advance_time(delta: float):
@@ -1409,6 +1503,39 @@ func toggle_visual(key: String) -> void:
 	settings.set_value("visual", "weather", visual_weather)
 	settings.save("user://settings.cfg")
 	open_page("save")
+
+
+## level is one of Graphics.AA_LEVELS; it applies at once.
+func set_anti_aliasing(level: String) -> void:
+	visual_aa = level
+	Graphics.apply_anti_aliasing(get_viewport(), level)
+	var settings = ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("visual", "aa", level)
+	settings.save("user://settings.cfg")
+	open_page("save")
+
+
+func toggle_plot_marks() -> void:
+	plot_marks = not plot_marks
+	map.set_plot_marks(plot_marks)
+	var settings = ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("visual", "plot_marks", plot_marks)
+	settings.save("user://settings.cfg")
+	open_page("save")
+
+
+## Picture quality for the next start (Graphics.STANDARD or Graphics.HIGH).
+func choose_renderer(method: String) -> void:
+	Graphics.choose(method)
+	open_page("save")
+
+
+## Starts the game again with the same arguments, so a new picture quality takes effect.
+func restart_game() -> void:
+	OS.set_restart_on_exit(true, OS.get_cmdline_args())
+	get_tree().quit()
 
 
 func toggle_information():

@@ -4,6 +4,7 @@ const WG = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
 const BuildPage = preload("res://ui/build_page.gd")
+const Graphics = preload("res://ui/graphics.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -1531,6 +1532,51 @@ static func enterprise(g, b):
 	)
 
 
+## Picture quality (the renderer, from the next start) and anti-aliasing (at once).
+static func _quality(g, b) -> void:
+	D.label(b, "画质", 20)
+	D.label(b, Graphics.status_text(), 16, D.GOLD if Graphics.fell_back() else D.MUTED)
+	var choices = D.row(b)
+	var chosen: String = Graphics.chosen()
+	for entry: Array in [
+		[Graphics.STANDARD, "标准画质", "兼容渲染（OpenGL 3.3）：任何显卡都能运行，最省电"],
+		[
+			Graphics.HIGH,
+			"高画质",
+			"Forward+（Vulkan / Direct3D 12）：环境光遮蔽、柔和阴影、泛光和真实路灯，需要较新的显卡。重启游戏后生效；显卡不支持时自动以标准画质运行",
+		],
+	]:
+		var method: String = str(entry[0])
+		var on: bool = chosen == method
+		D.button(
+			choices,
+			str(entry[1]) + (" ✓" if on else ""),
+			func(): g.choose_renderer(method),
+			str(entry[2]),
+			"Render_" + method,
+			"chip_on" if on else "chip"
+		)
+	if Graphics.restart_pending():
+		D.button(choices, "立即重启", g.restart_game, "未保存的进度会丢失：请先存档", "RestartGame", "primary")
+	D.label(b, "抗锯齿", 20)
+	var smoothing = D.row(b)
+	for entry: Array in [
+		[Graphics.AA_OFF, "关", "最快；模型和道路边缘有锯齿"],
+		[Graphics.AA_MEDIUM, "中", "2 倍多重采样"],
+		[Graphics.AA_HIGH, "高", "4 倍多重采样；高画质下另加 SMAA"],
+	]:
+		var level: String = str(entry[0])
+		var on: bool = str(g.visual_aa) == level
+		D.button(
+			smoothing,
+			"抗锯齿：" + str(entry[1]),
+			func(): g.set_anti_aliasing(level),
+			str(entry[2]),
+			"AA_" + level,
+			"chip_on" if on else "chip"
+		)
+
+
 static func settings(g, b):
 	D.label(b, "安全存档 / 独立保存世界与经营状态", 23, D.TEAL)
 	D.label(
@@ -1543,7 +1589,15 @@ static func settings(g, b):
 		18,
 		D.GOLD
 	)
-	D.label(b, "自动存档每 10 个模拟日写入。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。", 18, D.MUTED)
+	D.label(
+		b,
+		(
+			"自动存档每 %d 天（每季度）写入一次。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。"
+			% int(g.sim.progression.time.get("autosave_days", 90))
+		),
+		18,
+		D.MUTED
+	)
 	var r = D.row(b)
 	D.button(r, "保存手动档", func(): g.save_slot(g.SAVE_MANUAL))
 	D.button(r, "读取手动档", func(): g.load_path(g.SAVE_MANUAL))
@@ -1594,6 +1648,14 @@ static func settings(g, b):
 			str(entry[3]),
 			"Visual_" + key
 		)
+	D.button(
+		visuals,
+		"空地块标记：开" if g.plot_marks else "空地块标记：关",
+		g.toggle_plot_marks,
+		"地区视图中用细圈标出所有空闲地块，规划时打开；关闭时只显示矿床的矿石露头和农田",
+		"Visual_plots"
+	)
+	_quality(g, b)
 	D.label(b, "新手引导", 20)
 	var teaching = D.row(b)
 	D.button(teaching, "重新开始新手引导（开始一局引导专用的新游戏）", g.start_tutorial, "当前未保存的进度会丢失", "ReplayTutorial")

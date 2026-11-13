@@ -417,6 +417,11 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue
 		var marker := _sphere(
-			transport_root, points[0], .023, _mat("shipment", Color("ffedc2"), 0, 1, 2), 8, 4
+			transport_root,
+			points[0],
+			CARGO_DOT_GLOBE,
+			_mat("shipment", Color("ffedc2"), 0, 1, CARGO_GLOW),
+			8,
+			4
 		)
 		globe_movers.append(_mover(marker, points, shipment, r, INF))

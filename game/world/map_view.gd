@@ -13,6 +13,13 @@ const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
 const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
 const SUN_ENERGY: float = 1.12
+## Forward+ (高画质) tuning. Colour grade (brightness, contrast, saturation) that brings Forward+
+## to the Compatibility palette; ambient occlusion in the town (radius in units, intensity,
+## power); glow (intensity, bloom, HDR threshold); how far shadow edges soften.
+const HQ_GRADE: Vector3 = Vector3(0.92, 1.12, 1.38)
+const HQ_AO: Vector3 = Vector3(1.2, 1.6, 1.5)
+const HQ_GLOW: Vector3 = Vector3(0.4, 0.0, 1.6)
+const HQ_SHADOW_BLUR: float = 1.3
 
 var environment: Environment
 var fill_light: DirectionalLight3D
@@ -179,6 +186,7 @@ func show_planet() -> void:
 	camera.near = .05
 	camera.far = 700
 	_update_camera(1.0)
+	_apply_mode_quality()
 
 
 func show_flat() -> void:
@@ -195,6 +203,7 @@ func show_flat() -> void:
 	_update_camera(1.0)
 	_update_flat_markers()
 	_update_flat_transport()
+	_apply_mode_quality()
 
 
 func cancel_region_load() -> void:
@@ -215,6 +224,7 @@ func show_region(id: int) -> void:
 	var token: int = region_load_token
 	selected_region = id
 	mode = "region"
+	_apply_mode_quality()
 	planet.visible = false
 	flat_world.visible = false
 	surface.visible = false
@@ -444,6 +454,9 @@ func _animate_region(delta: float) -> void:
 		mats["headlight"].emission_energy_multiplier = 0.4 + night * 3.5
 	if glow_material != null:
 		glow_material.set_shader_parameter("intensity", night * 0.8)
+	for lamp: OmniLight3D in lamp_lights:
+		lamp.light_energy = night * LAMP_ENERGY
+		lamp.visible = night > 0.02
 	if mats.has("smoke"):
 		var shade: float = lerpf(1.0, 0.32, night)
 		mats["smoke"].albedo_color = Color(shade, shade, shade * 1.04, 1.0)
@@ -674,7 +687,43 @@ func _build_environment() -> void:
 	fill.rotation_degrees = Vector3(35, 140, 0)
 	add_child(fill)
 	fill_light = fill
+	_apply_render_quality()
 	_build_stars()
+
+
+## Forward+ (高画质) draws what Compatibility cannot: ambient occlusion where buildings meet the
+## ground, bloom on lit windows and town lights, finer and softer shadows. Forward+ renders in
+## linear light and comes out about a fifth less saturated, so a colour grade keeps one palette
+## across both renderers.
+func _apply_render_quality() -> void:
+	high_quality = RenderingServer.get_current_rendering_method() != "gl_compatibility"
+	if not high_quality:
+		return
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = HQ_GRADE.x
+	environment.adjustment_contrast = HQ_GRADE.y
+	environment.adjustment_saturation = HQ_GRADE.z
+	environment.ssao_radius = HQ_AO.x
+	environment.ssao_intensity = HQ_AO.y
+	environment.ssao_power = HQ_AO.z
+	environment.ssao_detail = 0.5
+	environment.glow_enabled = true
+	environment.glow_intensity = HQ_GLOW.x
+	environment.glow_bloom = HQ_GLOW.y
+	environment.glow_hdr_threshold = HQ_GLOW.z
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	sun_light.shadow_blur = HQ_SHADOW_BLUR
+	sun_light.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	RenderingServer.directional_soft_shadow_filter_set_quality(
+		RenderingServer.SHADOW_QUALITY_SOFT_HIGH
+	)
+	_apply_mode_quality()
+
+
+## Ambient occlusion belongs to the town at its scale; the globe and the flat map do without.
+func _apply_mode_quality() -> void:
+	if environment != null and high_quality:
+		environment.ssao_enabled = mode == "region"
 
 
 func _build_stars() -> void:

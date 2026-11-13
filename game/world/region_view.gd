@@ -34,6 +34,13 @@ const HARBOR_STREET_CLEAR: float = 2.0
 const HARBOR_CLIFF: float = 1.5
 const HARBOR_CLIFF_COST: float = 6.0
 const HARBOR_CROWDED: float = 1000.0
+## Forward+ lamps: how many, how high, how far they reach (times the painted pool's size), their
+## colour and their brightness at full night.
+const MAX_LAMP_LIGHTS: int = 64
+const LAMP_HEIGHT: float = 1.5
+const LAMP_REACH: float = 2.2
+const LAMP_COLOR: Color = Color(1.0, 0.78, 0.52)
+const LAMP_ENERGY: float = 1.6
 const RED_BALL_TECH: String = "red_ball_express"
 const RED_BALL_SHELL: String = "b8322a"
 ## Building roles whose working plants send up steam or smoke.
@@ -43,6 +50,11 @@ const SMOKE_KINDS: Array[String] = ["geothermal", "fission", "fusion", "smelter"
 ## the front of its pad, so nothing drives into it.
 const LANE_OFFSET: float = 3.0
 const PAD_FRONT: float = 2.55
+## Free plots: the radius their marks cover, the width of a planning ring (share of the radius)
+## and the rocks that show a deposit.
+const PLOT_MARK_RADIUS: float = 1.9
+const PLOT_RING_WIDTH: float = 0.07
+const PLOT_ROCKS: int = 3
 const PLOT_COLORS: Dictionary = {
 	"general": Color("8c9a94"),
 	"farm": Color("7f9a5c"),
@@ -77,6 +89,11 @@ var traffic: Traffic
 var region_gates: Array = []
 var smoke_emitters: Array = []
 var glow_material: ShaderMaterial
+## Real lamp lights in Forward+ (高画质), one per street lamp and working building.
+var lamp_lights: Array[OmniLight3D] = []
+## The free-plot rings (shown only when the player turns plot marks on) and that setting.
+var plot_marks_node: MultiMeshInstance3D
+var plot_marks_on: bool = false
 ## Road sections over water in the town being built, joined into runs: one bridge each.
 var bridge_runs: Array = []
 ## The cargo ship of a coastal town: where it sails from and to, and how far it is in its cycle.
@@ -185,7 +202,11 @@ func _draw_free_plots(settlement: Dictionary) -> void:
 	var taken: Dictionary = {}
 	for building: Dictionary in settlement.get("buildings", []):
 		taken[int(building.get("plot", -1))] = true
-	var placed: Array = []
+	var rings: Array = []
+	var patches: Array = []
+	var rocks: Array = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(world.get("seed", 0)) * 7 + selected_region * 131
 	var plots: Array = world.regions[selected_region].get("plots", [])
 	for index: int in range(plots.size()):
 		var plot: Dictionary = plots[index]
@@ -193,27 +214,72 @@ func _draw_free_plots(settlement: Dictionary) -> void:
 			continue
 		if float(plot.get("reserves", 1.0)) <= 0.0:
 			continue
-		var color_key: String = str(plot.get("resource", plot.kind))
+		var color: Color = PLOT_COLORS.get(str(plot.get("resource", plot.kind)), Color.WHITE)
 		var x: float = float(plot.x)
 		var z: float = float(plot.z)
-		placed.append(
-			[
-				Transform3D(Basis.IDENTITY, Vector3(x, _ground(x, z) + .06, z)),
-				Color(PLOT_COLORS.get(color_key, Color.WHITE), .55)
-			]
+		var at := Vector3(x, _ground(x, z), z)
+		var spread := Basis.IDENTITY.scaled(Vector3(PLOT_MARK_RADIUS, 1.0, PLOT_MARK_RADIUS))
+		rings.append(
+			[Transform3D(spread, at + Vector3(0, .06, 0)), Color(color.lightened(.25), .7)]
 		)
-	if placed.is_empty():
-		return
-	var disc := CylinderMesh.new()
-	disc.top_radius = 1.9
-	disc.bottom_radius = 1.9
-	disc.height = .03
-	disc.radial_segments = 6
-	var material := _natural_material("freeplot", 1.0)
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var node: MultiMeshInstance3D = _instanced(disc, material, placed)
-	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	buildings_root.add_child(node)
+		if str(plot.kind) == "farm":
+			patches.append([Transform3D(spread, at + Vector3(0, .04, 0)), Color(color, .3)])
+		elif str(plot.kind) == "deposit":
+			patches.append([Transform3D(spread, at + Vector3(0, .04, 0)), Color(color, .22)])
+			for _rock: int in range(PLOT_ROCKS):
+				var offset := Vector2(rng.randf_range(.2, .95), 0.0).rotated(rng.randf() * TAU)
+				var size: float = rng.randf_range(.16, .3)
+				var turn := Basis(Vector3.UP, rng.randf() * TAU).scaled(
+					Vector3(size, size * .7, size)
+				)
+				var rx: float = x + offset.x
+				var rz: float = z + offset.y
+				rocks.append(
+					[
+						Transform3D(turn, Vector3(rx, _ground(rx, rz) + size * .25, rz)),
+						color.lerp(Color("6f6a63"), .35)
+					]
+				)
+	if not patches.is_empty():
+		var soft: MultiMeshInstance3D = _instanced(_plot_plane(), _plot_material(0.0), patches)
+		soft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		buildings_root.add_child(soft)
+	if not rocks.is_empty():
+		var stone := SphereMesh.new()
+		stone.radius = 1.0
+		stone.height = 1.4
+		stone.radial_segments = 7
+		stone.rings = 3
+		var outcrop: MultiMeshInstance3D = _instanced(
+			stone, _natural_material("plotrock", .95), rocks
+		)
+		buildings_root.add_child(outcrop)
+	plot_marks_node = null
+	if not rings.is_empty():
+		plot_marks_node = _instanced(_plot_plane(), _plot_material(PLOT_RING_WIDTH), rings)
+		plot_marks_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		plot_marks_node.visible = plot_marks_on
+		buildings_root.add_child(plot_marks_node)
+
+
+## Free-plot rings for planning, on or off; the setting holds across towns and rebuilds.
+func set_plot_marks(on: bool) -> void:
+	plot_marks_on = on
+	if plot_marks_node != null and is_instance_valid(plot_marks_node):
+		plot_marks_node.visible = on
+
+
+func _plot_plane() -> PlaneMesh:
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(2.0, 2.0)
+	return plane
+
+
+func _plot_material(ring: float) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = Shaders.shader("plotmark")
+	material.set_shader_parameter("ring", ring)
+	return material
 
 
 func _build_colony() -> void:
@@ -1148,7 +1214,11 @@ func _vehicle_mesh(kind: String) -> ArrayMesh:
 
 ## Pools of lamp light on the ground after dark: one instanced mesh for the whole town.
 func _build_light_pools(pools: Array) -> void:
+	lamp_lights.clear()
 	if pools.is_empty():
+		return
+	if high_quality:
+		_build_lamp_lights(pools)
 		return
 	if glow_material == null:
 		glow_material = ShaderMaterial.new()
@@ -1167,6 +1237,26 @@ func _build_light_pools(pools: Array) -> void:
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.name = "LightPools"
 	buildings_root.add_child(node)
+
+
+## Forward+ lights the town with real lamps (no shadows; Forward+ handles many small lights),
+## where Compatibility paints pools of light on the ground. Their brightness follows the night.
+func _build_lamp_lights(pools: Array) -> void:
+	var lamps := Node3D.new()
+	lamps.name = "LampLights"
+	buildings_root.add_child(lamps)
+	for pool: Array in pools.slice(0, MAX_LAMP_LIGHTS):
+		var at: Vector3 = pool[0]
+		var light := OmniLight3D.new()
+		light.position = Vector3(at.x, _ground(at.x, at.z) + LAMP_HEIGHT, at.z)
+		light.omni_range = float(pool[1]) * LAMP_REACH
+		light.omni_attenuation = 1.6
+		light.light_color = LAMP_COLOR
+		light.light_energy = 0.0
+		light.shadow_enabled = false
+		light.visible = false
+		lamps.add_child(light)
+		lamp_lights.append(light)
 
 
 ## Steam and smoke over a working plant. Light, slow and few: a sign of life, not weather.

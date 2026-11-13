@@ -23,12 +23,38 @@ const APRON_REACH: float = 520.0
 const APRON_TRUE: float = 40.0
 const APRON_SPREAD: float = 0.22
 const APRON_LATITUDE: float = 88.0
-## Every plot is a level terrace cut into the slope: flat to TERRACE_FLAT from its centre, back to
-## the natural ground by TERRACE_EDGE, short of the next plot's terrace.
-const TERRACE_FLAT: float = 2.45
-## Where the softening of tall relief begins to bite, in region units.
-const RELIEF_KNEE: float = 5.0
-const TERRACE_EDGE: float = 3.6
+## Every plot is a level pad graded into the slope: flat to PAD_FLAT from its centre, back to the
+## natural ground by PAD_BLEND along a smooth curve, so no wall or mesa is cut.
+const PAD_FLAT: float = 2.35
+const PAD_BLEND: float = 5.2
+## A pad never sits lower than this above the sea.
+const PAD_ABOVE_SEA: float = 0.35
+## Neighbouring pads' levels are pulled this share toward their mean, this many times.
+const PAD_RELAX: float = 0.5
+const PAD_RELAX_PASSES: int = 2
+## Where the softening of tall relief begins to bite, in region units: the planet's relief is
+## steep at the diorama's scale, so peaks grow on a log curve past this knee.
+const RELIEF_KNEE: float = 3.2
+## Natural ground on generated worlds (1.9 terrain pass): passes of a 1-2-1 blur over the whole
+## landscape grid, which round off facets and stair-step shores; layered noise for detail, weak
+## near water and strong in the hills (frequency per unit, amplitudes in units); ridges on high
+## ground; a beach profile within SHORE_BAND of the sea; inland sites keep their lowest ground
+## INLAND_FLOOR above the sea, so no sea shows there; the town's ground is pulled TOWN_PULL of
+## the way toward its own level inside TOWN_CALM.
+const SMOOTH_PASSES: int = 3
+const DETAIL_FREQUENCY: float = 0.075
+const DETAIL_LOW: float = 0.25
+const DETAIL_HIGH: float = 1.45
+const RIDGE_AMPLITUDE: float = 1.6
+const SHORE_BAND: float = 1.6
+const SHORE_POWER: float = 1.5
+const INLAND_FLOOR: float = 0.45
+const INLAND_DATA_FLOOR: float = 0.0004
+const INLAND_SWELL: float = 0.6
+const TOWN_CALM: Vector2 = Vector2(10.0, 22.0)
+const TOWN_PULL: float = 0.65
+## Detail fades out over the coarse far rings of the landscape, past the field's edge.
+const DETAIL_FADE: Vector2 = Vector2(10.0, 60.0)
 const SLOT_SPACING: float = 6.0
 const RIVER_STEP: float = 0.5
 var field_res: int = int(OLD_FIELD.res)
@@ -205,12 +231,16 @@ static func _slot_key(x: float, z: float) -> Vector2i:
 	return Vector2i(roundi(x / SLOT_SPACING), roundi(z / SLOT_SPACING))
 
 
-## The ground pulled level towards each nearby plot's terrace: exactly level on the pad, back to
-## the natural slope by the terrace's edge. Plots are a slot apart, so only neighbours can reach.
+## The ground graded toward the nearby plots' pads: exactly level on a pad, and between pads a
+## weighted mean of their levels that leans on the nearest one, eased back into the natural
+## slope by PAD_BLEND. Plots are a slot apart, so only neighbours can reach.
 func _terraced(x: float, z: float, height: float) -> float:
 	if plot_levels.is_empty():
 		return height
 	var here: Vector2i = _slot_key(x, z)
+	var weights: float = 0.0
+	var levels: float = 0.0
+	var strongest: float = 0.0
 	for dz: int in [-1, 0, 1]:
 		for dx: int in [-1, 0, 1]:
 			var key := Vector2i(here.x + dx, here.y + dz)
@@ -218,9 +248,57 @@ func _terraced(x: float, z: float, height: float) -> float:
 				continue
 			var plot: Vector3 = plot_levels[key]
 			var d: float = Vector2(x - plot.x, z - plot.z).length()
-			if d < TERRACE_EDGE:
-				height = lerpf(height, plot.y, 1.0 - smoothstep(TERRACE_FLAT, TERRACE_EDGE, d))
-	return height
+			if d <= PAD_FLAT:
+				return plot.y
+			if d >= PAD_BLEND:
+				continue
+			var reach: float = 1.0 - _smoother(PAD_FLAT, PAD_BLEND, d)
+			var weight: float = reach / pow(maxf(d - PAD_FLAT, 0.05), 2.0)
+			weights += weight
+			levels += weight * plot.y
+			strongest = maxf(strongest, reach)
+	if weights <= 0.0:
+		return height
+	return lerpf(height, levels / weights, strongest)
+
+
+## Smootherstep: no kink where a pad's flat meets its slope, nor where the slope meets the land.
+static func _smoother(edge0: float, edge1: float, value: float) -> float:
+	var t: float = clampf((value - edge0) / (edge1 - edge0), 0.0, 1.0)
+	return t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+
+
+## Each pad's level from the natural ground it stands on (the field before pads), averaged over
+## the pad so a single bump does not set it, and kept above the sea.
+func _level_pads() -> void:
+	var sea: float = sea_level()
+	for key: Vector2i in plot_levels:
+		var plot: Vector3 = plot_levels[key]
+		var total: float = _ground(plot.x, plot.z)
+		for step: int in range(6):
+			var at: Vector2 = (
+				Vector2(plot.x, plot.z) + Vector2.RIGHT.rotated(TAU * step / 6.0) * 1.5
+			)
+			total += _ground(at.x, at.y)
+		plot_levels[key] = Vector3(plot.x, maxf(total / 7.0, sea + PAD_ABOVE_SEA), plot.z)
+	# Neighbouring pads lean toward each other, so the steps between them stay low.
+	for _pass: int in range(PAD_RELAX_PASSES):
+		var relaxed: Dictionary = {}
+		for key: Vector2i in plot_levels:
+			var plot: Vector3 = plot_levels[key]
+			var sum: float = 0.0
+			var count: int = 0
+			for offset: Vector2i in [
+				Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+			]:
+				if plot_levels.has(key + offset):
+					sum += float(plot_levels[key + offset].y)
+					count += 1
+			var level: float = plot.y
+			if count > 0:
+				level = lerpf(plot.y, sum / count, PAD_RELAX)
+			relaxed[key] = Vector3(plot.x, maxf(level, sea + PAD_ABOVE_SEA), plot.z)
+		plot_levels = relaxed
 
 
 func _water_height_at(x: float, z: float, margin: float = 1.0) -> float:
@@ -483,8 +561,10 @@ func _build_terrain(token: int) -> bool:
 
 
 ## Generated worlds: the field at its usual resolution inside rings of coarser ground that run on
-## into the haze, all one mesh, so there is no edge, wall or gap anywhere to see. The field's own
-## vertices are exactly where they always were, so heights and plots line up as before.
+## into the haze, all one mesh, so there is no edge, wall or gap anywhere to see. The planet's
+## relief is sampled at every vertex, then shaped as one grid (`_shape_relief`): smoothed, given
+## natural detail and shores, kept dry inland and calm in town. Rivers, lakes and the plots' pads
+## are cut into the field last.
 func _build_landscape(token: int) -> bool:
 	var reg: Dictionary = world.regions[selected_region]
 	_prepare_terraces()
@@ -496,12 +576,14 @@ func _build_landscape(token: int) -> bool:
 	vertices.resize(columns * rows)
 	var colors := PackedColorArray()
 	colors.resize(vertices.size())
-	var heights := PackedFloat32Array()
-	heights.resize((field_res + 1) * (field_res + 1))
+	var relief := PackedFloat32Array()
+	relief.resize(vertices.size())
+	var ridges := PackedFloat32Array()
+	ridges.resize(vertices.size())
 	var forests := PackedFloat32Array()
-	forests.resize(heights.size())
+	forests.resize((field_res + 1) * (field_res + 1))
+	var inland: bool = not bool(reg.get("coast", false))
 	terrain_unique_samples = 0
-	field_has_sea = false
 	for row: int in range(rows):
 		var z: float = zs[row]
 		var inner_z: int = row - APRON_RINGS
@@ -515,30 +597,56 @@ func _build_landscape(token: int) -> bool:
 			var ll: Vector2 = _local_coordinate(at.x, at.y) if inner else _apron_coordinate(at)
 			var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
 			terrain_unique_samples += 1
-			field_has_sea = field_has_sea or not bool(g.land)
-			var data: Color = Shaders.encode(
-				float(g.height), float(g.temperature), float(g.rainfall), 0.0
-			)
-			var height: float = 0.0
 			var index: int = row * columns + column
+			relief[index] = _lift((float(g.height) - region_ground) * 30.0)
+			ridges[index] = float(g.get("ridge", 0.0))
+			# Inland ground is coloured as land wherever the planet below dips under the sea.
+			var shown: float = float(g.height)
+			if inland:
+				shown = maxf(shown, INLAND_DATA_FLOOR)
+			var data: Color = Shaders.encode(shown, float(g.temperature), float(g.rainfall), 0.0)
 			if inner:
 				data.b = 1.0 if is_finite(_water_height_at(x, z, 1.9)) else 0.0
-				height = _ground_from_geo(x, z, g, ll)
-				var cell: int = inner_z * (field_res + 1) + inner_x
-				heights[cell] = height
-				forests[cell] = _forest_chance(g)
+				forests[inner_z * (field_res + 1) + inner_x] = _forest_chance(g)
 			else:
 				data.b = 0.0
-				height = _relief_from_geo(at.x, at.y, g, ll)
 			colors[index] = data
-			vertices[index] = Vector3(x, height, z)
 		if row % rows_per_frame == 0:
-			region_progress.emit(true, float(row) / rows * .9)
+			region_progress.emit(true, float(row) / rows * .8)
 			await get_tree().process_frame
 			if token != region_load_token:
 				return false
+	field_has_sea = not inland
+	if not await _shape_relief(relief, ridges, xs, zs, inland, token):
+		return false
+	# The ground's colours soften with it, so old shores leave no hard edge between patches.
+	for _pass: int in range(SMOOTH_PASSES):
+		_blur_colors(colors, columns, rows)
+	var heights := PackedFloat32Array()
+	heights.resize((field_res + 1) * (field_res + 1))
+	for inner_z: int in range(field_res + 1):
+		for inner_x: int in range(field_res + 1):
+			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
+			relief[index] = _carve_water(
+				xs[inner_x + APRON_RINGS], zs[inner_z + APRON_RINGS], relief[index]
+			)
+			heights[inner_z * (field_res + 1) + inner_x] = relief[index]
+	# The pads take their level from the natural ground, then are graded into it.
+	height_field = heights
+	_level_pads()
+	for inner_z: int in range(field_res + 1):
+		for inner_x: int in range(field_res + 1):
+			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
+			var x: float = xs[inner_x + APRON_RINGS]
+			var z: float = zs[inner_z + APRON_RINGS]
+			relief[index] = _terraced(x, z, relief[index])
+			heights[inner_z * (field_res + 1) + inner_x] = relief[index]
 	height_field = heights
 	forest_field = forests
+	for row: int in range(rows):
+		for column: int in range(columns):
+			var index: int = row * columns + column
+			vertices[index] = Vector3(xs[column], relief[index], zs[row])
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for row: int in range(rows - 1):
@@ -568,6 +676,164 @@ func _build_landscape(token: int) -> bool:
 	_build_sea()
 	_build_nature()
 	return true
+
+
+## Natural ground from the sampled relief, over the whole landscape grid at once: smoothed, given
+## layered detail (more in hills, little near water or far out), shaped into beaches at the
+## coast or held above the sea inland, and calmer around the town. False if the load was dropped.
+func _shape_relief(
+	relief: PackedFloat32Array,
+	ridges: PackedFloat32Array,
+	xs: PackedFloat32Array,
+	zs: PackedFloat32Array,
+	inland: bool,
+	token: int
+) -> bool:
+	var columns: int = xs.size()
+	var rows: int = zs.size()
+	for _pass: int in range(SMOOTH_PASSES):
+		_blur_rows(relief, columns, rows)
+		_blur_columns(relief, columns, rows)
+	await get_tree().process_frame
+	if token != region_load_token:
+		return false
+	var seed_value: int = int(world.get("seed", 0)) * 31 + selected_region * 977
+	var detail := FastNoiseLite.new()
+	detail.seed = seed_value
+	detail.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	detail.frequency = DETAIL_FREQUENCY
+	detail.fractal_type = FastNoiseLite.FRACTAL_FBM
+	detail.fractal_octaves = 4
+	var ridged := FastNoiseLite.new()
+	ridged.seed = seed_value + 7
+	ridged.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	ridged.frequency = DETAIL_FREQUENCY * 0.6
+	ridged.fractal_type = FastNoiseLite.FRACTAL_RIDGED
+	ridged.fractal_octaves = 3
+	var sea: float = sea_level()
+	for row: int in range(rows):
+		var z: float = zs[row]
+		for column: int in range(columns):
+			var x: float = xs[column]
+			var index: int = row * columns + column
+			var beyond: float = maxf(absf(x) - half_width, absf(z) - half_depth)
+			var near: float = 1.0 - smoothstep(DETAIL_FADE.x, DETAIL_FADE.y, beyond)
+			var h: float = relief[index]
+			var above: float = h - sea
+			var amount: float = lerpf(DETAIL_LOW, DETAIL_HIGH, smoothstep(0.6, 6.0, absf(above)))
+			h += detail.get_noise_2d(x, z) * amount * near
+			var crest: float = (ridged.get_noise_2d(x, z) + 1.0) * 0.5
+			h += (
+				crest
+				* RIDGE_AMPLITUDE
+				* smoothstep(3.0, 8.0, above)
+				* (0.5 + clampf(ridges[index], 0.0, 1.0))
+				* near
+			)
+			h = _shore(h, sea, inland)
+			if inland:
+				# Low plains where the planet has sea: gentle swells rather than a dead-flat floor.
+				var low: float = 1.0 - smoothstep(0.0, 1.2, h - sea - INLAND_FLOOR)
+				h += (
+					(detail.get_noise_2d(x * 0.6 + 53.0, z * 0.6) + 0.6) * INLAND_SWELL * low * near
+				)
+			relief[index] = h
+		if row % (rows_per_frame * 4) == 0:
+			await get_tree().process_frame
+			if token != region_load_token:
+				return false
+	_calm_town(relief, xs, zs, sea)
+	return true
+
+
+## Beaches and shallows at the coast: the ground flattens as it meets the water and deepens
+## gently. Inland, the lowest ground is held above the sea on a soft floor.
+static func _shore(height: float, sea: float, inland: bool) -> float:
+	if inland:
+		var lift: float = height - sea - INLAND_FLOOR
+		return sea + INLAND_FLOOR + log(1.0 + exp(2.0 * lift)) / 2.0
+	var depth: float = height - sea
+	if absf(depth) >= SHORE_BAND:
+		return height
+	return sea + signf(depth) * SHORE_BAND * pow(absf(depth) / SHORE_BAND, SHORE_POWER)
+
+
+## The town's ground is pulled toward its own level, so plots sit on gentle land rather than on
+## crests and gullies. The level itself stays above the sea.
+func _calm_town(
+	relief: PackedFloat32Array, xs: PackedFloat32Array, zs: PackedFloat32Array, sea: float
+) -> void:
+	var columns: int = xs.size()
+	var centre_x: int = APRON_RINGS + int(field_res / 2.0)
+	var centre_z: int = APRON_RINGS + int(field_res / 2.0)
+	var level: float = maxf(relief[centre_z * columns + centre_x], sea + PAD_ABOVE_SEA + 0.15)
+	var town := Vector2(_town_offset(), 0.0)
+	for row: int in range(zs.size()):
+		for column: int in range(columns):
+			var distance: float = Vector2(xs[column], zs[row]).distance_to(town)
+			if distance >= TOWN_CALM.y:
+				continue
+			var weight: float = (1.0 - smoothstep(TOWN_CALM.x, TOWN_CALM.y, distance)) * TOWN_PULL
+			var index: int = row * columns + column
+			relief[index] = lerpf(relief[index], level, weight)
+
+
+static func _blur_colors(values: PackedColorArray, columns: int, rows: int) -> void:
+	for row: int in range(rows):
+		var base: int = row * columns
+		var previous: Color = values[base]
+		for column: int in range(1, columns - 1):
+			var here: Color = values[base + column]
+			values[base + column] = (previous + here * 2.0 + values[base + column + 1]) * 0.25
+			previous = here
+	for column: int in range(columns):
+		var previous: Color = values[column]
+		for row: int in range(1, rows - 1):
+			var index: int = row * columns + column
+			var here: Color = values[index]
+			values[index] = (previous + here * 2.0 + values[index + columns]) * 0.25
+			previous = here
+
+
+static func _blur_rows(values: PackedFloat32Array, columns: int, rows: int) -> void:
+	for row: int in range(rows):
+		var base: int = row * columns
+		var previous: float = values[base]
+		for column: int in range(1, columns - 1):
+			var here: float = values[base + column]
+			values[base + column] = (previous + here * 2.0 + values[base + column + 1]) * 0.25
+			previous = here
+
+
+static func _blur_columns(values: PackedFloat32Array, columns: int, rows: int) -> void:
+	for column: int in range(columns):
+		var previous: float = values[column]
+		for row: int in range(1, rows - 1):
+			var index: int = row * columns + column
+			var here: float = values[index]
+			values[index] = (previous + here * 2.0 + values[index + columns]) * 0.25
+			previous = here
+
+
+## Rivers and lakes cut their channels and basins into the shaped field.
+func _carve_water(x: float, z: float, height: float) -> float:
+	var p := Vector2(x, z)
+	for segment in local_river_segments:
+		var a: Vector2 = segment.a
+		var b: Vector2 = segment.b
+		var t: float = clampf((p - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
+		var distance: float = p.distance_to(a.lerp(b, t))
+		var width: float = segment.width
+		if distance < width * 2:
+			var water: float = lerpf(segment.ya, segment.yb, t)
+			height = lerpf(water - .28, height, smoothstep(width * .72, width * 2, distance))
+	for lake in local_lakes:
+		var distance: float = p.distance_to(lake.center)
+		if distance < lake.radius * 1.25:
+			height = lerpf(
+				lake.height - .4, height, smoothstep(lake.radius * .8, lake.radius * 1.25, distance)
+			)
+	return height
 
 
 ## One axis of the landscape grid: the field's own vertices, with rings outside that grow wider

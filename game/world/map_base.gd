@@ -10,6 +10,11 @@ const SHUTTLE_COLOR: Color = Color("8fd8ee")
 const SHUTTLE_ARC: float = 0.07
 const Geo = preload("res://world/world_gen.gd")
 const Shaders = preload("res://world/shaders.gd")
+## Cargo on the way: the size of its dot on the globe and on the flat map, and how brightly it
+## glows. Small, so a busy road reads as a line of traffic rather than a string of beads.
+const CARGO_DOT_GLOBE: float = 0.013
+const CARGO_DOT_FLAT: float = 0.018
+const CARGO_GLOW: float = 1.2
 const NightLights = preload("res://world/night_lights.gd")
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
@@ -46,6 +51,8 @@ var lights_signature: String = ""
 var sky: VisualClock = VisualClock.new()
 ## Player settings for the moving map; the defaults are what a new player sees.
 var day_night_enabled: bool = true
+## Forward+ is running (高画质): real lamp lights, ambient occlusion and bloom; set at setup.
+var high_quality: bool = false
 var weather_enabled: bool = true
 var sun_light: DirectionalLight3D
 var flat_shader: ShaderMaterial

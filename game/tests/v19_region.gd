@@ -3,7 +3,8 @@ extends SceneTree
 ## plot's pad is level, the landing pods stand on a cell of their own, and no vehicle route between
 ## stops or out to a gate passes through a building or stops inside one. A plot that comes to
 ## light later gets its terrace the next time the region is shown. Headless; older worlds keep
-## their ground to the vertex (world_v16_terrain_identity).
+## their ground to the vertex (world_v16_terrain_identity). Since the terrain pass: no walls or mesas,
+## no hexagon plates on free plots, and no sea at inland sites.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -18,6 +19,9 @@ const KINDS: Array[String] = [
 const PAD: float = 2.3
 const CLEAR_OTHER: float = 2.7
 const CLEAR_OWN: float = 2.5
+## Ground steps between neighbouring field vertices: anywhere, and near the town.
+const MAX_STEP: float = 1.6
+const MAX_TOWN_STEP: float = 0.8
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -56,7 +60,10 @@ func run() -> void:
 	_pads(map, sim, site)
 	_pods(map, sim, site)
 	_routes(map, sim, site)
+	_natural_ground(map)
+	_plot_marks(map)
 	await _revealed(map, sim, site)
+	await _inland(map, sim)
 	root.remove_child(map)
 	map.free()
 	print("V19_REGION_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
@@ -81,6 +88,69 @@ func _landscape(map: Node3D) -> void:
 	check(
 		map.height_field.size() == (map.field_res + 1) * (map.field_res + 1),
 		"the field keeps its grid"
+	)
+
+
+## No walls or mesas: between neighbouring vertices of the field the ground never jumps by more
+## than a steep hillside would (vertices are about 0.86 units apart), and the town's ground is
+## gentler still.
+func _natural_ground(map: Node3D) -> void:
+	var res: int = map.field_res
+	var worst: float = 0.0
+	var worst_town: float = 0.0
+	for iz: int in range(res):
+		for ix: int in range(res):
+			var index: int = iz * (res + 1) + ix
+			var step: float = maxf(
+				absf(map.height_field[index + 1] - map.height_field[index]),
+				absf(map.height_field[index + res + 1] - map.height_field[index])
+			)
+			worst = maxf(worst, step)
+			var x: float = (float(ix) / res - .5) * map.field_width
+			var z: float = (float(iz) / res - .5) * map.field_depth
+			if Vector2(x, z).length() < map.TOWN_CALM.x:
+				worst_town = maxf(worst_town, step)
+	print("INFO steepest step %.2f, in town %.2f" % [worst, worst_town])
+	check(worst < MAX_STEP, "no wall anywhere in the field (steepest step %.2f)" % worst)
+	check(worst_town < MAX_TOWN_STEP, "the town stands on gentle ground (%.2f)" % worst_town)
+	var hexagons: int = 0
+	for node: Node in map.buildings_root.find_children("*", "MultiMeshInstance3D", true, false):
+		var mesh: Mesh = (node as MultiMeshInstance3D).multimesh.mesh
+		if mesh is CylinderMesh and (mesh as CylinderMesh).radial_segments == 6:
+			hexagons += 1
+	check(hexagons == 0, "no hexagon plates on the free plots")
+
+
+## Free-plot rings are for planning: hidden unless the player turns them on.
+func _plot_marks(map: Node3D) -> void:
+	var marks: Node3D = map.plot_marks_node
+	check(marks != null and not marks.visible, "free-plot rings are hidden by default")
+	map.set_plot_marks(true)
+	check(marks != null and marks.visible, "and shown when plot marks are on")
+	map.set_plot_marks(false)
+
+
+## An inland site shows no sea: no sea plane, and its lowest ground stays above the sea's level.
+func _inland(map: Node3D, sim: RefCounted) -> void:
+	var inland: int = -1
+	for reg: Dictionary in sim.state.world.regions:
+		if not bool(reg.coast) and sim.settlement(int(reg.id)).is_empty():
+			inland = int(reg.id)
+			break
+	check(inland >= 0, "the world has an inland site")
+	if inland < 0:
+		return
+	map.show_planet()
+	map.show_region(inland)
+	while map.region_busy:
+		await process_frame
+	check(not map.field_has_sea, "an inland site draws no sea")
+	var lowest: float = INF
+	for height: float in map.height_field:
+		lowest = minf(lowest, height)
+	check(
+		lowest > map.sea_level(),
+		"and its ground stays above the sea (lowest %.2f, sea %.2f)" % [lowest, map.sea_level()]
 	)
 
 

@@ -18,6 +18,7 @@
     {"name": "v19_ui", "script": "res://tests/v19_ui.gd", "success": "V19_UI_RESULT checks=\\d+ failures=0"},
     {"name": "v19_region", "script": "res://tests/v19_region.gd", "success": "V19_REGION_RESULT checks=\\d+ failures=0"},
     {"name": "v19_transport", "script": "res://tests/v19_transport.gd", "success": "V19_TRANSPORT_RESULT checks=\\d+ failures=0"},
+    {"name": "v19_graphics", "script": "res://tests/v19_graphics.gd", "success": "V19_GRAPHICS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

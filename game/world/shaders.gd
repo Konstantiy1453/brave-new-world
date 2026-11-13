@@ -277,6 +277,31 @@ void fragment() {
 }
 """
 
+## A free plot on the ground, in its kind's colour from the instance: a soft patch that fades
+## out from the centre, or with `ring` > 0 a thin ring of that width (plot marks for planning).
+const PLOTMARK_CODE: String = """
+shader_type spatial;
+render_mode blend_mix, depth_draw_never, cull_disabled;
+uniform float ring = 0.0;
+varying vec4 tint;
+
+void vertex() {
+	tint = COLOR;
+}
+
+void fragment() {
+	float r = length(UV - vec2(0.5)) * 2.0;
+	float a = 1.0 - smoothstep(0.3, 1.0, r);
+	if (ring > 0.0) {
+		a = smoothstep(1.0 - ring - 0.06, 1.0 - ring, r) * (1.0 - smoothstep(0.94, 1.0, r));
+	}
+	ALBEDO = tint.rgb;
+	ALPHA = a * tint.a;
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.0;
+}
+"""
+
 ## A soft pool of lamp light on the ground; `intensity` follows the night at the site.
 const GLOW_CODE: String = """
 shader_type spatial;
@@ -344,6 +369,8 @@ static func shader(kind: String) -> Shader:
 			code = FOOTPRINT_CODE
 		"glow":
 			code = GLOW_CODE
+		"plotmark":
+			code = PLOTMARK_CODE
 		"water":
 			code = WATER_CODE
 		_:
