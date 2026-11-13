@@ -4,7 +4,8 @@ extends SceneTree
 ## stops or out to a gate passes through a building or stops inside one. A plot that comes to
 ## light later gets its terrace the next time the region is shown. Headless; older worlds keep
 ## their ground to the vertex (world_v16_terrain_identity). Since the terrain pass: no walls or mesas,
-## no hexagon plates on free plots, and no sea at inland sites.
+## no hexagon plates on free plots, no sea at inland sites, and no ground lying close to the sea's
+## surface (it flickered against it).
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -63,6 +64,7 @@ func run() -> void:
 	_natural_ground(map)
 	_plot_marks(map)
 	await _revealed(map, sim, site)
+	await _waterline(map, sim)
 	await _inland(map, sim)
 	root.remove_child(map)
 	map.free()
@@ -128,6 +130,46 @@ func _plot_marks(map: Node3D) -> void:
 	map.set_plot_marks(true)
 	check(marks != null and marks.visible, "and shown when plot marks are on")
 	map.set_plot_marks(false)
+
+
+## Ground and sea never lie close together, where they flickered against each other as the camera
+## moved: at a coastal site every field vertex stands a low bank above the sea or well below it,
+## the field has both, and the town view keeps its own, finer near plane.
+func _waterline(map: Node3D, sim: RefCounted) -> void:
+	check(
+		is_equal_approx(map.camera.near, map.REGION_NEAR),
+		"the town view uses its own near plane (%.2f)" % map.camera.near
+	)
+	if not map.field_has_sea:
+		var coastal: int = -1
+		for reg: Dictionary in sim.state.world.regions:
+			if bool(reg.coast):
+				coastal = int(reg.id)
+				break
+		check(coastal >= 0, "the world has a coastal site")
+		if coastal < 0:
+			return
+		map.show_planet()
+		map.show_region(coastal)
+		while map.region_busy:
+			await process_frame
+	check(map.field_has_sea, "a coastal site draws the sea")
+	var sea: float = map.sea_level()
+	var closest: float = INF
+	var land: int = 0
+	var water: int = 0
+	for height: float in map.height_field:
+		closest = minf(closest, absf(height - sea))
+		if height > sea:
+			land += 1
+		else:
+			water += 1
+	print("INFO coastal field: %d vertices above the sea, %d below" % [land, water])
+	check(land > 0 and water > 0, "the field has a shore")
+	check(
+		closest >= map.WATERLINE_LIP * 0.99,
+		"no ground lies within %.2f of the sea (closest %.3f)" % [map.WATERLINE_LIP, closest]
+	)
 
 
 ## An inland site shows no sea: no sea plane, and its lowest ground stays above the sea's level.

@@ -12,6 +12,10 @@ const REGION_DAY_AIR: Color = Color("6b8291")
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
 const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
+## The town view's near clip plane. Its camera orbits 31 units or more from its pivot and at least
+## 7 units above it, so nothing comes this close; the depth buffer is ten times finer than with the
+## globe's 0.05, and ground and water no longer flicker where they meet.
+const REGION_NEAR: float = 0.5
 const SUN_ENERGY: float = 1.12
 ## Forward+ (高画质) tuning. Colour grade (brightness, contrast, saturation) that brings Forward+
 ## to the Compatibility palette; ambient occlusion in the town (radius in units, intensity,
@@ -262,6 +266,7 @@ func show_region(id: int) -> void:
 	camera_pivot = Vector3.ZERO
 	camera.fov = 43
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.near = REGION_NEAR
 	camera.far = 700
 	_update_camera(1.0)
 	if not last_region_cached:

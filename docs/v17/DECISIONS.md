@@ -618,3 +618,20 @@ rewrite goes to GPT in parallel.
 - The events' rewrite is GPT's (`docs/superpowers/plans/2026-11-13-v19-events-rewrite-sheet.md`,
   branch `v17-events`); Claude leaves `events.json` alone meanwhile.
 
+## 1.9: the coast that jumped (2026-11-13, after the preview)
+
+The user: where the sea meets the land, the land jumps; dropped frames or something else?
+
+- It was z-fighting, not frame time. The natural-terrain pass made beaches meet the flat sea plane at a
+  tangent (`SHORE_POWER` 1.5), and the town view kept the globe's near plane of 0.05, so land and water
+  lay within the depth buffer's precision of each other over whole strips of coast, worst far out. A
+  probe that renders each view twice with the camera turned by 0.0015 rad counted 10,756 land/water
+  flips over seven views (the same view rendered twice: 2).
+- Fix: the final ground keeps clear of the sea's level (`_clear_waterline`): land within 0.3 above
+  it is lifted by up to 0.08 into a low bank; the hidden seabed below it drops at least 0.3, or 0.12 of
+  the grid's cell in the coarse far rings, so every shore crosses the water at a slope of a tenth or
+  more. The town view sets its own near plane, 0.5 (its camera stays 31 units or more from its pivot
+  and 7 or more above it): a depth buffer ten times finer. Pads (0.35 above the sea) keep their level;
+  1.6 worlds are untouched. · A depth bias in the water shader (differs between renderers, and ground
+  within the bias would still flicker) · a transparent sea (sorting, and the beaches would still
+  flicker) · steeper beaches everywhere (the user asked for gentle shores).

@@ -53,6 +53,16 @@ const INLAND_DATA_FLOOR: float = 0.0004
 const INLAND_SWELL: float = 0.6
 const TOWN_CALM: Vector2 = Vector2(10.0, 22.0)
 const TOWN_PULL: float = 0.65
+## The ground keeps clear of the sea's flat surface (`_clear_waterline`), because ground and water
+## within the depth buffer's precision of each other flicker as the camera moves. Land up to
+## WATERLINE_BAND above the sea is lifted by up to WATERLINE_LIP (a low bank; pads stand higher,
+## at PAD_ABOVE_SEA, and keep their level). Seabed drops to at least SEABED_DROP below the sea,
+## or SEABED_SLOPE of the grid's cell where the far rings are coarse, so even there the shore
+## crosses the water at a slope of a tenth or more.
+const WATERLINE_LIP: float = 0.08
+const WATERLINE_BAND: float = 0.3
+const SEABED_DROP: float = 0.3
+const SEABED_SLOPE: float = 0.12
 ## Detail fades out over the coarse far rings of the landscape, past the field's edge.
 const DETAIL_FADE: Vector2 = Vector2(10.0, 60.0)
 const SLOT_SPACING: float = 6.0
@@ -640,6 +650,11 @@ func _build_landscape(token: int) -> bool:
 			var x: float = xs[inner_x + APRON_RINGS]
 			var z: float = zs[inner_z + APRON_RINGS]
 			relief[index] = _terraced(x, z, relief[index])
+	if field_has_sea:
+		_clear_waterline(relief, xs, zs, sea_level())
+	for inner_z: int in range(field_res + 1):
+		for inner_x: int in range(field_res + 1):
+			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
 			heights[inner_z * (field_res + 1) + inner_x] = relief[index]
 	height_field = heights
 	forest_field = forests
@@ -756,6 +771,36 @@ static func _shore(height: float, sea: float, inland: bool) -> float:
 	if absf(depth) >= SHORE_BAND:
 		return height
 	return sea + signf(depth) * SHORE_BAND * pow(absf(depth) / SHORE_BAND, SHORE_POWER)
+
+
+## Every shoreline crosses the water steeply, on the final ground (after the town's calm, the
+## rivers and the pads): land just above the sea is lifted into a low bank, and seabed just below
+## it drops away, by at least a set part of the grid's cell where the far rings are coarse. The
+## seabed is hidden under the opaque sea, so its drop changes nothing to see but where the bank
+## meets the water.
+static func _clear_waterline(
+	relief: PackedFloat32Array, xs: PackedFloat32Array, zs: PackedFloat32Array, sea: float
+) -> void:
+	var columns: int = xs.size()
+	for row: int in range(zs.size()):
+		var cell_z: float = _cell(zs, row)
+		for column: int in range(columns):
+			var index: int = row * columns + column
+			var depth: float = relief[index] - sea
+			if depth >= WATERLINE_BAND:
+				continue
+			if depth >= 0.0:
+				relief[index] += WATERLINE_LIP * (1.0 - smoothstep(0.0, WATERLINE_BAND, depth))
+				continue
+			var drop: float = maxf(SEABED_DROP, SEABED_SLOPE * maxf(_cell(xs, column), cell_z))
+			relief[index] = minf(relief[index], sea - drop)
+
+
+## The widest gap from a grid line to its neighbours.
+static func _cell(axis: PackedFloat32Array, index: int) -> float:
+	var before: float = axis[index] - axis[index - 1] if index > 0 else 0.0
+	var after: float = axis[index + 1] - axis[index] if index < axis.size() - 1 else 0.0
+	return maxf(before, after)
 
 
 ## The town's ground is pulled toward its own level, so plots sit on gentle land rather than on
