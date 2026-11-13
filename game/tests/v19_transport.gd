@@ -350,7 +350,7 @@ func _gift_events() -> void:
 	check(not inst.is_empty(), "the offer opens")
 	var view: Dictionary = Events.view(sim)
 	var text: String = JSON.stringify(view)
-	check(text.contains("车头上的红球"), "the card shows")
+	check(text.contains(str(defs.red_ball_loop.nodes.start.title)), "the card shows")
 	check(
 		sim.act("event_v2", {"instance_id": inst.instance_id, "choice": "trial"}) == "",
 		"the trial is funded"

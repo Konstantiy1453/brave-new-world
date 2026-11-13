@@ -51,4 +51,20 @@ func _init() -> void:
 		" audit=",
 		sim.audit()
 	)
-	quit(0 if inst.ending == "准时交付" and inst.order.paid == 110 and sim.audit().is_empty() else 1)
+	# The small order pays its amount at its price, as the data sets them.
+	var small: Dictionary = {}
+	for option: Dictionary in events.definitions().definitions.industry.nodes.start.choices:
+		if option.id == "small":
+			small = option.order
+	var due: float = float(small.amount) * float(small.price)
+	quit(
+		(
+			0
+			if (
+				inst.ending == "准时交付"
+				and is_equal_approx(float(inst.order.paid), due)
+				and sim.audit().is_empty()
+			)
+			else 1
+		)
+	)
