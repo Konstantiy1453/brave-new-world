@@ -627,11 +627,19 @@ The user: where the sea meets the land, the land jumps; dropped frames or someth
   lay within the depth buffer's precision of each other over whole strips of coast, worst far out. A
   probe that renders each view twice with the camera turned by 0.0015 rad counted 10,756 land/water
   flips over seven views (the same view rendered twice: 2).
-- Fix: the final ground keeps clear of the sea's level (`_clear_waterline`): land within 0.3 above
-  it is lifted by up to 0.08 into a low bank; the hidden seabed below it drops at least 0.3, or 0.12 of
-  the grid's cell in the coarse far rings, so every shore crosses the water at a slope of a tenth or
-  more. The town view sets its own near plane, 0.5 (its camera stays 31 units or more from its pivot
-  and 7 or more above it): a depth buffer ten times finer. Pads (0.35 above the sea) keep their level;
-  1.6 worlds are untouched. · A depth bias in the water shader (differs between renderers, and ground
-  within the bias would still flicker) · a transparent sea (sorting, and the beaches would still
-  flicker) · steeper beaches everywhere (the user asked for gentle shores).
+- Fix: the beach profile keeps a straight share (`SHORE_LINEAR` 0.35), so the ground crosses the
+  waterline at a slope instead of touching it; on the final ground a smooth odd curve moves heights
+  within 0.3 of the sea away from it by up to 0.1 (`_clear_waterline`, slope ×3 at the waterline).
+  The town view sets its own near plane, 0.5 (its camera stays 31 units or more from its pivot and 7
+  or more above it): a depth buffer ten times finer. Measured on the field of seed 260129's first
+  coastal site: the gentlest twentieth of the crossings went from slope 0.06 to 0.21; with the near
+  plane moved 3% (which moves nothing on screen), land/water flips over seven views went from 4,660
+  to 563, the rest on interface text. Pads (0.35 above the sea) keep their level; 1.6 worlds are
+  untouched.
+- First tried, and replaced the same day: a fixed lift of 0.08 for land and a drop of 0.3 or more for
+  the seabed. It stopped the flicker as well, but every crossing then sat at the same fraction of its
+  grid edge and the coast snapped into steps (crossing spread 0.14 against 0.26–0.32);
+  `v19_region` now checks both the slope and the spread.
+- Rejected: a depth bias in the water shader (it differs between renderers, and ground within the
+  bias would still flicker); a transparent sea (sorting, and the beaches would still flicker); steeper
+  beaches everywhere (the user asked for gentle shores).

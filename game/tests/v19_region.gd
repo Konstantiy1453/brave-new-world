@@ -23,6 +23,11 @@ const CLEAR_OWN: float = 2.5
 ## Ground steps between neighbouring field vertices: anywhere, and near the town.
 const MAX_STEP: float = 1.6
 const MAX_TOWN_STEP: float = 0.8
+## Where the ground crosses the sea's level between neighbouring field vertices: the gentlest
+## twentieth of the crossings at least this steep, and where along the edge they cross spread at
+## least this much (evenly spread is 0.29; a coast snapped to the grid measured 0.14).
+const MIN_SHORE_SLOPE: float = 0.15
+const MIN_SHORE_SPREAD: float = 0.2
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -133,8 +138,10 @@ func _plot_marks(map: Node3D) -> void:
 
 
 ## Ground and sea never lie close together, where they flickered against each other as the camera
-## moved: at a coastal site every field vertex stands a low bank above the sea or well below it,
-## the field has both, and the town view keeps its own, finer near plane.
+## moved: at a coastal site the ground crosses the sea's level at a slope between neighbouring
+## vertices (the tangent beaches of the first terrain pass crossed at 0.06 and flickered), the
+## coast keeps its own shape between the grid lines (a fixed lift snapped it into steps, every
+## crossing at the same fraction of the edge), and the town view keeps its own, finer near plane.
 func _waterline(map: Node3D, sim: RefCounted) -> void:
 	check(
 		is_equal_approx(map.camera.near, map.REGION_NEAR),
@@ -154,21 +161,47 @@ func _waterline(map: Node3D, sim: RefCounted) -> void:
 		while map.region_busy:
 			await process_frame
 	check(map.field_has_sea, "a coastal site draws the sea")
+	var res: int = map.field_res
+	var field: PackedFloat32Array = map.height_field
 	var sea: float = map.sea_level()
-	var closest: float = INF
-	var land: int = 0
-	var water: int = 0
-	for height: float in map.height_field:
-		closest = minf(closest, absf(height - sea))
-		if height > sea:
-			land += 1
-		else:
-			water += 1
-	print("INFO coastal field: %d vertices above the sea, %d below" % [land, water])
-	check(land > 0 and water > 0, "the field has a shore")
+	var slopes: Array[float] = []
+	var fractions: Array[float] = []
+	for iz: int in range(res + 1):
+		for ix: int in range(res + 1):
+			var here: float = field[iz * (res + 1) + ix]
+			for step: Vector2i in [Vector2i(1, 0), Vector2i(0, 1)]:
+				if ix + step.x > res or iz + step.y > res:
+					continue
+				var there: float = field[(iz + step.y) * (res + 1) + ix + step.x]
+				if (here - sea) * (there - sea) >= 0.0:
+					continue
+				var spacing: float = map.field_width / res if step.x == 1 else map.field_depth / res
+				slopes.append(absf(here - there) / spacing)
+				fractions.append((maxf(here, there) - sea) / absf(here - there))
+	check(slopes.size() >= 20, "the field has a shore (%d crossings)" % slopes.size())
+	if slopes.size() < 20:
+		return
+	slopes.sort()
+	var gentle: float = slopes[int(slopes.size() * 0.05)]
+	var mean: float = 0.0
+	for value: float in fractions:
+		mean += value
+	mean /= fractions.size()
+	var spread: float = 0.0
+	for value: float in fractions:
+		spread += (value - mean) * (value - mean)
+	spread = sqrt(spread / fractions.size())
+	print(
+		(
+			"INFO shore: %d crossings, slope p5 %.3f, crossing spread %.3f"
+			% [slopes.size(), gentle, spread]
+		)
+	)
 	check(
-		closest >= map.WATERLINE_LIP * 0.99,
-		"no ground lies within %.2f of the sea (closest %.3f)" % [map.WATERLINE_LIP, closest]
+		gentle >= MIN_SHORE_SLOPE, "the ground crosses the waterline at a slope (p5 %.3f)" % gentle
+	)
+	check(
+		spread >= MIN_SHORE_SPREAD, "the coast keeps its shape between grid lines (%.3f)" % spread
 	)
 
 
