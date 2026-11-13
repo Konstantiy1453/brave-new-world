@@ -643,3 +643,26 @@ The user: where the sea meets the land, the land jumps; dropped frames or someth
 - Rejected: a depth bias in the water shader (it differs between renderers, and ground within the
   bias would still flicker); a transparent sea (sorting, and the beaches would still flicker); steeper
   beaches everywhere (the user asked for gentle shores).
+
+## 1.9: the events rewrite (2026-11-13)
+
+The user, handing over GPT's package (`docs/v17/events_rewrite/`): integrate the edited text and
+events. The package offers two alternatives: the old events with new words only, or its full design.
+
+- The full design goes in as written (106 events, 249 nodes; `game/data/v17/events.json`), because
+  the user asked for stakes and rewards as well as story · the text-only alternative (it keeps the
+  old peanuts) · picking events from both (GPT built them as alternatives, not parts).
+- Checked before it went in: every old event keeps its id, version and nodes, so saves with an open
+  or finished event load; no field, condition, effect kind or option key is new to the engine; every
+  default is an option of its node, every `next` and `alt` exists, every chance lies between 0 and
+  1, every node is reachable (the order engine's `industry.delivered`, as before); technologies,
+  buildings, goods and earlier endings named in it exist. No placeholder, markup, English word or
+  reference to another game in any title, text, option or ending.
+- Its 18 requests for new mechanics (node-level pauses, single-road effects, cancellable upkeep,
+  casualty records, and so on) are left for later: GPT already wrote fallbacks with today's effects,
+  and each request is a system of its own · building them into this preview.
+- Tests that walked the old chains follow the new paths and read the numbers from the data
+  (`v17_events`: the crack's repair now runs through measurements, a plan and trial loads; the blank
+  ridge's survey through the old camp's papers, its water room, an agreement and a pilot hole). The
+  check that applies every short event's options on a rich colony stocks every good, since the new
+  events also ask for components and alloy.
