@@ -551,3 +551,70 @@ narrow the ranges over time, a model fix sheet and a technology tree overview.
   extra deck rolls gives +35% (BALANCE.md, 1.9 fix tips). Left as measured and reported · dealing new
   events from a separate dice stream so old runs keep their sequence (it would pass by luck, not by
   measuring better) or tuning wages to one draw.
+
+## 1.9: picture quality, natural terrain and polish (2026-11-13)
+
+The user, after the preview: 高画质 next to the light renderer; the aliasing, hard edges and
+hexagons looked amateur; the terrain looked like Minecraft (walls, mesas, stair-step shores); inland
+sites showed coast; candidate labels cluttered the map after landing; cargo dots too big; stage
+three too hard (three games stuck on population); a notice when research finishes; the events'
+rewrite goes to GPT in parallel.
+
+- Two renderers: standard is Compatibility (default, any graphics card); 高画质 is Forward+, chosen
+  in the settings, saved in `user://graphics_override.cfg` through
+  `application/config/project_settings_override` and applied on the next start (a restart button).
+  Without Vulkan or Direct3D 12, Godot falls back to Compatibility (`fallback_to_opengl3`) and the
+  page says so · a switch at run time (Godot cannot change renderer while running) or two
+  executables.
+- The choice at start-up is read once (`Graphics.start_choice`), to tell a fallback from a choice
+  that waits for a restart.
+- Anti-aliasing in both renderers: 4× multisampling by default, 2× and off in the settings; SMAA on
+  top in Forward+. FXAA stays off in Compatibility: with multisampling it undid the smoothing in the
+  captures · TAA (ghosts behind moving vehicles).
+- Forward+ colour grade (brightness 0.92, contrast 1.12, saturation 1.38), measured on captures
+  of the new terrain against Compatibility: mean brightness within 5 levels and the same saturation
+  (without it, Forward+ came out brighter and about a fifth less saturated) · another tonemapper
+  (AgX and ACES came out darker, linear lost the highlights).
+- Forward+ extras:
+  - ambient occlusion in the town view only (radius 1.2, intensity 1.6, power 1.5);
+  - glow only above an HDR level of 1.6 (lamps, lit windows, night lights; sunlit snow no longer
+    blooms);
+  - soft directional shadows (high filter, four splits, blur 1.3);
+  - at night, real lamp lights (up to 64, no shadows) instead of painted pools of light.
+
+  Rejected: SDFGI and volumetric fog (too costly on modest cards).
+- Natural ground on generated worlds:
+  - the relief knee drops from 5 to 3.2;
+  - three passes of a 1-2-1 blur over the whole landscape grid;
+  - noise detail of 0.25–1.45 units, rising with height above the sea, and ridges on high ground;
+  - a beach profile within 1.6 units of the sea;
+  - the town's ground is pulled 65% toward its own level between 10 and 22 units out;
+  - building pads are flat to 2.35 and graded out to 5.2 by a weighted mean of the neighbouring pad
+    levels with smootherstep; each pad's level is averaged over the pad and relaxed toward its
+    neighbours.
+
+  Rejected: the terraces of `fef2eb7` (vertical walls and mesas), or flattening the whole town.
+- Inland sites (no coast) draw no sea. The ground keeps a soft floor 0.45 above sea level, low
+  plains get gentle swells, and the ground shader colours them as land · the planet's real seas
+  within the field (the field spans 24° of the planet, so most inland sites had sea in view).
+- Free plots:
+  - no hexagon plates;
+  - ore deposits show three small rocks in the ore's colour over a faint patch;
+  - farmland shows a faint green patch;
+  - rings round every free plot sit behind a settings switch, off by default.
+
+  Rejected: hexagons, or no marks at all.
+- Candidate sites are named only before the first landing or while the map is filtered; afterwards
+  only the settled, selected and hovered sites are named · no candidate names at all (they help the
+  first choice).
+- Cargo dots shrink from 0.023 to 0.013 on the globe and from 0.031 to 0.018 on the flat map, and
+  their glow drops from 2 to 1.2 · hiding them.
+- Stage three's deadline moves a year later on every difficulty (normal 1,500 → 1,860, easy
+  1,800 → 2,160, hard 1,400 → 1,760), as the user asked. Stage four's stays (normal 2,100, now 240
+  days after stage three's) · moving stages four and five as well (not asked; put to the user).
+- Research notices: a card under the top bar for each finished technology, saying so for a gift;
+  eight seconds, up to three at a time, a click opens the research page; reset on a new or loaded
+  game · a dialog (it would stop play).
+- The events' rewrite is GPT's (`docs/superpowers/plans/2026-11-13-v19-events-rewrite-sheet.md`,
+  branch `v17-events`); Claude leaves `events.json` alone meanwhile.
+
