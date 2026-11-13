@@ -7,65 +7,66 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **fix-tips-5c50b0f** · 2026-11-12T14-06-04 · 3592 s wall clock. Source: balance harness.
+Run: **events-d36d01a** · 2026-11-13T09-05-58 · 2871 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
-| Floor | rush bot day >= 1440 | earliest day 2386 | PASS |
-| Balanced award, normal | 2160-2880 | median 2708 (8/9 awarded) | PASS |
+| Floor | rush bot day >= 1440 | earliest day 2433 | PASS |
+| Balanced award, normal | 2160-2880 | median 2782 (6/9 awarded) | PASS |
 | Balanced award, easy | 1800-2520 | median -1 (0/0 awarded) | NOT_MEASURED |
 | Balanced award, hard | 2520-3240 | median -1 (0/0 awarded) | NOT_MEASURED |
-| Openings | medians within 15%; best bot differs by opening | capital 2466, workers 2829, science 2606; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
+| Openings | medians within 15%; best bot differs by opening | capital 2684, workers 3023, science 2598; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
 | Failure, passive | review 150-400, failure 400-900 | review 168, failure 438 | PASS |
 | Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 0/0 | MISS |
-| Population | >= 300 by year 2; >= 800 by year 4 | 318 / 924 | PASS |
-| Research, balanced | >= 40 techs; every category; research teams 10-20% | 41 techs; 4 categories; 11% | PASS |
-| Research-first | more techs than balanced, award in standard band | 76 techs; day 2235 | PASS |
-| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 101%; x4.22 | PASS |
-| Export mix | no good > 60% after year 2 | median 27%, worst 33% | PASS |
-| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 13 days, p90 90 days | PASS |
-| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 17 days, p90 35 days | PASS |
-| Services budget | used by the balanced bot (1.9 optional spending) | 8 of 9 runs, median 390 days paid | PASS |
-| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 103%, y4 98%, y5 104%, y6 104%, y7 100% | PASS |
-| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 270k, recruitment 174k, upgrades 71k, services 27k, great_works 20k, commissions 9k, roads 8k | INFO |
-| Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2466, cover on day 1440 47 days, 1 of 3 taken over; with: award 2354, cover on day 1440 78 days, 0 of 3 taken over; extra spending a run in years 4-6: services +351k, buildings +238k, recruitment +196k, commissions +109k | INFO |
-| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 5/21 (level 2), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 6/21 (level 1) | INFO |
-| Shuttle lines | rush runs that opened a short-range shuttle line (no target) | 9/9 runs, 17 lines, 17 stood down for a road or sea route | INFO |
-| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 198 days; 56 distinct; 0 repeats; 72 short, 14 chains; 29% off; seeds share 47% | PASS |
-| Distrust | largest daily rise <= 0.8 | worst 0.33 | PASS |
-| Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 2.8% | PASS |
+| Population | >= 300 by year 2; >= 800 by year 4 | 347 / 933 | PASS |
+| Research, balanced | >= 40 techs; every category; research teams 10-20% | 48 techs; 4 categories; 10% | MISS |
+| Research-first | more techs than balanced, award in standard band | 78 techs; day 2206 | PASS |
+| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 107%; x3.30 | PASS |
+| Export mix | no good > 60% after year 2 | median 30%, worst 38% | PASS |
+| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 9 days, p90 81 days | PASS |
+| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 34 days, p90 94 days | PASS |
+| Services budget | used by the balanced bot (1.9 optional spending) | 5 of 9 runs, median 595 days paid | MISS |
+| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 96%, y4 116%, y5 111%, y6 114%, y7 103% | PASS |
+| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 315k, recruitment 103k, upgrades 52k, services 20k, great_works 14k, roads 9k, commissions 7k | INFO |
+| Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2684, cover on day 1440 11 days, 1 of 3 taken over; with: award 2381, cover on day 1440 149 days, 1 of 3 taken over; extra spending a run in years 4-6: services +366k, recruitment +340k, commissions +112k, buildings +98k | INFO |
+| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 4/21 (level 2), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 0/21 (level 0) | INFO |
+| Shuttle lines | rush runs that opened a short-range shuttle line (no target) | 8/9 runs, 18 lines, 18 stood down for a road or sea route | INFO |
+| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 205 days; 65 distinct; 0 repeats; 79 short, 27 chains; 33% off; seeds share 49% | PASS |
+| Distrust | largest daily rise <= 0.8 | worst 0.65 | PASS |
+| Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 4.4% | PASS |
 | Roads | first road takes 90-300 days | median 166 days | PASS |
-| Pollution, no control | output penalty >= 15% by year 8 | 37.0% | PASS |
+| Pollution, no control | output penalty >= 15% by year 8 | 39.6% | PASS |
 | Audits | 0 errors in every run | 0 errors in 51 runs | PASS |
-| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 160 to 169 arrivals (+6%) | MISS |
+| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 142 to 182 arrivals (+27%) | PASS |
 | Determinism | same seed + action log => identical state | 3/3 replays identical | PASS |
 
 | Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop y2 / y4 / y8 | Techs at award |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| balanced | normal | capital | 3 | 67% | 2466 | 33% | 3284 | 303 | 330 / 854 / 2354 | 40 |
-| balanced | normal | science | 3 | 100% | 2606 | 0% | -1 | 261 | 305 / 981 / 2141 | 40 |
-| balanced | normal | workers | 3 | 100% | 2829 | 33% | 3157 | 492 | 313 / 924 / 2414 | 43 |
-| passive | normal | capital | 3 | 0% | -1 | 100% | 438 | 16827 | -1 / -1 / -1 | -1 |
-| passive | normal | science | 3 | 0% | -1 | 100% | 426 | 4569 | -1 / -1 / -1 | -1 |
-| passive | normal | workers | 3 | 0% | -1 | 100% | 446 | 1476 | -1 / -1 / -1 | -1 |
-| random_legal | easy | capital | 1 | 0% | -1 | 100% | 461 | 0 | -1 / -1 / -1 | -1 |
-| random_legal | hard | science | 1 | 0% | -1 | 100% | 342 | 0 | -1 / -1 / -1 | -1 |
-| random_legal | normal | workers | 1 | 0% | -1 | 100% | 389 | 0 | -1 / -1 / -1 | -1 |
-| research_first | normal | capital | 3 | 67% | 2214 | 33% | 2410 | 268 | 327 / 816 / -1 | 74 |
-| research_first | normal | science | 3 | 67% | 2274 | 33% | 1904 | 213 | 313 / 620 / -1 | 82 |
-| research_first | normal | workers | 3 | 100% | 2239 | 0% | -1 | 206 | 298 / 833 / -1 | 76 |
-| rush | normal | capital | 3 | 100% | 2988 | 0% | -1 | 273 | 325 / 858 / 2232 | 40 |
-| rush | normal | science | 3 | 33% | 2386 | 67% | 3174 | 197 | 326 / 840 / 1812 | 40 |
-| rush | normal | workers | 3 | 100% | 2580 | 0% | -1 | 115 | 327 / 917 / 2324 | 40 |
+| balanced | normal | capital | 3 | 67% | 2684 | 33% | 3283 | 196 | 352 / 899 / 2109 | 45 |
+| balanced | normal | science | 3 | 67% | 2598 | 33% | 3284 | 401 | 315 / 940 / 2205 | 50 |
+| balanced | normal | workers | 3 | 67% | 3023 | 33% | 3278 | 465 | 347 / 933 / 2199 | 46 |
+| passive | normal | capital | 3 | 0% | -1 | 100% | 438 | 15777 | -1 / -1 / -1 | -1 |
+| passive | normal | science | 3 | 0% | -1 | 100% | 426 | 3519 | -1 / -1 / -1 | -1 |
+| passive | normal | workers | 3 | 0% | -1 | 100% | 446 | 426 | -1 / -1 / -1 | -1 |
+| random_legal | easy | capital | 1 | 0% | -1 | 100% | 459 | 0 | -1 / -1 / -1 | -1 |
+| random_legal | hard | science | 1 | 0% | -1 | 100% | 323 | 0 | -1 / -1 / -1 | -1 |
+| random_legal | normal | workers | 1 | 0% | -1 | 100% | 380 | 0 | -1 / -1 / -1 | -1 |
+| research_first | normal | capital | 3 | 100% | 2524 | 0% | -1 | 293 | 318 / 889 / 1629 | 78 |
+| research_first | normal | science | 3 | 100% | 2187 | 0% | -1 | 286 | 347 / 954 / -1 | 78 |
+| research_first | normal | workers | 3 | 67% | 2314 | 33% | 2504 | 301 | 322 / 787 / -1 | 78 |
+| rush | normal | capital | 3 | 67% | 2867 | 33% | 3099 | 309 | 374 / 793 / 2202 | 40 |
+| rush | normal | science | 3 | 33% | 2433 | 67% | 2774 | 256 | 343 / 872 / 2242 | 43 |
+| rush | normal | workers | 3 | 100% | 3070 | 0% | -1 | 303 | 361 / 914 / 2455 | 40 |
 | sloppy | normal | capital | 3 | 0% | -1 | 100% | 764 | 375 | 60 / -1 / -1 | -1 |
 | sloppy | normal | science | 3 | 0% | -1 | 100% | 764 | 246 | 60 / -1 / -1 | -1 |
-| sloppy | normal | workers | 3 | 0% | -1 | 100% | 764 | 15 | 104 / -1 / -1 | -1 |
-| windfall | normal | capital | 3 | 100% | 2354 | 0% | -1 | 303 | 330 / 1046 / 2094 | 40 |
+| sloppy | normal | workers | 3 | 0% | -1 | 100% | 717 | 15 | 104 / -1 / -1 | -1 |
+| windfall | normal | capital | 3 | 67% | 2381 | 33% | 3228 | 196 | 352 / 971 / 2282 | 40 |
 <!-- results:end -->
 
 ## History
 
 <!-- history:begin -->
+- 2026-11-13T09-05-58 · events-d36d01a (quick): 18 targets met, 4 missed.
 - 2026-11-12T14-06-04 · fix-tips-5c50b0f (quick): 19 targets met, 3 missed.
 - 2026-11-08T21-57-33 · 1.9-final-linux (quick): 19 targets met, 3 missed.
 - 2026-11-07T14-03-08 · 1.9-money-linux (quick): 20 targets met, 2 missed.
@@ -129,6 +130,36 @@ Two rows moved the wrong way, and both turn out to be noise around their bar:
 
 Proposed for the user: measure the lever and the payback bands over more seeds (the lever over the
 ten full-run seeds at least) before tuning anything; tuning to one path would chase noise.
+
+## 1.9 events rewrite
+
+Quick run `events-d36d01a` (2026-11-13, Linux, 51 runs, 0 audit errors). It covers everything since
+`fix-tips-5c50b0f`: stage three a year later, the coast fix (no effect on the simulation) and GPT's
+rewritten events. A run measuring stage three alone was started and then stopped: a shard died, and
+its retry would have read the new events. Nothing from it is recorded.
+
+| Row | fix-tips-5c50b0f | events-d36d01a |
+|---|---|---|
+| Balanced award, normal | median 2708, 8 of 9 awarded | median 2782, 6 of 9 awarded (PASS) |
+| Income ×, year 2 to year 6 | ×4.22 | ×3.30 (PASS, bar ×2.5) |
+| Labour lever | +6% (MISS) | +27% (PASS) |
+| Research, balanced | 41 techs, research teams 11% (PASS) | 48 techs, 10% (MISS, just under the band) |
+| Services budget | 8 of 9 runs (PASS) | 5 of 9 runs (MISS) |
+| Events | 56 distinct, 72 short, 14 chains | 65 distinct, 79 short, 27 chains; a pause every 205 days |
+| Largest daily distrust rise | 0.33 | 0.65 (bar 0.8) |
+| Targets | 19 met, 3 missed | 18 met, 4 missed |
+
+Two balanced runs finished stage three on days 1,751 and 1,698. Under the old day-1,500 deadline
+they would have failed there, so the extension does what the user asked. Overall, though, the
+balanced bot does worse: three of nine runs miss the main contract and are taken over around day
+3,280 (one before), and in the run inspected the mid-game operating surplus falls by about half.
+
+Much of that is the bot, not the events. `colony_bot._option_value` scores an event option as
+reward − pay ± goods, plus a flat (factor − 1) × 500 for each effect, whatever its length. So it
+always takes a free 90-day production cut (−125) over paying to avoid it (−2,700 at reference
+income, more as the colony grows). The rewritten events make those free options long and heavy on
+purpose, so the bot collects every penalty a sensible player would pay to avoid. The next run
+values effects by their days and the colony's income.
 
 ## Before and after
 
