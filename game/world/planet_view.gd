@@ -322,7 +322,7 @@ func _globe_marker(reg: Dictionary, with_label: bool) -> void:
 	_line(root, ring_points, c, .85)
 	if with_label:
 		var label := Label3D.new()
-		label.text = _site_text(reg, settled)
+		label.text = _site_name(reg, settled)
 		label.font = label_font
 		label.font_size = 48
 		label.pixel_size = .0028

@@ -5,6 +5,7 @@ const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
 const BuildPage = preload("res://ui/build_page.gd")
 const Graphics = preload("res://ui/graphics.gd")
+const EventLines = preload("res://ui/event_lines.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -404,6 +405,7 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 			)
 			D.font_size(action, 14)
 			action.custom_minimum_size.y = 28
+	EventLines.marks(g, b, int(s.region))
 	D.label(b, "地块与矿藏", 14, D.TEAL)
 	_site_facts(g, b, known)
 	_survey_button(g, b, known)
@@ -1093,6 +1095,7 @@ static func economy(g, b):
 		for shortage in s.get("shortages", []):
 			lines.append(Labels.shortage(g.sim.config, shortage))
 		D.label(c, "\n".join(lines), 16, D.RED)
+	EventLines.colony(g, b)
 	D.button(b, "查看公司审查原因、整改期限与救助义务", func(): g.open_page("company"))
 	var detail: bool = bool(g.detailed_info)
 	D.label(b, "详情：最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)

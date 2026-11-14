@@ -140,7 +140,7 @@ func _marker_signature() -> String:
 				str(place.get("name", ""))
 			]
 		)
-	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
+	return "%d|%s|%s|%s" % [selected_region, str(settled), marker_filter, str(_event_places())]
 
 
 ## Towns and lit roads change the night side; a few dozen people more do not.

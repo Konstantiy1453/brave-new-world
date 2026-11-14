@@ -15,6 +15,8 @@ const Shaders = preload("res://world/shaders.gd")
 const CARGO_DOT_GLOBE: float = 0.013
 const CARGO_DOT_FLAT: float = 0.018
 const CARGO_GLOW: float = 1.2
+## Added to a place's name on the maps while an event is open there.
+const EVENT_MARK: String = "  ·  通讯"
 const NightLights = preload("res://world/night_lights.gd")
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
@@ -126,6 +128,27 @@ static func _site_text(reg: Dictionary, settled: bool) -> String:
 	if settled:
 		return "◆ " + str(reg.name)
 	return str(reg.name) if bool(reg.get("named", true)) else str(reg.terrain)
+
+
+## A place's name on the maps, marked while an event is open there (waiting for an answer, or a
+## chain running on), so the player sees where a story is going on.
+func _site_name(reg: Dictionary, settled: bool) -> String:
+	var text: String = _site_text(reg, settled)
+	if int(reg.id) in _event_places():
+		text += EVENT_MARK
+	return text
+
+
+## The places with an event open now, in order.
+func _event_places() -> Array[int]:
+	var places: Array[int] = []
+	for inst: Dictionary in state.get("events_v2", {}).get("instances", []):
+		if str(inst.get("status", "")) in ["pending", "deferred", "waiting"]:
+			var region: int = int(inst.get("target_region", -1))
+			if not region in places:
+				places.append(region)
+	places.sort()
+	return places
 
 
 func _geo_color(

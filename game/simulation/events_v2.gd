@@ -17,6 +17,28 @@ const EFFECT_KINDS: Array[String] = [
 	"export_price",
 	"road_capacity"
 ]
+## What each kind of effect touches, in the player's words.
+const EFFECT_NAMES: Dictionary = {
+	"water": "供水",
+	"farm": "农产",
+	"mine": "采矿",
+	"processor": "加工",
+	"port": "货站吞吐",
+	"power": "发电",
+	"all": "全部生产",
+	"appeal": "吸引力",
+	"research": "科研速度",
+	"export_price": "出口价格",
+	"road_capacity": "道路运力",
+}
+## Kinds whose effects reach the whole colony, wherever the event happened (`colony_modifier`).
+const COLONY_KINDS: Array[String] = ["export_price", "research", "road_capacity"]
+## What an ending can leave standing at its place; each is drawn differently in the town view.
+const LANDMARK_KINDS: Array[String] = [
+	"monument", "station", "seal", "garden", "beacon", "archive", "wreck", "ruin"
+]
+## A place holds this many landmarks at most; the effects list keeps room for them.
+const LANDMARKS_PER_PLACE: int = 6
 const PAUSE_ALL: String = "all"
 const PAUSE_CRITICAL: String = "critical"
 ## How a gift technology's effects read on an event card: the name, and -1 where a bonus makes the
@@ -555,9 +577,12 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 				"until": int(sim.state.day) + 1 + n if n > 0 else -1,
 				"duration_days": n,
 				"maintenance": float(effect.get("maintenance", 0)),
-				"label": str(effect.get("label", ""))
+				"label": str(effect.get("label", "")),
+				"event": str(inst.definition_id)
 			}
 		)
+	if option.has("landmark"):
+		_raise_landmark(sim, inst, option.landmark)
 	var step: Dictionary = {
 		"day": int(sim.state.day), "node": inst.node, "choice": option.id, "automatic": automatic
 	}
@@ -1032,19 +1057,7 @@ static func _description(
 			)
 		)
 	for effect in option.get("effects", []):
-		var names: Dictionary = {
-			"water": "供水",
-			"farm": "农产",
-			"mine": "采矿",
-			"processor": "加工",
-			"port": "货站吞吐",
-			"power": "发电",
-			"all": "全部生产",
-			"appeal": "吸引力",
-			"research": "科研速度",
-			"export_price": "出口价格",
-			"road_capacity": "道路运力",
-		}
+		var names: Dictionary = EFFECT_NAMES
 		parts.append(
 			(
 				"%s × %.2f，%s"
@@ -1063,6 +1076,10 @@ static func _description(
 			parts.append("维护 %.1f / 日" % float(effect.maintenance))
 	if option.get("sell_rights", false):
 		parts.append("独家后续调查权转让，放弃该现场后续研究成果")
+	if option.has("landmark"):
+		parts.append(
+			"留下地标「%s」%s" % [str(option.landmark.get("name", "")), _landmark_gain(option.landmark)]
+		)
 	var course: String = _course(inst, option) if with_course else ""
 	if course != "":
 		parts.append(course)
@@ -1091,6 +1108,127 @@ static func _course(inst: Dictionary, option: Dictionary) -> String:
 	if wait > 0:
 		return "%d 日后进入「%s」" % [wait, ahead]
 	return "随即进入「%s」" % ahead
+
+
+## An ending leaves a landmark at its place for the rest of the game, with its effects acting
+## there permanently. Each landmark stands once; a place holds LANDMARKS_PER_PLACE at most.
+static func _raise_landmark(sim, inst: Dictionary, spec: Dictionary) -> void:
+	var e: Dictionary = sim.state.events_v2
+	if not e.has("landmarks"):
+		e.landmarks = []
+	var region: int = int(inst.target_region)
+	var here: int = 0
+	for standing: Dictionary in e.landmarks:
+		if str(standing.id) == str(spec.get("id", "")):
+			return
+		if int(standing.region) == region:
+			here += 1
+	if here >= LANDMARKS_PER_PLACE or not str(spec.get("kind", "")) in LANDMARK_KINDS:
+		return
+	e.landmarks.append(
+		{
+			"id": str(spec.id),
+			"name": str(spec.get("name", "")),
+			"kind": str(spec.kind),
+			"text": str(spec.get("text", "")),
+			"region": region,
+			"day": int(sim.state.day),
+			"event": str(inst.definition_id)
+		}
+	)
+	for effect: Dictionary in spec.get("effects", []):
+		e.effects.append(
+			{
+				"source": "landmark:" + str(spec.id),
+				"region": region,
+				"kind": str(effect.kind),
+				"factor": float(effect.factor),
+				"start": int(sim.state.day) + 1,
+				"until": -1,
+				"duration_days": 0,
+				"maintenance": float(effect.get("maintenance", 0)),
+				"label": str(spec.get("name", "")),
+				"event": str(inst.definition_id)
+			}
+		)
+	sim._log("地标落成 · " + str(spec.get("name", "")))
+
+
+## The landmarks standing at a place, in the order they were raised.
+static func landmarks_at(sim, region: int) -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for standing: Dictionary in sim.state.get("events_v2", {}).get("landmarks", []):
+		if int(standing.region) == region:
+			found.append(standing)
+	return found
+
+
+## What a landmark's effects do, in words: 「（科研速度 ×1.12，长期）」, or nothing.
+static func _landmark_gain(spec: Dictionary) -> String:
+	var words: PackedStringArray = []
+	for effect: Dictionary in spec.get("effects", []):
+		words.append(
+			"%s ×%.2f" % [str(EFFECT_NAMES.get(effect.kind, effect.kind)), float(effect.factor)]
+		)
+	return "（%s，长期）" % "，".join(words) if not words.is_empty() else ""
+
+
+## The event effects acting at a place now, for showing where they act: the place's own, then
+## those that reach the whole colony from anywhere. Each has a name (the effect's label, or its
+## event's title), what it touches, the factor, the days left (-1 when it lasts) and whether it
+## reaches the colony.
+static func place_effects(sim, region: int) -> Array[Dictionary]:
+	var shown: Array[Dictionary] = []
+	var day: int = int(sim.state.day)
+	for colony: bool in [false, true]:
+		for effect: Dictionary in sim.state.get("events_v2", {}).get("effects", []):
+			if not _active_effect(effect, day):
+				continue
+			var wide: bool = str(effect.kind) in COLONY_KINDS
+			if wide != colony or (not wide and int(effect.region) != region):
+				continue
+			shown.append(
+				{
+					"name": _effect_name(effect),
+					"what": str(EFFECT_NAMES.get(effect.kind, effect.kind)),
+					"factor": float(effect.factor),
+					"days_left": int(effect.until) - day if int(effect.until) >= 0 else -1,
+					"colony": wide
+				}
+			)
+	return shown
+
+
+## Every event effect acting anywhere now, for the economy page: as `place_effects`, with the
+## place's name.
+static func colony_effects(sim) -> Array[Dictionary]:
+	var shown: Array[Dictionary] = []
+	var day: int = int(sim.state.day)
+	for effect: Dictionary in sim.state.get("events_v2", {}).get("effects", []):
+		if not _active_effect(effect, day):
+			continue
+		var region: int = int(effect.region)
+		var wide: bool = str(effect.kind) in COLONY_KINDS
+		shown.append(
+			{
+				"name": _effect_name(effect),
+				"what": str(EFFECT_NAMES.get(effect.kind, effect.kind)),
+				"factor": float(effect.factor),
+				"days_left": int(effect.until) - day if int(effect.until) >= 0 else -1,
+				"colony": wide,
+				"place": "全殖民地" if wide else str(sim.state.world.regions[region].name)
+			}
+		)
+	return shown
+
+
+static func _effect_name(effect: Dictionary) -> String:
+	if str(effect.get("label", "")) != "":
+		return str(effect.label)
+	var definition: Dictionary = definitions().definitions.get(str(effect.get("event", "")), {})
+	if not definition.is_empty():
+		return str(definition.nodes.start.title)
+	return "事件影响"
 
 
 ## What a gift technology's effects do, in words: 「陆路单程时间 -20%，道路运力 +10%」.
@@ -1478,6 +1616,8 @@ static func validate(candidate: Dictionary) -> String:
 				return "事件效果数值无效"
 		if effect.has("label") and not effect.label is String:
 			return "事件效果名称无效"
+		if effect.has("event") and not effect.event is String:
+			return "事件效果来源事件无效"
 		if (
 			float(effect.factor) <= 0
 			or float(effect.maintenance) < 0
@@ -1493,6 +1633,29 @@ static func validate(candidate: Dictionary) -> String:
 			)
 		):
 			return "事件持续时间不一致"
+	if e.has("landmarks"):
+		if not e.landmarks is Array:
+			return "地标列表无效"
+		var standing: Dictionary = {}
+		for mark in e.landmarks:
+			if (
+				not mark is Dictionary
+				or not mark.get("id") is String
+				or not mark.get("name") is String
+				or not mark.get("text") is String
+				or not mark.get("kind") in LANDMARK_KINDS
+				or not _number(mark.get("region"))
+				or not _number(mark.get("day"))
+				or standing.has(mark.id)
+			):
+				return "地标无效"
+			if (
+				int(mark.region) < 0
+				or int(mark.region) >= candidate.world.regions.size()
+				or int(mark.day) > int(candidate.day)
+			):
+				return "地标位置或日期无效"
+			standing[mark.id] = true
 	return ""
 
 

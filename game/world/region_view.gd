@@ -5,6 +5,17 @@ extends "res://world/region_ground.gd"
 
 const Traffic = preload("res://world/traffic.gd")
 const ModelArt = preload("res://world/model_art.gd")
+const Landmarks = preload("res://world/landmarks.gd")
+## Landmarks around the town (`_landmark_spots`): rings in units from the town's centre, spots per
+## ring, how far from plots and from each other, how far above the sea, how steep the ground may
+## be across three units, and where the name floats.
+const LANDMARK_RINGS: Array[float] = [15.0, 19.0, 23.0, 27.0]
+const LANDMARK_SPOKES: int = 16
+const LANDMARK_PLOT_CLEARANCE: float = 4.5
+const LANDMARK_SPACING: float = 5.0
+const LANDMARK_ABOVE_SEA: float = 0.4
+const LANDMARK_MAX_RISE: float = 1.0
+const LANDMARK_LABEL_HEIGHT: float = 4.2
 ## Deck height of the bridge model above its origin, in game units (5.03 m at 0.09 units a metre).
 const BRIDGE_DECK: float = 0.45
 const BRIDGE_LENGTH: float = 1.98
@@ -138,13 +149,89 @@ func _building_signature() -> String:
 			var gifts: Array = []
 			for tech: String in [RED_BALL_TECH, "fast_freighters", "bulk_freighters"]:
 				gifts.append(_has_tech(tech))
+			var marks: Array = []
+			for mark: Dictionary in state.get("events_v2", {}).get("landmarks", []):
+				if int(mark.region) == selected_region:
+					marks.append(str(mark.id))
 			return (
 				JSON.stringify(visible_status)
 				+ JSON.stringify(route_state)
 				+ str(settlement.get("base_housing", 0))
 				+ str(gifts)
+				+ str(marks)
 			)
 	return "unsettled"
+
+
+## The landmarks events left here, each on its spot around the town with its name above it.
+func _build_landmarks() -> void:
+	var standing: Array[Dictionary] = []
+	for mark: Dictionary in state.get("events_v2", {}).get("landmarks", []):
+		if int(mark.region) == selected_region:
+			standing.append(mark)
+	if standing.is_empty():
+		return
+	var spots: Array[Vector3] = _landmark_spots(standing.size())
+	for index: int in range(mini(standing.size(), spots.size())):
+		var mark: Dictionary = standing[index]
+		var root := Node3D.new()
+		root.name = "Landmark_" + str(mark.id)
+		root.position = spots[index]
+		buildings_root.add_child(root)
+		Landmarks.draw(self, root, str(mark.kind))
+		var label := Label3D.new()
+		label.text = str(mark.name)
+		label.font = label_font
+		label.font_size = 44
+		label.pixel_size = .02
+		label.position = Vector3(0, LANDMARK_LABEL_HEIGHT, 0)
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.modulate = Color("e8c77f")
+		label.outline_modulate = Color("091621")
+		label.outline_size = 10
+		root.add_child(label)
+
+
+## Where landmarks stand: rings around the town, taken in a fixed order, each spot clear of the
+## plots, the main street, the water, steep ground and the other landmarks, so a landmark keeps its
+## place from one visit to the next.
+func _landmark_spots(count: int) -> Array[Vector3]:
+	var spots: Array[Vector3] = []
+	var town := Vector2(_town_offset(), 0.0)
+	var plots: Array = world.regions[selected_region].get("plots", [])
+	var floor_height: float = sea_level() + LANDMARK_ABOVE_SEA
+	for ring: int in range(LANDMARK_RINGS.size()):
+		for step: int in range(LANDMARK_SPOKES):
+			if spots.size() >= count:
+				return spots
+			var angle: float = TAU * (step + 0.5 * ring) / LANDMARK_SPOKES
+			var at: Vector2 = town + Vector2(cos(angle), sin(angle)) * LANDMARK_RINGS[ring]
+			if absf(at.x) > half_width - 4.0 or absf(at.y) > half_depth - 4.0:
+				continue
+			if absf(at.y) < 2.5:
+				continue
+			var clear: bool = true
+			for plot: Dictionary in plots:
+				if at.distance_to(Vector2(float(plot.x), float(plot.z))) < LANDMARK_PLOT_CLEARANCE:
+					clear = false
+					break
+			for taken: Vector3 in spots:
+				if at.distance_to(Vector2(taken.x, taken.z)) < LANDMARK_SPACING:
+					clear = false
+			if not clear:
+				continue
+			var height: float = _ground(at.x, at.y)
+			if height < floor_height or is_finite(_water_height_at(at.x, at.y, 1.2)):
+				continue
+			var rise: float = 0.0
+			for offset: Vector2 in [
+				Vector2(1.5, 0), Vector2(-1.5, 0), Vector2(0, 1.5), Vector2(0, -1.5)
+			]:
+				rise = maxf(rise, absf(_ground(at.x + offset.x, at.y + offset.y) - height))
+			if rise > LANDMARK_MAX_RISE:
+				continue
+			spots.append(Vector3(at.x, height, at.y))
+	return spots
 
 
 ## Where a building stands: on its plot, or for hand-built test states on the old town grid.
@@ -300,6 +387,7 @@ func _build_colony() -> void:
 		_lander(buildings_root, Vector3(offset, _ground(offset, 0) + .1, 0))
 		_draw_free_plots({})
 		return
+	_build_landmarks()
 	road_tool = SurfaceTool.new()
 	road_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	road_sections = 0
