@@ -7,65 +7,66 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **events-bot-days** · 2026-11-13T09-53-32 · 2695 s wall clock. Source: balance harness.
+Run: **stage4-5f596ee** · 2026-11-14T03-29-20 · 2766 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
 | Floor | rush bot day >= 1440 | earliest day 2559 | PASS |
-| Balanced award, normal | 2160-2880 | median 2686 (8/9 awarded) | PASS |
+| Balanced award, normal | 2160-2880 | median 2546 (7/9 awarded) | PASS |
 | Balanced award, easy | 1800-2520 | median -1 (0/0 awarded) | NOT_MEASURED |
 | Balanced award, hard | 2520-3240 | median -1 (0/0 awarded) | NOT_MEASURED |
-| Openings | medians within 15%; best bot differs by opening | capital 2576, workers 2769, science 2710; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
+| Openings | medians within 15%; best bot differs by opening | capital 2627, workers 2546, science 2370; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
 | Failure, passive | review 150-400, failure 400-900 | review 168, failure 438 | PASS |
 | Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 0/0 | MISS |
 | Population | >= 300 by year 2; >= 800 by year 4 | 331 / 865 | PASS |
-| Research, balanced | >= 40 techs; every category; research teams 10-20% | 40 techs; 4 categories; 10% | PASS |
-| Research-first | more techs than balanced, award in standard band | 74 techs; day 2129 | MISS |
-| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 105%; x3.40 | PASS |
+| Research, balanced | >= 40 techs; every category; research teams 10-20% | 40 techs; 4 categories; 12% | PASS |
+| Research-first | more techs than balanced, award in standard band | 75 techs; day 2112 | MISS |
+| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 106%; x3.22 | PASS |
 | Export mix | no good > 60% after year 2 | median 27%, worst 39% | PASS |
-| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 11 days, p90 102 days | PASS |
-| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 59 days, p90 105 days | PASS |
-| Services budget | used by the balanced bot (1.9 optional spending) | 7 of 9 runs, median 448 days paid | MISS |
-| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 97%, y4 114%, y5 118%, y6 111%, y7 100% | PASS |
-| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 274k, recruitment 135k, upgrades 55k, great_works 20k, services 18k, commissions 12k, roads 9k | INFO |
-| Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2576, cover on day 1440 37 days, 1 of 3 taken over; with: award 2659, cover on day 1440 155 days, 0 of 3 taken over; extra spending a run in years 4-6: services +439k, buildings +289k, recruitment +145k, commissions +134k | INFO |
-| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 4/21 (level 1), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 5/21 (level 1) | INFO |
+| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 28 days, p90 102 days | PASS |
+| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 89 days, p90 105 days | PASS |
+| Services budget | used by the balanced bot (1.9 optional spending) | 7 of 9 runs, median 512 days paid | MISS |
+| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 97%, y4 114%, y5 118%, y6 110%, y7 101% | PASS |
+| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 257k, recruitment 158k, upgrades 61k, great_works 29k, services 18k, commissions 12k, roads 11k | INFO |
+| Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2627, cover on day 1440 37 days, 0 of 3 taken over; with: award 2684, cover on day 1440 155 days, 0 of 3 taken over; extra spending a run in years 4-6: services +436k, buildings +160k, commissions +146k, recruitment +81k | INFO |
+| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 3/21 (level 1), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 6/21 (level 1) | INFO |
 | Shuttle lines | rush runs that opened a short-range shuttle line (no target) | 8/9 runs, 18 lines, 18 stood down for a road or sea route | INFO |
-| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 196 days; 65 distinct; 0 repeats; 79 short, 27 chains; 33% off; seeds share 47% | PASS |
-| Distrust | largest daily rise <= 0.8 | worst 0.67 | PASS |
-| Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 3.2% | PASS |
+| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 187 days; 65 distinct; 0 repeats; 79 short, 27 chains; 33% off; seeds share 48% | PASS |
+| Distrust | largest daily rise <= 0.8 | worst 0.55 | PASS |
+| Pollution | output penalty < 2% through year 3 | year 3 worst 0.2%; year 8 median 2.9% | PASS |
 | Roads | first road takes 90-300 days | median 166 days | PASS |
-| Pollution, no control | output penalty >= 15% by year 8 | 28.8% | PASS |
+| Pollution, no control | output penalty >= 15% by year 8 | 29.6% | PASS |
 | Audits | 0 errors in every run | 0 errors in 51 runs | PASS |
 | Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 155 to 214 arrivals (+38%) | PASS |
 | Determinism | same seed + action log => identical state | 3/3 replays identical | PASS |
 
 | Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop y2 / y4 / y8 | Techs at award |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| balanced | normal | capital | 3 | 67% | 2576 | 33% | 3284 | 354 | 327 / 699 / 2139 | 40 |
-| balanced | normal | science | 3 | 100% | 2710 | 0% | -1 | 454 | 331 / 934 / 2188 | 52 |
-| balanced | normal | workers | 3 | 100% | 2769 | 0% | -1 | 512 | 359 / 865 / 2278 | 40 |
+| balanced | normal | capital | 3 | 100% | 2627 | 0% | -1 | 354 | 327 / 699 / 2040 | 40 |
+| balanced | normal | science | 3 | 100% | 2370 | 0% | -1 | 454 | 331 / 934 / 1970 | 44 |
+| balanced | normal | workers | 3 | 33% | 2546 | 67% | 3278 | 512 | 359 / 865 / 1808 | 40 |
 | passive | normal | capital | 3 | 0% | -1 | 100% | 438 | 15777 | -1 / -1 / -1 | -1 |
 | passive | normal | science | 3 | 0% | -1 | 100% | 426 | 3519 | -1 / -1 / -1 | -1 |
 | passive | normal | workers | 3 | 0% | -1 | 100% | 446 | 426 | -1 / -1 / -1 | -1 |
 | random_legal | easy | capital | 1 | 0% | -1 | 100% | 459 | 0 | -1 / -1 / -1 | -1 |
 | random_legal | hard | science | 1 | 0% | -1 | 100% | 323 | 0 | -1 / -1 / -1 | -1 |
 | random_legal | normal | workers | 1 | 0% | -1 | 100% | 380 | 0 | -1 / -1 / -1 | -1 |
-| research_first | normal | capital | 3 | 100% | 2236 | 0% | -1 | 576 | 321 / 844 / -1 | 72 |
-| research_first | normal | science | 3 | 67% | 2020 | 33% | 2264 | 296 | 348 / 916 / -1 | 78 |
-| research_first | normal | workers | 3 | 67% | 2282 | 33% | 2374 | 208 | 323 / 794 / -1 | 75 |
-| rush | normal | capital | 3 | 100% | 2971 | 0% | -1 | 195 | 350 / 909 / 2500 | 40 |
-| rush | normal | science | 3 | 100% | 2637 | 0% | -1 | 228 | 340 / 935 / -1 | 42 |
-| rush | normal | workers | 3 | 67% | 2754 | 33% | 3283 | 345 | 335 / 848 / 2302 | 42 |
+| research_first | normal | capital | 3 | 100% | 2118 | 0% | -1 | 576 | 321 / 844 / -1 | 72 |
+| research_first | normal | science | 3 | 67% | 2034 | 33% | 2264 | 296 | 348 / 916 / -1 | 79 |
+| research_first | normal | workers | 3 | 67% | 2404 | 33% | 3282 | 208 | 323 / 794 / 1395 | 80 |
+| rush | normal | capital | 3 | 100% | 2944 | 0% | -1 | 195 | 350 / 909 / 2580 | 40 |
+| rush | normal | science | 3 | 100% | 2637 | 0% | -1 | 228 | 340 / 935 / 2240 | 43 |
+| rush | normal | workers | 3 | 100% | 2918 | 0% | -1 | 345 | 335 / 848 / 2530 | 45 |
 | sloppy | normal | capital | 3 | 0% | -1 | 100% | 764 | 375 | 60 / -1 / -1 | -1 |
 | sloppy | normal | science | 3 | 0% | -1 | 100% | 764 | 246 | 60 / -1 / -1 | -1 |
 | sloppy | normal | workers | 3 | 0% | -1 | 100% | 717 | 15 | 104 / -1 / -1 | -1 |
-| windfall | normal | capital | 3 | 100% | 2659 | 0% | -1 | 354 | 327 / 770 / 2152 | 42 |
+| windfall | normal | capital | 3 | 100% | 2684 | 0% | -1 | 354 | 327 / 770 / 2010 | 45 |
 <!-- results:end -->
 
 ## History
 
 <!-- history:begin -->
+- 2026-11-14T03-29-20 · stage4-5f596ee (quick): 18 targets met, 4 missed.
 - 2026-11-13T09-53-32 · events-bot-days (quick): 18 targets met, 4 missed.
 - 2026-11-13T09-05-58 · events-d36d01a (quick): 18 targets met, 4 missed.
 - 2026-11-12T14-06-04 · fix-tips-5c50b0f (quick): 19 targets met, 3 missed.
@@ -180,6 +181,28 @@ A bot that weighs event costs is awarded as often as before the rewrite, and at 
 The events take a larger share of the economy than before, as designed: income grows ×3.4 from year
 2 to year 6 against ×4.2. The two new misses (research-first a month early, services in 7 of 9 runs)
 are of the size quick runs swing by. The current results block is this run.
+
+## 1.9 stage four 14 months later
+
+Quick run `stage4-5f596ee` (2026-11-14, Linux, 51 runs, 0 audit errors). Changes since
+`events-bot-days`: stage four's deadline is 420 days later (normal 2,520) with stage five's kept at
+2,880; the payback suite and the event option texts do not touch the simulation.
+
+| Row | events-bot-days | stage4-5f596ee |
+|---|---|---|
+| Balanced award, normal | 2686, 8 of 9 | 2546, 7 of 9 (PASS) |
+| Income ×, year 2 to year 6 | ×3.40 | ×3.22 (PASS) |
+| Cash cover before the award | median 11 days | median 28 days (PASS) |
+| Cash cover after the award | median 59 days | median 89 days (PASS) |
+| Windfall runs taken over (without / with) | 1 / 0 of 3 | 0 / 0 of 3 |
+| Largest daily distrust rise | 0.67 | 0.55 |
+| Targets | 18 met, 4 missed | 18 met, 4 missed (the same four) |
+
+Every run is identical through stage three. Runs part only after day ~1,700, where lateness on
+stage four used to add distrust from day 2,100. One balanced run won that lost before (capital,
+seed 42, day 3,211), and two lost that won before: workers on seed 20261029, and workers on seed
+42, which had won only on day 3,239, nearly a year late. That is quick-run churn around marginal
+runs; nine balanced runs cannot show a deadline effect this size.
 
 ## Before and after
 
