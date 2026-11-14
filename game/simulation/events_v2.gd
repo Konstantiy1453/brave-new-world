@@ -1036,7 +1036,34 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 			parts.append("维护 %.1f / 日" % float(effect.maintenance))
 	if option.get("sell_rights", false):
 		parts.append("独家后续调查权转让，放弃该现场后续研究成果")
+	var course: String = _course(inst, option)
+	if course != "":
+		parts.append(course)
 	return "；".join(parts)
+
+
+## Where an option leads, in words: the ending it closes on, the next step and when, or for a
+## gamble both outcomes with their odds. Players weigh a choice by this as much as by its price.
+static func _course(inst: Dictionary, option: Dictionary) -> String:
+	if option.has("ending"):
+		return "结局「%s」" % str(option.ending)
+	if not option.has("next"):
+		return ""
+	var nodes: Dictionary = definitions().definitions[inst.definition_id].nodes
+	var ahead: String = str(nodes.get(str(option.next), {}).get("title", option.next))
+	var wait: int = int(option.get("delay", 0))
+	if option.has("alt"):
+		var share: int = roundi(float(option.chance) * 100.0)
+		var other: String = str(nodes.get(str(option.alt), {}).get("title", option.alt))
+		return (
+			"两种可能：约 %d%%「%s」，约 %d%%「%s」%s"
+			% [share, ahead, 100 - share, other, ("，%d 日后揭晓" % wait) if wait > 0 else ""]
+		)
+	if option.has("investigate"):
+		return "调查完成后进入「%s」" % ahead
+	if wait > 0:
+		return "%d 日后进入「%s」" % [wait, ahead]
+	return "随即进入「%s」" % ahead
 
 
 ## What a gift technology's effects do, in words: 「陆路单程时间 -20%，道路运力 +10%」.
