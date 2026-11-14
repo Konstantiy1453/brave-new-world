@@ -112,6 +112,7 @@ func run() -> void:
 	Events.ensure(sim)
 	scene._watch_events()
 	_pausing(sim, site)
+	_gift_words()
 	await _scenes(scene, sim, site)
 	await _page(scene)
 	await _landmarks(scene, sim, site)
@@ -126,6 +127,21 @@ func run() -> void:
 		)
 	)
 	quit(0 if failures.is_empty() else 1)
+
+
+## A gift whose effects have no short name on a card reads from its own description.
+func _gift_words() -> void:
+	var text: String = Events._effect_text(
+		{
+			"effects": {"research_speed": 0.15, "crystal_output": 0.1},
+			"description": "事件赠予，无法研究。地层相位学：科研速度 +15%，晶体产量 +10%。"
+		}
+	)
+	check(text == "地层相位学：科研速度 +15%，晶体产量 +10%。", "a new gift's effects read in words: " + text)
+	check(
+		Events._effect_text({"effects": {"sea_speed": 0.25}}) == "航程时间 -25%",
+		"the named ones still read as before"
+	)
 
 
 func _pausing(sim: RefCounted, site: int) -> void:

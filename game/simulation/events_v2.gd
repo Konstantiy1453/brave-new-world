@@ -50,6 +50,10 @@ const GIFT_EFFECTS: Dictionary = {
 	"sea_capacity": ["航线运力", 1.0],
 }
 
+## How every gift technology's description begins (techs.json), left out when the description
+## stands in for its effects on an event card.
+const GIFT_PREFIX: String = "事件赠予，无法研究。"
+
 static var _definitions: Dictionary = {}
 
 
@@ -1235,6 +1239,9 @@ static func _effect_name(effect: Dictionary) -> String:
 static func _effect_text(tech: Dictionary) -> String:
 	var words: PackedStringArray = []
 	for key: String in tech.get("effects", {}):
+		if not GIFT_EFFECTS.has(key):
+			# Effects without a short name here read from the technology's own description.
+			return str(tech.get("description", "")).trim_prefix(GIFT_PREFIX)
 		var named: Array = GIFT_EFFECTS.get(key, [key, 1.0])
 		var value: float = float(tech.effects[key]) * float(named[1]) * 100.0
 		words.append("%s %+.0f%%" % [str(named[0]), value])
