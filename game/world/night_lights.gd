@@ -1,7 +1,9 @@
 extends RefCounted
-## The night side of the map: settlements and lit roads painted into one equirectangular texture.
-## Red is warm light (homes, streets, roads), green is cold white light (mines and industry).
-## The globe and the flat map read the same texture and show it only where the sun has set.
+## The night side of the map. Lit roads are painted into one equirectangular texture (red warm
+## light, green cold white light); settlements are drawn by the globe and flat-map shaders from a
+## few numbers each (shaders.gd TOWN_LIGHTS_GLSL), as orbit photos show towns at night: a bright
+## core, an irregular built-up outline, lit blocks on a street grid and ribbons along the
+## arterial roads, growing from a few lights round a landing site to a metropolis with suburbs.
 
 const WIDTH: int = 2048
 const HEIGHT: int = 1024
@@ -9,6 +11,10 @@ const GLOBE_RADIUS: float = 3.0
 ## Degrees between two lamps along a finished road.
 const ROAD_STEP_DEGREES: float = 0.32
 const MAX_LIGHTS_PER_TOWN: int = 900
+## The shaders' arrays hold this many settlements (shaders.gd MAX_TOWNS).
+const MAX_TOWNS: int = 48
+## A settlement this populous counts as a metropolis: its lights stop growing brighter.
+const METROPOLIS: float = 3000.0
 const INDUSTRY_ROLES: Array[String] = ["mine", "harvest", "factory", "power", "port", "depot"]
 
 
@@ -33,6 +39,8 @@ static func town_source(
 		if frontier
 		else (30.0 + built * 7.0 + population / 6.0)
 	)
+	# 0 for a landing site, 1 for a metropolis: brightness, street density and suburbs follow it.
+	var size: float = clampf(log(1.0 + population / 40.0) / log(1.0 + METROPOLIS / 40.0), 0.0, 1.0)
 	return {
 		"lat": float(region.lat),
 		"lon": float(region.lon),
@@ -41,61 +49,44 @@ static func town_source(
 		"industry": clampf(float(industry) / maxf(1.0, float(built)), 0.0, 1.0),
 		"frontier": frontier,
 		"seed": int(region.id) * 7717 + 3,
+		"size": size,
 	}
 
 
-static func paint(towns: Array, roads: Array) -> Image:
+## The shaders' town arrays: Vector4(lat, lon, radius in degrees, seed) and Vector4(brightness,
+## cold-light share, size, frontier), padded to MAX_TOWNS.
+static func town_uniforms(towns: Array) -> Dictionary:
+	var places: Array = []
+	var styles: Array = []
+	for town: Dictionary in towns:
+		if places.size() >= MAX_TOWNS:
+			break
+		var size: float = float(town.get("size", 0.0))
+		var frontier: bool = bool(town.frontier)
+		var cold: float = clampf(
+			float(town.industry) * (0.75 if frontier else 0.5) + size * 0.2, 0.0, 1.0
+		)
+		var shine: float = (0.45 if frontier else 0.6) + 0.5 * size
+		# Seeds kept small: the shader hashes them as floats.
+		var seed_value: float = float(posmod(int(town.seed), 997)) + 0.37
+		places.append(
+			Vector4(float(town.lat), float(town.lon), maxf(float(town.radius), 0.25), seed_value)
+		)
+		styles.append(Vector4(shine, cold, size, 1.0 if frontier else 0.0))
+	var count: int = places.size()
+	while places.size() < MAX_TOWNS:
+		places.append(Vector4.ZERO)
+		styles.append(Vector4.ZERO)
+	return {"towns": places, "styles": styles, "count": count}
+
+
+## The lit roads; towns are the shaders' (town_uniforms).
+static func paint(roads: Array) -> Image:
 	var image := Image.create(WIDTH, HEIGHT, false, Image.FORMAT_RG8)
 	for road: Array in roads:
 		_paint_road(image, road)
-	for town: Dictionary in towns:
-		_paint_town(image, town)
 	image.generate_mipmaps()
 	return image
-
-
-## A town is a bright core, a scatter of streets and a few arms reaching out along its roads.
-static func _paint_town(image: Image, town: Dictionary) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(town.seed)
-	var lat: float = float(town.lat)
-	var lon: float = float(town.lon)
-	var radius: float = maxf(float(town.radius), 0.3)
-	var stretch: float = 1.0 / maxf(cos(deg_to_rad(lat)), 0.2)
-	var industry: float = float(town.industry)
-	var frontier: bool = bool(town.frontier)
-	var count: int = int(town.count)
-	var arms: int = 3 + rng.randi_range(0, 2)
-	var arm_angles: Array[float] = []
-	for _arm: int in range(arms):
-		arm_angles.append(rng.randf() * TAU)
-	for index: int in range(count):
-		var along_arm: bool = index % 4 == 3
-		var dy: float
-		var dx: float
-		if along_arm:
-			var angle: float = arm_angles[index % arms]
-			var reach: float = rng.randf_range(0.2, 1.6) * radius
-			dy = sin(angle) * reach + rng.randfn(0.0, radius * 0.06)
-			dx = cos(angle) * reach + rng.randfn(0.0, radius * 0.06)
-		else:
-			dy = rng.randfn(0.0, radius * (0.62 if frontier else 0.45))
-			dx = rng.randfn(0.0, radius * (0.62 if frontier else 0.45))
-		var brightness: float = rng.randf_range(0.35, 1.0)
-		var cold: bool = rng.randf() < industry * (0.75 if frontier else 0.5)
-		_add(
-			image,
-			lat + dy,
-			lon + dx * stretch,
-			0.0 if cold else brightness * 0.55,
-			brightness * 0.6 if cold else 0.0
-		)
-	# The centre glows: the light every orbit photo picks out first.
-	for oy: int in range(-1, 2):
-		for ox: int in range(-1, 2):
-			var spread: float = 180.0 / float(HEIGHT)
-			var weight: float = 0.5 if ox == 0 and oy == 0 else 0.22
-			_add(image, lat + oy * spread, lon + ox * spread * stretch, weight, 0.0)
 
 
 ## Lamps every few tenths of a degree along a finished, open road.
@@ -129,8 +120,21 @@ static func _paint_road(image: Image, coordinates: Array) -> void:
 		carried = length - (at - ROAD_STEP_DEGREES)
 
 
+## A lamp: a bright texel and a faint ring round it, so a road seen close is a string of glows.
 static func _add(image: Image, lat: float, lon: float, warm: float, cold: float) -> void:
 	var x: int = posmod(int(floor((wrapf(lon, -180.0, 180.0) + 180.0) / 360.0 * WIDTH)), WIDTH)
 	var y: int = clampi(int(floor((90.0 - lat) / 180.0 * HEIGHT)), 0, HEIGHT - 1)
+	_lighten(image, x, y, warm, cold)
+	for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		_lighten(
+			image,
+			posmod(x + step.x, WIDTH),
+			clampi(y + step.y, 0, HEIGHT - 1),
+			warm * 0.3,
+			cold * 0.3
+		)
+
+
+static func _lighten(image: Image, x: int, y: int, warm: float, cold: float) -> void:
 	var old: Color = image.get_pixel(x, y)
 	image.set_pixel(x, y, Color(minf(old.r + warm, 1.0), minf(old.g + cold, 1.0), 0.0, 1.0))

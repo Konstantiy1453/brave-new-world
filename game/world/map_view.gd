@@ -6,10 +6,28 @@ const DAY_AMBIENT: Color = Color("8aacbe")
 const NIGHT_AMBIENT: Color = Color("4a6a96")
 const DAY_SKY: Color = Color("080f1c")
 const NIGHT_SKY: Color = Color("03070f")
+## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
+## that hides the landscape's far edge: it begins and is complete this far from the eye.
+const REGION_DAY_AIR: Color = Color("6b8291")
+const REGION_DUSK_AIR: Color = Color("8a6b5b")
+const REGION_NIGHT_AIR: Color = Color("070b13")
+const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
+## The town view's near clip plane. Its camera orbits 31 units or more from its pivot and at least
+## 7 units above it, so nothing comes this close; the depth buffer is ten times finer than with the
+## globe's 0.05, and ground and water no longer flicker where they meet.
+const REGION_NEAR: float = 0.5
 const SUN_ENERGY: float = 1.12
+## Forward+ (高画质) tuning. Colour grade (brightness, contrast, saturation) that brings Forward+
+## to the Compatibility palette; ambient occlusion in the town (radius in units, intensity,
+## power); glow (intensity, bloom, HDR threshold); how far shadow edges soften.
+const HQ_GRADE: Vector3 = Vector3(0.92, 1.12, 1.38)
+const HQ_AO: Vector3 = Vector3(1.2, 1.6, 1.5)
+const HQ_GLOW: Vector3 = Vector3(0.4, 0.0, 1.6)
+const HQ_SHADOW_BLUR: float = 1.3
 
 var environment: Environment
 var fill_light: DirectionalLight3D
+var star_field: MultiMeshInstance3D
 ## A site the camera keeps in view while the spin eases out after a click.
 var focus_site: int = -1
 ## 0 by full day, 1 by full night, at the selected site: lamps and windows read this.
@@ -122,7 +140,7 @@ func _marker_signature() -> String:
 				str(place.get("name", ""))
 			]
 		)
-	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
+	return "%d|%s|%s|%s" % [selected_region, str(settled), marker_filter, str(_event_places())]
 
 
 ## Towns and lit roads change the night side; a few dozen people more do not.
@@ -172,6 +190,7 @@ func show_planet() -> void:
 	camera.near = .05
 	camera.far = 700
 	_update_camera(1.0)
+	_apply_mode_quality()
 
 
 func show_flat() -> void:
@@ -188,6 +207,7 @@ func show_flat() -> void:
 	_update_camera(1.0)
 	_update_flat_markers()
 	_update_flat_transport()
+	_apply_mode_quality()
 
 
 func cancel_region_load() -> void:
@@ -208,6 +228,7 @@ func show_region(id: int) -> void:
 	var token: int = region_load_token
 	selected_region = id
 	mode = "region"
+	_apply_mode_quality()
 	planet.visible = false
 	flat_world.visible = false
 	surface.visible = false
@@ -217,6 +238,10 @@ func show_region(id: int) -> void:
 			old_cached = true
 	if not old_cached:
 		_clear_node(surface)
+	if region_cache.has(id) and str(region_cache[id].get("terraces", "")) != terrace_signature(id):
+		# A plot has come to light since this ground was cut: cut it again with its terrace.
+		_clear_node(region_cache[id].surface)
+		region_cache.erase(id)
 	last_region_cached = region_cache.has(id)
 	if last_region_cached:
 		var entry: Dictionary = region_cache[id]
@@ -241,6 +266,7 @@ func show_region(id: int) -> void:
 	camera_pivot = Vector3.ZERO
 	camera.fov = 43
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.near = REGION_NEAR
 	camera.far = 700
 	_update_camera(1.0)
 	if not last_region_cached:
@@ -265,6 +291,7 @@ func show_region(id: int) -> void:
 			"lakes": local_lakes.duplicate(true),
 			"heights": height_field,
 			"forests": forest_field,
+			"terraces": terrace_signature(id),
 		}
 	signature = _building_signature()
 	if buildings_root == null or str(surface.get_meta("building_signature", "")) != signature:
@@ -432,6 +459,9 @@ func _animate_region(delta: float) -> void:
 		mats["headlight"].emission_energy_multiplier = 0.4 + night * 3.5
 	if glow_material != null:
 		glow_material.set_shader_parameter("intensity", night * 0.8)
+	for lamp: OmniLight3D in lamp_lights:
+		lamp.light_energy = night * LAMP_ENERGY
+		lamp.visible = night > 0.02
 	if mats.has("smoke"):
 		var shade: float = lerpf(1.0, 0.32, night)
 		mats["smoke"].albedo_color = Color(shade, shade, shade * 1.04, 1.0)
@@ -577,6 +607,7 @@ func _light_day_scene() -> void:
 		environment.background_color = DAY_SKY
 	if fill_light != null:
 		fill_light.light_energy = .18
+	_region_air(1.0, 0.0)
 
 
 ## The site's sky: east is +x, north is -z, as the regional ground is laid out.
@@ -601,6 +632,33 @@ func _aim_region_sun() -> void:
 		environment.background_color = NIGHT_SKY.lerp(DAY_SKY, daylight)
 	if fill_light != null:
 		fill_light.light_energy = lerpf(.85, .18, daylight)
+	var dusk: float = smoothstep(-0.12, 0.04, height) * (1.0 - smoothstep(0.04, 0.3, height))
+	_region_air(daylight, dusk * 0.55)
+
+
+## A generated region stands under its own sky: the horizon takes the time of day and the far
+## landscape fades into it, so no edge of the ground shows. The globe, the flat map and older
+## worlds keep the dark of space and the stars.
+func _region_air(daylight: float, dusk: float) -> void:
+	var landscape: bool = (
+		mode == "region" and not world.is_empty() and Geo.is_generated(str(world.version))
+	)
+	if star_field != null:
+		star_field.visible = not landscape
+	if environment == null:
+		return
+	environment.fog_enabled = landscape
+	if not landscape:
+		return
+	var air: Color = REGION_NIGHT_AIR.lerp(REGION_DAY_AIR, daylight).lerp(REGION_DUSK_AIR, dusk)
+	environment.background_color = air
+	environment.fog_mode = Environment.FOG_MODE_DEPTH
+	environment.fog_light_color = air
+	environment.fog_light_energy = 1.0
+	environment.fog_sun_scatter = 0.0
+	environment.fog_density = 1.0
+	environment.fog_depth_begin = REGION_HAZE.x
+	environment.fog_depth_end = REGION_HAZE.y
 
 
 func _build_environment() -> void:
@@ -634,7 +692,43 @@ func _build_environment() -> void:
 	fill.rotation_degrees = Vector3(35, 140, 0)
 	add_child(fill)
 	fill_light = fill
+	_apply_render_quality()
 	_build_stars()
+
+
+## Forward+ (高画质) draws what Compatibility cannot: ambient occlusion where buildings meet the
+## ground, bloom on lit windows and town lights, finer and softer shadows. Forward+ renders in
+## linear light and comes out about a fifth less saturated, so a colour grade keeps one palette
+## across both renderers.
+func _apply_render_quality() -> void:
+	high_quality = RenderingServer.get_current_rendering_method() != "gl_compatibility"
+	if not high_quality:
+		return
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = HQ_GRADE.x
+	environment.adjustment_contrast = HQ_GRADE.y
+	environment.adjustment_saturation = HQ_GRADE.z
+	environment.ssao_radius = HQ_AO.x
+	environment.ssao_intensity = HQ_AO.y
+	environment.ssao_power = HQ_AO.z
+	environment.ssao_detail = 0.5
+	environment.glow_enabled = true
+	environment.glow_intensity = HQ_GLOW.x
+	environment.glow_bloom = HQ_GLOW.y
+	environment.glow_hdr_threshold = HQ_GLOW.z
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	sun_light.shadow_blur = HQ_SHADOW_BLUR
+	sun_light.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	RenderingServer.directional_soft_shadow_filter_set_quality(
+		RenderingServer.SHADOW_QUALITY_SOFT_HIGH
+	)
+	_apply_mode_quality()
+
+
+## Ambient occlusion belongs to the town at its scale; the globe and the flat map do without.
+func _apply_mode_quality() -> void:
+	if environment != null and high_quality:
+		environment.ssao_enabled = mode == "region"
 
 
 func _build_stars() -> void:
@@ -670,6 +764,7 @@ func _build_stars() -> void:
 	var stars := MultiMeshInstance3D.new()
 	stars.multimesh = mm
 	add_child(stars)
+	star_field = stars
 
 
 func _exit_tree() -> void:

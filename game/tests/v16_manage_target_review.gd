@@ -3,6 +3,7 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 ## Real simulation and production manage page; minimal page context, no main-scene claim.
 const Sim = preload("res://simulation/sim.gd")
 const Pages = preload("res://ui/progression_pages.gd")
+const Labels = preload("res://ui/labels.gd")
 
 
 class PageContext:
@@ -66,15 +67,17 @@ func run():
 		)
 		var amounts = box.find_children("*", "SpinBox", true, false)
 		check(amounts.size() == 3, mode + " three inputs")
+		# 1.9: the page shows tonnes, the rules keep hundreds of tonnes (economy.json display).
+		var scale: float = Labels.tonnes_per_unit()
 		for index in range(mini(3, amounts.size())):
 			check(
-				absf(amounts[index].value - expected[index]) <= 0.000001,
+				absf(amounts[index].value - expected[index] * scale) <= 0.000001 * scale,
 				mode + " target within microton precision " + str(index),
-				{"expected": expected[index], "actual": amounts[index].value}
+				{"expected": expected[index] * scale, "actual": amounts[index].value}
 			)
 			check(
-				is_equal_approx(amounts[index].custom_arrow_step, 0.1),
-				mode + " arrow step 0.1 " + str(index)
+				is_equal_approx(amounts[index].custom_arrow_step, 0.1 * scale),
+				mode + " arrow step 0.1 unit " + str(index)
 			)
 		for button in box.find_children("*", "Button", true, false):
 			if button.text == "设置目标":
@@ -88,7 +91,7 @@ func run():
 			)
 		box.queue_free()
 		await process_frame
-	var page_script: Script = load("res://ui/progression_pages.gd")
+	var page_script: Script = Pages
 	result.runtime_page_source_hash = page_script.source_code.sha256_text()
 	var output: String = "res://../evidence/v17/tests/manage_target_review_red.json"
 	for arg in OS.get_cmdline_user_args():

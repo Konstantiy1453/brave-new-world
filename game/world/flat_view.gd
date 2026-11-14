@@ -36,6 +36,7 @@ func _build_flat() -> void:
 	material.set_shader_parameter("atlas", geography_atlas)
 	material.set_shader_parameter("noise3d", Shaders.noise_texture())
 	material.set_shader_parameter("lights", _night_lights_texture())
+	_apply_town_lights(material)
 	material.set_shader_parameter("ice_latitude", _ice_latitude())
 	material.set_shader_parameter("coverage", _cloud_coverage())
 	flat_shader = material
@@ -126,6 +127,9 @@ func _labelled_sites() -> Array:
 			var sb: float = _site_rank(b)
 			return int(a.id) < int(b.id) if sa == sb else sa > sb
 	)
+	# Candidates are named only while the player is choosing where to land, or filtering the map
+	# for a site; after that, the settled, selected and hovered sites keep their names.
+	var choosing: bool = state.get("settlements", []).is_empty() or marker_filter != "all"
 	var labelled: Array = []
 	for reg: Dictionary in ranked:
 		var id: int = int(reg.id)
@@ -133,7 +137,7 @@ func _labelled_sites() -> Array:
 			id == selected_region
 			or id == hovered_region
 			or _is_settled(id)
-			or labelled.size() < LABELLED_SITES
+			or (choosing and labelled.size() < LABELLED_SITES)
 		):
 			labelled.append(reg)
 	return labelled
@@ -212,7 +216,7 @@ func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
 	_sphere(holder, point, .025, _marker_material(color), 8, 4)
 	if not with_label:
 		return
-	var text: String = _site_text(reg, settled)
+	var text: String = _site_name(reg, settled)
 	_flat_label(holder, _place_flat_label(point, text, placed), text, color, .0068, 40)
 
 
@@ -364,8 +368,8 @@ func _draw_road_on_flat(route: Dictionary) -> void:
 		var marker := _sphere(
 			flat_transport_root,
 			lifted[0],
-			.031,
-			_mat("flatshipment", Color("fff0bd"), 0, 1, 2),
+			CARGO_DOT_FLAT,
+			_mat("flatshipment", Color("fff0bd"), 0, 1, CARGO_GLOW),
 			8,
 			4
 		)

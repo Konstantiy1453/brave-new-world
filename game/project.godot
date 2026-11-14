@@ -5,6 +5,7 @@ config/name="殖民契约 · COLONY CHARTER 1.9"
 config/version="1.9.0"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ColonyCharter/v19"
+config/project_settings_override="user://graphics_override.cfg"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/icons/port.svg"
@@ -19,6 +20,7 @@ window/stretch/mode="canvas_items"
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+rendering_device/fallback_to_opengl3=true
 textures/default_filters/use_nearest_mipmap_filter=false
 environment/defaults/default_clear_color=Color(0.035,0.071,0.11,1)
 

@@ -74,6 +74,7 @@ func _build_planet() -> void:
 	globe_shader.set_shader_parameter("atlas", geography_atlas)
 	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	globe_shader.set_shader_parameter("lights", _night_lights_texture())
+	_apply_town_lights(globe_shader)
 	globe_shader.set_shader_parameter("ice_latitude", _ice_latitude())
 	var sphere := SphereMesh.new()
 	sphere.radius = 3
@@ -264,11 +265,14 @@ func _update_night_lights() -> void:
 		if Geo.road_building(road, day) or Geo.road_blocked(road, day):
 			continue
 		roads.append(road.get("coordinates", []))
-	var image: Image = NightLights.paint(towns, roads)
+	var image: Image = NightLights.paint(roads)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
 	else:
 		night_lights.update(image)
+	town_lights = NightLights.town_uniforms(towns)
+	for material: ShaderMaterial in [globe_shader, flat_shader]:
+		_apply_town_lights(material)
 
 
 func _update_markers() -> void:
@@ -318,7 +322,7 @@ func _globe_marker(reg: Dictionary, with_label: bool) -> void:
 	_line(root, ring_points, c, .85)
 	if with_label:
 		var label := Label3D.new()
-		label.text = _site_text(reg, settled)
+		label.text = _site_name(reg, settled)
 		label.font = label_font
 		label.font_size = 48
 		label.pixel_size = .0028
@@ -413,6 +417,11 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue
 		var marker := _sphere(
-			transport_root, points[0], .023, _mat("shipment", Color("ffedc2"), 0, 1, 2), 8, 4
+			transport_root,
+			points[0],
+			CARGO_DOT_GLOBE,
+			_mat("shipment", Color("ffedc2"), 0, 1, CARGO_GLOW),
+			8,
+			4
 		)
 		globe_movers.append(_mover(marker, points, shipment, r, INF))

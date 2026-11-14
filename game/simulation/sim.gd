@@ -557,6 +557,11 @@ func _repay() -> void:
 	state.debt = maxf(0.0, state.debt)
 
 
+## Goods are kept in hundreds of tonnes (economy.json `display`): messages show tonnes.
+func tonnes(amount: float) -> float:
+	return amount * float(config.get("display", {}).get("tonnes_per_unit", 1.0))
+
+
 func summary() -> Dictionary:
 	var population: int = 0
 	var employed: int = 0

@@ -473,3 +473,276 @@ Format as above: the call · why · what was rejected. Branch `v17-ui-redesign`,
   repository); the look follows the written direction · guessing pixel values from file names.
 - Capture fixtures recorded on Windows do not load on Linux (world hash). `make_fixtures_v17.gd --out=`
   writes a local set and both capture suites take `--qa-fixtures=` · overwriting the recorded set.
+
+## 1.9: fix tips (2026-11-12)
+
+The user's FIX_TIPS document after the interface preview: a bigger region scene with no visible ground
+edge and buildings cut into the slopes, no vehicles through buildings, satellite-style town lights that
+grow with a place, daily changes, goods in real tonnes, labour, quarterly autosave, metals told apart,
+cargo docks instead of the coastal route, road upgrades, event-only gift technologies, surveys that
+narrow the ranges over time, a model fix sheet and a technology tree overview.
+
+- Goods are kept in hundreds of tonnes and shown in tonnes (×100, `economy.json display.tonnes_per_unit`);
+  prices read per 100 t · rescaling every amount, rate, capacity, save and harness number by 100 (same
+  balance, every rule touched).
+- The top bar's change is the mean daily change over the last 7 days (money: the economy page's 7-day
+  operating net) · yesterday's change, which jumps with every shipment and payday.
+- Labour (劳动力) is crews plus research teams, the people who work · everyone, children and retirees
+  included.
+- Metals are told apart by their map colours on the top-bar icons and by the name first in the tooltip ·
+  new pictograms (the shapes already differ; colour was what was missing).
+- Autosave every 90 days of the calendar (quarters, `progression.json time.autosave_days`) · monthly.
+- The region scene changes (landscape, terraces, lanes, haze) apply to generated worlds only; 1.6
+  worlds keep their ground to the vertex (`world_v16_terrain_identity`) · one rule for both.
+- The ground runs 520 units past the field on a widening grid that follows the planet, under depth fog
+  and a sky colour · a bigger field (every vertex costs on the CPU) or a skirt down to a flat floor
+  (seen from low angles).
+- Each visible plot is cut into the slope as a level terrace (flat to 2.45 units, back to the natural
+  ground by 3.6), and the relief is compressed on a log curve (knee 5 units) so no pad sits on a pillar;
+  towns read as carved into hillsides · pads on stilts, or flattening the whole town.
+- The landing pods get a free hex cell of their own · the nearest general plot (they overlapped a
+  building).
+- Vehicles drive on service lanes between the rows of plots, stop at the front of each pad and leave by
+  the lanes' corners and junctions · collision checks at run time (cost, and still visible clipping).
+- Town lights are drawn in the globe and flat shaders from up to 48 towns (frayed outline, arms and
+  suburbs gated by size, a rotated street grid with dark blocks, a core; a metropolis at 3,000 people);
+  roads stay in the night-light texture · painting towns into the texture (blurry at globe scale and
+  repainted on every change).
+- A sea link is one link with two small cargo docks, one at each end, and one level for both · docks as
+  town buildings (one dock serving several links needs coast plots and its own capacity rules).
+- Sea links no longer need an orbital freight station at either end; the base cost rises from 5,000 to
+  6,000 for the two docks · keeping the station rule (the request makes the docks the terminal).
+- Each link level multiplies the capacity the link has (paved ×1.5, trunk ×1.5; medium docks ×1.5,
+  large ×1.6), takes a day off the trip, multiplies the closure chance and adds upkeep (trunk +2, medium
+  +3, large +6 a day) · fixed capacities per level (old paved roads would need their base capacity).
+- Medium docks need no technology, large ones 沿海航运; the trunk road needs 连续摊铺机 after paving ·
+  new technologies (they would change the deal of every run).
+- Older saves: `paved` reads as level 2; `paving_until` carries any upgrade under way, with
+  `upgrade_to` · a save migration.
+- Upgrade stores come from whichever end has all of them · always the first end (an island outpost
+  rarely has any).
+- Gift technologies carry `gift: true` and weight 0: never dealt, refused by research and by event
+  leads, left out of the re-deal price, the charter's technology goals and the harness's techs at award ·
+  counting them as research.
+- The three gift events use the default deck chance (65%), a 900-day cooldown, and open only where they
+  make sense (`land_road`, `sea_link`, `lacks_tech`) · always in the deck (that pushed the share of events
+  left out below 25% on some seeds).
+- Bots let the gift events default (no gift) · a gift policy for bots (another change of path for the
+  harness's colonies).
+- Bots upgrade any link that runs full once its next level is open and the money is there · paving only.
+- Ground surveys come in three steps (±12%, ±6%, ±3%; 15, 25, 40 days; ×1, ×1.5, ×2 the price), the first
+  as in 1.8; the survey technology still makes surveyed sites exact · one survey straight to exact figures.
+- The town view stands in for `dock_medium`, `dock_large`, `ship_bulk`, `ship_fast` and
+  `vehicle_truck_redball` with the existing quay and ship drawn larger and trucks painted red, until the
+  models arrive · drawing nothing new.
+- The quay walks out from the town in half-unit steps and takes the nearest shore clear of plots and the
+  street, avoiding cliff tops · the nearest shore from 4 units out (on a cliff-top coastal town it put
+  the quay in the town centre).
+- `v19_payback` misses on the light iron mine (63 days in year 6, band 70–150): with docks that need no
+  freight station the bot's colony settles another coast first and its iron market is not saturated in
+  year 6 (price 5.57 against the 4.40 floor). Clean runs of the previous commit gave 72 and 69 days, so
+  the edge was already close. A dearer light iron mine (2,100 → 2,250) does not help: on its own path
+  the mine paid back in 61 days and two more checks missed (heavy iron mine 94, tailings 317 in year 4),
+  so one seed's year-6 figure follows the colony's path more than the mine's price. Left failing and
+  reported · asserting the bands over several seeds (a change to how plan A2.2 is measured, for the
+  user to approve) or tuning prices to one path.
+- The labour lever reads +6% on this run (MISS, +23% before). Probes show it is noise from the event
+  dice: unchanged code gives +15% and +16% with nudged event dice, and this code without its three
+  extra deck rolls gives +35% (BALANCE.md, 1.9 fix tips). Left as measured and reported · dealing new
+  events from a separate dice stream so old runs keep their sequence (it would pass by luck, not by
+  measuring better) or tuning wages to one draw.
+
+## 1.9: picture quality, natural terrain and polish (2026-11-13)
+
+The user, after the preview: 高画质 next to the light renderer; the aliasing, hard edges and
+hexagons looked amateur; the terrain looked like Minecraft (walls, mesas, stair-step shores); inland
+sites showed coast; candidate labels cluttered the map after landing; cargo dots too big; stage
+three too hard (three games stuck on population); a notice when research finishes; the events'
+rewrite goes to GPT in parallel.
+
+- Two renderers: standard is Compatibility (default, any graphics card); 高画质 is Forward+, chosen
+  in the settings, saved in `user://graphics_override.cfg` through
+  `application/config/project_settings_override` and applied on the next start (a restart button).
+  Without Vulkan or Direct3D 12, Godot falls back to Compatibility (`fallback_to_opengl3`) and the
+  page says so · a switch at run time (Godot cannot change renderer while running) or two
+  executables.
+- The choice at start-up is read once (`Graphics.start_choice`), to tell a fallback from a choice
+  that waits for a restart.
+- Anti-aliasing in both renderers: 4× multisampling by default, 2× and off in the settings; SMAA on
+  top in Forward+. FXAA stays off in Compatibility: with multisampling it undid the smoothing in the
+  captures · TAA (ghosts behind moving vehicles).
+- Forward+ colour grade (brightness 0.92, contrast 1.12, saturation 1.38), measured on captures
+  of the new terrain against Compatibility: mean brightness within 5 levels and the same saturation
+  (without it, Forward+ came out brighter and about a fifth less saturated) · another tonemapper
+  (AgX and ACES came out darker, linear lost the highlights).
+- Forward+ extras:
+  - ambient occlusion in the town view only (radius 1.2, intensity 1.6, power 1.5);
+  - glow only above an HDR level of 1.6 (lamps, lit windows, night lights; sunlit snow no longer
+    blooms);
+  - soft directional shadows (high filter, four splits, blur 1.3);
+  - at night, real lamp lights (up to 64, no shadows) instead of painted pools of light.
+
+  Rejected: SDFGI and volumetric fog (too costly on modest cards).
+- Natural ground on generated worlds:
+  - the relief knee drops from 5 to 3.2;
+  - three passes of a 1-2-1 blur over the whole landscape grid;
+  - noise detail of 0.25–1.45 units, rising with height above the sea, and ridges on high ground;
+  - a beach profile within 1.6 units of the sea;
+  - the town's ground is pulled 65% toward its own level between 10 and 22 units out;
+  - building pads are flat to 2.35 and graded out to 5.2 by a weighted mean of the neighbouring pad
+    levels with smootherstep; each pad's level is averaged over the pad and relaxed toward its
+    neighbours.
+
+  Rejected: the terraces of `fef2eb7` (vertical walls and mesas), or flattening the whole town.
+- Inland sites (no coast) draw no sea. The ground keeps a soft floor 0.45 above sea level, low
+  plains get gentle swells, and the ground shader colours them as land · the planet's real seas
+  within the field (the field spans 24° of the planet, so most inland sites had sea in view).
+- Free plots:
+  - no hexagon plates;
+  - ore deposits show three small rocks in the ore's colour over a faint patch;
+  - farmland shows a faint green patch;
+  - rings round every free plot sit behind a settings switch, off by default.
+
+  Rejected: hexagons, or no marks at all.
+- Candidate sites are named only before the first landing or while the map is filtered; afterwards
+  only the settled, selected and hovered sites are named · no candidate names at all (they help the
+  first choice).
+- Cargo dots shrink from 0.023 to 0.013 on the globe and from 0.031 to 0.018 on the flat map, and
+  their glow drops from 2 to 1.2 · hiding them.
+- Stage three's deadline moves a year later on every difficulty (normal 1,500 → 1,860, easy
+  1,800 → 2,160, hard 1,400 → 1,760), as the user asked. Stage four's stays (normal 2,100, now 240
+  days after stage three's) · moving stages four and five as well (not asked; put to the user).
+- Research notices: a card under the top bar for each finished technology, saying so for a gift;
+  eight seconds, up to three at a time, a click opens the research page; reset on a new or loaded
+  game · a dialog (it would stop play).
+- The events' rewrite is GPT's (`docs/superpowers/plans/2026-11-13-v19-events-rewrite-sheet.md`,
+  branch `v17-events`); Claude leaves `events.json` alone meanwhile.
+
+## 1.9: the coast that jumped (2026-11-13, after the preview)
+
+The user: where the sea meets the land, the land jumps; dropped frames or something else?
+
+- It was z-fighting, not frame time. The natural-terrain pass made beaches meet the flat sea plane at a
+  tangent (`SHORE_POWER` 1.5), and the town view kept the globe's near plane of 0.05, so land and water
+  lay within the depth buffer's precision of each other over whole strips of coast, worst far out. A
+  probe that renders each view twice with the camera turned by 0.0015 rad counted 10,756 land/water
+  flips over seven views (the same view rendered twice: 2).
+- Fix: the beach profile keeps a straight share (`SHORE_LINEAR` 0.35), so the ground crosses the
+  waterline at a slope instead of touching it; on the final ground a smooth odd curve moves heights
+  within 0.3 of the sea away from it by up to 0.1 (`_clear_waterline`, slope ×3 at the waterline).
+  The town view sets its own near plane, 0.5 (its camera stays 31 units or more from its pivot and 7
+  or more above it): a depth buffer ten times finer. Measured on the field of seed 260129's first
+  coastal site: the gentlest twentieth of the crossings went from slope 0.06 to 0.21; with the near
+  plane moved 3% (which moves nothing on screen), land/water flips over seven views went from 4,660
+  to 563, the rest on interface text. Pads (0.35 above the sea) keep their level; 1.6 worlds are
+  untouched.
+- First tried, and replaced the same day: a fixed lift of 0.08 for land and a drop of 0.3 or more for
+  the seabed. It stopped the flicker as well, but every crossing then sat at the same fraction of its
+  grid edge and the coast snapped into steps (crossing spread 0.14 against 0.26–0.32);
+  `v19_region` now checks both the slope and the spread.
+- Rejected: a depth bias in the water shader (it differs between renderers, and ground within the
+  bias would still flicker); a transparent sea (sorting, and the beaches would still flicker); steeper
+  beaches everywhere (the user asked for gentle shores).
+
+## 1.9: the events rewrite (2026-11-13)
+
+The user, handing over GPT's package (`docs/v17/events_rewrite/`): integrate the edited text and
+events. The package offers two alternatives: the old events with new words only, or its full design.
+
+- The full design goes in as written (106 events, 249 nodes; `game/data/v17/events.json`), because
+  the user asked for stakes and rewards as well as story · the text-only alternative (it keeps the
+  old peanuts) · picking events from both (GPT built them as alternatives, not parts).
+- Checked before it went in: every old event keeps its id, version and nodes, so saves with an open
+  or finished event load; no field, condition, effect kind or option key is new to the engine; every
+  default is an option of its node, every `next` and `alt` exists, every chance lies between 0 and
+  1, every node is reachable (the order engine's `industry.delivered`, as before); technologies,
+  buildings, goods and earlier endings named in it exist. No placeholder, markup, English word or
+  reference to another game in any title, text, option or ending.
+- Its 18 requests for new mechanics (node-level pauses, single-road effects, cancellable upkeep,
+  casualty records, and so on) are left for later: GPT already wrote fallbacks with today's effects,
+  and each request is a system of its own · building them into this preview.
+- Tests that walked the old chains follow the new paths and read the numbers from the data
+  (`v17_events`: the crack's repair now runs through measurements, a plan and trial loads; the blank
+  ridge's survey through the old camp's papers, its water room, an agreement and a pilot hole). The
+  check that applies every short event's options on a rich colony stocks every good, since the new
+  events also ask for components and alloy.
+- The harness bots value an event option in money (`colony_bot._option_value`): payments and
+  rewards scaled as the game scales them, goods at their prices, and each effect over its days (a
+  year when it lasts) on the share of daily income its kind touches (all 1, export price 0.6, mines
+  0.45, processing 0.3, port and roads 0.2, power 0.15, farms and water 0.1, research and appeal
+  0.05), less its upkeep. The flat (factor − 1) × 500 per effect took every long cut the rewritten
+  events offer and turned 8 of 9 balanced awards into 6. With it, 8 of 9 again (BALANCE.md, 1.9
+  events rewrite) · scaling GPT's numbers down to suit the old bot (the user asked for bigger
+  stakes; the bot, not the events, misjudged them).
+
+## 1.9: stage four, payback seeds, event options (2026-11-14)
+
+- Stage four's deadline moves 14 months (420 days) later on every difficulty, as the user asked:
+  normal 2,100 → 2,520, easy 2,500 → 2,920, hard 2,000 → 2,420. Stage five's deadline, the
+  contract's last date, stays: the user wants the overall limit kept, so stage five's window
+  shrinks (normal 780 → 360 days) · moving stage five with it (that lengthens the contract).
+- Payback bands are asserted on each building's median over the harness's first seeds, as the
+  user agreed (`v19_payback`): five by default, `--seeds=3` for a quicker check; each seed's value is
+  printed beside the median. The suite's timeout goes to 1,500 seconds · the mean (one odd path
+  drags it) or keeping one seed (one colony's path decided a band). Three seeds failed the
+  processing plant on one bad draw (median 112); five pass it (118).
+- On five seeds, one band misses: the light iron mine pays back in 65 days in year 6 (69 / 62 / 46 /
+  79 / 65; floor 70, 66.5 with the tolerance). Left as reported · a dearer light iron mine (2,100 →
+  2,270): it brings the mine to 68 but pushes the smelter's year-4 median from 306 to 374 (ceiling
+  315), since fewer iron mines starve it of ore; the two trade through the ore supply, so a fix
+  means retuning ore, the processing plant and the smelter together, over five seeds each step.
+- Every event option says where it leads: the ending it closes on, the next step and how many days
+  until it, or for a gamble both outcomes with their odds (`events_v2._course`). Players could not
+  tell a gamble from a sure thing, or whether a story went on · hiding the odds for suspense (the
+  node texts already state most of them in words).
+
+## 1.9: event payoffs, engine side, and faster immigration (2026-11-14)
+
+The user approved the five steps of `docs/v17/EVENTS_DIAGNOSIS.md` and asked for GPT's brief
+(`docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`); Claude builds steps 1-4 while GPT
+writes the content. On balance the user chose more population growth over a retune of ore and the
+factories, so the game's cycle and the payback bands stay as they are.
+
+- The data contract is fixed in GPT's sheet before either side starts:
+  - `outcome` on a choice;
+  - `critical` on a node;
+  - `landmark` on an ending (eight kinds);
+  - `label` on an effect.
+
+  The engine ignores keys it does not know, so GPT's data can land before or after this code ·
+  waiting for the engine before briefing GPT (it would serialise the work).
+- **Ending scenes.**
+  - The ending's `outcome` is kept in the event log, with what changed in words and whether the
+    default applied at the deadline.
+  - A card under the top bar shows each new ending (the shared notice card, 14 seconds), and the
+    events page shows the scene under its ending.
+  - A loaded game raises no cards for old endings · a dialog (it stops play), or the scene only on
+    the events page (players do not open it).
+- **Pausing finales.** A node marked `critical` pauses when it opens, even in a notice · a chain-wide
+  `critical` (it pauses every step, against the pause budget) · ending a node's default early.
+- **Effects where they act.**
+  - A town's panel lists the effects acting there and the colony-wide ones, with label, size and
+    days left. The economy page lists all effects with their places.
+  - Effects remember their event, so their name outlives the event's record.
+  - Both maps add 「通讯」 to a place's name while an event is open there.
+
+  Rejected: per-building tags (most effects act on a kind of production, not a building), a
+  separate effects page.
+- **Landmarks.**
+  - Plain-shape figures for the eight kinds (there are no models yet), placed on rings around the
+    town and clear of plots, street, water and steep ground. They are rebuilt with the town's live
+    objects, so a landmark appears as soon as it is raised.
+  - Each stands once, at most six to a place; their effects are permanent effects of the place.
+  - The list of landmarks is created only with the first one, so other games keep a byte-identical
+    state.
+
+  Rejected: landmarks as buildings (they would need jobs, upkeep and plots), models from the art
+  team first (that would hold up the content).
+- New gift technologies may use any technology effect; an event card reads them from the gift's
+  own description when there is no short name for them · names for every technology effect key
+  (the research page already shows descriptions, not generated lists).
+- **Free immigration 9 → 11 a month** (+22%), as the user asked: population, not money, is what
+  stops stage three. Births, recruitment, housing and the economy are unchanged. The wage lever
+  stays proportional, since wages act through attractiveness, which multiplies the base · births
+  (1% a year moves little) · cheaper recruitment (it moves money, which the user wants left alone)
+  · a lower stage-three goal (the goals stay; the pace changes).

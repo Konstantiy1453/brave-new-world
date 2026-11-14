@@ -61,12 +61,12 @@ static func company(g, b):
 	D.label(b, str(v.get("remedy", "优先恢复食品和住房，清偿到期欠款；暂停非必要扩张，调拨库存，必要时接受有条件援助。")), 17, D.MUTED)
 	for offer in v.get("offers", []):
 		var description = (
-			"援助现金 %.0f，食品 %.0ft，建材 %.0ft，部件 %.0ft；%d日后抵达。\n期限%d日，偿还%.0f；期间正经营结余追加分成%.0f%%。仅从超过%.0f现金保底的部分分期偿还。每方案一生涯当前星球仅可领取一次。"
+			"援助现金 %.0f，食品 %s，建材 %s，部件 %s；%d日后抵达。\n期限%d日，偿还%.0f；期间正经营结余追加分成%.0f%%。仅从超过%.0f现金保底的部分分期偿还。每方案一生涯当前星球仅可领取一次。"
 			% [
 				offer.cash,
-				offer.food,
-				offer.materials,
-				offer.parts,
+				Labels.t(float(offer.food)),
+				Labels.t(float(offer.materials)),
+				Labels.t(float(offer.parts)),
 				offer.arrival_days,
 				offer.duration,
 				offer.repayment,
@@ -215,10 +215,10 @@ static func events(g, b):
 			D.label(
 				c,
 				(
-					"订单已发 %.1f / 已到 %.1f · 已付款 %.2f"
+					"订单已发 %s / 已到 %s · 已付款 %.2f"
 					% [
-						node.order.get("dispatched", 0),
-						node.order.get("delivered", 0),
+						Labels.t(float(node.order.get("dispatched", 0))),
+						Labels.t(float(node.order.get("delivered", 0))),
 						node.order.get("paid", 0)
 					]
 				),
@@ -256,6 +256,9 @@ static func events(g, b):
 					16,
 					D.MUTED
 				)
+				# An ending keeps its scene: what happened, in the event's own words.
+				if section == "history" and str(row.get("outcome", "")) != "":
+					D.label(b, "　" + str(row.outcome), 15, D.MUTED)
 			else:
 				D.label(b, str(row), 16, D.MUTED)
 
@@ -452,15 +455,17 @@ static func manage(g, b):
 		)
 		caption.custom_minimum_size.x = 180
 		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Shown and typed in tonnes; the rules keep hundreds of tonnes (economy.json `display`).
+		var scale: float = Labels.tonnes_per_unit()
 		var amount = D.spin(
 			row,
 			"Target_" + key,
 			0,
-			maxf(10000, g.sim._target(s, key)),
-			0.000001,
-			g.sim._target(s, key)
+			maxf(10000, g.sim._target(s, key)) * scale,
+			0.000001 * scale,
+			g.sim._target(s, key) * scale
 		)
-		amount.custom_arrow_step = 0.1
+		amount.custom_arrow_step = 0.1 * scale
 		var resource = key
 		D.button(
 			row,
@@ -468,6 +473,6 @@ static func manage(g, b):
 			func():
 				g.act(
 					"stock_target",
-					{"region": g.selected, "resource": resource, "target": amount.value}
+					{"region": g.selected, "resource": resource, "target": amount.value / scale}
 				)
 		)

@@ -36,6 +36,44 @@ func _init() -> void:
 	quit(1 if failures else 0)
 
 
+## A sample now goes through the evacuation roster, the station's recordings, a controlled layer
+## test and a demonstration before the findings.
+func _archaeology_trial(s, i: Dictionary) -> void:
+	until_node(s, i, "roster")
+	check(choose(s, i, "trace") == "", "the evacuation roster is traced")
+	until_node(s, i, "voices")
+	check(choose(s, i, "analyse") == "", "the station's recordings are analysed")
+	until_node(s, i, "layer")
+	check(choose(s, i, "controlled") == "", "a controlled layer test is run")
+	until_node(s, i, "demonstration")
+	check(choose(s, i, "run") == "", "the demonstration runs")
+	for _k in range(60):
+		if i.node in ["findings", "dissent"]:
+			break
+		days(s, 1)
+	check(i.node == "findings", "the demonstration reaches the findings")
+
+
+## After a survey, the finished pump's water goes through a ledger, a schedule and a pilot run
+## before the inspection; a saline pilot is recovered.
+func _water_trial(s, i: Dictionary) -> void:
+	check(i.node == "ledger", "a surveyed pump opens its water ledger")
+	check(choose(s, i, "measure") == "", "the ledger is measured by research teams")
+	until_node(s, i, "allocation")
+	check(choose(s, i, "schedule") == "", "the new allocation is scheduled")
+	until_node(s, i, "pilot")
+	check(choose(s, i, "calibrate") == "", "the pilot run is calibrated")
+	for _k in range(60):
+		if i.node in ["stable", "saline"]:
+			break
+		days(s, 1)
+	if i.node == "saline":
+		check(choose(s, i, "recover") == "", "a saline pilot is recovered")
+	else:
+		check(choose(s, i, "accept") == "", "a stable pilot is accepted")
+	until_node(s, i, "inspection")
+
+
 func make():
 	var s = Sim.new()
 	s.new_game(20261029, "science", 1)
@@ -231,6 +269,8 @@ func water_chain() -> void:
 	for final_choice in ["flush", "decline", "careful"]:
 		var s = make()
 		supplies(s)
+		# The rewritten chain costs more than the shared supplies: a survey, a water ledger, a pilot.
+		s._transfer("external", "public", 20000, "TEST water chain funds", false)
 		var i: Dictionary = opened(s, "water")
 		if final_choice == "careful":
 			check(choose(s, i, "survey") == "", "water survey reserves real research teams")
@@ -246,6 +286,12 @@ func water_chain() -> void:
 		check(build.remaining > 0, "actual pump is still under construction without simulation")
 		for k in range(int(s.config.buildings.water.days)):
 			s.tick()
+		if final_choice == "careful":
+			_water_trial(s, i)
+		else:
+			check(i.node == "night", "the running pump's first night shift is reviewed first")
+			check(choose(s, i, "review") == "", "the night shift's readings are reviewed")
+			until_node(s, i, "inspection")
 		check(i.node == "inspection", "actual completed and operating pump triggers inspection")
 		check(choose(s, i, final_choice) == "", "water inspection outcome " + final_choice)
 		assert_end(s, i, {"flush": "调蓄验收", "decline": "含盐扩张", "careful": "精测验收"}[final_choice])
@@ -295,6 +341,9 @@ func archaeology_chain() -> void:
 		assert_end(s, i, "调查权转让")
 	for final_choice in ["protect", "decline", "apply", "sample_decline"]:
 		var s = make()
+		# The rewritten chain costs more: three investigations, a layer test and the findings.
+		supplies(s)
+		s._transfer("external", "public", 20000, "TEST archaeology funds", false)
 		var i: Dictionary = opened(s, "archaeology")
 		choose(s, i, "survey")
 		check(
@@ -308,7 +357,7 @@ func archaeology_chain() -> void:
 		)
 		if final_choice in ["apply", "sample_decline"]:
 			choose(s, i, "sample")
-			until_node(s, i, "findings")
+			_archaeology_trial(s, i)
 			choose(s, i, "apply" if final_choice == "apply" else "decline")
 		else:
 			choose(s, i, final_choice)
@@ -342,14 +391,19 @@ func industry_chain() -> void:
 	for final_choice in ["standard", "decline", "reduce", "extend"]:
 		var s = make()
 		facilities(s)
+		s._transfer("external", "public", 20000, "TEST order funds", false)
 		var i: Dictionary = opened(s, "industry")
+		var ordered: float = 0.0
+		for option: Dictionary in E.definitions().definitions.industry.nodes.start.choices:
+			if option.id == "accept":
+				ordered = float(option.order.amount)
 		check(choose(s, i, "accept") == "", "real order signed")
 		days(s, 1)
 		check(
 			i.order.dispatched == 0 and i.order.paid == 0,
 			"imported inventories cannot satisfy local production order"
 		)
-		var amount: float = 2.0 if final_choice == "reduce" else 4.0
+		var amount: float = 2.0 if final_choice == "reduce" else ordered
 		# A reduction settles for what has already gone out: those two parts leave before the review.
 		if final_choice == "reduce":
 			s._produce(s.settlement(0), "parts", amount, "processing")
@@ -368,7 +422,7 @@ func industry_chain() -> void:
 		if final_choice == "reduce":
 			check(
 				float(i.order.required) == 2,
-				"negotiated reduction lowers four-part promise to two actually shipped"
+				"negotiated reduction lowers the promise to the two parts actually shipped"
 			)
 		if final_choice != "reduce":
 			var cash: float = float(s.state.cash)
@@ -466,6 +520,7 @@ func deferred_nodes() -> void:
 	for target in ["plan", "inspection", "records", "findings", "sale_report"]:
 		var s = make()
 		supplies(s)
+		s._transfer("external", "public", 20000, "TEST deferral funds", false)
 		var i: Dictionary = opened(
 			s, "water" if target in ["plan", "inspection"] else "archaeology"
 		)
@@ -479,9 +534,10 @@ func deferred_nodes() -> void:
 				choose(s, i, "build")
 				for n in range(int(s.config.buildings.water.days)):
 					s.tick()
+				_water_trial(s, i)
 			if target == "findings":
 				choose(s, i, "sample")
-				until_node(s, i, "findings")
+				_archaeology_trial(s, i)
 		check(i.node == target, "reach deferred chain node " + target)
 		check(choose(s, i, "defer") == "", "defer node " + target)
 		days(s, int(i.deadline) - int(s.state.day))
@@ -535,12 +591,19 @@ func integrated_production() -> void:
 				replay.load_game("user://v16_event_order_transit.json") == "",
 				"actual dispatched order restores in transit"
 			)
+	var small: Dictionary = {}
+	for option: Dictionary in E.definitions().definitions.industry.nodes.start.choices:
+		if option.id == "small":
+			small = option.order
 	check(
-		i.ending == "准时交付" and float(i.order.delivered) == 2,
+		i.ending == "准时交付" and float(i.order.delivered) == float(small.amount),
 		"normal simulation production and real port deliver contracted parts"
 	)
 	check(
-		float(i.order.paid) == 110 and float(s.state.external_in) > paid_before,
+		(
+			is_equal_approx(float(i.order.paid), float(small.amount) * float(small.price))
+			and float(s.state.external_in) > paid_before
+		),
 		"normal simulation order has external payer"
 	)
 	check(s.audit().is_empty(), "actual industrial route conservation")
