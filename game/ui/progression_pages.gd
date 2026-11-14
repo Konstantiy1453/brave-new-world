@@ -256,9 +256,11 @@ static func events(g, b):
 					16,
 					D.MUTED
 				)
-				# An ending keeps its scene: what happened, in the event's own words.
-				if section == "history" and str(row.get("outcome", "")) != "":
-					D.label(b, "　" + str(row.outcome), 15, D.MUTED)
+				# An ending keeps its scene (what happened, in the event's own words), or else
+				# what changed.
+				var scene: String = str(row.get("outcome", row.get("changes", "")))
+				if section == "history" and scene != "":
+					D.label(b, "　" + scene, 15, D.MUTED)
 			else:
 				D.label(b, str(row), 16, D.MUTED)
 

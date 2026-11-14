@@ -223,10 +223,18 @@ func _page(scene: Node) -> void:
 	scene.open_page("events")
 	await process_frame
 	var found: bool = false
+	var changed: bool = false
+	var defaulted: bool = false
+	var named: bool = false
 	for label: Label in scene.modal_box.find_children("*", "Label", true, false):
-		if label.text.contains(SCENE):
-			found = true
+		found = found or label.text.contains(SCENE)
+		changed = changed or (label.text.begins_with("　") and label.text.contains("农产"))
+		defaulted = defaulted or label.text.contains("朴素结局 · 到期按默认处理")
+		named = named or label.text.begins_with("测试限速 · 采矿效率 × 0.90")
 	check(found, "the events page keeps the scene under its ending")
+	check(changed, "an ending without a scene shows what changed under it")
+	check(defaulted, "and says when the default applied")
+	check(named, "an effect still acting is named after what caused it")
 	scene.close_modal()
 
 

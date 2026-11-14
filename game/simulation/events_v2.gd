@@ -1344,6 +1344,8 @@ static func view(sim) -> Dictionary:
 			)
 		)
 		row.text = "%s · %s" % [_date(int(row.day)), str(row.ending)]
+		if bool(row.get("automatic", false)):
+			row.text += " · 到期按默认处理"
 		result.history.append(row)
 	for effect in sim.state.events_v2.effects:
 		if int(effect.until) < 0 or int(effect.until) > int(sim.state.day):
@@ -1361,11 +1363,12 @@ static func view(sim) -> Dictionary:
 				"export_price": "出口价格",
 				"road_capacity": "道路运力",
 			}
-			row.title = str(names.get(effect.kind, effect.kind))
+			# Named after what caused it (the effect's label, or its event's title).
+			row.title = _effect_name(effect)
 			row.text = (
 				"%s × %.2f · %s"
 				% [
-					row.title,
+					str(names.get(effect.kind, effect.kind)),
 					float(effect.factor),
 					(
 						"持续生效"
