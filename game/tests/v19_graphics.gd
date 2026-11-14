@@ -4,13 +4,16 @@ extends SceneTree
 ## carries the quality, anti-aliasing and plot-mark rows and they work; a finished technology
 ## raises a notice once, and a loaded game raises none for its old work; candidate sites are
 ## named only while the player chooses where to land; cargo dots are small; stage three's
-## deadline is a year later than in 1.9's first preview.
+## deadline is a year later than in 1.9's first preview, stage four's fourteen months later, and
+## stage five's, the contract's last, where it was.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Graphics = preload("res://ui/graphics.gd")
 const MapBase = preload("res://world/map_base.gd")
 const FlatView = preload("res://world/flat_view.gd")
 const STAGE_THREE_NORMAL: int = 1860
+const STAGE_FOUR_NORMAL: int = 2520
+const STAGE_FIVE_NORMAL: int = 2880
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -216,6 +219,14 @@ func _cargo_and_deadline(scene: Node) -> void:
 	check(
 		int(scene.sim.contract_rules.deadlines.normal[2]) == STAGE_THREE_NORMAL,
 		"stage three's deadline is in year six on normal"
+	)
+	check(
+		int(scene.sim.contract_rules.deadlines.normal[3]) == STAGE_FOUR_NORMAL,
+		"stage four's deadline is fourteen months later on normal"
+	)
+	check(
+		int(scene.sim.contract_rules.deadlines.normal[4]) == STAGE_FIVE_NORMAL,
+		"stage five's deadline, the contract's last, stays where it was"
 	)
 	for level: String in ["easy", "normal", "hard"]:
 		var days: Array = scene.sim.contract_rules.deadlines[level]
