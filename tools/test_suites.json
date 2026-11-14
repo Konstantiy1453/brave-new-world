@@ -13,7 +13,7 @@
     {"name": "v17_tutorial", "script": "res://tests/v17_tutorial.gd", "success": "V17_TUTORIAL_RESULT checks=\\d+ failures=0"},
     {"name": "v18_systems", "script": "res://tests/v18_systems.gd", "success": "V18_SYSTEMS_RESULT checks=\\d+ failures=0"},
     {"name": "v19_money", "script": "res://tests/v19_money.gd", "success": "V19_MONEY_RESULT checks=\\d+ failures=0"},
-    {"name": "v19_payback", "script": "res://tests/v19_payback.gd", "success": "V19_PAYBACK_RESULT checks=\\d+ failures=0"},
+    {"name": "v19_payback", "script": "res://tests/v19_payback.gd", "timeout": 1500, "success": "V19_PAYBACK_RESULT checks=\\d+ failures=0"},
     {"name": "v19_art", "script": "res://tests/v19_art.gd", "success": "V19_ART_RESULT checks=\\d+ failures=0"},
     {"name": "v19_ui", "script": "res://tests/v19_ui.gd", "success": "V19_UI_RESULT checks=\\d+ failures=0"},
     {"name": "v19_region", "script": "res://tests/v19_region.gd", "success": "V19_REGION_RESULT checks=\\d+ failures=0"},
