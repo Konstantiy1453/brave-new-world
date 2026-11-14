@@ -674,3 +674,18 @@ events. The package offers two alternatives: the old events with new words only,
   events offer and turned 8 of 9 balanced awards into 6. With it, 8 of 9 again (BALANCE.md, 1.9
   events rewrite) · scaling GPT's numbers down to suit the old bot (the user asked for bigger
   stakes; the bot, not the events, misjudged them).
+
+## 1.9: stage four, payback seeds, event options (2026-11-14)
+
+- Stage four's deadline moves 14 months (420 days) later on every difficulty, as the user asked:
+  normal 2,100 → 2,520, easy 2,500 → 2,920, hard 2,000 → 2,420. Stage five's deadline, the
+  contract's last date, stays: the user wants the overall limit kept, so stage five's window
+  shrinks (normal 780 → 360 days) · moving stage five with it (that lengthens the contract).
+- Payback bands are asserted on each building's median over the harness's first seeds, as the
+  user agreed (`v19_payback`): three by default, `--seeds=5` for five; each seed's value is
+  printed beside the median. The suite's timeout goes to 1,500 seconds · the mean (one odd path
+  drags it) or keeping one seed (one colony's path decided a band).
+- Every event option says where it leads: the ending it closes on, the next step and how many days
+  until it, or for a gamble both outcomes with their odds (`events_v2._course`). Players could not
+  tell a gamble from a sure thing, or whether a story went on · hiding the odds for suspense (the
+  node texts already state most of them in words).
