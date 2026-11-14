@@ -50,7 +50,9 @@ window found underground) ends with four options:
 **3. The choice screen read as an invoice.** Options listed costs and multipliers. They did not say
 which of the 33 risky nodes' options were gambles, with what odds, or whether the story went on.
 Choices became arithmetic, not decisions. *Fixed on 2026-11-14 (`ce1d903`): every option now
-names its ending, or the next step and when, or both outcomes with their odds.*
+names its ending, or the next step and when, or both outcomes with their odds.* The page still reads
+like a form: each option is a line of small text over an identical 「选择此方案」 button, so the
+eye finds the buttons, not the choices.
 
 **4. It can all be ignored.**
 - 58 of 106 events are notices, which never pause and resolve to a free default.

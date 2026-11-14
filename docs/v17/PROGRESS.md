@@ -47,6 +47,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Picture quality and terrain (2026-11-13) | 高画质 (Forward+) chosen in the settings, saved in a user override file, applied on restart, automatic fallback to the standard renderer; 4× anti-aliasing in both renderers (2× and off selectable), SMAA in Forward+; Forward+ colour grade, town ambient occlusion, glow on lights only, soft shadows, real lamp lights at night; natural ground on generated worlds (smoothed relief, layered detail, beach profiles, calm town ground, graded pads, no walls or mesas); no sea at inland sites; no hexagon plates (ore rocks, farmland patches, optional rings); candidate names only while choosing; smaller cargo dots; stage three's deadline a year later; research-complete notices | automated tests (new `v19_graphics`; `v19_region` with terrain checks: steepest step 0.71, town 0.12), source-project window in both renderers (software Vulkan for Forward+), screenshots viewed (`docs/v17/quality/`) |
 | Coast flicker (2026-11-13) | The land jumped where it met the sea: z-fighting. Beaches now cross the waterline at a slope (a straight share in the beach profile, and a smooth curve away from the sea's level), and the town view has its own near plane (0.5, ten times finer depth). A first fix with a fixed lift snapped the coast into steps and was replaced the same day | automated tests (`v19_region`: crossing slope p5 0.21, crossing spread 0.26), source-project window, screenshots viewed (flip masks: 4,660 land/water flips over seven views before, 563 after, with only the near plane moved) |
 | Events rewrite (2026-11-13) | GPT's full design: 86 events rewritten, 20 new, 249 nodes, 14 long chains; stakes in days of income (mostly 2–20, up to 80); same ids, versions and nodes for every old event, nothing new to the engine; `v17_events` follows the new chain paths | automated tests (`v17_events` 161 checks; data checks against the engine and the old file), balance harness (see BALANCE.md) |
+| Deadlines, payback, event options (2026-11-14) | Stage four's deadline 14 months later on every difficulty (normal 2,100 → 2,520), stage five's (the contract's last date) unchanged; `v19_payback` asserts each band on the median over five seeds (`--seeds=3` for a quicker check); every event option names its ending, or its next step and when, or a gamble's outcomes with their odds; a measured diagnosis of why the events still feel thin (`docs/v17/EVENTS_DIAGNOSIS.md`) | automated tests (`v19_graphics`, `v19_payback` 43 checks, event suites), screenshots viewed (event page with the new option lines) |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
@@ -199,10 +200,12 @@ Windows.
     2,686), and income grows ×3.4 from year 2 to year 6 (×4.2 before the rewrite); with the old flat
     valuation the bots took every long penalty and 3 of 9 were taken over. Playtest the new stakes:
     GPT's own aim is a net 5–10% of income from events over ten years.
-16. Payback on one seed: with the new events, `v19_payback` misses the smelter (340 days, band
-    120–300) and the food works (335, band 100–220) in year 4 on seed 260129, where before it
-    missed only the light iron mine (63, band 70–150). Same proposal as item 9: assert the bands
-    over several seeds before tuning prices.
+16. Payback over five seeds (as the user agreed): one band misses, the light iron mine in year 6
+    (median 65 days, floor 66.5 with the tolerance). A dearer iron mine fixes it but pushes the
+    smelter out of its band through the ore supply (DECISIONS.md); a fix means retuning ore, the
+    processing plant and the smelter together.
+17. Events still feel thin (the user, 2026-11-14): diagnosis and proposed plan in
+    `docs/v17/EVENTS_DIAGNOSIS.md`; the option lines are done, the rest waits for the user's choice.
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.
