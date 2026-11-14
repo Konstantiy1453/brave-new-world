@@ -3,7 +3,7 @@ extends SceneTree
 ## weight. The balanced bot plays several seeds (capital opening, normal); at days 720, 1,440 and
 ## 2,160 each income building's best build_forecast over all settlements is taken, and its median
 ## over the seeds must sit in its group's band, so one colony's path (a fresh market, an event's
-## cut on the measuring day) does not decide a band. Three seeds by default, `--seeds=5` for five.
+## cut on the measuring day) does not decide a band. Five seeds by default, `--seeds=3` for a quicker check.
 ## Mines are checked in year 6 only: in years 2 and 4 fresh markets and early research make them
 ## faster than their band, and the opening depends on that (DECISIONS.md). Factories are checked in
 ## year 4, as the plan says. Prints the whole table, medians with each seed's value, for BALANCE.md.
@@ -14,9 +14,9 @@ const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 
 ## The harness's first seeds; the first DEFAULT_SEEDS of them unless `--seeds=` asks for more.
 const SEEDS: Array[int] = [260129, 20261029, 42, 1024873270, 909386518]
-const DEFAULT_SEEDS: int = 3
+const DEFAULT_SEEDS: int = 5
 const SEEDS_ARGUMENT: String = "--seeds="
-## Three ten-year colonies take several minutes.
+## Five six-year colonies take about five minutes.
 const WATCHDOG_SECONDS: float = 1500.0
 const CHECKPOINTS: Array[int] = [720, 1440, 2160]
 ## Band edges may be missed by this share: the same seed builds a slightly different world on

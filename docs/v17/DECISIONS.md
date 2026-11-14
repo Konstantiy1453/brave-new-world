@@ -682,9 +682,15 @@ events. The package offers two alternatives: the old events with new words only,
   contract's last date, stays: the user wants the overall limit kept, so stage five's window
   shrinks (normal 780 → 360 days) · moving stage five with it (that lengthens the contract).
 - Payback bands are asserted on each building's median over the harness's first seeds, as the
-  user agreed (`v19_payback`): three by default, `--seeds=5` for five; each seed's value is
+  user agreed (`v19_payback`): five by default, `--seeds=3` for a quicker check; each seed's value is
   printed beside the median. The suite's timeout goes to 1,500 seconds · the mean (one odd path
-  drags it) or keeping one seed (one colony's path decided a band).
+  drags it) or keeping one seed (one colony's path decided a band). Three seeds failed the
+  processing plant on one bad draw (median 112); five pass it (118).
+- On five seeds, one band misses: the light iron mine pays back in 65 days in year 6 (69 / 62 / 46 /
+  79 / 65; floor 70, 66.5 with the tolerance). Left as reported · a dearer light iron mine (2,100 →
+  2,270): it brings the mine to 68 but pushes the smelter's year-4 median from 306 to 374 (ceiling
+  315), since fewer iron mines starve it of ore; the two trade through the ore supply, so a fix
+  means retuning ore, the processing plant and the smelter together, over five seeds each step.
 - Every event option says where it leads: the ending it closes on, the next step and how many days
   until it, or for a gamble both outcomes with their odds (`events_v2._course`). Players could not
   tell a gamble from a sure thing, or whether a story went on · hiding the odds for suspense (the
