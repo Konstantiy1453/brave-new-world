@@ -333,14 +333,21 @@ static func _prune(e: Dictionary) -> void:
 static func _enter(sim, inst: Dictionary, node_id: String) -> void:
 	inst.node = node_id
 	inst.status = "pending"
-	inst.pause_required = _pauses(sim, definitions().definitions[inst.definition_id])
+	# A node marked critical (a chain's deciding step) waits for the player whatever its event's
+	# own setting: a finale is never settled by a default the player did not see.
+	inst.pause_required = (
+		_pauses(sim, definitions().definitions[inst.definition_id])
+		or bool(_node(inst).get("critical", false))
+	)
 	inst.scheduled = {}
 	inst.deadline = int(sim.state.day) + int(_node(inst).get("deadline_days", 6))
 	inst.variables.erase("deferred_node")
 	sim._log("事件 · " + str(_node(inst).title))
 
 
-static func _end(sim, inst: Dictionary, ending: String) -> void:
+## `closing` carries the ending scene when a choice ends the event: its `outcome` text, what
+## changed in words (`changes`), and whether the default applied at the deadline (`automatic`).
+static func _end(sim, inst: Dictionary, ending: String, closing: Dictionary = {}) -> void:
 	if inst.status in ["resolved", "cancelled"]:
 		return
 	if sim.has_method("research_release"):
@@ -351,15 +358,19 @@ static func _end(sim, inst: Dictionary, ending: String) -> void:
 	inst.scheduled = {}
 	inst.variables.erase("investigation")
 	sim.state.events_v2.endings[inst.definition_id] = ending
-	sim.state.events_v2.history.append(
-		{
-			"instance_id": inst.instance_id,
-			"definition_id": inst.definition_id,
-			"day": int(sim.state.day),
-			"ending": ending,
-			"target_region": inst.target_region
-		}
-	)
+	var row: Dictionary = {
+		"instance_id": inst.instance_id,
+		"definition_id": inst.definition_id,
+		"day": int(sim.state.day),
+		"ending": ending,
+		"target_region": inst.target_region
+	}
+	for key: String in ["outcome", "changes"]:
+		if str(closing.get(key, "")) != "":
+			row[key] = str(closing[key])
+	if closing.has("automatic"):
+		row.automatic = bool(closing.automatic)
+	sim.state.events_v2.history.append(row)
 	while sim.state.events_v2.history.size() > 80:
 		sim.state.events_v2.history.pop_front()
 	sim._log("事件结案 · " + ending)
@@ -543,14 +554,27 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 				"start": int(sim.state.day) + 1,
 				"until": int(sim.state.day) + 1 + n if n > 0 else -1,
 				"duration_days": n,
-				"maintenance": float(effect.get("maintenance", 0))
+				"maintenance": float(effect.get("maintenance", 0)),
+				"label": str(effect.get("label", ""))
 			}
 		)
-	inst.history.append(
-		{"day": int(sim.state.day), "node": inst.node, "choice": option.id, "automatic": automatic}
-	)
+	var step: Dictionary = {
+		"day": int(sim.state.day), "node": inst.node, "choice": option.id, "automatic": automatic
+	}
+	if str(option.get("outcome", "")) != "":
+		step.outcome = str(option.outcome)
+	inst.history.append(step)
 	if option.has("ending"):
-		_end(sim, inst, str(option.ending))
+		_end(
+			sim,
+			inst,
+			str(option.ending),
+			{
+				"outcome": str(option.get("outcome", "")),
+				"changes": _description(sim, inst, option, false),
+				"automatic": automatic
+			}
+		)
 	elif option.has("investigate"):
 		inst.status = "waiting"
 		inst.pause_required = false
@@ -912,7 +936,10 @@ static func reserved(sim, region: int, resource: String) -> float:
 	return amount
 
 
-static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
+## What an option costs and does, in words; with `with_course`, also where it leads.
+static func _description(
+	sim, inst: Dictionary, option: Dictionary, with_course: bool = true
+) -> String:
 	var parts: Array = []
 	if option.has("pay"):
 		parts.append("支出 %.0f" % _pay(sim, option))
@@ -1036,7 +1063,7 @@ static func _description(sim, inst: Dictionary, option: Dictionary) -> String:
 			parts.append("维护 %.1f / 日" % float(effect.maintenance))
 	if option.get("sell_rights", false):
 		parts.append("独家后续调查权转让，放弃该现场后续研究成果")
-	var course: String = _course(inst, option)
+	var course: String = _course(inst, option) if with_course else ""
 	if course != "":
 		parts.append(course)
 	return "；".join(parts)
@@ -1325,6 +1352,8 @@ static func validate(candidate: Dictionary) -> String:
 				return "事件选择历史无效"
 			if not d.nodes.has(h.node) or int(h.day) > int(candidate.day):
 				return "事件历史节点或日期无效"
+			if h.has("outcome") and not h.outcome is String:
+				return "事件选择结果文字无效"
 		for key in ["surveyed", "rights_sold"]:
 			if inst.variables.has(key) and not inst.variables[key] is bool:
 				return "事件权利标志无效"
@@ -1432,6 +1461,11 @@ static func validate(candidate: Dictionary) -> String:
 			or int(h.target_region) >= candidate.world.regions.size()
 		):
 			return "事件结案历史日期或地区无效"
+		for key: String in ["outcome", "changes"]:
+			if h.has(key) and not h[key] is String:
+				return "事件结局文字无效"
+		if h.has("automatic") and not h.automatic is bool:
+			return "事件结局方式无效"
 	for effect in e.effects:
 		if (
 			not effect is Dictionary
@@ -1442,6 +1476,8 @@ static func validate(candidate: Dictionary) -> String:
 		for key in ["region", "factor", "start", "until", "duration_days", "maintenance"]:
 			if not _number(effect.get(key)):
 				return "事件效果数值无效"
+		if effect.has("label") and not effect.label is String:
+			return "事件效果名称无效"
 		if (
 			float(effect.factor) <= 0
 			or float(effect.maintenance) < 0

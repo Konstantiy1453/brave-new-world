@@ -256,6 +256,9 @@ static func events(g, b):
 					16,
 					D.MUTED
 				)
+				# An ending keeps its scene: what happened, in the event's own words.
+				if section == "history" and str(row.get("outcome", "")) != "":
+					D.label(b, "　" + str(row.outcome), 15, D.MUTED)
 			else:
 				D.label(b, str(row), 16, D.MUTED)
 

@@ -57,6 +57,9 @@ const NOTICE_WIDTH: int = 460
 const NOTICE_TOP: int = 98
 const NOTICE_LIMIT: int = 3
 const NOTICE_SECONDS: float = 8.0
+## Ending scenes are longer to read than a technology's name.
+const EVENT_NOTICE_SECONDS: float = 14.0
+const PAGE_TOOLTIPS: Dictionary = {"research": "打开科研教育", "events": "打开通讯事件"}
 ## Pages drawn in a module's variant (design.gd); every other page stays neutral.
 const PAGE_VARIANTS: Dictionary = {
 	"research": D.RESEARCH,
@@ -117,6 +120,9 @@ var toast_time: float = 0
 var notices: VBoxContainer
 var research_watch: Dictionary = {}
 var research_seen: int = 0
+## Event endings already shown: the events state being watched and the newest ending's instance.
+var event_watch: Dictionary = {}
+var event_seen: String = ""
 var autosave_day: int = 0
 var session_seconds: float = 0
 var sample_frames: Array = []
@@ -443,6 +449,7 @@ func _process(delta):
 		if toast_time <= 0:
 			toast_label.text = ""
 	_watch_research()
+	_watch_events()
 
 
 ## A technology finished since the last frame gets a notice; a new or loaded game only sets the
@@ -465,35 +472,107 @@ func notice_research(tech: String) -> void:
 	if spec.is_empty() or notices == null:
 		return
 	var gift: bool = bool(spec.get("gift", false))
+	_post_notice(
+		"Notice_" + tech,
+		D.RESEARCH,
+		"◆ 获得赠予科技" if gift else "◆ 科研完成",
+		str(spec.name),
+		[str(spec.get("description", ""))],
+		"research",
+		NOTICE_SECONDS
+	)
+
+
+## An event that ended since the last frame gets its ending scene; a new or loaded game only sets
+## the mark, so old endings never flood the screen.
+func _watch_events() -> void:
+	var e: Dictionary = sim.state.get("events_v2", {})
+	var rows: Array = e.get("history", [])
+	var newest: String = str(rows.back().get("instance_id", "")) if not rows.is_empty() else ""
+	if not is_same(e, event_watch):
+		event_watch = e
+		event_seen = newest
+		return
+	if newest == event_seen:
+		return
+	var start: int = rows.size() - 1
+	for index: int in range(rows.size() - 1, -1, -1):
+		if str(rows[index].get("instance_id", "")) == event_seen:
+			start = index + 1
+			break
+	for index: int in range(start, rows.size()):
+		notice_event(rows[index])
+	event_seen = newest
+
+
+## The ending scene of an event: its title, the ending, and what happened (the event's own words,
+## or else what changed); a click opens the events page.
+func notice_event(row: Dictionary) -> void:
+	var definition: Dictionary = Events.definitions().definitions.get(
+		str(row.get("definition_id", "")), {}
+	)
+	if definition.is_empty() or notices == null:
+		return
+	var scene: String = str(row.get("outcome", ""))
+	var lines: Array[String] = ["结局「%s」" % str(row.get("ending", ""))]
+	if scene != "":
+		lines.append(scene)
+	elif str(row.get("changes", "")) != "":
+		lines.append(str(row.changes))
+	_post_notice(
+		"EventEnding_" + str(row.get("instance_id", "")),
+		D.NEUTRAL,
+		"◆ 到期按默认处理" if bool(row.get("automatic", false)) else "◆ 事件结局",
+		str(definition.nodes.start.title),
+		lines,
+		"events",
+		EVENT_NOTICE_SECONDS
+	)
+
+
+## A card under the top bar: a small heading, a title and lines of text; a click opens `page`.
+## Up to NOTICE_LIMIT at once, each gone after `seconds`.
+func _post_notice(
+	card_name: String,
+	variant: String,
+	heading: String,
+	title_text: String,
+	lines: Array[String],
+	page: String,
+	seconds: float
+) -> void:
 	var panel := PanelContainer.new()
-	panel.name = "Notice_" + tech
-	panel.add_theme_stylebox_override("panel", D.style("card_on", D.RESEARCH))
+	panel.name = card_name
+	panel.add_theme_stylebox_override("panel", D.style("card_on", variant))
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	panel.tooltip_text = "打开科研教育"
+	panel.tooltip_text = PAGE_TOOLTIPS.get(page, "")
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(box)
 	var head := Label.new()
-	head.text = "◆ 获得赠予科技" if gift else "◆ 科研完成"
+	head.text = heading
 	head.add_theme_color_override("font_color", D.GOLD)
 	head.add_theme_font_size_override("font_size", 15)
 	var title := Label.new()
-	title.text = str(spec.name)
+	title.text = title_text
 	title.add_theme_font_size_override("font_size", 22)
-	var effect := Label.new()
-	effect.text = str(spec.get("description", ""))
-	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	effect.add_theme_color_override("font_color", D.MUTED)
-	effect.add_theme_font_size_override("font_size", 15)
-	for label: Label in [head, title, effect]:
+	var labels: Array[Label] = [head, title]
+	for line: String in lines:
+		var body := Label.new()
+		body.text = line
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.add_theme_color_override("font_color", D.MUTED)
+		body.add_theme_font_size_override("font_size", 15)
+		labels.append(body)
+	for label: Label in labels:
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		box.add_child(label)
 	panel.gui_input.connect(
 		func(event: InputEvent):
 			if event is InputEventMouseButton and event.pressed:
-				open_page("research")
+				open_page(page)
 				panel.queue_free()
 	)
 	notices.add_child(panel)
@@ -503,7 +582,7 @@ func notice_research(tech: String) -> void:
 		var oldest: Node = notices.get_child(0)
 		notices.remove_child(oldest)
 		oldest.queue_free()
-	get_tree().create_timer(NOTICE_SECONDS, true).timeout.connect(
+	get_tree().create_timer(seconds, true).timeout.connect(
 		func():
 			if is_instance_valid(panel):
 				panel.queue_free()
