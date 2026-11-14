@@ -695,3 +695,54 @@ events. The package offers two alternatives: the old events with new words only,
   until it, or for a gamble both outcomes with their odds (`events_v2._course`). Players could not
   tell a gamble from a sure thing, or whether a story went on · hiding the odds for suspense (the
   node texts already state most of them in words).
+
+## 1.9: event payoffs, engine side, and faster immigration (2026-11-14)
+
+The user approved the five steps of `docs/v17/EVENTS_DIAGNOSIS.md` and asked for GPT's brief
+(`docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`); Claude builds steps 1-4 while GPT
+writes the content. On balance the user chose more population growth over a retune of ore and the
+factories, so the game's cycle and the payback bands stay as they are.
+
+- The data contract is fixed in GPT's sheet before either side starts:
+  - `outcome` on a choice;
+  - `critical` on a node;
+  - `landmark` on an ending (eight kinds);
+  - `label` on an effect.
+
+  The engine ignores keys it does not know, so GPT's data can land before or after this code ·
+  waiting for the engine before briefing GPT (it would serialise the work).
+- **Ending scenes.**
+  - The ending's `outcome` is kept in the event log, with what changed in words and whether the
+    default applied at the deadline.
+  - A card under the top bar shows each new ending (the shared notice card, 14 seconds), and the
+    events page shows the scene under its ending.
+  - A loaded game raises no cards for old endings · a dialog (it stops play), or the scene only on
+    the events page (players do not open it).
+- **Pausing finales.** A node marked `critical` pauses when it opens, even in a notice · a chain-wide
+  `critical` (it pauses every step, against the pause budget) · ending a node's default early.
+- **Effects where they act.**
+  - A town's panel lists the effects acting there and the colony-wide ones, with label, size and
+    days left. The economy page lists all effects with their places.
+  - Effects remember their event, so their name outlives the event's record.
+  - Both maps add 「通讯」 to a place's name while an event is open there.
+
+  Rejected: per-building tags (most effects act on a kind of production, not a building), a
+  separate effects page.
+- **Landmarks.**
+  - Plain-shape figures for the eight kinds (there are no models yet), placed on rings around the
+    town and clear of plots, street, water and steep ground. They are rebuilt with the town's live
+    objects, so a landmark appears as soon as it is raised.
+  - Each stands once, at most six to a place; their effects are permanent effects of the place.
+  - The list of landmarks is created only with the first one, so other games keep a byte-identical
+    state.
+
+  Rejected: landmarks as buildings (they would need jobs, upkeep and plots), models from the art
+  team first (that would hold up the content).
+- New gift technologies may use any technology effect; an event card reads them from the gift's
+  own description when there is no short name for them · names for every technology effect key
+  (the research page already shows descriptions, not generated lists).
+- **Free immigration 9 → 11 a month** (+22%), as the user asked: population, not money, is what
+  stops stage three. Births, recruitment, housing and the economy are unchanged. The wage lever
+  stays proportional, since wages act through attractiveness, which multiplies the base · births
+  (1% a year moves little) · cheaper recruitment (it moves money, which the user wants left alone)
+  · a lower stage-three goal (the goals stay; the pace changes).

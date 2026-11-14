@@ -48,6 +48,8 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Coast flicker (2026-11-13) | The land jumped where it met the sea: z-fighting. Beaches now cross the waterline at a slope (a straight share in the beach profile, and a smooth curve away from the sea's level), and the town view has its own near plane (0.5, ten times finer depth). A first fix with a fixed lift snapped the coast into steps and was replaced the same day | automated tests (`v19_region`: crossing slope p5 0.21, crossing spread 0.26), source-project window, screenshots viewed (flip masks: 4,660 land/water flips over seven views before, 563 after, with only the near plane moved) |
 | Events rewrite (2026-11-13) | GPT's full design: 86 events rewritten, 20 new, 249 nodes, 14 long chains; stakes in days of income (mostly 2–20, up to 80); same ids, versions and nodes for every old event, nothing new to the engine; `v17_events` follows the new chain paths | automated tests (`v17_events` 161 checks; data checks against the engine and the old file), balance harness (see BALANCE.md) |
 | Deadlines, payback, event options (2026-11-14) | Stage four's deadline 14 months later on every difficulty (normal 2,100 → 2,520), stage five's (the contract's last date) unchanged; `v19_payback` asserts each band on the median over five seeds (`--seeds=3` for a quicker check); every event option names its ending, or its next step and when, or a gamble's outcomes with their odds; a measured diagnosis of why the events still feel thin (`docs/v17/EVENTS_DIAGNOSIS.md`) | automated tests (`v19_graphics`, `v19_payback` 43 checks, event suites), screenshots viewed (event page with the new option lines) |
+| Event payoffs, engine side (2026-11-14) | Steps 1-4 of `EVENTS_DIAGNOSIS.md`, approved: ending scenes (`outcome`, a card per ending, kept on the events page), nodes that pause (`critical` on a node), effects listed on the town panel and economy page with days left, 「通讯」 on the maps while an event is open, landmarks (eight kinds drawn around the town, permanent effects, listed on the panel), new gifts' effects in words. GPT writes the content: `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md` | automated tests (new `v19_event_payoff`, 42 checks; event suites), source-project window, screenshots viewed (landmarks around a town, the town panel, an ending card) |
+| Faster immigration (2026-11-14) | Free arrivals 9 → 11 a month in every town (+22%), the user's choice for stage three's population goal instead of an economy retune | automated tests (population and economy suites), balance harness (BALANCE.md) |
 
 ## Money: quick harness on Linux (3 seeds, standard)
 
@@ -204,8 +206,13 @@ Windows.
     (median 65 days, floor 66.5 with the tolerance). A dearer iron mine fixes it but pushes the
     smelter out of its band through the ore supply (DECISIONS.md); a fix means retuning ore, the
     processing plant and the smelter together.
-17. Events still feel thin (the user, 2026-11-14): diagnosis and proposed plan in
-    `docs/v17/EVENTS_DIAGNOSIS.md`; the option lines are done, the rest waits for the user's choice.
+17. Events still feel thin (the user, 2026-11-14): diagnosis in `docs/v17/EVENTS_DIAGNOSIS.md`.
+    The engine side (steps 1-4) is built; GPT writes the content on branch `v17-events-payoff` from
+    `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`. When it lands: check the data
+    against the contract (outcomes on every ending, landmark kinds and limits, effect sizes, gift
+    technologies), run the event suites and the harness, and capture a finale and a landmark.
+18. Landmarks are drawn from plain shapes; real models for the eight kinds can go to the model team
+    (a short sheet like `2026-11-12-v19-model-fix-sheet.md`).
 
 **Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
 `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.

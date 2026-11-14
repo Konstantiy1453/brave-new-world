@@ -104,5 +104,10 @@ The story arrives in pieces, each a fresh decision that weighs about as much as 
    - Notices either cost nothing and leave a mark, or become decisions; merge the weakest.
 9. **An outcome text for each option.**
 
+**Status (2026-11-14):** the user approved all five steps. Steps 1–4 are built (`ce1d903`,
+`08f7600`, `af03574`, `b3ca230`): option course, ending scenes, nodes that pause, effects and
+landmarks shown where they act, and gift effects in words. Step 5, the content, is GPT's:
+`docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`.
+
 **Recommended order:** 2 and 4 first (the story gets an ending, and the big moments wait for the
 player), then 3, then 5. Then the sheet for GPT, so its rewrite can use the new hooks.
