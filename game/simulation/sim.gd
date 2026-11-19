@@ -22,7 +22,7 @@ const Market = preload("res://simulation/market.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
-const SAVE_VERSION: int = 5
+const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
 const LOG_LIMIT: int = 120
@@ -714,6 +714,13 @@ func audit() -> Array:
 
 func _audit_sites() -> Array:
 	var errors: Array = []
+	var uids: Dictionary = {}
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			var uid: int = int(b.get("uid", 0))
+			if uid <= 0 or uid >= int(state.get("next_building_uid", 1)) or uids.has(uid):
+				errors.append("building uid invalid or repeated")
+			uids[uid] = true
 	for s: Dictionary in state.settlements:
 		var plots: Array = state.world.regions[int(s.region)].plots
 		var used: Dictionary = {}

@@ -41,6 +41,34 @@ static func ensure_state(state: Dictionary) -> void:
 				b.upgrade_days = 0
 			if not b.has("total_days"):
 				b.total_days = int(b.remaining)
+	_ensure_uids(state)
+
+
+## Every building has a uid that never changes, so stories, crews and lights can follow it when
+## earlier buildings are pulled down. Older saves get theirs in list order, settlement by
+## settlement; the counter continues after the largest.
+static func _ensure_uids(state: Dictionary) -> void:
+	var largest: int = 0
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			largest = maxi(largest, int(b.get("uid", 0)))
+	var next: int = maxi(int(state.get("next_building_uid", 1)), largest + 1)
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			if int(b.get("uid", 0)) <= 0:
+				b.uid = next
+				next += 1
+	state.next_building_uid = next
+
+
+## The index of the building with this uid in a settlement's list, or -1.
+static func index_of(s: Dictionary, uid: int) -> int:
+	if uid <= 0:
+		return -1
+	for index: int in range(s.get("buildings", []).size()):
+		if int(s.buildings[index].get("uid", 0)) == uid:
+			return index
+	return -1
 
 
 static func role_of(sim: RefCounted, kind: String) -> String:
@@ -149,7 +177,16 @@ static func _advance_upgrade(sim: RefCounted, s: Dictionary, b: Dictionary) -> v
 		sim._log("%s · %s升级完成。" % [s.name, sim.config.buildings[b.kind].name])
 
 
-static func new_building(_sim: RefCounted, kind: String, remaining: int) -> Dictionary:
+static func new_building(sim: RefCounted, kind: String, remaining: int) -> Dictionary:
+	var building: Dictionary = building_record(kind, remaining)
+	var next: int = maxi(1, int(sim.state.get("next_building_uid", 1)))
+	building.uid = next
+	sim.state.next_building_uid = next + 1
+	return building
+
+
+## A building's fields without its uid: the save check's pattern uses it too.
+static func building_record(kind: String, remaining: int) -> Dictionary:
 	return {
 		"kind": kind,
 		"remaining": remaining,
@@ -919,7 +956,51 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 	return ""
 
 
+## How much more food a farm here would put to use each day: what the town eats and sends to its
+## food works, less what its own farms already grow, never more than the new farm can grow. Farms
+## stop at the stock target, so the rest of a surplus farm stands idle and earns nothing.
+static func usable_food(sim: RefCounted, s: Dictionary, nominal: float) -> float:
+	if s.is_empty():
+		return nominal
+	var need: float = float(s.population) * float(sim.config.economy.food_per_person)
+	var grown: float = 0.0
+	for b: Dictionary in s.buildings:
+		if b.kind == "service" or int(b.remaining) > 0 or not bool(b.get("enabled", true)):
+			continue
+		var d: Dictionary = sim.config.buildings.get(b.kind, {})
+		match str(d.get("role", "")):
+			"foodworks":
+				need += float(d.get("food_input", 0.0)) * float(b.get("efficiency", 1.0))
+			"farm", "indoor_farm":
+				grown += float(farm_rate(sim, s, b)) * float(b.get("efficiency", 1.0))
+	return clampf(need - grown, 0.0, nominal)
+
+
+## A standing farm's daily food at full staffing, as run_settlement grows it.
+static func farm_rate(sim: RefCounted, s: Dictionary, b: Dictionary) -> float:
+	var d: Dictionary = sim.config.buildings[b.kind]
+	var field_bonus: float = _field_bonus(sim, s)
+	if str(d.role) == "indoor_farm":
+		return float(d.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
+	var reg: Dictionary = sim.state.world.regions[int(s.region)]
+	var field: Dictionary = Sites.plot_of(sim, s, b)
+	var soil: float = (
+		maxf(float(field.get("fertility", reg.fertility)), float(d.get("fertility_floor", 0.0)))
+		+ Megaprojects.fertility_bonus(sim)
+	)
+	return (
+		float(d.rate)
+		* soil
+		* farm_climate(sim, int(s.region))
+		* field_bonus
+		* (1.0 + Research.bonus(sim, "farm_output"))
+		* output_factor(sim, b)
+	)
+
+
 ## Everything a player or bot needs before committing: cost, output, money per day, payback.
+## For farms, `outputs` is the nominal capacity and `usable` what the town can use; money and
+## payback count only the usable part, valued as the imports it replaces.
 static func build_forecast(
 	sim: RefCounted, region: int, kind: String, plot: int = -1
 ) -> Dictionary:
@@ -932,6 +1013,9 @@ static func build_forecast(
 	var ground: Dictionary = reg.plots[chosen] if chosen >= 0 else {}
 	var fee: float = float(sim.config.economy.port_fee)
 	var outputs: Dictionary = {}
+	# What the town can use of `outputs` (farms only; any other output sells or feeds a factory).
+	var usable: Dictionary = {}
+	var savings: float = 0.0
 	var revenue: float = 0.0
 	var role: String = str(spec.role)
 	var reserve_days: float = -1.0
@@ -969,13 +1053,17 @@ static func build_forecast(
 			* (1.0 + Research.bonus(sim, "farm_output"))
 		)
 		outputs.food = rate
-		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+		usable.food = usable_food(sim, s, rate)
+		revenue = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		savings = revenue
 	elif role == "indoor_farm":
 		var rate: float = (
 			float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
 		)
 		outputs.food = rate
-		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+		usable.food = usable_food(sim, s, rate)
+		revenue = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		savings = revenue
 	elif role == "factory":
 		var boost: float = _factory_boost(sim, {"kind": kind})
 		# What the colony builds with replaces imports: worth the import price, not the export one.
@@ -1027,6 +1115,9 @@ static func build_forecast(
 		+ float(spec.materials) * float(sim.config.prices.materials)
 		+ float(spec.parts) * float(sim.config.prices.parts)
 	)
+	for good: String in outputs:
+		if not usable.has(good):
+			usable[good] = outputs[good]
 	return {
 		"kind": kind,
 		"name": spec.name,
@@ -1040,6 +1131,8 @@ static func build_forecast(
 		"water": float(spec.water),
 		"maintenance": float(spec.maintenance),
 		"outputs": outputs,
+		"usable": usable,
+		"import_savings_per_day": savings,
 		"revenue_per_day": revenue,
 		"wages_per_day": wages,
 		"net_per_day": net,

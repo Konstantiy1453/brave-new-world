@@ -79,8 +79,19 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 
-func _fake(kind: String, active: bool = true) -> Dictionary:
-	return {"kind": kind, "active": active, "enabled": true, "remaining": 0, "plot": -1, "level": 1}
+## A finished building put straight into a list, with a real uid so the audit accepts it.
+func _fake(sim: RefCounted, kind: String, active: bool = true) -> Dictionary:
+	var uid: int = int(sim.state.next_building_uid)
+	sim.state.next_building_uid = uid + 1
+	return {
+		"kind": kind,
+		"active": active,
+		"enabled": true,
+		"remaining": 0,
+		"plot": -1,
+		"level": 1,
+		"uid": uid
+	}
 
 
 func _copies() -> void:
@@ -91,7 +102,7 @@ func _copies() -> void:
 	var first: float = float(sim.build_preview(region, "farm").cost)
 	var standing: int = Copies.count_kind(sim, "farm")
 	for _index: int in range(3):
-		place.buildings.append(_fake("farm"))
+		place.buildings.append(_fake(sim, "farm"))
 	var fourth: Dictionary = sim.build_preview(region, "farm")
 	var step: float = float(rules.copy_surcharge)
 	check(
@@ -102,7 +113,7 @@ func _copies() -> void:
 	)
 	check(int(fourth.copy_number) == standing + 4, "the preview says which copy this is")
 	for _index: int in range(60):
-		place.buildings.append(_fake("farm"))
+		place.buildings.append(_fake(sim, "farm"))
 	var capped: Dictionary = sim.build_preview(region, "farm")
 	check(
 		is_equal_approx(float(capped.copy_surcharge), float(rules.copy_surcharge_cap) - 1.0),
@@ -111,7 +122,7 @@ func _copies() -> void:
 	var great: Dictionary = sim.build_preview(region, "university")
 	check(float(great.get("copy_surcharge", 0.0)) == 0.0, "great works pay no copy surcharge")
 	for _index: int in range(5):
-		place.buildings.append(_fake("habitat"))
+		place.buildings.append(_fake(sim, "habitat"))
 	var home: Dictionary = sim.build_preview(region, "habitat")
 	check(float(home.get("copy_surcharge", 0.0)) == 0.0, "homes pay no copy surcharge")
 	fund(sim, 1.0e9)
@@ -127,7 +138,7 @@ func _fixed_incomes() -> void:
 	var rules: Dictionary = sim.config.economy
 	var centres: Array = []
 	for _index: int in range(3):
-		var building: Dictionary = _fake("data_center")
+		var building: Dictionary = _fake(sim, "data_center")
 		place.buildings.append(building)
 		centres.append(building)
 	var factor: float = float(rules.income_copy_factor)
@@ -154,7 +165,7 @@ func _fixed_incomes() -> void:
 	)
 	var works: Array = []
 	for _index: int in range(8):
-		var building: Dictionary = _fake("foodworks")
+		var building: Dictionary = _fake(sim, "foodworks")
 		place.buildings.append(building)
 		works.append(building)
 	var food_factor: float = float(rules.foodworks_copy_factor)
@@ -375,13 +386,13 @@ func _mine_outlook() -> void:
 		"kind": "deposit", "resource": "ore", "grade": 1.0, "reserves": 1.0, "depth": 0
 	}
 	plots.append(seam)
-	var mine: Dictionary = _fake("mine_ore")
+	var mine: Dictionary = _fake(sim, "mine_ore")
 	mine.plot = plots.size() - 1
 	place.buildings.append(mine)
-	var unplaced: Dictionary = _fake("mine_copper")
+	var unplaced: Dictionary = _fake(sim, "mine_copper")
 	place.buildings.append(unplaced)
 	# The civic service slot is a building without an entry in the building rules.
-	place.buildings.append(_fake("service"))
+	place.buildings.append(_fake(sim, "service"))
 	Stats.goods(sim.state, "ore", Stats.EXPORTED, 100.0)
 	Stats.close_day(sim.state)
 	var outlook: Dictionary = sim.mine_outlook(sim.stats_window(30))
@@ -410,13 +421,13 @@ func _mine_outlook() -> void:
 	outlook = sim.mine_outlook(sim.stats_window(30))
 	check(float(outlook.share) == 0.0, "a mine switched off earns nothing to lose")
 	mine.enabled = true
-	place.buildings.append(_fake("processor"))
+	place.buildings.append(_fake(sim, "processor"))
 	outlook = sim.mine_outlook(sim.stats_window(30))
 	check(
 		is_equal_approx(float(outlook.share), 1.0),
 		"parts made from the dying seam's ore are at risk with it"
 	)
-	place.buildings.append(_fake("tailings_plant"))
+	place.buildings.append(_fake(sim, "tailings_plant"))
 	outlook = sim.mine_outlook(sim.stats_window(30))
 	check(
 		float(outlook.share) > 0.0 and float(outlook.share) < 1.0,
@@ -625,12 +636,12 @@ func _old_schema_save() -> void:
 	check(error == "", "a 1.8 save loads: " + error)
 	if error != "":
 		return
-	check(int(loaded.state.schema) == SaveIo.SCHEMA, "and is brought to schema 5")
+	check(int(loaded.state.schema) == SaveIo.SCHEMA, "and is brought to the current schema")
 	check(int(loaded.state.policy.get("services", -1)) == 0, "with the services budget off")
 	check(loaded.state.stats.get("sinks") is Array, "with an empty spending record")
 	check(
-		str(loaded.state.log.back().text).begins_with("1.8 存档按 1.9 规则继续经营"),
-		"the log says it now plays by 1.9 rules"
+		str(loaded.state.log.back().text).begins_with("1.8 存档按 %s 规则继续经营" % SaveIo.CURRENT_VERSION),
+		"the log says it now plays by the current rules"
 	)
 	check(loaded.Career.validate(loaded.state) == "", "the career record is valid")
 	loaded.tick()
@@ -640,13 +651,13 @@ func _old_schema_save() -> void:
 	check(loaded.save_game(again) == "", "it saves")
 	check(
 		int(SaveIo.read_header(again).get("version", 0)) == SaveIo.SCHEMA,
-		"as a schema 5 file of its own"
+		"as a current-schema file of its own"
 	)
 
 
 ## A finished great work in the first settlement, at a level; the day's effect totals refreshed.
 func _place_work(sim: RefCounted, kind: String, level: int) -> Dictionary:
-	var work: Dictionary = _fake(kind)
+	var work: Dictionary = _fake(sim, kind)
 	work.level = level
 	work.upgrade_days = 0
 	sim.state.settlements[0].buildings.append(work)
@@ -799,7 +810,7 @@ func _great_works() -> void:
 	var audit: Array = sim.audit()
 	check(audit.is_empty(), "the ledger balances after the purchase: " + str(audit))
 	# Every other upgrade is still built from local stock.
-	var homes: Dictionary = _fake("habitat")
+	var homes: Dictionary = _fake(sim, "habitat")
 	place.buildings.append(homes)
 	homes.upgrade_days = 0
 	sim.state.research.completed.append(str(sim.config.upgrades.habitat[0].tech))

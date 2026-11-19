@@ -1618,6 +1618,10 @@ static func settings(g, b):
 		D.button(b, "读取1.5兼容性示例（中期）", func(): g.load_path("res://data/acceptance_midgame.json"))
 		D.button(b, "导出可读 JSON（开发用）", func(): g.export_state_json())
 	for item: Array in [
+		["读取 1.9 手动档（原文件保留）", g.old_save_path(g.V19_SAVE_MANUAL)],
+		["读取 1.9 自动档（原文件保留）", g.old_save_path(g.V19_SAVE_AUTO)],
+		["读取 1.8 手动档（原文件保留）", g.old_save_path(g.V18_SAVE_MANUAL)],
+		["读取 1.8 自动档（原文件保留）", g.old_save_path(g.V18_SAVE_AUTO)],
 		["读取 1.7 手动档（原文件保留）", g.old_save_path(g.V17_SAVE_MANUAL)],
 		["读取 1.7 自动档（原文件保留）", g.old_save_path(g.V17_SAVE_AUTO)],
 		["读取 1.6 手动档（原文件保留）", g.old_save_path(g.OLD_SAVE_MANUAL)],

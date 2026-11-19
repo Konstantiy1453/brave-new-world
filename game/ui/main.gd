@@ -17,8 +17,12 @@ const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
 const MAX_DAYS_PER_FRAME: int = 3
+## The difficulty option's entries, in order.
+const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
+const V19_SAVE_MANUAL: String = "/ColonyCharter/v19/manual.save"
+const V19_SAVE_AUTO: String = "/ColonyCharter/v19/autosave.save"
 const V18_SAVE_MANUAL: String = "/ColonyCharter/v18/manual.save"
 const V18_SAVE_AUTO: String = "/ColonyCharter/v18/autosave.save"
 const V17_SAVE_MANUAL: String = "/ColonyCharter/v17/manual.save"
@@ -606,10 +610,11 @@ func advance_time(delta: float):
 	var seconds_per_day: float = float(sim.progression.get("time", {}).get("seconds_per_day", 5.0))
 	var days_this_frame: int = 0
 	while accumulator >= seconds_per_day:
-		# A long frame never turns into a burst of days: the rest of the backlog is dropped.
+		# A long frame never turns into a burst of days: the rest of the backlog is dropped, but
+		# the day already under way keeps its fraction.
 		days_this_frame += 1
 		if days_this_frame > MAX_DAYS_PER_FRAME:
-			accumulator = 0
+			accumulator = fmod(accumulator, seconds_per_day)
 			break
 		accumulator -= seconds_per_day
 		var prior_company: String = str(sim.state.get("company", {}).get("stage", "normal"))
@@ -638,7 +643,8 @@ func advance_time(delta: float):
 			forced_pause(true)
 			open_page("events")
 		if paused or panel_blocks_time():
-			accumulator = 0
+			# The rest of the day waits for the clock to run again.
+			accumulator = fmod(accumulator, seconds_per_day)
 			break
 
 
@@ -704,11 +710,11 @@ func forced_page_open() -> bool:
 	)
 
 
-## Stops the clock for something the player must see; `resume` restores the speed on close.
+## Stops the clock for something the player must see; `resume` restores the speed on close. The
+## part of a day already run is kept for when the clock runs again.
 func forced_pause(resume: bool):
 	resume_on_close = resume and not paused
 	paused = true
-	accumulator = 0
 
 
 func set_speed(n: int):
@@ -719,8 +725,6 @@ func set_speed(n: int):
 		return
 	paused = n == 0
 	resume_on_close = false
-	if paused:
-		accumulator = 0
 	if n > 0:
 		speed = n
 	refresh()
@@ -1178,7 +1182,6 @@ func modal(title: String, width: int = 960, closable: bool = true, key: String =
 		if not paused:
 			resume_on_close = true
 		paused = true
-		accumulator = 0
 	refresh()
 	return modal_box
 
@@ -1263,14 +1266,26 @@ func show_menu():
 	D.label(r, "星球种子", 17, D.MUTED, false)
 	if menu_seed == "":
 		menu_seed = _new_seed()
-	seed_edit = D.line_edit(r, "SeedEdit", menu_seed)
+	# With the tutorial on, the controls show the tutorial's own planet, the one it really uses.
+	var lesson: Dictionary = Tutorial.data()
+	seed_edit = D.line_edit(r, "SeedEdit", str(int(lesson.seed)) if tutorial_on else menu_seed)
 	seed_edit.custom_minimum_size.x = 180
 	seed_edit.editable = not tutorial_on
 	if not seed_edit.text_changed.is_connected(_on_seed_changed):
 		seed_edit.text_changed.connect(_on_seed_changed)
-	size_option = D.option(r, "SizeOption", ["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"], 1)
+	size_option = D.option(
+		r,
+		"SizeOption",
+		["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"],
+		int(lesson.size) if tutorial_on else 1
+	)
 	size_option.disabled = tutorial_on
-	difficulty_option = D.option(r, "DifficultyOption", ["简单", "标准", "困难"], 1)
+	difficulty_option = D.option(
+		r,
+		"DifficultyOption",
+		["简单", "标准", "困难"],
+		DIFFICULTIES.find(str(lesson.difficulty)) if tutorial_on else 1
+	)
 	difficulty_option.disabled = tutorial_on
 	var reroll = D.button(r, "换个种子", _reroll_seed, "只更换输入框中的种子；新建后生成对应星球")
 	D.font_size(reroll, 15)
@@ -1285,7 +1300,7 @@ func show_menu():
 		)
 		b.toggle_mode = true
 		b.button_group = group
-		b.button_pressed = id == advantage
+		b.button_pressed = id == (str(lesson.opening) if tutorial_on else advantage)
 		b.disabled = tutorial_on
 		b.custom_minimum_size.y = 34
 		D.font_size(b, 15)
@@ -1340,7 +1355,15 @@ func _on_seed_changed(text: String):
 ## A forecast: a draw that gives no playable world softens, which only building the world can tell.
 func _show_planet_preview():
 	if tutorial_on:
-		planet_preview.text = "新手引导使用专用星球。想自己选种子、大小、难度和开局，先把引导关掉，或点「换个种子」。"
+		var lesson: Dictionary = Tutorial.data()
+		planet_preview.text = (
+			"新手引导使用专用星球：种子 %d · %s · %s。想自己选种子、大小、难度和开局，先把引导关掉，或点「换个种子」。"
+			% [
+				int(lesson.seed),
+				["小型", "中型", "大型"][clampi(int(lesson.size), 0, 2)],
+				["简单", "标准", "困难"][maxi(0, DIFFICULTIES.find(str(lesson.difficulty)))]
+			]
+		)
 		return
 	var rules: Dictionary = sim.progression_geo()
 	var character: Dictionary = WorldGen.Plates.character(
@@ -1353,10 +1376,12 @@ func old_save_path(relative: String) -> String:
 	return OS.get_environment("APPDATA") + relative
 
 
-## The newer of the manual and automatic saves; a 1.8, 1.7 or 1.6 save if this version has none
+## The newer of the manual and automatic saves; a 1.9, 1.8, 1.7 or 1.6 save if this version has none
 ## yet. Older versions' files are only read: saving writes to this version's own folder.
 func _latest_save() -> String:
 	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(V19_SAVE_MANUAL), old_save_path(V19_SAVE_AUTO)])
 	if best == "":
 		best = _newest_of([old_save_path(V18_SAVE_MANUAL), old_save_path(V18_SAVE_AUTO)])
 	if best == "":
@@ -1396,7 +1421,7 @@ func start_game():
 	var text = seed_edit.text
 	var seed_value: Variant = text
 	var scale_id = size_option.selected
-	difficulty = ["easy", "normal", "hard"][difficulty_option.selected]
+	difficulty = DIFFICULTIES[difficulty_option.selected]
 	_begin_world(seed_value, advantage, scale_id, difficulty)
 	menu_seed = ""
 	coach.stop(false)

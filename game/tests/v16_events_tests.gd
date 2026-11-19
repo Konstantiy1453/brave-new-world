@@ -282,7 +282,10 @@ func water_chain() -> void:
 		check(choose(s, i, "build") == "", "water improvement uses real building action")
 		days(s, 5)
 		check(i.status == "waiting", "calendar alone cannot finish construction")
-		var build: Dictionary = s.settlement(0).buildings[int(i.variables.building_index)]
+		var home: Dictionary = s.settlement(0)
+		var build: Dictionary = home.buildings[s.Production.index_of(
+			home, int(i.variables.building_uid)
+		)]
 		check(build.remaining > 0, "actual pump is still under construction without simulation")
 		for k in range(int(s.config.buildings.water.days)):
 			s.tick()
@@ -304,7 +307,8 @@ func water_chain() -> void:
 	var bad = make()
 	var bi: Dictionary = opened(bad, "water")
 	choose(bad, bi, "build")
-	bad.settlement(0).buildings.remove_at(int(bi.variables.building_index))
+	var bad_home: Dictionary = bad.settlement(0)
+	bad_home.buildings.remove_at(bad.Production.index_of(bad_home, int(bi.variables.building_uid)))
 	days(bad, 1)
 	assert_end(bad, bi, "工程目标失效")
 

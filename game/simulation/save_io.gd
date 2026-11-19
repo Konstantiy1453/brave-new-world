@@ -1,5 +1,5 @@
 extends RefCounted
-## Save schema 5 (3 and 4 are read too): "CCS3" | u32 header length | header JSON |
+## Save schema 6 (3, 4 and 5 are read too): "CCS3" | u32 header length | header JSON |
 ## zstd(var_to_bytes(state)).
 ## The header can be read without touching the payload. Landing checkpoint and stewardship
 ## archives live in sibling files named with their hash. Geography is not saved: it is
@@ -14,11 +14,11 @@ const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
 const SaveMigration = preload("res://simulation/save_migration.gd")
-const SCHEMA: int = 5
-## 1.7 (3) and 1.8 (4) saves: same format, older rules. Newer systems arrive through
+const SCHEMA: int = 6
+## 1.7 (3), 1.8 (4) and 1.9 (5) saves: same format, older rules. Newer systems arrive through
 ## ensure_systems on load, the log says so, and the original file is left as it was.
-const OLD_SCHEMAS: Dictionary = {3: "1.7", 4: "1.8"}
-const CURRENT_VERSION: String = "1.9"
+const OLD_SCHEMAS: Dictionary = {3: "1.7", 4: "1.8", 5: "1.9"}
+const CURRENT_VERSION: String = "1.10"
 const MAGIC: String = "CCS3"
 const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
@@ -282,6 +282,7 @@ static func shape(value: Variant, pattern: Variant, path: String) -> String:
 static func _state_shape(sim: RefCounted) -> Dictionary:
 	return {
 		"schema": 0,
+		"next_building_uid": 0,
 		"world":
 		{
 			"seed": 0,
@@ -479,6 +480,12 @@ static func _validate_roads(candidate: Dictionary, site_count: int) -> String:
 	return ""
 
 
+static func _building_shape() -> Dictionary:
+	var pattern: Dictionary = Production.building_record("", 0)
+	pattern.uid = 0
+	return pattern
+
+
 static func _settlement_shape(sim: RefCounted) -> Dictionary:
 	return {
 		"region": 0,
@@ -490,7 +497,7 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 		"scientists": 0,
 		"stock": sim._stock(),
 		"stock_delta": sim._stock(),
-		"buildings": [Production.new_building(sim, "", 0)],
+		"buildings": [_building_shape()],
 		"jobs": 0,
 		"housing": 0,
 		"base_housing": 0,

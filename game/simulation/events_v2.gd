@@ -79,6 +79,27 @@ static func ensure_state(state: Dictionary) -> void:
 				e.endings[inst.definition_id] = str(inst.ending)
 	if not e.has("off"):
 		e.off = _deal_deck(e)
+	_ensure_building_uids(state, e)
+
+
+## Stories saved before buildings had uids followed their target by its place in the list; the
+## building found there (if it is still the kind the story built) becomes the target by uid.
+## Needs the buildings' own uids first (Production.ensure_state runs earlier).
+static func _ensure_building_uids(state: Dictionary, e: Dictionary) -> void:
+	for inst: Dictionary in e.get("instances", []):
+		var vars: Dictionary = inst.get("variables", {})
+		if not vars.has("building_index"):
+			continue
+		var index: int = int(vars.building_index)
+		vars.erase("building_index")
+		vars.building_uid = -1
+		for s: Dictionary in state.get("settlements", []):
+			if int(s.region) != int(inst.get("target_region", -1)):
+				continue
+			if index >= 0 and index < s.buildings.size():
+				var b: Dictionary = s.buildings[index]
+				if str(b.kind) == str(vars.get("building_kind", "")):
+					vars.building_uid = int(b.get("uid", -1))
 
 
 ## Which definitions this run will never draw. Not every story happens on every planet.
@@ -549,7 +570,8 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 		)
 		if error != "":
 			return error
-		inst.variables.building_index = s.buildings.size() - 1
+		# Followed by its uid: pulling down an older building must not lose the story's target.
+		inst.variables.building_uid = int(s.buildings.back().uid)
 		inst.variables.building_kind = str(option.build)
 	sim._transfer(
 		"public", "external", _pay(sim, option), "event.pay", false, str(inst.instance_id)
@@ -846,12 +868,10 @@ static func tick(sim) -> void:
 					if day >= int(scheduled.due):
 						_enter(sim, inst, str(scheduled.next))
 				"construction":
-					var idx: int = int(inst.variables.get("building_index", -1))
-					if (
-						idx < 0
-						or idx >= s.buildings.size()
-						or s.buildings[idx].kind != inst.variables.building_kind
-					):
+					var idx: int = sim.Production.index_of(
+						s, int(inst.variables.get("building_uid", -1))
+					)
+					if idx < 0 or s.buildings[idx].kind != inst.variables.building_kind:
 						_end(sim, inst, "工程目标失效")
 					elif s.buildings[idx].remaining <= 0 and s.buildings[idx].active:
 						_enter(sim, inst, str(scheduled.next))
@@ -864,9 +884,7 @@ static func tick(sim) -> void:
 						)
 					)
 					var inv: Dictionary = inst.variables.investigation
-					inv.progress += (
-						pow(float(staff) / 3.0, log(0.6) / log(0.5)) if staff > 0 else 0.0
-					)
+					inv.progress += _investigation_pace(staff)
 					if float(inv.progress) >= float(inv.work):
 						inst.variables.surveyed = true
 						sim.research_release(inst.instance_id)
@@ -902,21 +920,96 @@ static func tick(sim) -> void:
 				and day - int(e.last_negative) < int(definitions().sampling.negative_cooldown_days)
 			):
 				continue
+			# A definition counts once, however many towns could host it: the colony's rate
+			# stays the same as it grows. Its town is chosen after it is drawn.
+			var places: Array = []
 			for s in sim.state.settlements:
 				if _matches(sim, s, d.conditions):
-					candidates.append(
-						{"id": id, "region": int(s.region), "weight": float(d.weight)}
-					)
-					total += float(d.weight)
-					break
+					places.append(int(s.region))
+			if not places.is_empty():
+				candidates.append({"id": id, "places": places, "weight": float(d.weight)})
+				total += float(d.weight)
 		if total > 0:
 			var roll: float = _rng(e) * total
 			for c in candidates:
 				roll -= float(c.weight)
 				if roll <= 0:
-					_open(sim, str(c.id), int(c.region))
+					_open(sim, str(c.id), _choose_town(sim, str(c.id), c.places))
 					break
 	_sync_legacy(sim)
+
+
+## Which of the towns that qualify hosts a drawn event: one whose kind of work the story is about
+## (its effects and buildings), and one that has not had an event lately. Frontier towns, ports,
+## farms and mines get stories of their own instead of the oldest town getting all of them.
+static func _choose_town(sim, id: String, places: Array) -> int:
+	if places.size() == 1:
+		return int(places[0])
+	var rules: Dictionary = sim.progression.get("event_towns", {})
+	var recent: float = float(rules.get("recent_days", 120))
+	var floor_weight: float = float(rules.get("recent_floor", 0.15))
+	var focus_bonus: float = float(rules.get("focus_bonus", 0.5))
+	var focus_cap: int = int(rules.get("focus_cap", 3))
+	var roles: Array = _focus_roles(sim, id)
+	var weights: Array = []
+	var total: float = 0.0
+	var day: int = int(sim.state.day)
+	for region: Variant in places:
+		var s: Dictionary = sim.settlement(int(region))
+		var matching: int = 0
+		for b: Dictionary in s.buildings:
+			if int(b.remaining) <= 0 and sim.Production.role_of(sim, str(b.kind)) in roles:
+				matching += 1
+		var weight: float = 1.0 + focus_bonus * mini(matching, focus_cap)
+		var last: int = _last_event_day(sim, int(region))
+		if last >= 0:
+			weight *= clampf(float(day - last) / maxf(1.0, recent), floor_weight, 1.0)
+		weights.append(weight)
+		total += weight
+	var roll: float = _rng(sim.state.events_v2) * total
+	for index: int in range(places.size()):
+		roll -= float(weights[index])
+		if roll <= 0.0:
+			return int(places[index])
+	return int(places.back())
+
+
+## The building roles a definition's story is about: what its effects act on, and what it builds.
+static func _focus_roles(sim, id: String) -> Array:
+	var kinds: Dictionary = {}
+	var roles: Array = []
+	var d: Dictionary = definitions().definitions.get(id, {})
+	for node: Dictionary in d.get("nodes", {}).values():
+		for option: Dictionary in node.get("choices", []):
+			for effect: Dictionary in option.get("effects", []):
+				kinds[str(effect.get("kind", ""))] = true
+			if option.has("build"):
+				roles.append(sim.Production.role_of(sim, str(option.build)))
+	for kind: String in kinds:
+		match kind:
+			"mine":
+				roles.append_array(["mine", "harvest"])
+			"farm":
+				roles.append_array(["farm", "indoor_farm"])
+			"processor":
+				roles.append("factory")
+			"port", "power", "water":
+				roles.append(kind)
+	return roles
+
+
+## The day the last event opened at a town, from the events still held and the log of endings;
+## -1 if none.
+static func _last_event_day(sim, region: int) -> int:
+	var e: Dictionary = sim.state.events_v2
+	var last: int = -1
+	for inst: Dictionary in e.instances:
+		if int(inst.target_region) == region:
+			last = maxi(last, int(inst.created_day))
+	for row: Dictionary in e.history:
+		if int(row.get("target_region", -1)) == region:
+			last = maxi(last, int(row.get("day", -1)))
+	return last
 
 
 static func _active_effect(effect: Dictionary, day: int) -> bool:
@@ -1108,10 +1201,40 @@ static func _course(inst: Dictionary, option: Dictionary) -> String:
 			% [share, ahead, 100 - share, other, ("，%d 日后揭晓" % wait) if wait > 0 else ""]
 		)
 	if option.has("investigate"):
+		var days: int = investigation_days(option)
+		if days > 0:
+			return "调查团队约 %d 日后回报，进入「%s」" % [days, ahead]
 		return "调查完成后进入「%s」" % ahead
 	if wait > 0:
 		return "%d 日后进入「%s」" % [wait, ahead]
 	return "随即进入「%s」" % ahead
+
+
+## The day a field team still at work reports back at its present size; -1 while it has nobody.
+static func _report_day(sim, inst: Dictionary) -> int:
+	var staff: int = int(
+		sim.state.research.get("investigations", {}).get(inst.instance_id, {}).get("staff", 0)
+	)
+	var inv: Dictionary = inst.variables.get("investigation", {})
+	var pace: float = _investigation_pace(staff)
+	if pace <= 0.0:
+		return -1
+	var left: float = maxf(0.0, float(inv.get("work", 0.0)) - float(inv.get("progress", 0.0)))
+	return int(sim.state.day) + ceili(left / pace)
+
+
+## Days a field investigation takes with the team the option sends, at the pace `tick` advances
+## it; 0 when the option sends nobody.
+static func investigation_days(option: Dictionary) -> int:
+	var staff: float = float(option.get("investigate", 0))
+	if staff <= 0.0:
+		return 0
+	return ceili(float(option.get("work", 0.0)) / _investigation_pace(int(staff)))
+
+
+## Work a field team of this size does in a day.
+static func _investigation_pace(staff: int) -> float:
+	return pow(float(staff) / 3.0, log(0.6) / log(0.5)) if staff > 0 else 0.0
 
 
 ## An ending leaves a landmark at its place for the rest of the game, with its effects acting
@@ -1320,6 +1443,7 @@ static func view(sim) -> Dictionary:
 			if inst.pause_required:
 				result.pause_required = true
 		elif inst.status == "waiting" and inst.scheduled.get("kind", "") == "research":
+			item.report_day = _report_day(sim, inst)
 			item.choices.append(
 				{
 					"id": "cancel",
@@ -1506,9 +1630,9 @@ static func validate(candidate: Dictionary) -> String:
 			if inst.variables.has(key) and not inst.variables[key] is bool:
 				return "事件权利标志无效"
 		if (
-			inst.variables.has("building_index")
+			inst.variables.has("building_uid")
 			and (
-				not _number(inst.variables.building_index)
+				not _number(inst.variables.building_uid)
 				or not inst.variables.get("building_kind") is String
 			)
 		):
@@ -1556,7 +1680,7 @@ static func validate(candidate: Dictionary) -> String:
 			)
 			if inst.scheduled.kind != "order" and not _number(inst.scheduled.get(timekey)):
 				return "事件后继时刻无效"
-			if inst.scheduled.kind == "construction" and not inst.variables.has("building_index"):
+			if inst.scheduled.kind == "construction" and not inst.variables.has("building_uid"):
 				return "工程后继缺少目标"
 			if inst.scheduled.kind == "research" and not inst.variables.has("investigation"):
 				return "调查后继缺少工作量"
