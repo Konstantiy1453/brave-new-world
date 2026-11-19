@@ -47,6 +47,7 @@ func setup(data: Dictionary) -> void:
 		if entry.surface != surface:
 			_clear_node(entry.surface)
 	region_cache.clear()
+	camp_cache.clear()
 	selected_region = 0
 	signature = ""
 	marker_signature = ""
@@ -145,20 +146,7 @@ func _marker_signature() -> String:
 
 ## Towns and lit roads change the night side; a few dozen people more do not.
 func _lights_signature() -> String:
-	var towns: Array = []
-	for place: Dictionary in state.get("settlements", []):
-		var built: int = 0
-		for building: Dictionary in place.get("buildings", []):
-			if int(building.get("remaining", 0)) <= 0:
-				built += 1
-		towns.append([int(place.region), built, int(place.get("population", 0)) / 40])
-	var lit: Array = []
-	var day: int = int(state.get("day", 0))
-	for road: Dictionary in state.get("roads", []):
-		lit.append(
-			[int(road.get("id", 0)), Geo.road_building(road, day) or Geo.road_blocked(road, day)]
-		)
-	return "%s|%s" % [str(towns), str(lit)]
+	return LightField.signature(state, Rules.read("economy").buildings)
 
 
 func _transport_signature() -> String:

@@ -804,3 +804,21 @@ factories, so the game's cycle and the payback bands stay as they are.
   capital most stories again).
 - An option that sends a field team says when it reports back (「调查团队约 N 日后回报」, at the
   team size it sends); a running investigation shows its expected day on the events page.
+- Night lights come from the game's state (`world/light_field.gd`): each building shines from its
+  own plot, mapped to the planet at the district's 4 units a degree. Housing windows are warm and
+  fill in the order the homes were built (the landing camp first); a running facility shows cool
+  work lamps by its role; a building site one lamp; roads only where they leave town and where
+  three links meet. They are painted into one 4096 × 2048 texture shared by the globe and the flat
+  map (a texel is about a screen pixel at the closest zoom; the mipmaps merge lights as the
+  camera pulls back). The procedural town shapes and the lamp strings along whole roads are gone ·
+  billboards for every light (exact, but more to keep in step with clouds, the terminator and two
+  renderers, for no gain at this game's zoom range, about 13 pixels a degree at most).
+- The landing camp's cell (`region_ground.landing_spot`) is one search shared by the district and
+  the lights, run for any region: the first free slot of the plot grid on land, clear of rivers
+  and lakes. The district used to run it before its rivers were prepared, which could stand pods
+  in a river · two searches (they would disagree at the coast).
+- The flat map's night is as dark as the globe's (`color *= 1 - 0.8 dark`, was 0.42), so towns read
+  as lights on a just-legible land · keeping the cartographic brightness (the lights were lost).
+- Harbour lights wait for the bay's harbour to be a building on a plot (plan C): then the quay and
+  its lights share one position · guessing the quay from the planet's coast (it would disagree
+  with the district's own search by a step or two).

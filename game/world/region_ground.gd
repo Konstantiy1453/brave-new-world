@@ -196,7 +196,7 @@ func _prepare_terraces() -> void:
 		if bool(plot.get("hidden", false)):
 			continue
 		_add_terrace(float(plot.x), float(plot.z))
-	pods_spot = _free_cell(taken)
+	pods_spot = landing_spot(selected_region)
 	_add_terrace(pods_spot.x, pods_spot.y)
 
 
@@ -207,7 +207,18 @@ func _add_terrace(x: float, z: float) -> void:
 
 
 ## The nearest dry cell of the plot grid, off the main street, that no plot has been given.
-func _free_cell(taken: Dictionary) -> Vector2:
+## The landing camp's cell in a region: the first free slot of the plot grid, ring by ring from
+## the centre, on land and clear of rivers and lakes. The district stands its pods there and the
+## night lights put the camp's first lights there (light_field.gd), so both show the same place.
+## Any region, not only the one on show.
+func landing_spot(region: int) -> Vector2:
+	if region < 0 or region >= world.get("regions", []).size():
+		return Vector2(-6.0, 0.0)
+	var reg: Dictionary = world.regions[region]
+	var taken: Dictionary = {}
+	for plot: Dictionary in reg.get("plots", []):
+		taken[_slot_key(float(plot.x), float(plot.z))] = true
+	var water: Array = _water_marks(reg)
 	for ring: int in range(1, 8):
 		for iz: int in range(-ring, ring + 1):
 			for ix: int in range(-ring, ring + 1):
@@ -217,12 +228,67 @@ func _free_cell(taken: Dictionary) -> Vector2:
 					continue
 				var x: float = ix * SLOT_SPACING
 				var z: float = iz * SLOT_SPACING
-				var ll := _local_coordinate(x, z)
+				var ll: Vector2 = _coordinate_in(reg, x, z)
 				var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
-				if not bool(g.land) or is_finite(_water_height_at(x, z, 1.6)):
+				if not bool(g.land) or _wet(water, Vector2(x, z), 1.6):
 					continue
 				return Vector2(x, z)
 	return Vector2(-6.0, 0.0)
+
+
+## A region's rivers and lakes in its own district units, as the district draws them
+## (`_prepare_local_rivers`): [kind, a or centre, b, width or radius].
+func _water_marks(reg: Dictionary) -> Array:
+	var marks: Array = []
+	for river: Dictionary in render_rivers:
+		var coordinates: Array = river.coordinates
+		for i in range(coordinates.size() - 1):
+			var a: Vector2 = _point_to_local_in(
+				reg, float(coordinates[i][0]), float(coordinates[i][1])
+			)
+			var b: Vector2 = _point_to_local_in(
+				reg, float(coordinates[i + 1][0]), float(coordinates[i + 1][1])
+			)
+			if a.distance_to(b) > 60:
+				continue
+			var clip := _clip_segment(a, b)
+			if clip.x < 0:
+				continue
+			var last: int = maxi(1, coordinates.size() - 1)
+			var wa: float = .45 + .18 * float(i) / last + .035 * sin(float(i) * .51)
+			var wb: float = .45 + .18 * float(i + 1) / last + .035 * sin(float(i + 1) * .51)
+			marks.append(["river", a.lerp(b, clip.x), a.lerp(b, clip.y), maxf(wa, wb)])
+	for lake: Dictionary in world.get("lakes", []):
+		var center: Vector2 = _point_to_local_in(reg, float(lake.lat), float(lake.lon))
+		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
+		if absf(center.x) > half_width - radius or absf(center.y) > half_depth - radius:
+			continue
+		marks.append(["lake", center, center, radius])
+	return marks
+
+
+static func _wet(marks: Array, point: Vector2, margin: float) -> bool:
+	for mark: Array in marks:
+		var a: Vector2 = mark[1]
+		var b: Vector2 = mark[2]
+		var t: float = clampf((point - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
+		if point.distance_to(a.lerp(b, t)) < float(mark[3]) * margin:
+			return true
+	return false
+
+
+func _coordinate_in(reg: Dictionary, x: float, z: float) -> Vector2:
+	var lat: float = float(reg.get("canonical_lat", reg.lat)) - z / 4.0
+	var lon: float = float(reg.get("canonical_lon", reg.lon)) + x / 4.0
+	return Geo.project_coordinate(lat, lon, world)
+
+
+func _point_to_local_in(reg: Dictionary, lat: float, lon: float) -> Vector2:
+	var ll: Vector2 = Geo.unproject_coordinate(lat, lon, world)
+	return Vector2(
+		wrapf(ll.y - float(reg.get("canonical_lon", reg.lon)), -180, 180) * 4.0,
+		(float(reg.get("canonical_lat", reg.lat)) - ll.x) * 4.0
+	)
 
 
 ## Which plots the terrain was cut for: a cached region is rebuilt once a hidden plot is found.

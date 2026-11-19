@@ -18,6 +18,7 @@ const CARGO_GLOW: float = 1.2
 ## Added to a place's name on the maps while an event is open there.
 const EVENT_MARK: String = "  ·  通讯"
 const NightLights = preload("res://world/night_lights.gd")
+const LightField = preload("res://world/light_field.gd")
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
 static var atlas_cache: Dictionary = {}
@@ -48,6 +49,8 @@ var terrain_shader: ShaderMaterial
 var night_lights: ImageTexture
 ## The settlements' night lights for the shaders (night_lights.gd town_uniforms).
 var town_lights: Dictionary = {}
+## Landing camps found so far, by region (planet_view `landing_camps`).
+var camp_cache: Dictionary = {}
 var lights_signature: String = ""
 ## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
 var sky: VisualClock = VisualClock.new()

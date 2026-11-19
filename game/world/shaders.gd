@@ -489,14 +489,13 @@ void fragment() {
 	float spec = pow(max(dot(water_normal, halfway), 0.0), 400.0) * 0.4;
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
 	color += vec3(1.0, 0.92, 0.78) * spec * (1.0 - coast) * (1.0 - ice) * day;
-	// Lit roads after sunset (their halo from a coarser mip of the same map) and the towns.
+	// The colony's lights after sunset (light_field.gd), their halo from a coarser mip of the same
+	// map, which also merges them smoothly as the camera pulls back.
 	vec2 point_light = textureGrad(lights, uv, ddx_uv, ddy_uv).rg;
 	vec2 halo = textureGrad(lights, uv, ddx_uv * 6.0, ddy_uv * 6.0).rg;
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
-	float pixel = max(length(ddx_uv * vec2(360.0, 180.0)), length(ddy_uv * vec2(360.0, 180.0)));
-	vec2 city = dark > 0.001 ? town_lights(lat, (uv.x - 0.5) * 360.0, pixel) : vec2(0.0);
-	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.4 + halo.r * 6.0 + city.x * 1.7);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.0 + halo.g * 4.5 + city.y * 1.5);
+	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * 7.0);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * 5.0);
 	ALBEDO = color + glow * dark;
 }
 """
@@ -609,14 +608,15 @@ void fragment() {
 	color *= 1.0 - cloud * 0.25;
 	float facing = dot(n, normalize(sun_local));
 	float dark = (1.0 - smoothstep(-0.08, 0.12, facing)) * day_night;
-	color *= 1.0 - dark * 0.42;
+	// Night as the globe has it (1.10): the sea darkest, the land just legible, the lights clear.
+	color *= 1.0 - dark * 0.8;
 	color = mix(color, vec3(0.88, 0.9, 0.94) * mix(1.0, 0.45, dark), cloud);
+	// The colony's lights (light_field.gd): small bright cores and a restrained halo from a coarser
+	// mip, which also merges them as the map zooms out.
 	vec2 point_light = texture(lights, UV).rg;
 	vec2 halo = textureLod(lights, UV, 2.5).rg;
-	float pixel = max(length(dFdx(UV) * vec2(360.0, 180.0)), length(dFdy(UV) * vec2(360.0, 180.0)));
-	vec2 city = dark > 0.001 ? town_lights(lat, lon, pixel) : vec2(0.0);
-	vec3 glow = vec3(1.0, 0.68, 0.32) * (point_light.r * 2.0 + halo.r * 5.0 + city.x * 1.5);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 1.6 + halo.g * 3.5 + city.y * 1.3);
+	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.2 + halo.r * 6.0);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.8 + halo.g * 4.5);
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
 """

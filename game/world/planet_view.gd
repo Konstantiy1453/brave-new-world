@@ -247,32 +247,38 @@ func _build_clouds() -> void:
 	cloud_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
-## Towns and lit roads for the night side. Repainted only when what it shows has changed.
+## The colony's lights for the night side (light_field.gd): every building at its plot, lit as it
+## is used, and the few lamps where roads leave town. Repainted only when what it shows has changed.
 func _update_night_lights() -> void:
-	var roles: Dictionary = {}
-	for kind: String in Rules.read("economy").buildings:
-		roles[kind] = str(Rules.read("economy").buildings[kind].get("role", ""))
-	var towns: Array = []
-	for settlement: Dictionary in state.get("settlements", []):
-		var region: int = int(settlement.get("region", -1))
-		if region >= 0 and region < world.regions.size():
-			towns.append(NightLights.town_source(settlement, world.regions[region], roles))
-	var roads: Array = []
-	var day: int = int(state.get("day", 0))
-	for road: Dictionary in state.get("roads", []):
-		if str(road.get("variant", "")) in ["sea", "shuttle"]:
-			continue
-		if Geo.road_building(road, day) or Geo.road_blocked(road, day):
-			continue
-		roads.append(road.get("coordinates", []))
-	var image: Image = NightLights.paint(roads)
+	var buildings: Dictionary = Rules.read("economy").buildings
+	var image: Image = NightLights.paint(
+		LightField.lights(state, world, buildings, landing_camps())
+	)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
 	else:
 		night_lights.update(image)
-	town_lights = NightLights.town_uniforms(towns)
+	town_lights = NightLights.town_uniforms()
 	for material: ShaderMaterial in [globe_shader, flat_shader]:
 		_apply_town_lights(material)
+
+
+## Each settled town's landing camp in district units, as the district stands its pods: found once
+## per town (region_ground `landing_spot`), since plots and water do not move.
+func landing_camps() -> Dictionary:
+	var camps: Dictionary = {}
+	for settlement: Dictionary in state.get("settlements", []):
+		var region: int = int(settlement.get("region", -1))
+		if region < 0 or region >= world.get("regions", []).size():
+			continue
+		if not camp_cache.has(region):
+			# The district's field size clips its rivers; it depends only on the world.
+			_fit_field()
+			camp_cache[region] = (
+				landing_spot(region) if Geo.is_generated(str(world.version)) else Vector2(-6.0, 0.0)
+			)
+		camps[region] = camp_cache[region]
+	return camps
 
 
 func _update_markers() -> void:
