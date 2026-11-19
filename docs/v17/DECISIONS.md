@@ -767,3 +767,40 @@ factories, so the game's cycle and the payback bands stay as they are.
   (radius, geology, prospecting, free siting, seabed, districts, people, stories) wait until the
   bay has been judged, as the brief asks · free siting first (it would scale an opening nobody
   has judged yet).
+- Every building has a `uid` (`Production.new_building`; old saves get them in list order on
+  load), and an event's construction follows it: an unrelated demolition no longer voids the
+  story, demolishing the target still does. Saves move to schema 6 in their own folder
+  (`ColonyCharter/v110`); 1.9 saves (schema 5, `v19`) are read and upgraded like 1.8's, never
+  written · repairing the index on demolition (keeps a fragile position as identity; crews and
+  lights need the uid anyway) · keeping schema 5 (1.9 builds would load 1.10 saves silently).
+  New games had the schema hard-coded at 5, so every fresh save was "upgraded" on load; it now
+  follows `SaveIo.SCHEMA`.
+- Research topics have three states: progressing (the team earns points), blocked (a team is
+  assigned but cannot work; the reason is shown) and open. The card and its column say which, the
+  tutorial's research step waits for progressing work, as the contract does, and its coach says
+  why a team is waiting · counting assignment as research (the preview's bug).
+- The days left on a topic count a running commission's points; the switch says that charging
+  starts the next day and stops on days the team is idle or cash is short · a separate commission
+  ETA (one figure, the card's, is less to read).
+- A farm's forecast counts only the food its town can use: what it eats and sends to food works,
+  less what its farms grow, at most the farm's capacity (farms stop at the stock target). Its
+  money and payback are that part valued as the imports it replaces. The ledger shows capacity,
+  usable output and import savings · valuing the whole capacity (the preview's second
+  greenhouse) · counting future population (the next forecast does, when it comes). Bots read the
+  same forecast, so their farm choices may move in the next harness run.
+- The water lesson completes when the player adds a pump. A fault that passes by itself is
+  reported as waiting: the days short, the lowest output, and the pump's real price and time. The
+  player may then move on with 「下一步」 · counting recovery as a fix (the preview's bug) ·
+  making the lesson wait for a pump (a player who chose to wait would be stuck).
+- With the tutorial on, the menu shows the tutorial's own seed, size, difficulty and opening (greyed
+  out), the ones it really uses.
+- The clock keeps the part of a day already run across pauses, panels, speed changes and forced
+  stops. A long frame still drops its backlog of whole days. The 1.6 interface tests now accept
+  less than a day kept instead of exactly 0 · zeroing on resume (that was the lost day).
+- An event's town is chosen after the event is drawn: among the towns that qualify, weighted 1 +
+  0.5 per building of the kind its story is about (up to 3), and down to 0.15 for a town that had
+  an event within 120 days (`progression.json` `event_towns`). A definition still counts once, so
+  the colony's rate stays the same as towns multiply · weighting by population (it would give the
+  capital most stories again).
+- An option that sends a field team says when it reports back (「调查团队约 N 日后回报」, at the
+  team size it sends); a running investigation shows its expected day on the events page.

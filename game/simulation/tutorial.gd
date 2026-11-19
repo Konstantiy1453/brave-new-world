@@ -17,6 +17,10 @@ static func new_context() -> Dictionary:
 		"pages_opened": {},
 		"shortage_day": -1,
 		"home": 0,
+		# The water lesson: pumps at home when the fault began, and what the fault cost.
+		"water_built": -1,
+		"short_days": 0,
+		"lowest_water": 1.0,
 	}
 
 
@@ -77,19 +81,104 @@ static func _running(state: Dictionary, prefix: String) -> bool:
 	return false
 
 
+## Projects whose team is at work, as the contract counts them: a team assigned to a laboratory
+## that is not running does not count (`note` says why the lesson is waiting).
 static func _staffed_projects(state: Dictionary) -> int:
 	var total: int = 0
 	for project: Dictionary in state.research.get("projects", {}).values():
-		if int(project.staff) >= 3:
+		if int(project.staff) >= 3 and int(project.effective) > 0:
 			total += 1
 	return total
 
 
-## True once the shortage has shown itself and is gone again.
+## A line under the lesson while its condition is not met for a reason the player may not see:
+## a research team that is assigned but blocked. Empty when there is nothing to add.
+static func note(sim: RefCounted, condition: Dictionary, context: Dictionary) -> String:
+	match str(condition.get("name", "")):
+		"project_staffed":
+			for project: Dictionary in sim.state.research.get("projects", {}).values():
+				if int(project.staff) >= 3 and int(project.effective) <= 0:
+					return "团队已经派出，但研究还没有进展：" + str(project.get("reason", ""))
+		"shortage_cleared":
+			return _water_note(sim, context)
+	return ""
+
+
+## True once the shortage has shown itself and is gone again because the player added supply.
+## Waiting for the fault to pass is not counted as fixing it (`waited`).
 static func _shortage_cleared(sim: RefCounted, context: Dictionary, key: String) -> bool:
+	return _shortage_over(sim, context, key) and _invested(sim, context)
+
+
+static func _shortage_over(sim: RefCounted, context: Dictionary, key: String) -> bool:
 	if int(context.shortage_day) < 0 or int(sim.state.day) <= int(context.shortage_day) + 1:
 		return false
 	return not _any_shortage(sim.state, key)
+
+
+## The water lesson ended because the fault passed by itself, with no pump added, after the town
+## had gone short for at least a day.
+static func waited(sim: RefCounted, context: Dictionary) -> bool:
+	return (
+		int(context.get("short_days", 0)) > 0
+		and _shortage_over(sim, context, "water")
+		and not _invested(sim, context)
+	)
+
+
+## Water buildings at the lesson's town, finished or not.
+static func water_count(sim: RefCounted, region: int) -> int:
+	var count: int = 0
+	for b: Dictionary in sim.settlement(region).get("buildings", []):
+		if str(sim.config.buildings.get(b.kind, {}).get("role", "")) == "water":
+			count += 1
+	return count
+
+
+static func _invested(sim: RefCounted, context: Dictionary) -> bool:
+	var before: int = int(context.get("water_built", -1))
+	return before >= 0 and water_count(sim, int(context.home)) > before
+
+
+## Once a day during the water lesson: how long the town has been short and how short.
+static func count_shortage(sim: RefCounted, context: Dictionary) -> void:
+	if int(context.get("shortage_day", -1)) < 0 or _shortage_over(sim, context, "water"):
+		return
+	var s: Dictionary = sim.settlement(int(context.home))
+	if s.is_empty() or not _settlement_short(s, "water"):
+		return
+	context.short_days = int(context.get("short_days", 0)) + 1
+	var ratio: float = float(s.water_supply) / maxf(0.001, float(s.water_demand))
+	context.lowest_water = minf(float(context.get("lowest_water", 1.0)), clampf(ratio, 0.0, 1.0))
+
+
+static func _settlement_short(s: Dictionary, key: String) -> bool:
+	for entry: Dictionary in s.get("shortages", []):
+		if str(entry.key) == key:
+			return true
+	return false
+
+
+## What waiting costs against what a pump costs, in the actual numbers of this game.
+static func _water_note(sim: RefCounted, context: Dictionary) -> String:
+	if int(context.get("shortage_day", -1)) < 0:
+		return ""
+	var home: int = int(context.home)
+	var pump: Dictionary = sim.build_preview(home, "water")
+	var price: String = "再建一座净水泵站要 ¥%.0f、%d 天" % [float(pump.cost), int(pump.days)]
+	var lowest: int = roundi(100.0 * float(context.get("lowest_water", 1.0)))
+	if waited(sim, context):
+		return (
+			"滤芯自己恢复了：缺水 %d 天，用水的设施最低只剩 %d%% 的产量。等待不花钱，但这些天少产了东西；%s，下次出故障时它能顶上。可以点「下一步」继续。"
+			% [int(context.short_days), lowest, price]
+		)
+	if _invested(sim, context):
+		return "新泵站已经下令，建成后供水就能补回来。"
+	var ends: int = int(context.shortage_day) + 1 + int(data().shortage.days)
+	return (
+		"缺水第 %d 天：用水的设施只能按供水比例开工（最低约 %d%%）。等滤芯自己恢复要到第 %d 天；%s。"
+		% [int(context.short_days), lowest, ends, price]
+	)
 
 
 static func _any_shortage(state: Dictionary, key: String) -> bool:

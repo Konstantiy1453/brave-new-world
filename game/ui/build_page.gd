@@ -300,17 +300,44 @@ static func _build_ledger(
 		"crew"
 	)
 	D.heading(rows, "预计产出")
+	var usable: Dictionary = forecast.get("usable", forecast.outputs)
 	for good: String in forecast.outputs:
+		var nominal: float = float(forecast.outputs[good])
+		var used: float = float(usable.get(good, nominal))
 		D.pair(
 			rows,
-			"产出",
-			"%s %s" % [RES.get(good, good), Labels.per_day(float(forecast.outputs[good]))],
-			D.TEAL,
+			"产能",
+			"%s %s" % [RES.get(good, good), Labels.per_day(nominal)],
+			D.TEAL if used >= nominal - 0.001 else D.INK,
 			"",
 			D.MUTED,
 			good
 		)
-	if float(forecast.revenue_per_day) != 0.0:
+		# A farm grows only up to the stock target: what the town cannot use stands idle.
+		if used < nominal - 0.001:
+			D.pair(
+				rows,
+				"可用",
+				"%s %s" % [RES.get(good, good), Labels.per_day(used)],
+				D.TEAL if used > 0.0 else D.GOLD,
+				"其余 %s 用不上（本地需求和库存目标已满足）" % Labels.per_day(nominal - used),
+				D.GOLD,
+				good
+			)
+	if float(forecast.get("import_savings_per_day", 0.0)) > 0.0:
+		D.pair(
+			rows,
+			"省下进口",
+			"¥ %.0f/日" % float(forecast.import_savings_per_day),
+			D.INK,
+			"按可用部分替代进口食品计",
+			D.MUTED
+		)
+	# A farm's income is the imports it replaces, shown above.
+	if (
+		float(forecast.revenue_per_day) != 0.0
+		and float(forecast.get("import_savings_per_day", 0.0)) <= 0.0
+	):
 		D.pair(rows, "收入", "¥ %.0f/日" % float(forecast.revenue_per_day), D.INK)
 	var net: float = float(forecast.net_per_day)
 	D.pair(rows, "净额", "¥ %+.0f/日" % net, D.TEAL if net >= 0.0 else D.RED)

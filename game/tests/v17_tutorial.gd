@@ -224,6 +224,10 @@ func _run_tutorial() -> void:
 	# An event investigation may hold the research teams for a while; the refusal says so.
 	tick_until(func() -> bool: return _assign_scientists() == "", 40)
 	check(_assign_scientists() == "", "research teams assigned")
+	# 1.10: the lesson waits until the team actually works, once the laboratory runs.
+	await settle_coach()
+	check(step_id() == "research", "an assigned team alone does not finish the lesson")
+	tick_until(func() -> bool: return Tutorial._staffed_projects(game.sim.state) > 0, 60)
 	await settle_coach()
 	check(step_id() == "stage", "step: finish stage one")
 	tick_until(func() -> bool: return int(game.sim.state.contract.stage) >= 2)

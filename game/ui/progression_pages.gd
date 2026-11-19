@@ -203,11 +203,16 @@ static func events(g, b):
 		D.label(c, str(node.title) + " / 进行中", 21, D.TEAL)
 		var investigation: Dictionary = node.variables.get("investigation", {})
 		if not investigation.is_empty():
+			var report: int = int(node.get("report_day", -1))
 			D.label(
 				c,
 				(
-					"调查进度 %.1f / %.1f · 已保留科研团队"
-					% [investigation.get("progress", 0), investigation.get("work", 0)]
+					"调查进度 %.1f / %.1f · 已保留科研团队 · %s"
+					% [
+						investigation.get("progress", 0),
+						investigation.get("work", 0),
+						"预计 %s 回报" % g.Events._date(report) if report >= 0 else "团队不在岗，调查暂停"
+					]
 				),
 				17
 			)

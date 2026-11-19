@@ -21,6 +21,8 @@ var tip: Dictionary = {}
 var tips_enabled: bool = true
 var title_label: Label
 var text_label: Label
+## Why a lesson is waiting, or what an outcome cost: Tutorial.note, refreshed with every check.
+var note_label: Label
 var progress_label: Label
 var back_button: Button
 var next_button: Button
@@ -46,6 +48,9 @@ func setup(owner_game: Node) -> void:
 	progress_label = D.label(column, "", 14, D.TEAL, false)
 	title_label = D.label(column, "", 21, D.GOLD)
 	text_label = D.label(column, "", 17)
+	note_label = D.label(column, "", 15, D.GOLD)
+	note_label.name = "CoachNote"
+	note_label.visible = false
 	var buttons := HBoxContainer.new()
 	column.add_child(buttons)
 	back_button = D.button(buttons, "上一步", back, "", "CoachBack")
@@ -124,7 +129,7 @@ func forward() -> void:
 		tip = {}
 		visible = false
 		return
-	if not reviewing and not _done():
+	if not reviewing and not _done() and not _waited_out():
 		return
 	_advance()
 
@@ -149,6 +154,7 @@ func _enter() -> void:
 		game.refresh_sidebar()
 	if str(step.get("enter", "")) == "shortage" and int(context.shortage_day) < 0:
 		context.shortage_day = int(game.sim.state.day)
+		context.water_built = Tutorial.water_count(game.sim, int(context.home))
 		game.act("tutorial_shortage", {"site": int(context.home)})
 		game.selected = int(context.home)
 		game.refresh_sidebar()
@@ -178,7 +184,23 @@ func keep_on_top() -> void:
 
 func _update_next_button() -> void:
 	next_button.text = "下一步"
-	next_button.visible = reviewing or _done()
+	# A fault that passed by itself is not a lesson done, but the player may move on.
+	next_button.visible = reviewing or _done() or _waited_out()
+	var note: String = ""
+	if index >= 0 and index < steps().size() and not reviewing:
+		note = Tutorial.note(game.sim, steps()[index].done, context)
+	note_label.text = note
+	note_label.visible = note != ""
+
+
+## The water lesson's fault passed by itself: not done, but the player may move on.
+func _waited_out() -> bool:
+	if index < 0 or index >= steps().size():
+		return false
+	var condition: Dictionary = steps()[index].done
+	return (
+		str(condition.get("name", "")) == "shortage_cleared" and Tutorial.waited(game.sim, context)
+	)
 
 
 func _done() -> bool:
@@ -282,8 +304,11 @@ func note_page(page: String) -> void:
 	context.pages_opened[page] = true
 
 
-## Called once per simulated day: shows the first tip whose moment has come.
+## Called once per simulated day: counts the water lesson's shortage, and shows the first tip
+## whose moment has come.
 func on_day() -> void:
+	if active():
+		Tutorial.count_shortage(game.sim, context)
 	if active() or not tips_enabled or not tip.is_empty():
 		return
 	for row: Dictionary in Tutorial.data().tips:

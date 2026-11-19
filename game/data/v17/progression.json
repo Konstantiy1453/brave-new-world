@@ -7,7 +7,8 @@
     "money": "account units",
     "staff": "persons",
     "stock": "tonnes",
-    "commission": "speedup: extra points a day per point of the team's own rate, by level; price: money per point by tier 1-5, times 1 + crowding per other running commission"
+    "commission": "speedup: extra points a day per point of the team's own rate, by level; price: money per point by tier 1-5, times 1 + crowding per other running commission",
+    "event_towns": "recent_days: days after a town's last event before it is fully eligible again; recent_floor: its weight the day after one; focus_bonus: extra weight per building of the kind the story is about, up to focus_cap buildings"
   },
   "scope": "all difficulties share rules; normal is baseline candidate calibration",
   "difficulty": {
@@ -117,6 +118,12 @@
       "materials": 320.0,
       "parts": 80.0
     }
+  },
+  "event_towns": {
+    "recent_days": 120,
+    "recent_floor": 0.15,
+    "focus_bonus": 0.5,
+    "focus_cap": 3
   },
   "time": {
     "fast_multiplier": 3,

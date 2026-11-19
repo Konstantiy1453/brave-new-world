@@ -72,8 +72,10 @@ static func _research_column(g, grid, column: Dictionary, v: Dictionary):
 	var running: Dictionary = column.running
 	if running.is_empty():
 		D.tag(title, "○ 待选", D.MUTED)
-	else:
+	elif str(running.get("state", "")) == "progressing":
 		D.tag(title, "● 在研", D.TEAL)
+	else:
+		D.tag(title, "◐ 受阻", D.GOLD)
 	var wanted: int = int(g.research_team.get(id, clampi(int(v.available), 3, 10)))
 	var line = D.row(head)
 	line.add_theme_constant_override("separation", 8)
@@ -118,7 +120,9 @@ static func _research_column(g, grid, column: Dictionary, v: Dictionary):
 ## One dealt topic. Active (its team is on it), available (it can be picked), or waiting for a
 ## prerequisite; the state is written on the card as well as coloured.
 static func _tech_card(g, parent, row: Dictionary, count):
+	# A team assigned is not research under way: a blocked team earns nothing (`row.reason`).
 	var running: bool = int(row.staff) > 0
+	var progressing: bool = str(row.get("state", "")) == "progressing"
 	var missing: Array = row.get("missing", [])
 	var blocked: bool = not running and not missing.is_empty()
 	var role: String = "card_on" if running else ("card_quiet" if blocked else "card")
@@ -126,8 +130,10 @@ static func _tech_card(g, parent, row: Dictionary, count):
 	c.add_theme_constant_override("separation", 5)
 	var top = D.row(c)
 	top.add_theme_constant_override("separation", 6)
-	if running:
+	if progressing:
 		D.tag(top, "● 进行中", D.TEAL)
+	elif running:
+		D.tag(top, "◐ 已派团队 · 受阻", D.GOLD)
 	elif blocked:
 		D.tag(top, "× 需前置", D.RED)
 	else:
@@ -160,19 +166,28 @@ static func _tech_card(g, parent, row: Dictionary, count):
 			false
 		)
 	if running:
-		if float(row.rate) > 0.0:
-			var left: int = ceili((float(row.cost) - work) / float(row.rate))
+		var left: int = int(row.get("days_left", -1))
+		if progressing and left >= 0:
+			var helped: bool = (
+				int(row.commission) > 0
+				and left < ceili((float(row.cost) - work) / maxf(float(row.rate), 0.0001))
+			)
 			D.label(
 				c,
 				(
-					"%d 支团队 · 还要 %d 天（%s）"
-					% [int(row.effective), left, Labels.short_date(int(g.sim.state.day) + left)]
+					"%d 支团队%s · 还要 %d 天（%s）"
+					% [
+						int(row.effective),
+						" + 外部委托" if helped else "",
+						left,
+						Labels.short_date(int(g.sim.state.day) + left)
+					]
 				),
 				D.SMALL,
 				D.TEAL
 			)
 		else:
-			D.label(c, str(row.reason), D.SMALL, D.GOLD)
+			D.label(c, "已派 %d 支团队，但没有进展：%s" % [int(row.staff), str(row.reason)], D.SMALL, D.GOLD)
 		_commission_switch(g, c, row)
 		return
 	# How long it would take with each team size: three figures that wrap between, not within.
@@ -250,11 +265,16 @@ static func _commission_switch(g, c, row: Dictionary) -> void:
 		saved.append("%d 级 %d 天" % [level, int(quote.days_saved)])
 	D.label(c, "预计提前：" + "，".join(saved), D.CAPTION, D.MUTED)
 	if current > 0:
-		var state: String = str(quotes[mini(current, quotes.size()) - 1].state)
-		if state == "no_team":
-			D.label(c, "团队没有在做这个课题，委托暂停", D.CAPTION, D.GOLD)
+		var quote: Dictionary = quotes[mini(current, quotes.size()) - 1]
+		var state: String = str(quote.state)
+		if state == "running":
+			D.label(c, "委托生效：从明天起每天收 ¥%.0f，团队停工或现金不足的日子不收" % float(quote.cost), D.CAPTION, D.TEAL)
+		elif state == "no_team":
+			D.label(c, "团队还没在这个课题上开工：开工后才开始收费", D.CAPTION, D.GOLD)
 		elif state == "no_cash":
-			D.label(c, "现金不够今天的委托（先留足日常开支），委托暂停", D.CAPTION, D.GOLD)
+			D.label(c, "现金不够今天的委托（先留足日常开支）：现金够时才收费", D.CAPTION, D.GOLD)
+	else:
+		D.label(c, "选一级后从明天起按日收费；团队停工的日子不收", D.CAPTION, D.MUTED)
 
 
 ## A step of the commission switch: a toggle whose chosen state shows as pressed.

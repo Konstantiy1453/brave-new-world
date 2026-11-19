@@ -616,6 +616,35 @@ static func view(sim: RefCounted) -> Dictionary:
 	}
 
 
+## What a topic's team is doing, for the card, its column and the tutorial: "progressing" (points
+## every day), "blocked" (a team is assigned but cannot work; the project's reason says why),
+## "open" (no team) or "done". The contract counts only progressing work, and so does all of this.
+static func project_state(project: Dictionary, done: bool) -> String:
+	if done:
+		return "done"
+	if int(project.get("staff", 0)) <= 0:
+		return "open"
+	if int(project.get("effective", 0)) > 0 and float(project.get("rate", 0.0)) > 0.0:
+		return "progressing"
+	return "blocked"
+
+
+## Days left at today's pace, counting a commission's extra points only on days it runs. -1 when
+## nothing moves.
+static func days_left(sim: RefCounted, key: String) -> int:
+	var p: Dictionary = sim.state.research.projects.get(key, {})
+	var left: float = maxf(0.0, float(sim.config.techs[key].cost) - float(p.get("work", 0.0)))
+	var pace: float = float(p.get("rate", 0.0))
+	if project_state(p, sim.state.research.completed.has(key)) != "progressing":
+		return -1
+	var level: int = int(p.get("commission", 0))
+	if level > 0:
+		var quote: Dictionary = commission_quote(sim, key, level)
+		if str(quote.state) == "running":
+			pace += float(quote.extra)
+	return ceili(left / pace) if pace > 0.0 else -1
+
+
 static func _row(sim: RefCounted, key: String) -> Dictionary:
 	var r: Dictionary = sim.state.research
 	var t: Dictionary = sim.config.techs[key]
@@ -646,6 +675,8 @@ static func _row(sim: RefCounted, key: String) -> Dictionary:
 		"effective": int(project.get("effective", 0)),
 		"rate": float(project.get("rate", 0.0)),
 		"reason": str(project.get("reason", "")),
+		"state": project_state(project, r.completed.has(key)),
+		"days_left": days_left(sim, key),
 		"previews": previews,
 		"commission": int(project.get("commission", 0)),
 		"commission_quotes": _quotes(sim, key),
