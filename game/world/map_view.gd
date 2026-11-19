@@ -70,6 +70,7 @@ func setup(data: Dictionary) -> void:
 	_clear_node(flat_world)
 	flat_marker_root = null
 	flat_transport_root = null
+	flat_mover_root = null
 	planet = Node3D.new()
 	planet.name = "AuthoritativePlanet"
 	add_child(planet)
@@ -468,6 +469,15 @@ func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
 	weather_enabled = weather
 	if not spin:
 		sky.spin_factor = 0.0
+
+
+## The complete transport diagram on the globe and the flat map. Off, the night shows only what
+## lights a route: where it leaves town, junctions and the cargo moving on it.
+func set_route_overlay(on: bool) -> void:
+	routes_shown = on
+	for root: Variant in [transport_root, flat_transport_root]:
+		if root is Node3D and is_instance_valid(root):
+			(root as Node3D).visible = on
 
 
 ## Captures and window tests want the same picture every time: the clock stops where it is,

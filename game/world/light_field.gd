@@ -142,6 +142,16 @@ static func housing_shares(s: Dictionary, buildings: Dictionary) -> Dictionary:
 	return shares
 
 
+## Whether a building shows any light in its windows: every building but a home that nobody lives
+## in yet (the district's windows follow the same rule as the night map).
+static func home_lit(b: Dictionary, buildings: Dictionary, shares: Dictionary) -> bool:
+	var spec: Dictionary = buildings.get(str(b.kind), {})
+	if str(spec.get("role", "")) != "housing":
+		return true
+	var windows: int = maxi(1, ceili(float(spec.get("housing", 15)) / BEDS_PER_WINDOW))
+	return roundi(windows * float(shares.get(int(b.get("uid", 0)), 0.0))) >= 1
+
+
 ## A building's plot centre in district units; a building without a plot stands in the centre.
 static func plot_point(reg: Dictionary, b: Dictionary) -> Vector2:
 	var plots: Array = reg.get("plots", [])

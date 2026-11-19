@@ -71,6 +71,7 @@ func run() -> void:
 	_building_site(sim, site, camps)
 	_roads(sim, site)
 	_anchored(sim, camps)
+	_overlay(map)
 	root.remove_child(map)
 	map.free()
 	print("V110_LIGHTS_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
@@ -258,3 +259,18 @@ func _anchored(sim: RefCounted, camps: Dictionary) -> void:
 		JSON.stringify(LightField.lights(copy, sim.geo, buildings, camps)) == JSON.stringify(first),
 		"lights stay where they are from one day to the next"
 	)
+
+
+## The route diagram is an overlay: off, the lines go and the moving cargo stays.
+func _overlay(map: Node3D) -> void:
+	map.set_route_overlay(false)
+	check(
+		not map.transport_root.visible and not map.flat_transport_root.visible,
+		"the transport diagram can be switched off"
+	)
+	check(
+		map.mover_root.visible and map.flat_mover_root.visible,
+		"while the cargo on the routes still moves"
+	)
+	map.set_route_overlay(true)
+	check(map.transport_root.visible, "and back on")

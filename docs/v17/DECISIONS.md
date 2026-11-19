@@ -822,3 +822,10 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Harbour lights wait for the bay's harbour to be a building on a plot (plan C): then the quay and
   its lights share one position · guessing the quay from the planet's coast (it would disagree
   with the district's own search by a step or two).
+- The district lights a home's windows only when people live in it, by the same fill order as the
+  night map (`LightField.home_lit`); the landing pods' windows follow the camp. An empty home keeps
+  its normal colours (not the idle orange): it is not broken, only empty.
+- The complete transport diagram is an overlay (「运输网络」 in 地图画面, on by default): off, the
+  globe and flat map show only what lights a route, where it leaves town and junctions, and the
+  cargo moving on it, which now has its own node · turning the overlay off by default (players
+  would lose the route view they know without asking for it).

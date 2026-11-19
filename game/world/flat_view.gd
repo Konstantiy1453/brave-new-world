@@ -65,6 +65,10 @@ func _build_flat() -> void:
 	flat_world.add_child(flat_marker_root)
 	flat_transport_root = Node3D.new()
 	flat_world.add_child(flat_transport_root)
+	flat_transport_root.visible = routes_shown
+	flat_mover_root = Node3D.new()
+	flat_mover_root.name = "FlatMovers"
+	flat_world.add_child(flat_mover_root)
 	_build_global_water(flat_world, true)
 	_update_flat_markers()
 	_update_flat_transport()
@@ -325,9 +329,12 @@ func _disc(
 func _update_flat_transport() -> void:
 	if flat_transport_root == null or not is_instance_valid(flat_transport_root):
 		return
-	for child in flat_transport_root.get_children():
-		flat_transport_root.remove_child(child)
-		child.queue_free()
+	for root: Node3D in [flat_transport_root, flat_mover_root]:
+		if root == null or not is_instance_valid(root):
+			continue
+		for child in root.get_children():
+			root.remove_child(child)
+			child.queue_free()
 	flat_movers.clear()
 	for route: Dictionary in state.get("roads", []):
 		if not bool(route.get("retired", false)):
@@ -366,7 +373,7 @@ func _draw_road_on_flat(route: Dictionary) -> void:
 		if points.is_empty() or int(shipment.get("road", 0)) != int(route.get("id", 0)):
 			continue
 		var marker := _sphere(
-			flat_transport_root,
+			flat_mover_root if flat_mover_root != null else flat_transport_root,
 			lifted[0],
 			CARGO_DOT_FLAT,
 			_mat("flatshipment", Color("fff0bd"), 0, 1, CARGO_GLOW),

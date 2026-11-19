@@ -140,6 +140,8 @@ var panel_pause: bool = true
 var visual_spin: bool = true
 var visual_day_night: bool = true
 var visual_weather: bool = true
+## The complete transport diagram on the maps (an overlay since 1.10).
+var visual_routes: bool = true
 ## Anti-aliasing level (Graphics.AA_LEVELS) and the free-plot rings in the region view.
 var visual_aa: String = Graphics.AA_DEFAULT
 var plot_marks: bool = false
@@ -198,9 +200,11 @@ func _ready():
 		visual_spin = bool(preferences.get_value("visual", "spin", true))
 		visual_day_night = bool(preferences.get_value("visual", "day_night", true))
 		visual_weather = bool(preferences.get_value("visual", "weather", true))
+		visual_routes = bool(preferences.get_value("visual", "routes", true))
 		visual_aa = str(preferences.get_value("visual", "aa", Graphics.AA_DEFAULT))
 		plot_marks = bool(preferences.get_value("visual", "plot_marks", false))
 	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
+	map.set_route_overlay(visual_routes)
 	Graphics.apply_anti_aliasing(get_viewport(), visual_aa)
 	map.set_plot_marks(plot_marks)
 	show_menu()
@@ -1590,7 +1594,7 @@ func toggle_panel_pause():
 	open_page("save")
 
 
-## key is "spin", "day_night" or "weather".
+## key is "spin", "day_night", "weather" or "routes".
 func toggle_visual(key: String) -> void:
 	match key:
 		"spin":
@@ -1599,12 +1603,16 @@ func toggle_visual(key: String) -> void:
 			visual_day_night = not visual_day_night
 		"weather":
 			visual_weather = not visual_weather
+		"routes":
+			visual_routes = not visual_routes
 	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
+	map.set_route_overlay(visual_routes)
 	var settings = ConfigFile.new()
 	settings.load("user://settings.cfg")
 	settings.set_value("visual", "spin", visual_spin)
 	settings.set_value("visual", "day_night", visual_day_night)
 	settings.set_value("visual", "weather", visual_weather)
+	settings.set_value("visual", "routes", visual_routes)
 	settings.save("user://settings.cfg")
 	open_page("save")
 

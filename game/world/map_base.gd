@@ -40,6 +40,11 @@ var flat_user_zoomed: bool = false
 var surface: Node3D
 var marker_root: Node3D
 var transport_root: Node3D
+## Cargo moving on the routes: lights at night, shown with or without the route diagram.
+var mover_root: Node3D
+var flat_mover_root: Node3D
+## The complete transport diagram, an overlay the player switches on and off (1.10).
+var routes_shown: bool = true
 var buildings_root: Node3D
 var cloud_shell: MeshInstance3D
 var globe_shader: ShaderMaterial

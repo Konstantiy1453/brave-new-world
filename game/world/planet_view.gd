@@ -93,6 +93,10 @@ func _build_planet() -> void:
 	planet.add_child(marker_root)
 	transport_root = Node3D.new()
 	planet.add_child(transport_root)
+	transport_root.visible = routes_shown
+	mover_root = Node3D.new()
+	mover_root.name = "Movers"
+	planet.add_child(mover_root)
 	_build_global_water(planet, false)
 	_update_markers()
 
@@ -386,9 +390,12 @@ func _update_transport() -> void:
 	_update_flat_transport()
 	if transport_root == null or not is_instance_valid(transport_root):
 		return
-	for child in transport_root.get_children():
-		transport_root.remove_child(child)
-		child.queue_free()
+	for root: Node3D in [transport_root, mover_root]:
+		if root == null or not is_instance_valid(root):
+			continue
+		for child in root.get_children():
+			root.remove_child(child)
+			child.queue_free()
 	globe_movers.clear()
 	for r: Dictionary in state.get("roads", []):
 		if not bool(r.get("retired", false)):
@@ -423,7 +430,7 @@ func _draw_road_on_globe(r: Dictionary) -> void:
 		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
 			continue
 		var marker := _sphere(
-			transport_root,
+			mover_root if mover_root != null else transport_root,
 			points[0],
 			CARGO_DOT_GLOBE,
 			_mat("shipment", Color("ffedc2"), 0, 1, CARGO_GLOW),

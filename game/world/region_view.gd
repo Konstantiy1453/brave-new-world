@@ -120,6 +120,10 @@ func _building_signature() -> String:
 	for settlement in state.get("settlements", []):
 		if int(settlement.region) == selected_region:
 			var visible_status: Array = []
+			# Whose windows are lit changes as people move in (light_field.gd).
+			var roles: Dictionary = Rules.read("economy").buildings
+			var shares: Dictionary = LightField.housing_shares(settlement, roles)
+			visible_status.append(float(shares.get(LightField.CAMP, 0.0)) > 0.0)
 			for building in settlement.get("buildings", []):
 				(
 					visible_status
@@ -130,6 +134,7 @@ func _building_signature() -> String:
 							building.get("active", false),
 							int(building.get("remaining", 0)) > 0,
 							int(building.get("plot", -1)),
+							LightField.home_lit(building, roles, shares),
 						]
 					)
 				)
@@ -399,7 +404,12 @@ func _build_colony() -> void:
 	var lanes: bool = Geo.is_generated(str(world.version))
 	var street_ends := Vector2(-12.0, 12.0)
 	if int(settlement.get("base_housing", 0)) > 0:
-		_build_base_housing(offset, int(settlement.base_housing))
+		var camp: float = float(
+			LightField.housing_shares(settlement, Rules.read("economy").buildings).get(
+				LightField.CAMP, 0.0
+			)
+		)
+		_build_base_housing(offset, int(settlement.base_housing), camp > 0.0)
 		var pods: Vector2 = _pods_position(offset)
 		if lanes:
 			var reach: Dictionary = _access(pods)
@@ -415,6 +425,7 @@ func _build_colony() -> void:
 		else:
 			stops.append({"end": pods, "z": 0.0, "kind": "base", "active": true})
 	var roles: Dictionary = Rules.read("economy").buildings
+	var shares: Dictionary = LightField.housing_shares(settlement, roles)
 	var buildings: Array = settlement.get("buildings", [])
 	for i in range(buildings.size()):
 		var b: Dictionary = buildings[i]
@@ -422,6 +433,7 @@ func _build_colony() -> void:
 		var reach: Dictionary = _access(slot) if lanes and int(b.get("plot", -1)) >= 0 else {}
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0
 		var active: bool = b.get("enabled", true) and b.get("active", true) and complete
+		var lit: bool = LightField.home_lit(b, roles, shares)
 		var model := MeshInstance3D.new()
 		var art: Dictionary = ModelArt.kind_entry(str(b.kind))
 		model.mesh = (
@@ -434,7 +446,7 @@ func _build_colony() -> void:
 		buildings_root.add_child(model)
 		var yaw: float = _street_yaw(slot.x, offset) if reach.is_empty() else float(reach.yaw)
 		if not art.is_empty():
-			_dress_building(model, b, art, active, complete, yaw)
+			_dress_building(model, b, art, active, complete, yaw, lit)
 		elif not complete:
 			_construction_frame(model)
 		if reach.is_empty():
@@ -455,7 +467,7 @@ func _build_colony() -> void:
 					"active": active
 				}
 			)
-		if active:
+		if active and lit:
 			pools.append([model.position, 2.6])
 			var role: String = str(roles.get(str(b.kind), {}).get("role", ""))
 			if role in SMOKE_ROLES or str(b.kind) in SMOKE_KINDS:
@@ -493,7 +505,8 @@ func _build_colony() -> void:
 	_build_traffic(stops, offset, int(settlement.get("region", 0)))
 
 
-func _build_base_housing(offset: float, capacity: int) -> void:
+## The landing camp's living pods, their windows lit while anyone lives in them (light_field.gd).
+func _build_base_housing(offset: float, capacity: int, lit: bool = true) -> void:
 	var root := Node3D.new()
 	root.name = "LandingLivingCapsules"
 	root.set_meta("base_housing", capacity)
@@ -501,7 +514,9 @@ func _build_base_housing(offset: float, capacity: int) -> void:
 	root.position = Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
 	buildings_root.add_child(root)
 	var pods: MeshInstance3D = ModelArt.instance(
-		"landing_pods", func(slot: String) -> Material: return _art_material(slot, {}, true)
+		"landing_pods",
+		func(slot: String) -> Material:
+			return _window_mat(lit) if slot == "glass" else _art_material(slot, {}, true)
 	)
 	if pods != null:
 		_cylinder(root, Vector3(0, -.22, 0), 2.6, .6, _mat("pad", Color("43545a"), .3, .85), 8)
@@ -1141,7 +1156,8 @@ func _dress_building(
 	art: Dictionary,
 	active: bool,
 	complete: bool,
-	yaw: float
+	yaw: float,
+	lit: bool = true
 ) -> void:
 	var id: String = str(art.model)
 	var scale: float = float(art.get("scale", 1.0))
@@ -1157,7 +1173,10 @@ func _dress_building(
 			scale = 1.2 if great else 1.0
 	elif art.has("ore") and _plot_depleted(building):
 		id = "depleted_" + str(art.ore)
+	# Windows glow as the night lights have it (light_field.gd): an empty home stays dark.
 	var material_for: Callable = func(slot: String) -> Material:
+		if slot == "glass":
+			return _window_mat(active and lit)
 		return _art_material(slot, art, active)
 	var dressed: MeshInstance3D = ModelArt.instance(id, material_for)
 	if dressed == null:
