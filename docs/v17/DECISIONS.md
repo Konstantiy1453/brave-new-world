@@ -746,3 +746,13 @@ factories, so the game's cycle and the payback bands stay as they are.
   stays proportional, since wages act through attractiveness, which multiplies the base · births
   (1% a year moves little) · cheaper recruitment (it moves money, which the user wants left alone)
   · a lower stage-three goal (the goals stay; the pace changes).
+- The events page's log shows what changed under an ending that has no scene, and marks a default
+  (「到期按默认处理」); effects still acting are named after what caused them (the effect's label, or
+  its event's title) instead of repeating their kind. Until GPT's scenes arrive, the log would
+  otherwise show only a date and a tag · waiting for the content (the payoff would stay invisible in
+  the meantime).
+- Payback after faster immigration (`v19_payback`, five seeds): the light iron mine is back in band
+  in year 6 (67 days), and the smelter misses in year 4 (median 354 days, ceiling 315; seeds 260 /
+  1,713 / 316 / 354 / 457). The two trade through the ore supply, as with the dearer iron mine.
+  Left as reported; the retune (ore, processing plant and smelter together) is still the user's
+  call · retuning the smelter alone (the user asked to leave the numbers and timeline as they are).

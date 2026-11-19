@@ -48,7 +48,7 @@ are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
 | Coast flicker (2026-11-13) | The land jumped where it met the sea: z-fighting. Beaches now cross the waterline at a slope (a straight share in the beach profile, and a smooth curve away from the sea's level), and the town view has its own near plane (0.5, ten times finer depth). A first fix with a fixed lift snapped the coast into steps and was replaced the same day | automated tests (`v19_region`: crossing slope p5 0.21, crossing spread 0.26), source-project window, screenshots viewed (flip masks: 4,660 land/water flips over seven views before, 563 after, with only the near plane moved) |
 | Events rewrite (2026-11-13) | GPT's full design: 86 events rewritten, 20 new, 249 nodes, 14 long chains; stakes in days of income (mostly 2–20, up to 80); same ids, versions and nodes for every old event, nothing new to the engine; `v17_events` follows the new chain paths | automated tests (`v17_events` 161 checks; data checks against the engine and the old file), balance harness (see BALANCE.md) |
 | Deadlines, payback, event options (2026-11-14) | Stage four's deadline 14 months later on every difficulty (normal 2,100 → 2,520), stage five's (the contract's last date) unchanged; `v19_payback` asserts each band on the median over five seeds (`--seeds=3` for a quicker check); every event option names its ending, or its next step and when, or a gamble's outcomes with their odds; a measured diagnosis of why the events still feel thin (`docs/v17/EVENTS_DIAGNOSIS.md`) | automated tests (`v19_graphics`, `v19_payback` 43 checks, event suites), screenshots viewed (event page with the new option lines) |
-| Event payoffs, engine side (2026-11-14) | Steps 1-4 of `EVENTS_DIAGNOSIS.md`, approved: ending scenes (`outcome`, a card per ending, kept on the events page), nodes that pause (`critical` on a node), effects listed on the town panel and economy page with days left, 「通讯」 on the maps while an event is open, landmarks (eight kinds drawn around the town, permanent effects, listed on the panel), new gifts' effects in words. GPT writes the content: `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md` | automated tests (new `v19_event_payoff`, 42 checks; event suites), source-project window, screenshots viewed (landmarks around a town, the town panel, an ending card) |
+| Event payoffs, engine side (2026-11-14) | Steps 1-4 of `EVENTS_DIAGNOSIS.md`, approved: ending scenes (`outcome`, a card per ending, kept on the events page, or else what changed; a default marked), nodes that pause (`critical` on a node), effects listed on the town panel and economy page with days left and named after their cause on the events page, 「通讯」 on the maps while an event is open, landmarks (eight kinds drawn around the town, permanent effects, listed on the panel), new gifts' effects in words. GPT writes the content: `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md` | automated tests (new `v19_event_payoff`, 45 checks; event suites), exported pack (two years with events), source-project window, screenshots viewed (`docs/v17/events_payoff/`: landmarks around a town, the town panel, an ending card) |
 | Faster immigration (2026-11-14) | Free arrivals 9 → 11 a month in every town (+22%), the user's choice for stage three's population goal instead of an economy retune | automated tests (population and economy suites), balance harness (BALANCE.md) |
 
 ## Money: quick harness on Linux (3 seeds, standard)
@@ -134,6 +134,18 @@ audit errors (BALANCE.md). Exported pack `ColonyCharter-1.9.0-preview-20261112-W
 transport, construction, research and economy pages and the region with no script error; not run on
 Windows.
 
+Event payoffs and faster immigration (code at `8c3506e`): on `82a85f3`, of the 46 headless suites
+other than the `review_*` tools, 41 pass and 5 fail: the same 4 Windows-recorded ones and
+`v19_payback`, whose miss moved from the light iron mine to the smelter (item 16). After the events
+page fix, the 14 event and interface suites ran again and pass (`v19_event_payoff` 45 checks).
+Quick harness `immigration-11`: 51 runs, 0 audit errors (BALANCE.md). Exported pack
+`ColonyCharter-1.9.0-preview-20261114-payoff-Windows-x64.zip` from `8c3506e`, on the Linux engine:
+the standard smoke is clean (deadlines 360 / 900 / 1,860 / 2,520 / 2,880, immigration 11 a month);
+two years with every event answered, on seeds 20261029 and 260129, give 15 and 9 endings, 9 and 5 of
+them saying what changed, a card for the newest ending, the effect lines on the town panel and the
+economy page while effects act, and no audit problem, refusal or script error. The colonies, played
+passively, fail on days 493 and 422, as before. Not run on Windows.
+
 ## Not done / open
 
 1. Windows: re-record the capture fixtures (rules and save schema changed), rebake the menu atlas,
@@ -193,8 +205,8 @@ Windows.
     (`tests/art/frame_time_probe.gd`, once with `--rendering-method forward_plus`). Both Vulkan and
     Direct3D 12 should run; a card without either falls back to the standard renderer and the
     settings page says so. Steps: the Windows sheet, section "Picture quality".
-14. Stage three's deadline moved a year later as asked; stage four's (normal: day 2,100) now
-    follows 240 days after it. For the user: move stages four and five a year as well?
+14. Stage three's deadline moved a year later as asked. Answered on 2026-11-14: stage four moved 14
+    months later (normal: day 2,520), stage five unchanged as the contract's last date (2,880).
 15. Events: GPT's rewrite is in (`docs/v17/events_rewrite/`, 106 events). Its 18 requests for new
     mechanics (node-level pauses, single-road effects, cancellable upkeep, casualty records, and so
     on: `04_奖惩与开发交接.md`) are not built; GPT wrote fallbacks with today's effects. Quick
@@ -202,10 +214,11 @@ Windows.
     2,686), and income grows ×3.4 from year 2 to year 6 (×4.2 before the rewrite); with the old flat
     valuation the bots took every long penalty and 3 of 9 were taken over. Playtest the new stakes:
     GPT's own aim is a net 5–10% of income from events over ten years.
-16. Payback over five seeds (as the user agreed): one band misses, the light iron mine in year 6
-    (median 65 days, floor 66.5 with the tolerance). A dearer iron mine fixes it but pushes the
-    smelter out of its band through the ore supply (DECISIONS.md); a fix means retuning ore, the
-    processing plant and the smelter together.
+16. Payback over five seeds (as the user agreed): one band misses. Before faster immigration it was
+    the light iron mine in year 6 (median 65 days, floor 66.5 with the tolerance); with it, the mine
+    is in band (67) and the smelter misses in year 4 (median 354 days, ceiling 315). A dearer iron
+    mine moves the miss the same way; the two trade through the ore supply (DECISIONS.md), so a fix
+    means retuning ore, the processing plant and the smelter together. The user's call.
 17. Events still feel thin (the user, 2026-11-14): diagnosis in `docs/v17/EVENTS_DIAGNOSIS.md`.
     The engine side (steps 1-4) is built; GPT writes the content on branch `v17-events-payoff` from
     `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`. When it lands: check the data
