@@ -1,3 +1,22 @@
+# Colony Charter 1.10 — Progress (the bay first, started 2026-11-19)
+
+The user's brief of 2026-11-19 covers free siting, geology per resource and prospecting, mobile engineering crews,
+a nightscape built from the game's own state, people and growth, and stories. The plan, in phases, is
+`docs/superpowers/plans/2026-11-19-v110-bay-first-instructions.md`. The check of the branch against
+the November 13 preview is `docs/v17/REVIEW_20261119.md`: most findings are still open, and immigration has
+changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. Evidence labels as in
+`CLAUDE.md`; everything runs in the Linux cloud container unless stated.
+
+| Phase | What | State |
+|---|---|---|
+| A. Verified feedback | building identity, research states, commissions, build ledger, tutorial, clock, event towns | in progress |
+| B. Nightscape from state | lights from real plots on globe, flat map and district; transport overlay apart | next |
+| C. The playable bay | crews apart from the workforce, mine road or harbour, offshore signal, first shipment | after B |
+| Reviews | 3 × 3 sheet, clip, gameplay review of the opening and stage three | after C |
+| D–G | radius slider, geology, prospecting, free siting, seabed; districts; people; stories and contracts | after the bay is judged |
+
+---
+
 # Colony Charter 1.9 — Progress (in development)
 
 Started 2026-11-07 from the user's request after a friend compared the 1.8 demo with TerraGenesis:

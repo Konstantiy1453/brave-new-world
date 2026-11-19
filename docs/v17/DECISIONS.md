@@ -756,3 +756,14 @@ factories, so the game's cycle and the payback bands stay as they are.
   1,713 / 316 / 354 / 457). The two trade through the ore supply, as with the dearer iron mine.
   Left as reported; the retune (ore, processing plant and smelter together) is still the user's
   call · retuning the smelter alone (the user asked to leave the numbers and timeline as they are).
+
+## 1.10: the bay first (2026-11-19)
+
+- The 2026-11-19 brief is 1.10, on branch `v17-bay` from `v17-fix-tips` (`8c395db`): pull request 2
+  is already five rounds long, and this changes the premise (free siting, crews, geology). Folders
+  keep the name `v17` · continuing on `v17-fix-tips` (one review for unrelated work).
+- Order: the verified feedback first (small, and building identity is needed by lights and crews),
+  then the nightscape from state, then crews and the bay, then the reviews; the planet-wide systems
+  (radius, geology, prospecting, free siting, seabed, districts, people, stories) wait until the
+  bay has been judged, as the brief asks · free siting first (it would scale an opening nobody
+  has judged yet).
