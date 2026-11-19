@@ -500,7 +500,7 @@ func _build_colony() -> void:
 	_draw_free_plots(settlement)
 	_finish_roads()
 	_build_bridges()
-	_build_harbor(settlement, offset)
+	_build_harbor(settlement)
 	_build_light_pools(pools)
 	_build_traffic(stops, offset, int(settlement.get("region", 0)))
 
@@ -762,15 +762,15 @@ func _build_bridges() -> void:
 	bridge_runs.clear()
 
 
-## A coastal town with a port or a sea route gets a quay at its nearest shore and a cargo ship
-## that sails in, berths and leaves. Enlarged docks (1.9) use their own model once one is
-## delivered (`dock_medium`, `dock_large`), and until then a bigger quay and ship.
-func _build_harbor(settlement: Dictionary, offset: float) -> void:
+## A coastal town with a harbour or a sea route gets a quay at its shore (`harbor_spot`) and a
+## cargo ship that sails in, berths and leaves. Enlarged docks (1.9) use their own model once one
+## is delivered (`dock_medium`, `dock_large`), and until then a bigger quay and ship.
+func _build_harbor(settlement: Dictionary) -> void:
 	ship = null
 	ship_route.clear()
 	if not field_has_sea or not _harbor_wanted(settlement):
 		return
-	var best: Dictionary = _harbor_shore(Vector2(offset, 0.0), sea_level())
+	var best: Dictionary = harbor_spot(selected_region)
 	if best.is_empty():
 		return
 	var sea_level: float = sea_level()
@@ -828,37 +828,51 @@ func _gift_ship() -> Array:
 	return ["cargo_ship", 1.0]
 
 
-## Where the quay goes: the nearest point of shore, walked out from the town in small steps, that
-## leaves room for the plots and the street and is not a cliff top. A crowded or steep shore is
-## taken only when there is no other. {shore, heading} or empty.
-func _harbor_shore(town: Vector2, sea_level: float) -> Dictionary:
+## Where a town's quay stands: walked out from the town centre in small steps along each heading,
+## the last land before the sea, clear of the plots and the main street and not on a cliff top; a
+## crowded or steep shore only when there is no other. It reads the planet's own land and height,
+## so the district and the night lights put the harbour in the same place for any town.
+## {shore, heading} in district units, or empty.
+func harbor_spot(region: int) -> Dictionary:
+	if region < 0 or region >= world.get("regions", []).size():
+		return {}
+	if harbor_cache.has(region):
+		return harbor_cache[region]
+	var reg: Dictionary = world.regions[region]
 	var plots: Array = []
-	for plot: Dictionary in world.regions[selected_region].get("plots", []):
+	for plot: Dictionary in reg.get("plots", []):
 		plots.append(Vector2(float(plot.x), float(plot.z)))
+	var version: String = str(world.version)
+	var base: float = float(Geo.sample_geo(reg.lat, reg.lon, noise, version).height)
+	var sea: float = _lift(-base * 30.0)
 	var best: Dictionary = {}
 	var reach_limit: float = maxf(half_width, half_depth) - 2.0
 	for step: int in range(HARBOR_HEADINGS):
 		var heading := Vector2.RIGHT.rotated(TAU * float(step) / HARBOR_HEADINGS)
-		var last_land: Vector2 = town
+		var last_land: Vector2 = Vector2.ZERO
+		var land_height: float = 0.0
 		var reach: float = HARBOR_STEP
 		while reach < reach_limit:
-			var at: Vector2 = town + heading * reach
+			var at: Vector2 = heading * reach
 			if absf(at.x) > half_width - 3.0 or absf(at.y) > half_depth - 3.0:
 				break
-			if _ground(at.x, at.y) < sea_level - .1:
+			var ll: Vector2 = _coordinate_in(reg, at.x, at.y)
+			var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, version)
+			if not bool(g.land):
 				var cost: float = reach
-				var crowded: bool = absf(last_land.x - town.x) < HARBOR_STREET_CLEAR
+				var crowded: bool = absf(last_land.x) < HARBOR_STREET_CLEAR
 				for centre: Vector2 in plots:
 					crowded = crowded or centre.distance_to(last_land) < HARBOR_PLOT_CLEAR
 				if crowded:
 					cost += HARBOR_CROWDED
-				var height: float = _ground(last_land.x, last_land.y) - sea_level
-				cost += maxf(0.0, height - HARBOR_CLIFF) * HARBOR_CLIFF_COST
+				cost += maxf(0.0, land_height - sea - HARBOR_CLIFF) * HARBOR_CLIFF_COST
 				if best.is_empty() or cost < float(best.cost):
 					best = {"cost": cost, "shore": last_land, "heading": heading}
 				break
 			last_land = at
+			land_height = _lift((float(g.height) - base) * 30.0)
 			reach += HARBOR_STEP
+	harbor_cache[region] = best
 	return best
 
 
@@ -874,9 +888,14 @@ func _dock_level() -> int:
 	return clampi(level, 1, DOCK_MODELS.size())
 
 
+## A quay is drawn for a town with a finished harbour (1.10) or a sea link; an orbital freight
+## station alone has none, so a town that chose its mine first has no pier.
 func _harbor_wanted(settlement: Dictionary) -> bool:
 	for building: Dictionary in settlement.get("buildings", []):
-		if str(building.kind) == "port" and int(building.get("remaining", 0)) <= 0:
+		var role: String = str(
+			Rules.read("economy").buildings.get(str(building.kind), {}).get("role", "")
+		)
+		if role == "harbor" and int(building.get("remaining", 0)) <= 0:
 			return true
 	for route: Dictionary in state.get("roads", []):
 		if str(route.get("variant", "")) != "sea":

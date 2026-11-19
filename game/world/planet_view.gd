@@ -256,7 +256,7 @@ func _build_clouds() -> void:
 func _update_night_lights() -> void:
 	var buildings: Dictionary = Rules.read("economy").buildings
 	var image: Image = NightLights.paint(
-		LightField.lights(state, world, buildings, landing_camps())
+		LightField.lights(state, world, buildings, landing_camps(), harbor_spots())
 	)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
@@ -283,6 +283,21 @@ func landing_camps() -> Dictionary:
 			)
 		camps[region] = camp_cache[region]
 	return camps
+
+
+## Each settled coastal town's quay (region_view `harbor_spot`), for its night lights.
+func harbor_spots() -> Dictionary:
+	var spots: Dictionary = {}
+	if not Geo.is_generated(str(world.version)):
+		return spots
+	for settlement: Dictionary in state.get("settlements", []):
+		var region: int = int(settlement.get("region", -1))
+		if region < 0 or region >= world.get("regions", []).size():
+			continue
+		if bool(world.regions[region].get("coast", false)):
+			_fit_field()
+			spots[region] = harbor_spot(region)
+	return spots
 
 
 func _update_markers() -> void:

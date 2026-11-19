@@ -48,6 +48,7 @@ func setup(data: Dictionary) -> void:
 			_clear_node(entry.surface)
 	region_cache.clear()
 	camp_cache.clear()
+	harbor_cache.clear()
 	selected_region = 0
 	signature = ""
 	marker_signature = ""

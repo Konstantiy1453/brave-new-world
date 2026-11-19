@@ -835,3 +835,10 @@ factories, so the game's cycle and the payback bands stay as they are.
   days, then appeal under 3 a month), with its remedy. The people page shows all of it; the town
   panel shows the limit when there is one · a growth forecast (the readout states what is true
   today; a forecast waits for crews and the bay, which change it).
+- A town's quay is found by one search shared by the district and the night lights
+  (`region_view.harbor_spot`): walked out from the town centre along 48 headings over the planet's
+  own land and height, the last land before the sea, clear of plots and the street, cliffs costed.
+  A quay is drawn for a town with a finished harbour or a sea link; an orbital freight station alone
+  has none, so a town that put its crew on the mine first has no pier. A working quay shows a compact
+  group of cool lights along it · the district's terrain-based search (it can only run for the town
+  on show, so the globe could not agree with it).

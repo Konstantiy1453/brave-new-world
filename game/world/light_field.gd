@@ -45,12 +45,20 @@ const JUNCTION_LINKS: int = 3
 const GOLDEN_ANGLE: float = 2.399963
 ## The landing camp's key among the homes' shares (no building has uid 0).
 const CAMP: int = 0
+## The quay's lights: [out along the quay, aside, brightness], district units.
+const QUAY_STEPS: Array = [
+	[0.4, 0.0, 0.7], [1.1, 0.25, 0.65], [1.8, -0.2, 0.6], [2.4, 0.3, 0.55], [1.2, -0.6, 0.5]
+]
 
 
 ## Every light in the colony tonight. `buildings` is the economy's building table (role, housing);
 ## `camps` holds each town's landing camp in district units (region_ground `landing_spot`).
 static func lights(
-	state: Dictionary, world: Dictionary, buildings: Dictionary, camps: Dictionary = {}
+	state: Dictionary,
+	world: Dictionary,
+	buildings: Dictionary,
+	camps: Dictionary = {},
+	shores: Dictionary = {}
 ) -> Array:
 	var found: Array = []
 	for s: Dictionary in state.get("settlements", []):
@@ -60,7 +68,38 @@ static func lights(
 		found.append_array(
 			settlement_lights(s, world, buildings, camps.get(region, Vector2(-6.0, 0.0)))
 		)
+		if not shores.get(region, {}).is_empty() and quay_working(state, s, buildings):
+			found.append_array(quay_lights(world, world.regions[region], shores[region]))
 	found.append_array(road_lights(state, world))
+	return found
+
+
+## Whether a town's quay is at work tonight: a finished, running harbour, or a finished sea link.
+static func quay_working(state: Dictionary, s: Dictionary, buildings: Dictionary) -> bool:
+	for b: Dictionary in s.get("buildings", []):
+		if str(buildings.get(str(b.kind), {}).get("role", "")) != "harbor":
+			continue
+		if int(b.get("remaining", 0)) <= 0 and bool(b.get("active", false)):
+			return true
+	var day: int = int(state.get("day", 0))
+	for road: Dictionary in state.get("roads", []):
+		if str(road.get("variant", "")) != "sea" or int(road.get("ready_day", 0)) >= day:
+			continue
+		if int(road.get("a", -1)) == int(s.region) or int(road.get("b", -1)) == int(s.region):
+			return true
+	return false
+
+
+## The quay's work lights: a compact group of cool lights along it, out over the water, where the
+## district stands its quay (region_view `harbor_spot`).
+static func quay_lights(world: Dictionary, reg: Dictionary, spot: Dictionary) -> Array:
+	var shore: Vector2 = spot.shore
+	var heading: Vector2 = spot.heading
+	var side := Vector2(-heading.y, heading.x)
+	var found: Array = []
+	for step: Array in QUAY_STEPS:
+		var at: Vector2 = shore + heading * float(step[0]) + side * float(step[1])
+		found.append(_light(world, reg, at, 0.0, float(step[2])))
 	return found
 
 
@@ -218,6 +257,8 @@ static func signature(state: Dictionary, buildings: Dictionary) -> String:
 				)
 			)
 	var day: int = int(state.get("day", 0))
+	for s: Dictionary in state.get("settlements", []):
+		parts.append("q%d:%d" % [int(s.region), 1 if quay_working(state, s, buildings) else 0])
 	for road: Dictionary in state.get("roads", []):
 		var open: bool = (
 			int(road.get("ready_day", 0)) < day and int(road.get("blocked_until", -1)) < day

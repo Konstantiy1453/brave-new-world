@@ -56,6 +56,8 @@ var night_lights: ImageTexture
 var town_lights: Dictionary = {}
 ## Landing camps found so far, by region (planet_view `landing_camps`).
 var camp_cache: Dictionary = {}
+## Harbour quays found so far, by region (region_view `harbor_spot`).
+var harbor_cache: Dictionary = {}
 var lights_signature: String = ""
 ## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
 var sky: VisualClock = VisualClock.new()
