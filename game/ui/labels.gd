@@ -41,7 +41,7 @@ const SITE_KIND_NAMES: Dictionary = {
 }
 const SITE_KIND_TEXT: Dictionary = {
 	Keys.SITE_RESIDENTIAL: "人们在这里安家：住房、医疗、学校、研究所和精密工厂都建在这里。自发移民多，有新生儿；只能开轻型矿场。",
-	Keys.SITE_FRONTIER: "工程队驻扎的矿区或农区：重型矿场、大田农业只能建在这里，产量 +15%，远征更便宜。很少有人自愿来，要靠道路把人调过来。",
+	Keys.SITE_FRONTIER: "职工驻扎的矿区或农区：重型矿场、大田农业只能建在这里，产量 +15%，远征更便宜。很少有人自愿来，要靠道路把人调过来。",
 }
 const ENTERPRISE_STATUS: Dictionary = {
 	Keys.E_FITTING: "装修中",
@@ -53,7 +53,7 @@ const ENTERPRISE_STATUS: Dictionary = {
 const ENTERPRISE_REASON: Dictionary = {
 	Keys.ER_FITTING: "自主租用社区商业场地；装修需要 4 天",
 	Keys.ER_PAUSED: "玩家暂停了服务设施",
-	Keys.ER_NO_WORKERS: "可雇用工程队不足",
+	Keys.ER_NO_WORKERS: "可雇用职工不足",
 	Keys.ER_NO_CASH: "企业现金不足以支付工资与租金",
 	Keys.ER_RUNNING: "自主经营，无需逐日操作；利润税只对正利润征收",
 	Keys.ER_RECOVERING: "有偿重组或迁址，3 日后重新营业",
@@ -360,7 +360,7 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 	var detail: String = str(entry.get("detail", ""))
 	match str(entry.get("key", "")):
 		Keys.SH_JOBS_WORKERS:
-			return "岗位缺员：%s（需要工程队）" % building_name(config, detail)
+			return "岗位缺员：%s（需要职工）" % building_name(config, detail)
 		Keys.SH_JOBS_SPECIALISTS:
 			return "岗位缺员：%s（需要研究团队）" % building_name(config, detail)
 		Keys.SH_POWER:

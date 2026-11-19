@@ -7,6 +7,8 @@ const BuildPage = preload("res://ui/build_page.gd")
 const Graphics = preload("res://ui/graphics.gd")
 const EventLines = preload("res://ui/event_lines.gd")
 const PeopleLines = preload("res://ui/people_lines.gd")
+const BayLines = preload("res://ui/bay_lines.gd")
+const CrewPanel = preload("res://ui/crew_panel.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -217,93 +219,15 @@ static func building_column(g, b):
 	var day: int = int(g.sim.state.day)
 	if int(s.arrival) > 0:
 		D.label(b, "远征队在途，预计 %s 抵达" % Labels.short_date(day + int(s.arrival)), 15, D.GOLD)
-	var underway: int = 0
-	for index: int in range(s.buildings.size()):
-		var item: Dictionary = s.buildings[index]
-		if int(item.remaining) > 0 or int(item.get("upgrade_days", 0)) > 0:
-			if underway == 0:
-				D.label(b, "在建", 14, D.GOLD)
-			underway += 1
-			_underway_row(g, b, item, day)
+	CrewPanel.underway(g, b, s)
 	D.label(b, "已建成", 14, D.TEAL)
 	_building_groups(g, b, s)
-
-
-static func _underway_row(g, b, item: Dictionary, day: int):
-	var card = D.card(b)
-	var line = D.row(card)
-	D.building_icon(line, str(item.kind), Labels.icon_key(g.sim.config, str(item.kind)), 32)
-	var building: bool = int(item.remaining) > 0
-	var left: int = int(item.remaining) if building else int(item.upgrade_days)
-	var words: String = Labels.building_name(g.sim.config, item.kind)
-	if not building:
-		words += " 升级到 %d 级" % (int(item.level) + 1)
-	var caption = D.label(line, words, 15, D.INK)
-	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var total: int = maxi(left, int(item.get("total_days", left)))
-	if not building:
-		total = maxi(left, _upgrade_total(g, item))
-	D.progress(card, 1.0 - float(left) / maxi(1, total), D.GOLD)
-	D.label(card, "%s 完工 · 还要 %d 天" % [Labels.short_date(day + left), left], 13, D.MUTED)
-
-
-static func _upgrade_total(g, item: Dictionary) -> int:
-	var rules: Array = g.sim.config.get("upgrades", {}).get(item.kind, [])
-	var step: int = int(item.get("level", 1)) - 1
-	return int(rules[step].days) if step >= 0 and step < rules.size() else 0
 
 
 ## Every building of the colony in one place, what is still being built first.
 static func buildings(g, b):
 	var state: Dictionary = g.sim.state
-	var underway: Array = []
-	for s: Dictionary in state.settlements:
-		if int(s.arrival) > 0:
-			underway.append({"days": int(s.arrival), "text": "远征队前往 %s" % str(s.name), "total": 0})
-		for item: Dictionary in s.buildings:
-			var name: String = Labels.building_name(g.sim.config, item.kind)
-			if int(item.remaining) > 0:
-				var spec: Dictionary = g.sim.config.buildings.get(item.kind, {})
-				(
-					underway
-					. append(
-						{
-							"days": int(item.remaining),
-							"text": "%s · %s" % [name, str(s.name)],
-							"total": maxi(int(spec.get("days", 0)), int(item.remaining)),
-						}
-					)
-				)
-			elif int(item.get("upgrade_days", 0)) > 0:
-				(
-					underway
-					. append(
-						{
-							"days": int(item.upgrade_days),
-							"text": "%s 升级到 %d 级 · %s" % [name, int(item.level) + 1, str(s.name)],
-							"total": 0,
-						}
-					)
-				)
-	underway.sort_custom(
-		func(x: Dictionary, y: Dictionary) -> bool:
-			return (
-				str(x.text) < str(y.text)
-				if int(x.days) == int(y.days)
-				else int(x.days) < int(y.days)
-			)
-	)
-	D.label(b, "在建工程 %d 项" % underway.size(), 21, D.GOLD)
-	if underway.is_empty():
-		D.label(b, "现在没有在建的工程。", 16, D.MUTED)
-	var queue = D.grid(D.card(b), 2)
-	for row: Dictionary in underway:
-		var text = D.label(queue, str(row.text), 16, D.INK, false)
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var left: String = "还需 %d 天" % int(row.days)
-		if int(row.total) > 0:
-			left += " / 共 %d 天" % int(row.total)
-		D.label(queue, left, 16, D.TEAL, false)
+	CrewPanel.colony_underway(g, b)
 	for s: Dictionary in state.settlements:
 		_settlement_buildings(g, b, s)
 
@@ -345,7 +269,7 @@ static func _settlement_buildings(g, b, s: Dictionary):
 			var note: String = Labels.building_status(item)
 			row.notes[note] = int(row.notes.get(note, 0)) + 1
 	var table = D.grid(card, 4)
-	for heading: String in ["设施", "数量", "运营", "工程队"]:
+	for heading: String in ["设施", "数量", "运营", "职工"]:
 		D.label(table, heading, 14, D.MUTED, false)
 	for kind: String in kinds:
 		var row: Dictionary = kinds[kind]
@@ -384,6 +308,7 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 	if str(main.key) != "none":
 		D.label(b, "增长受限：" + str(main.text), 15, D.GOLD)
 	D.label(b, "食品可吃 %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
+	BayLines.offshore(g, b, s)
 	D.label(
 		b,
 		(
@@ -845,13 +770,14 @@ static func contract(g, b):
 	D.label(
 		v,
 		(
-			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。工程队 %d、研究团队 %d、未成年 %d。"
+			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。职工 %d、工程队 %d 支、研究团队 %d、未成年 %d。"
 			% [
 				float(op.cash) * capital,
 				Labels.t(float(op.food)),
 				Labels.t(float(op.materials)),
 				Labels.t(float(op.parts)),
-				op.workers,
+				int(op.workers) - int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
+				int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
 				op.scientists,
 				op.children
 			]
@@ -1776,12 +1702,12 @@ static func population(g, b):
 	)
 	var recruit_row = D.row(b)
 	var count = D.spin(
-		recruit_row, "RecruitCount", 1, g.sim.pop_rules.recruitment.max_per_campaign, 1, 10, "支"
+		recruit_row, "RecruitCount", 1, g.sim.pop_rules.recruitment.max_per_campaign, 1, 10, "人"
 	)
 	var region: int = int(s.region)
 	D.button(
 		recruit_row,
-		"招募工程队 · ¥ %.0f/支" % float(v.worker_price),
+		"招募职工 · ¥ %.0f/人" % float(v.worker_price),
 		func(): g.act("recruit", {"region": region, "kind": "worker", "count": int(count.value)}),
 		"",
 		"RecruitWorkers"

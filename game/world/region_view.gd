@@ -429,6 +429,9 @@ func _build_colony() -> void:
 	var buildings: Array = settlement.get("buildings", [])
 	for i in range(buildings.size()):
 		var b: Dictionary = buildings[i]
+		# The harbour stands at the shore: `_build_harbor` draws it with its quay.
+		if str(roles.get(str(b.kind), {}).get("role", "")) == "harbor":
+			continue
 		var slot: Vector2 = _building_spot(i, b, offset)
 		var reach: Dictionary = _access(slot) if lanes and int(b.get("plot", -1)) >= 0 else {}
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0

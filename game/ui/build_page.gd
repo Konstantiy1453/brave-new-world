@@ -3,6 +3,7 @@ extends RefCounted
 
 const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
+const CrewPanel = preload("res://ui/crew_panel.gd")
 ## Each facility at work in its setting, baked from its model (tests/art/bake_facility_views.gd).
 const FACILITY_VIEWS: String = "res://assets/art/facilities/"
 const RES: Dictionary = Labels.RESOURCE_NAMES
@@ -23,6 +24,7 @@ static func build(g, b):
 	# The three columns fill the panel; each scrolls on its own.
 	b.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_build_header(g, b, s, region)
+	CrewPanel.strip(g, b, s)
 	var shown: Array[String] = []
 	for key: String in _open_kinds(g, s):
 		var category: String = str(g.sim.config.buildings[key].get("category", ""))
@@ -79,7 +81,7 @@ static func _build_header(g, b, s: Dictionary, region: Dictionary) -> void:
 	D.label(place, str(Labels.SITE_KIND_NAMES.get(s.kind, "")), D.CAPTION, D.MUTED, false)
 	D.label(place, str(region.name) + " / 建设目录", 22, D.INK, false)
 	var supplies: String = "工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。"
-	D.stat(strip, "空闲工程队", str(g.sim.free_workers(s)), D.INK, "每项在建工程占用工程队，完工后释放")
+	D.stat(strip, "空闲职工", str(g.sim.free_workers(s)), D.INK, "还没有岗位的职工：每座设施运转时雇用职工")
 	D.stat(strip, "公共资金", "¥ " + g.money(g.sim.state.cash), D.GOLD)
 	D.stat(strip, "建材库存", Labels.t(float(s.stock.materials)), D.INK, supplies)
 	D.stat(strip, "部件库存", Labels.t(float(s.stock.parts)), D.INK, supplies)
@@ -289,13 +291,27 @@ static func _build_ledger(
 			D.MUTED if have >= need else D.GOLD,
 			good
 		)
-	D.pair(rows, "工期", "%d 天" % int(forecast.days), D.INK, "", D.MUTED, "time")
+	var haul: Dictionary = forecast.get("haul", {})
+	D.pair(
+		rows,
+		"工期",
+		"%d 天" % int(forecast.days),
+		D.INK,
+		(
+			"含矿区道路 %d 天 · ¥ %.0f" % [int(haul.days), float(haul.cost)]
+			if int(haul.get("days", 0)) > 0
+			else ""
+		),
+		D.MUTED,
+		"time"
+	)
+	D.label(rows, CrewPanel.start_line(g, s, key), D.CAPTION, D.MUTED)
 	D.pair(
 		rows,
 		"岗位",
 		"%d" % int(forecast.jobs),
 		D.INK,
-		"空闲工程队 %d" % int(forecast.free_workers),
+		"空闲职工 %d" % int(forecast.free_workers),
 		D.MUTED,
 		"crew"
 	)

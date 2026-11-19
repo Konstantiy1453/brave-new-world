@@ -125,6 +125,9 @@ static func settlement_lights(
 	for b: Dictionary in s.get("buildings", []):
 		var spot: Vector2 = plot_point(reg, b)
 		var uid: int = int(b.get("uid", 0))
+		# A harbour shines at its quay (`quay_lights`), not on a plot.
+		if str(buildings.get(str(b.kind), {}).get("role", "")) == "harbor":
+			continue
 		if int(b.get("remaining", 0)) > 0:
 			found.append(_light(world, reg, spot, 0.0, SITE_LAMP))
 			continue

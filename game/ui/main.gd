@@ -127,6 +127,9 @@ var research_seen: int = 0
 ## Event endings already shown: the events state being watched and the newest ending's instance.
 var event_watch: Dictionary = {}
 var event_seen: String = ""
+## The first shipments already announced in the game on show (`_watch_firsts`).
+var firsts_watch: Dictionary = {}
+var firsts_seen: Dictionary = {}
 var autosave_day: int = 0
 var session_seconds: float = 0
 var sample_frames: Array = []
@@ -458,6 +461,7 @@ func _process(delta):
 			toast_label.text = ""
 	_watch_research()
 	_watch_events()
+	_watch_firsts()
 
 
 ## A technology finished since the last frame gets a notice; a new or loaded game only sets the
@@ -513,6 +517,47 @@ func _watch_events() -> void:
 	event_seen = newest
 
 
+## The first shipment worth watching (1.10 plan C): the first ore leaving camp, and the first ship
+## at a new harbour. Each is announced once; a new or loaded game only marks what it has already.
+func _watch_firsts() -> void:
+	var now: Dictionary = _firsts_now()
+	if not is_same(sim.state, firsts_watch):
+		firsts_watch = sim.state
+		firsts_seen = now
+		return
+	if int(now.get("export", -1)) >= 0 and int(firsts_seen.get("export", -1)) < 0:
+		_post_first(
+			"FirstOre", int(now.export), "第一车矿石运出营地", "矿车把第一批矿石运回营地，装上了货运站：殖民地有了第一笔出口收入。点这里去地区里看看。"
+		)
+	if int(now.get("harbor", -1)) >= 0 and int(firsts_seen.get("harbor", -1)) < 0:
+		_post_first(
+			"FirstShip",
+			int(now.harbor),
+			"第一艘货船靠上新码头",
+			"渔船和货船开始进港，食品和建材走海运便宜四分之一。点这里去码头看看，夜里码头会亮起冷色的工作灯。"
+		)
+	firsts_seen = now
+
+
+## Where each first has happened: the town of the first export, the town of the first harbour.
+func _firsts_now() -> Dictionary:
+	var found: Dictionary = {}
+	if float(sim.state.get("exports_total", 0.0)) > 0.0 and not sim.state.settlements.is_empty():
+		found.export = int(sim.state.settlements[0].region)
+	for s: Dictionary in sim.state.get("settlements", []):
+		for b: Dictionary in s.get("buildings", []):
+			var role: String = str(sim.config.buildings.get(b.kind, {}).get("role", ""))
+			if role == "harbor" and int(b.remaining) <= 0 and bool(b.get("active", false)):
+				found.harbor = int(s.region)
+	return found
+
+
+func _post_first(card_name: String, region: int, title_text: String, line: String) -> void:
+	_post_notice(
+		card_name, D.NEUTRAL, "◆ 第一次", title_text, [line] as Array[String], "region", 18.0, region
+	)
+
+
 ## The ending scene of an event: its title, the ending, and what happened (the event's own words,
 ## or else what changed); a click opens the events page.
 func notice_event(row: Dictionary) -> void:
@@ -547,7 +592,8 @@ func _post_notice(
 	title_text: String,
 	lines: Array[String],
 	page: String,
-	seconds: float
+	seconds: float,
+	region: int = -1
 ) -> void:
 	var panel := PanelContainer.new()
 	panel.name = card_name
@@ -580,7 +626,11 @@ func _post_notice(
 	panel.gui_input.connect(
 		func(event: InputEvent):
 			if event is InputEventMouseButton and event.pressed:
-				open_page(page)
+				# A notice about a town opens that town.
+				if region >= 0:
+					selected = region
+					map.focus_region(region)
+				navigate(page)
 				panel.queue_free()
 	)
 	notices.add_child(panel)
@@ -682,6 +732,14 @@ func _finish_autosave(only_if_done: bool):
 	if str(autosave_snapshot.get("result", "")) != "":
 		toast(str(autosave_snapshot.result))
 	autosave_snapshot = {}
+
+
+## Engineering crews in every town (1.10), apart from the labour force.
+static func _crew_count(state: Dictionary) -> int:
+	var total: int = 0
+	for s: Dictionary in state.get("settlements", []):
+		total += int(s.get("crew", 0))
+	return total
 
 
 ## Notices do not stop the game, so each one gets a line on screen when it arrives.
@@ -981,8 +1039,11 @@ func _refresh_top() -> Dictionary:
 		labour,
 		Stats.labour_change(state, DAILY_WINDOW),
 		(
-			"劳动力 %d：工程队和研究团队\n人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
-			% [labour, people, employed, children]
+			(
+				"劳动力 %d：职工和研究团队；另有工程队 %d 支（施工、维修、外勤）\n"
+				+ "人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
+			)
+			% [labour, _crew_count(state), people, employed, children]
 		)
 	)
 	_set_cell_text(
