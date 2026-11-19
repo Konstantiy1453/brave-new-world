@@ -430,6 +430,8 @@ uniform float season = 0.0;
 uniform float relief = 1.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
+uniform float halo_warm = 2.2;
+uniform float halo_cold = 1.6;
 varying vec3 local_point;
 """
 		+ GEOGRAPHY_GLSL
@@ -490,12 +492,21 @@ void fragment() {
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
 	color += vec3(1.0, 0.92, 0.78) * spec * (1.0 - coast) * (1.0 - ice) * day;
 	// The colony's lights after sunset (light_field.gd), their halo from a coarser mip of the same
-	// map, which also merges them smoothly as the camera pulls back.
+	// map, which also merges them smoothly as the camera pulls back. The halo answers by its
+	// 0.7th power: a coarse mip averages a small town's few lights over hundreds of texels, and a
+	// linear halo left it a few specks from orbit while a city would saturate.
 	vec2 point_light = textureGrad(lights, uv, ddx_uv, ddy_uv).rg;
-	vec2 halo = textureGrad(lights, uv, ddx_uv * 6.0, ddy_uv * 6.0).rg;
+	// A round halo: the centre and a ring of six taps of a coarser mip, about six pixels out.
+	vec2 spread = (abs(ddx_uv) + abs(ddy_uv)) * 4.0;
+	vec2 gather = textureGrad(lights, uv, ddx_uv * 4.0, ddy_uv * 4.0).rg;
+	for (int k = 0; k < 6; k++) {
+		vec2 step_uv = vec2(cos(float(k) * 1.0472), sin(float(k) * 1.0472)) * spread;
+		gather += textureGrad(lights, uv + step_uv, ddx_uv * 4.0, ddy_uv * 4.0).rg;
+	}
+	vec2 halo = pow(max(gather / 7.0, vec2(0.0)), vec2(0.7));
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
-	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * 7.0);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * 5.0);
+	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * halo_warm);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * halo_cold);
 	ALBEDO = color + glow * dark;
 }
 """
@@ -572,6 +583,8 @@ uniform float ice_latitude = 76.0;
 uniform float season = 0.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
+uniform float halo_warm = 2.0;
+uniform float halo_cold = 1.5;
 uniform float cloud_opacity = 0.22;
 uniform float terraform = 0.0;
 """
@@ -612,11 +625,17 @@ void fragment() {
 	color *= 1.0 - dark * 0.8;
 	color = mix(color, vec3(0.88, 0.9, 0.94) * mix(1.0, 0.45, dark), cloud);
 	// The colony's lights (light_field.gd): small bright cores and a restrained halo from a coarser
-	// mip, which also merges them as the map zooms out.
+	// mip, which also merges them as the map zooms out; round and by a power, as on the globe.
 	vec2 point_light = texture(lights, UV).rg;
-	vec2 halo = textureLod(lights, UV, 2.5).rg;
-	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.2 + halo.r * 6.0);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.8 + halo.g * 4.5);
+	vec2 spread = vec2(0.0012, 0.0024);
+	vec2 gather = textureLod(lights, UV, 2.0).rg;
+	for (int k = 0; k < 6; k++) {
+		vec2 step_uv = vec2(cos(float(k) * 1.0472), sin(float(k) * 1.0472)) * spread;
+		gather += textureLod(lights, UV + step_uv, 2.0).rg;
+	}
+	vec2 halo = pow(max(gather / 7.0, vec2(0.0)), vec2(0.7));
+	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.2 + halo.r * halo_warm);
+	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.8 + halo.g * halo_cold);
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
 """

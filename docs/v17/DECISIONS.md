@@ -934,5 +934,12 @@ factories, so the game's cycle and the payback bands stay as they are.
   district, 20 units out beyond the quay and off the shipping lane, while it is unknown or rich ·
   a ship every game day (a blur at 6×) · the signal at the town's own marker (it would read as the
   town's, not the sea's).
+- The night halo on the globe and the flat map is round and answers by a power: the centre and a
+  ring of six taps of a coarser mip, raised to 0.7. A linear halo from one coarse tap averaged a
+  small town's few lights over hundreds of texels and left it as specks from orbit; a square root
+  of that one tap lit it but drew square blocks (the mip's bilinear footprint). The ship light is a
+  cargo dot's size: at one and a half it was the brightest thing in the bay. A town at the default
+  globe distance is still small (its plots span about 60 pixels at 1920 × 1080); how bright the
+  bay should read from orbit is for the player to judge on a real GPU.
 - The first ore export and the first ship at a new harbour each raise a card once a game (「◆ 第一次」);
   a click opens that town's district. A loaded game marks what it already has.

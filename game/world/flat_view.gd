@@ -465,8 +465,8 @@ func _ship_movers(flat: bool) -> Array:
 		var light := _sphere(
 			holder,
 			ends[0],
-			(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * 1.5,
-			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW * 1.6),
+			CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE,
+			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW),
 			8,
 			4
 		)

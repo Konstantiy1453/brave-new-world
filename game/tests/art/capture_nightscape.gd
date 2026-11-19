@@ -11,7 +11,7 @@ extends SceneTree
 ##
 ## godot --path game --script res://tests/art/capture_nightscape.gd -- --seed=260129
 ##   --out=<folder> [--size=1920x1080] [--labels=on|off] [--side=inland|west|east]
-##   [--stages=landing,housing,harbour] [--site=<id>] [--clip=on]
+##   [--stages=landing,housing,harbour] [--site=<id>] [--clip=on] [--views=globe,flat,district]
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -39,7 +39,8 @@ var options: Dictionary = {
 	"side": "inland",
 	"stages": "landing,housing,harbour",
 	"site": "",
-	"clip": "off"
+	"clip": "off",
+	"views": "globe,flat,district"
 }
 var map: Node3D
 var folder: String = ""
@@ -94,9 +95,13 @@ func run() -> void:
 			"buildings": shown.settlements[0].buildings.size()
 		}
 		report.stages[stage].ships = map.globe_ships.size()
-		await _globe(home, stage)
-		await _flat(home, stage)
-		await _district(home, stage)
+		var views: PackedStringArray = str(options.views).split(",")
+		if views.has("globe"):
+			await _globe(home, stage)
+		if views.has("flat"):
+			await _flat(home, stage)
+		if views.has("district"):
+			await _district(home, stage)
 		if stage == "harbour" and str(options.clip) == "on":
 			await _clips(home)
 	var file := FileAccess.open(folder + "/report.json", FileAccess.WRITE)
