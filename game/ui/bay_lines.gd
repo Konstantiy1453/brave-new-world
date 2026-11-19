@@ -31,12 +31,11 @@ static func offshore(g, b: Control, s: Dictionary) -> void:
 			D.GOLD
 		)
 		return
-	var line: HBoxContainer = D.row(b)
-	var words: Label = D.label(line, "近海信号：疑似%s矿体，规模不明" % good, 15, D.GOLD, false)
-	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# The words wrap and the button takes its own line: the town panel is narrow.
+	D.label(b, "近海信号：疑似%s矿体，规模不明" % good, 15, D.GOLD)
 	var region: int = int(s.region)
 	var send: Button = D.button(
-		line,
+		b,
 		(
 			"派测量船 · ¥ %.0f · %d 天"
 			% [float(rule.get("survey_cost", 0)), int(rule.get("survey_days", 0))]
@@ -46,4 +45,5 @@ static func offshore(g, b: Control, s: Dictionary) -> void:
 		"SurveyOffshore"
 	)
 	D.font_size(send, D.CAPTION)
+	send.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	send.disabled = not bool(bay.harbor_working(g.sim, s))

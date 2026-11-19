@@ -51,7 +51,7 @@ static func strip(g, b: Control, s: Dictionary) -> void:
 	var waiting: Array = view.waiting.get(int(s.region), [])
 	if not waiting.is_empty():
 		D.label(card, "等工程队开工（按开工顺序）：" + "、".join(PackedStringArray(waiting)), D.SMALL, D.GOLD)
-	D.label(card, "常设指令：先修本地缺水、缺电、缺粮的工程，手头的工程暂停、进度保留；其余按下单顺序", D.CAPTION, D.MUTED)
+	D.label(card, "常设指令：先修本地缺水、缺电、缺粮的工程，手头的工程暂停、进度保留；再建标了「先建」的；其余按下单顺序", D.CAPTION, D.MUTED)
 
 
 static func _team_row(g, parent: Control, team: Dictionary) -> void:

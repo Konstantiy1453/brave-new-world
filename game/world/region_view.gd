@@ -26,8 +26,9 @@ const SHIP_BERTH_OUT: float = 2.4
 const SHIP_BERTH_SIDE: float = 0.6
 const SHIP_OFFING_OUT: float = 30.0
 const SHIP_OFFING_SIDE: float = 6.0
-## The masthead lamp's height on the cargo ship model (2.03 tall).
+## The masthead lamp's height on the cargo ship model (2.03 tall); the quay's lamp posts.
 const SHIP_LAMP_HEIGHT: float = 2.2
+const QUAY_LAMP_HEIGHT: float = 1.9
 ## The offshore signal: out beyond the quay, off the shipping lane (district units).
 const SIGNAL_OUT: float = 20.0
 const SIGNAL_SIDE: float = -9.0
@@ -814,6 +815,7 @@ func _build_harbor(settlement: Dictionary) -> void:
 	quay.rotation.y = atan2(-heading.x, -heading.y)
 	quay.scale = Vector3.ONE * grown
 	buildings_root.add_child(quay)
+	_build_quay_lamps(best, sea_level)
 	var calling: Array = _gift_ship()
 	var vessel: MeshInstance3D = ModelArt.instance(
 		str(calling[0]), func(slot: String) -> Material: return _art_material(slot, {}, true)
@@ -950,6 +952,25 @@ func _build_harbor_site(shore: Vector2, heading: Vector2, sea_level: float) -> v
 	site.position = Vector3(shore.x, maxf(_ground(shore.x, shore.y), sea_level) + .02, shore.y)
 	site.rotation.y = atan2(-heading.x, -heading.y)
 	buildings_root.add_child(site)
+
+
+## The quay's work lights where the night map puts them (light_field.gd `QUAY_STEPS`): cool lamps
+## on poles along the quay, brightening after dark like the street lamps ("lamps").
+func _build_quay_lamps(spot: Dictionary, sea_level: float) -> void:
+	var heading: Vector2 = spot.heading
+	var side := Vector2(-heading.y, heading.x)
+	var pole: StandardMaterial3D = _mat("quay_pole", Color("5d6b73"), .5, .5)
+	var lamp: StandardMaterial3D = _mat("lamps", Color("c4eee1"), .2, .4, 1.3)
+	for step: Array in LightField.QUAY_STEPS:
+		var at: Vector2 = spot.shore + heading * float(step[0]) + side * float(step[1])
+		var base: float = maxf(_ground(at.x, at.y), sea_level)
+		_box(
+			buildings_root,
+			Vector3(at.x, base + QUAY_LAMP_HEIGHT * 0.5, at.y),
+			Vector3(.08, QUAY_LAMP_HEIGHT, .08),
+			pole
+		)
+		_sphere(buildings_root, Vector3(at.x, base + QUAY_LAMP_HEIGHT, at.y), .2, lamp, 8, 4)
 
 
 ## The berth and the offing of a quay's ships, in district units: [berth, offing].
