@@ -11,6 +11,8 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 
+## Days of imports a harbour's forecast looks back over.
+const SAVINGS_WINDOW: int = 30
 const SIGNAL_GOODS: Array[String] = ["copper", "crystal"]
 
 
@@ -19,13 +21,23 @@ static func rules(sim: RefCounted) -> Dictionary:
 
 
 ## The extra days and cost a mine's road adds on a plot beyond the haul reach: {days, cost, units}.
+## A road already built to one of the town's mines carries the next: from the nearest of them only
+## the spur is built, if that is shorter than the way from the edge of the reach.
 static func haul(sim: RefCounted, region: int, plot: int) -> Dictionary:
 	var rule: Dictionary = rules(sim)
 	var plots: Array = sim.state.world.regions[region].get("plots", [])
 	if rule.is_empty() or plot < 0 or plot >= plots.size():
 		return {"days": 0, "cost": 0.0, "units": 0.0}
-	var reach: float = Vector2(float(plots[plot].x), float(plots[plot].z)).length()
-	var beyond: float = maxf(0.0, reach - float(rule.haul_reach))
+	var at := Vector2(float(plots[plot].x), float(plots[plot].z))
+	var beyond: float = maxf(0.0, at.length() - float(rule.haul_reach))
+	for b: Dictionary in sim.settlement(region).get("buildings", []):
+		var index: int = int(b.get("plot", -1))
+		if index < 0 or index >= plots.size() or index == plot:
+			continue
+		if str(sim.config.buildings.get(str(b.kind), {}).get("role", "")) != "mine":
+			continue
+		var spur: float = at.distance_to(Vector2(float(plots[index].x), float(plots[index].z)))
+		beyond = minf(beyond, spur)
 	if beyond <= 0.0:
 		return {"days": 0, "cost": 0.0, "units": 0.0}
 	return {
@@ -33,6 +45,21 @@ static func haul(sim: RefCounted, region: int, plot: int) -> Dictionary:
 		"cost": beyond * float(rule.haul_cost_per_unit),
 		"units": beyond
 	}
+
+
+## What sea freight would save this town a day on what it imports now: the discount on its share
+## (by people) of the colony's food, materials and parts imports over the last 30 days. Only reads.
+static func sea_savings(sim: RefCounted, s: Dictionary) -> float:
+	var rule: Dictionary = rules(sim)
+	if rule.is_empty() or s.is_empty():
+		return 0.0
+	var window: Dictionary = sim.stats_window(SAVINGS_WINDOW)
+	var spent: float = 0.0
+	for key: String in ["import.food", "import.stock"]:
+		spent += float(window.get("expense", {}).get(key, 0.0))
+	var days: float = maxf(1.0, float(window.get("days", SAVINGS_WINDOW)))
+	var people: float = maxf(1.0, float(sim.Contract.population_total(sim)))
+	return float(rule.sea_discount) * spent / days * minf(1.0, float(s.population) / people)
 
 
 ## A town with a working harbour.

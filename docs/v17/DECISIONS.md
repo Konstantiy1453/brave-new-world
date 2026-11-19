@@ -897,6 +897,19 @@ factories, so the game's cycle and the payback bands stay as they are.
     ¥40 a unit beyond, so the richest far seam of the first landing costs about 7 days and ¥1,040 on
     an 18-day, ¥2,100 mine. At first it was 0.5 days and ¥60: 13 days and ¥1,560, not a short road,
     and it held the first export back long enough to starve the jobs that pull in immigrants.
+    A road built to one of the town's mines carries the next: a later mine pays only the spur
+    from the nearest mine (6 units between neighbouring deposits), if that is shorter. Without
+    this every mine paid the whole road from the centre again; the bots then built fewer mines,
+    jobs held immigration, and the quick harness (`crews-234a06c`) lost a fifth of its people
+    (296 / 783 at years 2 and 4 against 374 / 1014). The balanced bot's probe on three seeds: no
+    mine road at all 413 / 388 / 420 at year 2, spurs 404 / 325 / 332, the whole road every time
+    333 / 317 / 271 (seed 42 stalled at 300 for two years).
+  - **The harbour's forecast** counts what it saves as its income: the catch the town can use
+    instead of imported food (as a farm's crop), and the sea discount on the town's share of the
+    colony's food, materials and parts imports over the last 30 days. Its added port capacity is
+    not valued. Before, the order showed 不产生净收入, so a player could not weigh it against the
+    mine road (`bay_openings`: on seed 909386518, a start with its own farmland, the harbour saves
+    little and the bot that built it first lost its contract).
   - **Small harbour (小型码头).** ¥3,000, 20 days, 3 jobs. It catches 6 food a day, counted as the
     town's own food. Food, materials and parts come in 25% cheaper by sea there, and it adds 60
     capacity. It stands at the shore, with no plot, and its quay is what the district draws.
@@ -915,7 +928,9 @@ factories, so the game's cycle and the payback bands stay as they are.
   ship light on the district ship's own line (offing 30 units out, berth beside the quay): in over
   the first third of a three-day call, at the berth, out, then away, from the game clock alone so
   captures and replays agree (`v110_lights` checks the berth and that every frame stays on the
-  line). The offshore signal is a gold ring on the globe and the flat map and a lit buoy in the
+  line). The district's quay stands lamp posts where the night map has its work lights
+  (`QUAY_STEPS`), so the cool lights are in the same place on every view. The offshore signal is
+  a gold ring on the globe and the flat map and a lit buoy in the
   district, 20 units out beyond the quay and off the shipping lane, while it is unknown or rich ·
   a ship every game day (a blur at 6×) · the signal at the town's own marker (it would read as the
   town's, not the sea's).

@@ -1043,6 +1043,8 @@ static func build_forecast(
 	# What the town can use of `outputs` (farms only; any other output sells or feeds a factory).
 	var usable: Dictionary = {}
 	var savings: float = 0.0
+	# A harbour's: what sea freight saves on the town's imports.
+	var sea: float = 0.0
 	var revenue: float = 0.0
 	var role: String = str(spec.role)
 	var reserve_days: float = -1.0
@@ -1083,6 +1085,15 @@ static func build_forecast(
 		usable.food = usable_food(sim, s, rate)
 		revenue = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
 		savings = revenue
+	elif role == "harbor":
+		# The catch replaces imported food as a farm's crop does; sea freight makes what the town
+		# still imports cheaper (bay.gd). Its added port capacity is not valued.
+		var catch: float = float(spec.get("fish", 0.0))
+		outputs.food = catch
+		usable.food = usable_food(sim, s, catch)
+		savings = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		sea = Bay.sea_savings(sim, s)
+		revenue = savings + sea
 	elif role == "indoor_farm":
 		var rate: float = (
 			float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
@@ -1160,6 +1171,7 @@ static func build_forecast(
 		"outputs": outputs,
 		"usable": usable,
 		"import_savings_per_day": savings,
+		"sea_savings_per_day": sea,
 		"haul": spec.get("haul", {"days": 0, "cost": 0.0, "units": 0.0}),
 		"revenue_per_day": revenue,
 		"wages_per_day": wages,

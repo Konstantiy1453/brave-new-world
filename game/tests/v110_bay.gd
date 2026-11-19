@@ -107,6 +107,51 @@ func _mine_road() -> void:
 	check(int(near.days) == int(spec.days), "and takes the catalogue's days")
 	var farm: Dictionary = sim.Production.build_preview(sim, region, "farm", int(ends[0]))
 	check(int(farm.haul.days) == 0, "only mines build a road")
+	# Once a road reaches a mine, the next mine beside it builds only the spur.
+	var deposits: Array = _workable_deposits(sim, region)
+	check(deposits.size() >= 2, "two workable deposits beyond the reach")
+	if deposits.size() < 2:
+		return
+	var first: Array = deposits[0]
+	var first_point := Vector2(float(plots[first[0]].x), float(plots[first[0]].z))
+	var second: Array = deposits[1]
+	var gap: float = INF
+	for entry: Array in deposits.slice(1):
+		var point := Vector2(float(plots[entry[0]].x), float(plots[entry[0]].z))
+		if point.distance_to(first_point) < gap:
+			gap = point.distance_to(first_point)
+			second = entry
+	var alone: Dictionary = sim.Production.build_preview(sim, region, second[1], second[0])
+	check(
+		sim.act("build", {"site": region, "kind": first[1], "plot": first[0]}) == "",
+		"a mine on the farthest deposit is ordered"
+	)
+	var beside: Dictionary = sim.Production.build_preview(sim, region, second[1], second[0])
+	check(
+		is_equal_approx(float(beside.haul.units), minf(float(alone.haul.units), gap)),
+		(
+			"the mine beside it builds only the spur: %.1f units, not %.1f"
+			% [float(beside.haul.units), float(alone.haul.units)]
+		)
+	)
+	check(float(beside.haul.units) < float(alone.haul.units), "which is shorter")
+
+
+## Deposits a light mine can work now, beyond the mine road's reach, farthest first: [plot, kind].
+func _workable_deposits(sim: RefCounted, region: int) -> Array:
+	var found: Array = []
+	var plots: Array = sim.state.world.regions[region].plots
+	var reach: float = float(Bay.rules(sim).haul_reach)
+	for index: int in range(plots.size()):
+		var point := Vector2(float(plots[index].x), float(plots[index].z))
+		if point.length() <= reach:
+			continue
+		for kind: String in ["mine_ore", "mine_copper", "mine_crystal"]:
+			if sim.Sites.plot_fits(sim, plots[index], kind):
+				found.append([index, kind, point.length()])
+				break
+	found.sort_custom(func(a: Array, b: Array) -> bool: return float(a[2]) > float(b[2]))
+	return found
 
 
 func _harbour() -> void:
@@ -124,6 +169,21 @@ func _harbour() -> void:
 	var region: int = int(s.region)
 	var rule: Dictionary = Bay.rules(sim)
 	check(Bay.sea_discount(sim, s, "food") == 0.0, "no sea discount before a harbour")
+	var forecast: Dictionary = sim.build_forecast(region, "harbor")
+	check(
+		is_equal_approx(float(forecast.outputs.food), float(sim.config.buildings.harbor.fish)),
+		"the order's forecast shows the catch"
+	)
+	check(
+		is_equal_approx(
+			float(forecast.revenue_per_day),
+			float(forecast.import_savings_per_day) + float(forecast.sea_savings_per_day)
+		),
+		(
+			"and counts what it saves as its income: ¥ %.1f catch + ¥ %.1f sea freight a day"
+			% [float(forecast.import_savings_per_day), float(forecast.sea_savings_per_day)]
+		)
+	)
 	check(sim.act("build", {"site": region, "kind": "harbor"}) == "", "a coastal town builds one")
 	var harbor: Dictionary = s.buildings.back()
 	check(int(harbor.get("plot", -1)) < 0, "at the shore, on no plot")

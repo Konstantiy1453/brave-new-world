@@ -349,11 +349,21 @@ static func _build_ledger(
 			"按可用部分替代进口食品计",
 			D.MUTED
 		)
-	# A farm's income is the imports it replaces, shown above.
-	if (
-		float(forecast.revenue_per_day) != 0.0
-		and float(forecast.get("import_savings_per_day", 0.0)) <= 0.0
-	):
+	if float(forecast.get("sea_savings_per_day", 0.0)) > 0.0:
+		D.pair(
+			rows,
+			"海运省下",
+			"¥ %.0f/日" % float(forecast.sea_savings_per_day),
+			D.INK,
+			"按近 30 日的食品、建材和部件进口计",
+			D.MUTED
+		)
+	# A farm's and a harbour's income is the imports they replace or cheapen, shown above.
+	var replaces: float = (
+		float(forecast.get("import_savings_per_day", 0.0))
+		+ float(forecast.get("sea_savings_per_day", 0.0))
+	)
+	if float(forecast.revenue_per_day) != 0.0 and replaces <= 0.0:
 		D.pair(rows, "收入", "¥ %.0f/日" % float(forecast.revenue_per_day), D.INK)
 	var net: float = float(forecast.net_per_day)
 	D.pair(rows, "净额", "¥ %+.0f/日" % net, D.TEAL if net >= 0.0 else D.RED)
