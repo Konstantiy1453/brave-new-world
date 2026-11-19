@@ -10,6 +10,13 @@ const SHUTTLE_COLOR: Color = Color("8fd8ee")
 const SHUTTLE_ARC: float = 0.07
 const Geo = preload("res://world/world_gen.gd")
 const Shaders = preload("res://world/shaders.gd")
+## Cargo on the way: the size of its dot on the globe and on the flat map, and how brightly it
+## glows. Small, so a busy road reads as a line of traffic rather than a string of beads.
+const CARGO_DOT_GLOBE: float = 0.013
+const CARGO_DOT_FLAT: float = 0.018
+const CARGO_GLOW: float = 1.2
+## Added to a place's name on the maps while an event is open there.
+const EVENT_MARK: String = "  ·  通讯"
 const NightLights = preload("res://world/night_lights.gd")
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
@@ -39,11 +46,15 @@ var cloud_shader: ShaderMaterial
 var atmosphere_shader: ShaderMaterial
 var terrain_shader: ShaderMaterial
 var night_lights: ImageTexture
+## The settlements' night lights for the shaders (night_lights.gd town_uniforms).
+var town_lights: Dictionary = {}
 var lights_signature: String = ""
 ## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
 var sky: VisualClock = VisualClock.new()
 ## Player settings for the moving map; the defaults are what a new player sees.
 var day_night_enabled: bool = true
+## Forward+ is running (高画质): real lamp lights, ambient occlusion and bloom; set at setup.
+var high_quality: bool = false
 var weather_enabled: bool = true
 var sun_light: DirectionalLight3D
 var flat_shader: ShaderMaterial
@@ -97,9 +108,18 @@ func _cloud_coverage() -> float:
 
 
 ## The night-side light map shared by the globe and the flat map; empty until towns exist.
+## Hands the settlements' lights to a map shader: on every update and to a shader built later.
+func _apply_town_lights(material: ShaderMaterial) -> void:
+	if material == null or town_lights.is_empty():
+		return
+	material.set_shader_parameter("towns", town_lights.towns)
+	material.set_shader_parameter("town_style", town_lights.styles)
+	material.set_shader_parameter("town_count", int(town_lights.count))
+
+
 func _night_lights_texture() -> ImageTexture:
 	if night_lights == null:
-		night_lights = ImageTexture.create_from_image(NightLights.paint([], []))
+		night_lights = ImageTexture.create_from_image(NightLights.paint([]))
 	return night_lights
 
 
@@ -108,6 +128,27 @@ static func _site_text(reg: Dictionary, settled: bool) -> String:
 	if settled:
 		return "◆ " + str(reg.name)
 	return str(reg.name) if bool(reg.get("named", true)) else str(reg.terrain)
+
+
+## A place's name on the maps, marked while an event is open there (waiting for an answer, or a
+## chain running on), so the player sees where a story is going on.
+func _site_name(reg: Dictionary, settled: bool) -> String:
+	var text: String = _site_text(reg, settled)
+	if int(reg.id) in _event_places():
+		text += EVENT_MARK
+	return text
+
+
+## The places with an event open now, in order.
+func _event_places() -> Array[int]:
+	var places: Array[int] = []
+	for inst: Dictionary in state.get("events_v2", {}).get("instances", []):
+		if str(inst.get("status", "")) in ["pending", "deferred", "waiting"]:
+			var region: int = int(inst.get("target_region", -1))
+			if not region in places:
+				places.append(region)
+	places.sort()
+	return places
 
 
 func _geo_color(

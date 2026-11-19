@@ -16,9 +16,9 @@ var vehicle_meshes: Dictionary = {}
 ## Road height at a ground point, bridges included.
 var surface_height: Callable
 var street_x: float = 0.0
-## [{"end": Vector2, "z": float, "kind": String, "active": bool}]
+## [{"end": Vector2, "via": Vector2 (optional), "z": float, "kind": String, "active": bool}]
 var stops: Array = []
-## [{"end": Vector2}] route gates at the edge of the region.
+## [{"end": Vector2, "junction": Vector2 (optional)}] route gates at the edge of the region.
 var gates: Array = []
 var running: bool = true
 var rate: float = 1.0
@@ -88,20 +88,12 @@ func _pick_kind(index: int) -> String:
 func _next_trip(vehicle: Dictionary) -> void:
 	var from: Dictionary = stops[int(vehicle.stop)]
 	var points := PackedVector2Array()
-	points.append(from.end)
-	points.append(Vector2(street_x, float(from.z)))
 	if not gates.is_empty() and str(vehicle.kind) == "truck" and _rng.randf() < 0.3:
 		var gate: Dictionary = gates[_rng.randi_range(0, gates.size() - 1)]
-		points.append(Vector2(street_x, 0.0))
-		points.append(gate.end)
-		points.append(Vector2(street_x, 0.0))
-		points.append(Vector2(street_x, float(from.z)))
-		points.append(from.end)
+		points = gate_path(from, gate, street_x)
 	else:
 		var choice: int = _choose_stop(vehicle)
-		var to: Dictionary = stops[choice]
-		points.append(Vector2(street_x, float(to.z)))
-		points.append(to.end)
+		points = stop_path(from, stops[choice], street_x)
 		vehicle.stop = choice
 	vehicle.path = points
 	var lengths := PackedFloat32Array([0.0])
@@ -111,6 +103,41 @@ func _next_trip(vehicle: Dictionary) -> void:
 		lengths[lengths.size() - 1] = 0.01
 	vehicle.lengths = lengths
 	vehicle.at = 0.0
+
+
+## A trip between two stops by the roads: out along the stop's spur and lane (its "via" corner
+## when it has one), along the main street, and in by the other's lane and spur.
+static func stop_path(from: Dictionary, to: Dictionary, street: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	points.append(from.end)
+	if from.has("via"):
+		points.append(from.via)
+	points.append(Vector2(street, float(from.z)))
+	points.append(Vector2(street, float(to.z)))
+	if to.has("via"):
+		points.append(to.via)
+	points.append(to.end)
+	return points
+
+
+## Out to a route gate and back: by the gate's junction with the main street, when it has one.
+static func gate_path(from: Dictionary, gate: Dictionary, street: float) -> PackedVector2Array:
+	var junction: Vector2 = gate.get("junction", Vector2(street, 0.0))
+	var points := PackedVector2Array()
+	points.append(from.end)
+	if from.has("via"):
+		points.append(from.via)
+	points.append(Vector2(street, float(from.z)))
+	points.append(Vector2(street, junction.y))
+	points.append(junction)
+	points.append(gate.end)
+	points.append(junction)
+	points.append(Vector2(street, junction.y))
+	points.append(Vector2(street, float(from.z)))
+	if from.has("via"):
+		points.append(from.via)
+	points.append(from.end)
+	return points
 
 
 func _choose_stop(vehicle: Dictionary) -> int:

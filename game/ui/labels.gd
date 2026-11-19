@@ -2,6 +2,7 @@ extends RefCounted
 ## English simulation keys to player-facing text. Simulation code never reads this file.
 
 const Keys = preload("res://simulation/keys.gd")
+const Rules = preload("res://simulation/rules.gd")
 
 const RESOURCE_NAMES: Dictionary = {
 	"ore": "铁矿",
@@ -14,6 +15,14 @@ const RESOURCE_NAMES: Dictionary = {
 	"alloy": "合金",
 	"machinery": "精密机械",
 	"pharma": "药品",
+}
+## Goods that need telling apart at a glance, in the colours their deposits have on the maps:
+## iron rust, copper brass, crystal blue. Other goods keep the interface's ink.
+const GOOD_COLORS: Dictionary = {
+	"ore": Color("d4764f"),
+	"copper": Color("e6b34a"),
+	"crystal": Color("74b8f2"),
+	"food": Color("9dcd6c"),
 }
 ## Money sinks on the economy page, in display order.
 const SINK_NAMES: Dictionary = {
@@ -386,10 +395,20 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 	if key in ["invest.build", "invest.upgrade", "wages.public", "upkeep.facility"]:
 		return "%s · %s" % [name, building_name(config, detail)]
 	if key == "invest.road":
-		return "%s · 铺装" % name
+		return "%s · %s" % [name, road_level_name(config, detail)]
 	if key == "research.funding":
 		return "%s · %s" % [name, str(config.techs.get(detail, {}).get("name", detail))]
 	return "%s · %s" % [name, detail]
+
+
+## A link level named by its id in the ledger: 「铺装路面」, 「中型货运码头」.
+static func road_level_name(config: Dictionary, id: String) -> String:
+	var levels: Dictionary = config.get("road_levels", {})
+	for kind: String in ["land", "sea"]:
+		for step: Dictionary in levels.get(kind, []):
+			if str(step.get("id", "")) == id:
+				return str(step.name)
+	return "线路升级"
 
 
 ## The shortcut beside a shortage: what to do about it and where.
@@ -417,16 +436,65 @@ static func fix(entry: Dictionary) -> Dictionary:
 ## Text for one row of the top resource table's tooltip: where the month's change came from.
 static func flow_text(name: String, stock: float, flows: Array) -> String:
 	return (
-		"%s：全部据点合计 %.0f t\n近 30 日：产出 %.0f · 进口 %.0f · 消耗 %.0f · 出口 %.0f"
-		% [name, stock, float(flows[0]), float(flows[3]), float(flows[1]), float(flows[2])]
+		"%s\n全部据点合计 %s\n近 30 日（吨）：产出 %s · 进口 %s · 消耗 %s · 出口 %s"
+		% [
+			name,
+			t(stock),
+			amount_text(tonnes(float(flows[0]))),
+			amount_text(tonnes(float(flows[3]))),
+			amount_text(tonnes(float(flows[1]))),
+			amount_text(tonnes(float(flows[2])))
+		]
 	)
+
+
+## Goods are kept in hundreds of tonnes (economy.json `display`); the interface shows tonnes.
+static func tonnes_per_unit() -> float:
+	return float(Rules.read("economy").get("display", {}).get("tonnes_per_unit", 1.0))
+
+
+static func tonnes(amount: float) -> float:
+	return amount * tonnes_per_unit()
+
+
+## A goods amount in tonnes, for any page: "8,600 t", "157.9万 t".
+static func t(amount: float) -> String:
+	return amount_text(tonnes(amount)) + " t"
+
+
+## A rate of goods in tonnes a day: "1,240 t/日".
+static func per_day(amount: float) -> String:
+	return amount_text(tonnes(amount)) + " t/日"
+
+
+## A count in tonnes: one decimal under ten, grouped by thousands below a hundred thousand, then 万.
+static func amount_text(value: float) -> String:
+	var size: float = absf(value)
+	if size >= 100000000.0:
+		return "%.2f亿" % (value / 100000000.0)
+	if size >= 100000.0:
+		return "%.1f万" % (value / 10000.0)
+	if size < 10.0 and size >= 0.05:
+		return "%.1f" % value
+	var whole: int = roundi(value)
+	var digits: String = str(absi(whole))
+	var grouped: String = ""
+	while digits.length() > 3:
+		grouped = "," + digits.substr(digits.length() - 3) + grouped
+		digits = digits.substr(0, digits.length() - 3)
+	return ("-" if whole < 0 else "") + digits + grouped
+
+
+## A price per 100 t, the unit goods are kept in, so the figure is the rules' own: "¥ 8.0 / 百吨".
+static func per_hundred(price: float) -> String:
+	return "¥ %.1f / 百吨" % price
 
 
 ## Text for one plot in the build dialog's plot list.
 static func plot(row: Dictionary) -> String:
 	if str(row.kind) == "deposit":
 		var depth: String = "深层 · " if bool(row.deep) else ""
-		return "%s品位 %.2f · 储量 %.0f t" % [depth, float(row.grade), float(row.reserves)]
+		return "%s品位 %.2f · 储量 %s" % [depth, float(row.grade), t(float(row.reserves))]
 	if str(row.kind) == "farm":
 		return "肥力 %.0f%%" % (float(row.fertility) * 100.0)
 	return "建设用地"

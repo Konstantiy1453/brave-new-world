@@ -5,7 +5,8 @@
     "funding": "money per day at ten research teams",
     "effects": "fractions added to the matching bonus; negative lowers it",
     "weight": "relative chance of being drawn as a card",
-    "always_dealt": "what the charter cannot be finished without: on the table as soon as it can be started"
+    "always_dealt": "what the charter cannot be finished without: on the table as soon as it can be started",
+    "gift": "true: never dealt or researched; only an event hands it over (weight 0, cost shown for reference only). Not counted towards the charter's technology goals"
   },
   "categories": {
     "industry": {
@@ -1136,7 +1137,7 @@
         "logistics"
       ],
       "minimum_staff": 3,
-      "description": "解锁道路升级：运力 +50%，单程 -1 天，封路风险 -70%。",
+      "description": "解锁道路升级「铺装路面」：运力 +50%，单程 -1 天，封路风险 -70%。",
       "effects": {}
     },
     "shipping": {
@@ -1151,7 +1152,7 @@
         "cargo_handling"
       ],
       "minimum_staff": 3,
-      "description": "航线运力 +50%，航速 +20%。",
+      "description": "航线运力 +50%，航速 +20%；解锁码头扩建「大型货运码头」。",
       "effects": {
         "sea_capacity": 0.5,
         "sea_speed": 0.2
@@ -1264,7 +1265,7 @@
         "road_crews"
       ],
       "minimum_staff": 3,
-      "description": "修路速度 +30%，路线投资 -10%。",
+      "description": "修路速度 +30%，路线投资 -10%；解锁道路升级「四车道干线」（铺装之后）。",
       "effects": {
         "road_build": 0.3,
         "road_cost": -0.1
@@ -2088,6 +2089,55 @@
       "minimum_staff": 3,
       "description": "解锁巨型工程行星应急网：事件损失和道路封闭减少。",
       "effects": {}
+    },
+    "red_ball_express": {
+      "name": "红球快运车队",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 2,
+      "cost": 340.0,
+      "funding": 0.0,
+      "weight": 0.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "gift": true,
+      "description": "事件赠予，无法研究。单行环线昼夜不停，车头漆红球、路上优先：陆路单程时间 -20%，道路运力 +10%。",
+      "effects": {
+        "road_speed": 0.2,
+        "road_capacity": 0.1
+      }
+    },
+    "fast_freighters": {
+      "name": "高速货轮",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 3,
+      "cost": 620.0,
+      "funding": 0.0,
+      "weight": 0.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "gift": true,
+      "description": "事件赠予，无法研究。两艘退役高速货轮编入航线：航速 +25%。",
+      "effects": {
+        "sea_speed": 0.25
+      }
+    },
+    "bulk_freighters": {
+      "name": "大型散货船",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 3,
+      "cost": 620.0,
+      "funding": 0.0,
+      "weight": 0.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "gift": true,
+      "description": "事件赠予，无法研究。打捞修复的大型散货船跑最忙的航线：航线运力 +40%。",
+      "effects": {
+        "sea_capacity": 0.4
+      }
     }
   },
   "always_dealt": [

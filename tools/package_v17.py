@@ -143,7 +143,7 @@ def identity():
     report = {
         "version": VERSION,
         "commit": commit_id(),
-        "engine": "Godot 4.5.1-stable, GL Compatibility, Windows x64",
+        "engine": "Godot 4.5.1-stable, Windows x64, GL Compatibility (default) or Forward+ (高画质)",
         "save_schema": SAVE_SCHEMA,
         "world_generator": WORLD_GENERATOR,
         "files": {

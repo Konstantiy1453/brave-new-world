@@ -7,6 +7,7 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Events = preload("res://simulation/events_v2.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Keys = preload("res://simulation/keys.gd")
 
 const SAVE_PATH: String = "user://events_test.save"
 const NEW_CHAINS: Array[String] = ["liner", "crack", "blank_ridge"]
@@ -465,14 +466,27 @@ func _liner() -> void:
 
 func _crack() -> void:
 	var sim: RefCounted = _with_road()
+	supply(sim, "materials", 100.0)
+	supply(sim, "parts", 120.0)
 	var inst: Dictionary = open(sim, "crack")
 	check(choose(sim, inst, "limit") == "", "loads can be limited")
 	sim.tick()
+	var limited: float = float(option_of("crack", "start", "limit").effects[0].factor)
 	check(
-		is_equal_approx(Events.colony_modifier(sim, "road_capacity"), 0.5),
-		"limited loads halve road capacity"
+		limited < 1.0 and is_equal_approx(Events.colony_modifier(sim, "road_capacity"), limited),
+		"limited loads cut road capacity to %.0f%%" % (limited * 100.0)
 	)
-	step_until(sim, inst, ["repaired"])
+	# The repair runs through measurements, a plan and trial loads before the span reopens.
+	step_until(sim, inst, ["measurements"])
+	check(choose(sim, inst, "surface") == "", "the span is measured")
+	step_until(sim, inst, ["repair_plan"])
+	check(choose(sim, inst, "full") == "", "a full repair is ordered")
+	step_until(sim, inst, ["trial"])
+	check(choose(sim, inst, "calibrate") == "", "trial loads are run")
+	step_until(sim, inst, ["repaired", "trial_rework"])
+	if inst.node == "trial_rework":
+		check(choose(sim, inst, "replace") == "", "a failed trial is reworked")
+		step_until(sim, inst, ["repaired"])
 	check(inst.node == "repaired", "the repair finishes")
 	choose(sim, inst, "reopen")
 	check(str(inst.ending) == "修复通行", "ending: repaired")
@@ -539,14 +553,31 @@ func _blank_ridge() -> void:
 			}
 		)
 	)
-	fund(sim, 2000.0)
+	fund(sim, 30000.0)
+	supply(sim, "materials", 100.0)
+	supply(sim, "parts", 80.0)
 	var s: Dictionary = sim.settlement(0)
 	s.buildings.append(sim._building("lab", 0))
 	var before: float = float(site.deposits.crystal)
 	var inst: Dictionary = open(sim, "blank_ridge")
 	check(choose(sim, inst, "survey") == "", "a full survey can be sent")
 	check(inst.status == "waiting", "and takes time")
-	step_until(sim, inst, ["charted"])
+	# The survey leads on through the old camp's papers, its water room, an agreement and a pilot
+	# hole before the vein is charted.
+	step_until(sim, inst, ["compass"])
+	check(choose(sim, inst, "contract") == "", "the old survey line is followed")
+	step_until(sim, inst, ["waterroom"])
+	check(choose(sim, inst, "restore") == "", "the water room is restored")
+	step_until(sim, inst, ["archive"])
+	check(choose(sim, inst, "publish") == "", "the archive is published")
+	step_until(sim, inst, ["agreement"])
+	check(choose(sim, inst, "isolated") == "", "an isolated pilot hole is agreed")
+	step_until(sim, inst, ["pilot"])
+	check(choose(sim, inst, "cross") == "", "the pilot hole is cross-checked")
+	step_until(sim, inst, ["charted", "pilot_bad"])
+	if inst.node == "pilot_bad":
+		check(choose(sim, inst, "repair") == "", "a bad pilot hole is repaired")
+		step_until(sim, inst, ["charted"])
 	check(inst.node == "charted", "the survey finishes")
 	check(choose(sim, inst, "open") == "", "the vein is published")
 	check(float(site.deposits.crystal) > before, "the hidden deposit is now known")
@@ -630,7 +661,10 @@ func _rich_colony() -> RefCounted:
 	fund(sim, 20000.0)
 	supply(sim, "food", 400.0)
 	supply(sim, "materials", 200.0)
-	supply(sim, "parts", 60.0)
+	# Every other good too: the rewritten events also ask for components and alloy.
+	for good: String in Keys.RESOURCES:
+		if not good in ["food", "materials"]:
+			supply(sim, good, 120.0)
 	beds(sim, 2)
 	var s: Dictionary = sim.settlement(0)
 	s.buildings.append(sim._building("mine_ore", 0))

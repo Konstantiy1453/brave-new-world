@@ -123,6 +123,7 @@ static func close_day(state: Dictionary) -> void:
 			{
 				"day": int(state.day),
 				"cash": float(state.cash),
+				"labour": labour(state),
 				"income": today.income,
 				"expense": today.expense,
 				"invest": today.invest,
@@ -138,6 +139,29 @@ static func close_day(state: Dictionary) -> void:
 	while stats.goods_days.size() > GOODS_DAYS:
 		stats.goods_days.pop_front()
 	stats.today = _blank()
+
+
+## Engineering crews and research teams in every settlement: the colony's labour force.
+static func labour(state: Dictionary) -> int:
+	var total: int = 0
+	for s: Dictionary in state.get("settlements", []):
+		total += int(s.get("workers", 0)) + int(s.get("scientists", 0))
+	return total
+
+
+## The labour force's mean change a day over the last `span` closed days; 0 until two days with a
+## count have been kept (saves from before 1.9's interface pass have none).
+static func labour_change(state: Dictionary, span: int = 7) -> float:
+	var counted: Array = []
+	for row: Dictionary in state.get("stats", {}).get("days", []):
+		if row.has("labour"):
+			counted.append(row)
+	if counted.size() < 2:
+		return 0.0
+	var first: Dictionary = counted[maxi(0, counted.size() - 1 - span)]
+	var last: Dictionary = counted[counted.size() - 1]
+	var days: int = maxi(1, int(last.day) - int(first.day))
+	return (float(last.labour) - float(first.labour)) / days
 
 
 static func _add_all(into: Dictionary, row: Dictionary) -> void:

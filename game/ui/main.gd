@@ -15,6 +15,7 @@ const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
+const Graphics = preload("res://ui/graphics.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
@@ -25,12 +26,15 @@ const V17_SAVE_AUTO: String = "/ColonyCharter/v17/autosave.save"
 const OLD_SAVE_MANUAL: String = "/ColonyCharter/v16/manual.json"
 const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
 const OLDER_SAVE_MANUAL: String = "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
-const AUTOSAVE_DAYS: int = 10
+## Autosaves land on every quarter of the calendar (progression.json time.autosave_days).
+const AUTOSAVE_FALLBACK_DAYS: int = 90
+## Days whose mean is the change shown after each amount in the top bar.
+const DAILY_WINDOW: int = 7
 const MODAL_HEIGHT: int = 690
 const PAGE_HEIGHT: int = 535
 const TOP_CELLS: Array = [
 	["money", "¥", "公共资金"],
-	["people", "人", "人口"],
+	["labour", "crew", "劳动力"],
 	["places", "据", "据点"],
 	["food", "food", "食品"],
 	["power", "power", "电力"],
@@ -48,6 +52,14 @@ const TOP_GOODS: Array[String] = [
 const MONTH_DAYS: float = 30.0
 const COLUMN_LEFT: int = 170
 const COLUMN_WIDTH: int = 300
+## Research notices: width, distance from the top, how many at once, seconds on screen.
+const NOTICE_WIDTH: int = 460
+const NOTICE_TOP: int = 98
+const NOTICE_LIMIT: int = 3
+const NOTICE_SECONDS: float = 8.0
+## Ending scenes are longer to read than a technology's name.
+const EVENT_NOTICE_SECONDS: float = 14.0
+const PAGE_TOOLTIPS: Dictionary = {"research": "打开科研教育", "events": "打开通讯事件"}
 ## Pages drawn in a module's variant (design.gd); every other page stays neutral.
 const PAGE_VARIANTS: Dictionary = {
 	"research": D.RESEARCH,
@@ -104,6 +116,13 @@ var seed_edit: LineEdit
 var size_option: OptionButton
 var accumulator: float = 0
 var toast_time: float = 0
+## Research notices: one card per finished technology under the top bar, for a few seconds.
+var notices: VBoxContainer
+var research_watch: Dictionary = {}
+var research_seen: int = 0
+## Event endings already shown: the events state being watched and the newest ending's instance.
+var event_watch: Dictionary = {}
+var event_seen: String = ""
 var autosave_day: int = 0
 var session_seconds: float = 0
 var sample_frames: Array = []
@@ -117,6 +136,9 @@ var panel_pause: bool = true
 var visual_spin: bool = true
 var visual_day_night: bool = true
 var visual_weather: bool = true
+## Anti-aliasing level (Graphics.AA_LEVELS) and the free-plot rings in the region view.
+var visual_aa: String = Graphics.AA_DEFAULT
+var plot_marks: bool = false
 var resume_on_close: bool = false
 var dev_mode: bool = false
 var modal_root: Control
@@ -136,6 +158,7 @@ var autosave_snapshot: Dictionary = {}
 
 
 func _ready():
+	Graphics.start_choice()
 	Engine.max_fps = 60
 	dev_mode = OS.is_debug_build() or OS.get_cmdline_user_args().has("--dev")
 	sim.new_game(260129, "capital", 1)
@@ -171,7 +194,11 @@ func _ready():
 		visual_spin = bool(preferences.get_value("visual", "spin", true))
 		visual_day_night = bool(preferences.get_value("visual", "day_night", true))
 		visual_weather = bool(preferences.get_value("visual", "weather", true))
+		visual_aa = str(preferences.get_value("visual", "aa", Graphics.AA_DEFAULT))
+		plot_marks = bool(preferences.get_value("visual", "plot_marks", false))
 	map.set_visual_options(visual_spin, visual_day_night, visual_weather)
+	Graphics.apply_anti_aliasing(get_viewport(), visual_aa)
+	map.set_plot_marks(plot_marks)
 	show_menu()
 	var args = OS.get_cmdline_user_args()
 	for a in args:
@@ -318,6 +345,16 @@ func build_shell():
 			collapse.text = "收起" if mission.visible else "展开任务"
 			bottom.offset_top = -94 if mission.visible else -70
 	)
+	notices = VBoxContainer.new()
+	notices.name = "Notices"
+	notices.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	notices.offset_left = -NOTICE_WIDTH / 2.0
+	notices.offset_right = NOTICE_WIDTH / 2.0
+	notices.offset_top = NOTICE_TOP
+	notices.offset_bottom = NOTICE_TOP + NOTICE_LIMIT * 140
+	notices.add_theme_constant_override("separation", 6)
+	notices.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(notices)
 	toast_label = D.label(ui, "", 18, D.GOLD)
 	toast_label.anchor_top = 1
 	toast_label.anchor_bottom = 1
@@ -350,7 +387,9 @@ func _build_resource_table(parent: Control) -> void:
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		top_stats.add_child(cell)
 		if ResourceLoader.exists("res://assets/icons/%s.svg" % str(row[1])):
-			D.icon(cell, str(row[1]), 20)
+			var mark: TextureRect = D.icon(cell, str(row[1]), 20)
+			# Iron, copper and crystal in their map colours, so the three read apart.
+			mark.self_modulate = Labels.GOOD_COLORS.get(str(row[0]), Color.WHITE)
 		else:
 			D.label(cell, str(row[1]), 15, D.GOLD, false)
 		var value: Label = D.label(cell, "", 16, D.INK, false)
@@ -409,6 +448,145 @@ func _process(delta):
 		toast_time -= delta
 		if toast_time <= 0:
 			toast_label.text = ""
+	_watch_research()
+	_watch_events()
+
+
+## A technology finished since the last frame gets a notice; a new or loaded game only sets the
+## mark, so old work never floods the screen.
+func _watch_research() -> void:
+	var research: Dictionary = sim.state.get("research", {})
+	var done: Array = research.get("completed", [])
+	if not is_same(research, research_watch) or done.size() < research_seen:
+		research_watch = research
+		research_seen = done.size()
+		return
+	while research_seen < done.size():
+		notice_research(str(done[research_seen]))
+		research_seen += 1
+
+
+## 「科研完成：某某」 under the top bar, with what it does; a click opens the research page.
+func notice_research(tech: String) -> void:
+	var spec: Dictionary = sim.config.techs.get(tech, {})
+	if spec.is_empty() or notices == null:
+		return
+	var gift: bool = bool(spec.get("gift", false))
+	_post_notice(
+		"Notice_" + tech,
+		D.RESEARCH,
+		"◆ 获得赠予科技" if gift else "◆ 科研完成",
+		str(spec.name),
+		[str(spec.get("description", ""))],
+		"research",
+		NOTICE_SECONDS
+	)
+
+
+## An event that ended since the last frame gets its ending scene; a new or loaded game only sets
+## the mark, so old endings never flood the screen.
+func _watch_events() -> void:
+	var e: Dictionary = sim.state.get("events_v2", {})
+	var rows: Array = e.get("history", [])
+	var newest: String = str(rows.back().get("instance_id", "")) if not rows.is_empty() else ""
+	if not is_same(e, event_watch):
+		event_watch = e
+		event_seen = newest
+		return
+	if newest == event_seen:
+		return
+	var start: int = rows.size() - 1
+	for index: int in range(rows.size() - 1, -1, -1):
+		if str(rows[index].get("instance_id", "")) == event_seen:
+			start = index + 1
+			break
+	for index: int in range(start, rows.size()):
+		notice_event(rows[index])
+	event_seen = newest
+
+
+## The ending scene of an event: its title, the ending, and what happened (the event's own words,
+## or else what changed); a click opens the events page.
+func notice_event(row: Dictionary) -> void:
+	var definition: Dictionary = Events.definitions().definitions.get(
+		str(row.get("definition_id", "")), {}
+	)
+	if definition.is_empty() or notices == null:
+		return
+	var scene: String = str(row.get("outcome", ""))
+	var lines: Array[String] = ["结局「%s」" % str(row.get("ending", ""))]
+	if scene != "":
+		lines.append(scene)
+	elif str(row.get("changes", "")) != "":
+		lines.append(str(row.changes))
+	_post_notice(
+		"EventEnding_" + str(row.get("instance_id", "")),
+		D.NEUTRAL,
+		"◆ 到期按默认处理" if bool(row.get("automatic", false)) else "◆ 事件结局",
+		str(definition.nodes.start.title),
+		lines,
+		"events",
+		EVENT_NOTICE_SECONDS
+	)
+
+
+## A card under the top bar: a small heading, a title and lines of text; a click opens `page`.
+## Up to NOTICE_LIMIT at once, each gone after `seconds`.
+func _post_notice(
+	card_name: String,
+	variant: String,
+	heading: String,
+	title_text: String,
+	lines: Array[String],
+	page: String,
+	seconds: float
+) -> void:
+	var panel := PanelContainer.new()
+	panel.name = card_name
+	panel.add_theme_stylebox_override("panel", D.style("card_on", variant))
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	panel.tooltip_text = PAGE_TOOLTIPS.get(page, "")
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(box)
+	var head := Label.new()
+	head.text = heading
+	head.add_theme_color_override("font_color", D.GOLD)
+	head.add_theme_font_size_override("font_size", 15)
+	var title := Label.new()
+	title.text = title_text
+	title.add_theme_font_size_override("font_size", 22)
+	var labels: Array[Label] = [head, title]
+	for line: String in lines:
+		var body := Label.new()
+		body.text = line
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.add_theme_color_override("font_color", D.MUTED)
+		body.add_theme_font_size_override("font_size", 15)
+		labels.append(body)
+	for label: Label in labels:
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(label)
+	panel.gui_input.connect(
+		func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed:
+				open_page(page)
+				panel.queue_free()
+	)
+	notices.add_child(panel)
+	# Above whatever page or dialog is open.
+	notices.get_parent().move_child(notices, -1)
+	while notices.get_child_count() > NOTICE_LIMIT:
+		var oldest: Node = notices.get_child(0)
+		notices.remove_child(oldest)
+		oldest.queue_free()
+	get_tree().create_timer(seconds, true).timeout.connect(
+		func():
+			if is_instance_valid(panel):
+				panel.queue_free()
+	)
 
 
 func advance_time(delta: float):
@@ -438,7 +616,8 @@ func advance_time(delta: float):
 		sim.tick()
 		map.sync_state(sim.state)
 		refresh()
-		if sim.state.day - autosave_day >= AUTOSAVE_DAYS:
+		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
+		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
 			_begin_autosave()
 			autosave_day = sim.state.day
 		if sim.state.status != last_status and sim.state.status in ["success", "failed"]:
@@ -740,7 +919,9 @@ func _money_advice(window: Dictionary) -> String:
 func _refresh_top() -> Dictionary:
 	var state: Dictionary = sim.state
 	var window: Dictionary = sim.stats_window(int(MONTH_DAYS))
-	var scale: float = MONTH_DAYS / maxi(1, int(window.days))
+	# The figure after each amount is its change a day: the mean of the last week's days.
+	var week: Dictionary = sim.stats_window(DAILY_WINDOW)
+	var per_day: float = 1.0 / maxi(1, int(week.days))
 	var income: float = 0.0
 	var expense: float = 0.0
 	for key: String in window.income:
@@ -748,19 +929,22 @@ func _refresh_top() -> Dictionary:
 	for key: String in window.expense:
 		expense += float(window.expense[key])
 	var cover_line: String = Labels.cover_text(sim.cover_view())
+	var net_per_day: float = float(sim.summary().operating_average)
 	_set_cell(
 		"money",
 		float(state.cash),
-		(income - expense) * scale,
+		net_per_day,
 		(
 			(
-				"公共资金 ¥ %.0f\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；后面的数字是每月结余。建设和融资不计入。"
-				% [float(state.cash), income, expense]
+				"公共资金 ¥ %.0f\n后面的数字是每日经营结余（近 7 日平均）¥ %+.0f/日。\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；建设和融资不计入。"
+				% [float(state.cash), net_per_day, income, expense]
 			)
 			+ ("" if cover_line == "" else "\n" + cover_line)
 		)
 	)
 	var people: int = 0
+	var employed: int = 0
+	var children: int = 0
 	var power: float = 0.0
 	var power_used: float = 0.0
 	var water: float = 0.0
@@ -769,6 +953,8 @@ func _refresh_top() -> Dictionary:
 	var places: PackedStringArray = []
 	for s: Dictionary in state.settlements:
 		people += int(s.population)
+		employed += int(s.get("employed", 0))
+		children += int(s.get("children", 0))
 		power += float(s.power_supply)
 		power_used += float(s.power_demand)
 		water += float(s.water_supply)
@@ -781,12 +967,16 @@ func _refresh_top() -> Dictionary:
 		)
 		for good: String in TOP_GOODS:
 			stock[good] = float(stock.get(good, 0.0)) + float(s.stock.get(good, 0.0))
-	var moved: float = 0.0
-	for key: String in window.arrivals:
-		moved += float(window.arrivals[key])
-	for key: String in window.departures:
-		moved -= float(window.departures[key])
-	_set_cell("people", people, moved * scale, "人口 %d\n后面的数字是每月迁入减离开。" % people)
+	var labour: int = Stats.labour(state)
+	_set_cell(
+		"labour",
+		labour,
+		Stats.labour_change(state, DAILY_WINDOW),
+		(
+			"劳动力 %d：工程队和研究团队\n人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
+			% [labour, people, employed, children]
+		)
+	)
 	_set_cell_text(
 		"places",
 		"%d / %d" % [state.settlements.size(), Contract.settlement_cap(sim)],
@@ -798,25 +988,33 @@ func _refresh_top() -> Dictionary:
 	_set_cell_flow("power", power, power - power_used, "电力" + utility_note + "\n".join(places))
 	_set_cell_flow("water", water, water - water_used, "水" + utility_note + "\n".join(places))
 	for good: String in TOP_GOODS:
-		var flows: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		var flows: Array = week.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
 		var change: float = (
 			float(flows[Stats.PRODUCED])
 			+ float(flows[Stats.IMPORTED])
 			- float(flows[Stats.CONSUMED])
 			- float(flows[Stats.EXPORTED])
 		)
+		var month: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
 		_set_cell(
 			good,
-			float(stock.get(good, 0.0)),
-			change * scale,
-			Labels.flow_text(str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), flows)
+			Labels.tonnes(float(stock.get(good, 0.0))),
+			Labels.tonnes(change * per_day),
+			(
+				Labels.flow_text(
+					str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), month
+				)
+				+ "\n后面的数字是每日变化（近 7 日平均，吨）。"
+			)
 		)
 	return window
 
 
 func _set_cell(key: String, value: float, change: float, hint: String) -> void:
 	var sign_text: String = "+" if change >= 0.0 else ""
-	_set_cell_text(key, Labels.compact(value), sign_text + Labels.compact(change), change, hint)
+	_set_cell_text(
+		key, Labels.amount_text(value), sign_text + Labels.amount_text(change), change, hint
+	)
 
 
 ## Power and water: a rate, not a stock, so the sign is the surplus and red means somebody is short.
@@ -1384,6 +1582,39 @@ func toggle_visual(key: String) -> void:
 	settings.set_value("visual", "weather", visual_weather)
 	settings.save("user://settings.cfg")
 	open_page("save")
+
+
+## level is one of Graphics.AA_LEVELS; it applies at once.
+func set_anti_aliasing(level: String) -> void:
+	visual_aa = level
+	Graphics.apply_anti_aliasing(get_viewport(), level)
+	var settings = ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("visual", "aa", level)
+	settings.save("user://settings.cfg")
+	open_page("save")
+
+
+func toggle_plot_marks() -> void:
+	plot_marks = not plot_marks
+	map.set_plot_marks(plot_marks)
+	var settings = ConfigFile.new()
+	settings.load("user://settings.cfg")
+	settings.set_value("visual", "plot_marks", plot_marks)
+	settings.save("user://settings.cfg")
+	open_page("save")
+
+
+## Picture quality for the next start (Graphics.STANDARD or Graphics.HIGH).
+func choose_renderer(method: String) -> void:
+	Graphics.choose(method)
+	open_page("save")
+
+
+## Starts the game again with the same arguments, so a new picture quality takes effect.
+func restart_game() -> void:
+	OS.set_restart_on_exit(true, OS.get_cmdline_args())
+	get_tree().quit()
 
 
 func toggle_information():

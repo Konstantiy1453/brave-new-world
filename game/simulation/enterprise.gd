@@ -24,7 +24,7 @@ static func found(sim: RefCounted, region: int) -> String:
 	var materials: float = float(rules.materials)
 	var parts: float = float(rules.parts)
 	if s.stock.materials < materials or s.stock.parts < parts:
-		return "企业要向本地仓库购买 %.0f 建材和 %.0f 部件" % [materials, parts]
+		return "企业要向本地仓库购买 %.0f t 建材和 %.0f t 部件" % [sim.tonnes(materials), sim.tonnes(parts)]
 	sim._transfer("external", "enterprise", float(rules.capital), "enterprise.capital", false)
 	var inputs: float = materials * sim.config.prices.materials + parts * sim.config.prices.parts
 	sim._transfer("enterprise", "public", inputs, "enterprise.inputs", false)

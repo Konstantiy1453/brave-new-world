@@ -552,6 +552,24 @@
     "days": 15,
     "orbital_band": 0.4,
     "ground_band": 0.12,
+    "levels_note": "Ground surveys in order (1.9): each leaves a narrower band around the true value, costs cost x cost_factor and takes days. A settlement counts as the first. With the survey technology a surveyed site is exact; with prospecting a site surveyed as closely as surveys go can still be surveyed for hidden deposits nearby, at cost and days of the first level.",
+    "levels": [
+      {
+        "band": 0.12,
+        "days": 15,
+        "cost_factor": 1.0
+      },
+      {
+        "band": 0.06,
+        "days": 25,
+        "cost_factor": 1.5
+      },
+      {
+        "band": 0.03,
+        "days": 40,
+        "cost_factor": 2.0
+      }
+    ],
     "prospecting_radius_degrees": 30.0,
     "prospecting_cost_factor": 0.5
   },

@@ -109,7 +109,10 @@ static func upgrade_preview(sim: RefCounted, region: int, index: int) -> Diction
 			or float(s.stock.parts) < float(rule.parts)
 		)
 	):
-		rule.disabled_reason = "本地仓库不足：需要 %.0f 建材 / %.0f 部件" % [rule.materials, rule.parts]
+		rule.disabled_reason = (
+			"本地仓库不足：需要 %.0f t 建材 / %.0f t 部件"
+			% [sim.tonnes(float(rule.materials)), sim.tonnes(float(rule.parts))]
+		)
 	return rule
 
 
@@ -235,7 +238,10 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "土地或气温不适合当前温室技术"
 	var short: bool = s.stock.materials < float(d.materials) or s.stock.parts < float(d.parts)
 	if short and not bool(d.get("megaproject", false)) and not _port_ready(s):
-		return "本地仓库不足：需要 %.0f 建材 / %.0f 部件；没有货运站时要靠道路运来" % [d.materials, d.parts]
+		return (
+			"本地仓库不足：需要 %.0f t 建材 / %.0f t 部件；没有货运站时要靠道路运来"
+			% [sim.tonnes(float(d.materials)), sim.tonnes(float(d.parts))]
+		)
 	var total: float = float(d.cost) + _supply_train_cost(sim, s, d)
 	if sim.state.cash < total:
 		if total > float(d.cost):

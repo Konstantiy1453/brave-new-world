@@ -67,6 +67,32 @@ static func _offer_size(r: Dictionary) -> int:
 	return size
 
 
+## A technology no team can research: only an event hands it over (1.9).
+static func is_gift(key: String) -> bool:
+	return bool(Rules.read("techs").techs.get(key, {}).get("gift", false))
+
+
+## Finished technologies the teams researched; gifts from events are not counted.
+static func researched(state: Dictionary) -> int:
+	var count: int = 0
+	for key: String in state.research.completed:
+		if not is_gift(key):
+			count += 1
+	return count
+
+
+## Hands over a gift technology from an event. Its effects apply from today. False if the colony
+## already has it or it is not a gift.
+static func grant(sim: RefCounted, key: String) -> bool:
+	var r: Dictionary = sim.state.research
+	if not is_gift(key) or r.completed.has(key):
+		return false
+	r.completed.append(key)
+	sim._log("获得技术：%s（事件赠予）" % str(sim.config.techs[key].name))
+	sim.Sites.on_technology(sim, key)
+	return true
+
+
 ## Technologies the colony could start in this category right now.
 static func _eligible(r: Dictionary, category: String, skip: Array) -> Array:
 	var techs: Dictionary = Rules.read("techs").techs
@@ -74,6 +100,8 @@ static func _eligible(r: Dictionary, category: String, skip: Array) -> Array:
 	for key: String in techs:
 		var t: Dictionary = techs[key]
 		if str(t.category) != category or r.completed.has(key) or skip.has(key):
+			continue
+		if bool(t.get("gift", false)):
 			continue
 		var open: bool = true
 		for need: String in t.requires:
@@ -128,7 +156,7 @@ static func _draw(r: Dictionary, category: String, avoid: Array) -> void:
 static func add_lead(sim: RefCounted, tech: String) -> bool:
 	var t: Dictionary = sim.config.techs.get(tech, {})
 	var r: Dictionary = sim.state.research
-	if t.is_empty() or r.completed.has(tech):
+	if t.is_empty() or r.completed.has(tech) or bool(t.get("gift", false)):
 		return false
 	for need: String in t.requires:
 		if not r.completed.has(need):
@@ -148,7 +176,8 @@ static func reshuffle_cost(sim: RefCounted) -> float:
 static func _highest_tier(sim: RefCounted) -> int:
 	var top: int = 0
 	for tech: String in sim.state.research.completed:
-		top = maxi(top, int(sim.config.techs.get(tech, {}).get("tier", 0)))
+		if not is_gift(tech):
+			top = maxi(top, int(sim.config.techs.get(tech, {}).get("tier", 0)))
 	return top
 
 
@@ -240,6 +269,8 @@ static func allocate(sim: RefCounted, tech: String, staff: int) -> String:
 		return "无此研究项目"
 	if r.completed.has(tech):
 		return "此技术已经完成"
+	if bool(sim.config.techs[tech].get("gift", false)):
+		return "这项技术无法研究，只能由事件获得"
 	if staff < 0:
 		return "分配人数不能为负数"
 	var category: String = str(sim.config.techs[tech].category)
@@ -603,6 +634,7 @@ static func _row(sim: RefCounted, key: String) -> Dictionary:
 		"branch": t.branch,
 		"tier": int(t.tier),
 		"charter": Rules.read("techs").get("always_dealt", []).has(key),
+		"gift": bool(t.get("gift", false)),
 		"cost": float(t.cost),
 		"funding": float(t.funding),
 		"description": t.description,
@@ -661,9 +693,14 @@ static func cards(sim: RefCounted) -> Array:
 			if int(row.staff) > 0:
 				running = row
 		var finished: Array = []
+		var gifts: Array = []
 		var pool: int = 0
 		for key: String in sim.config.techs:
 			if str(sim.config.techs[key].category) != category:
+				continue
+			if bool(sim.config.techs[key].get("gift", false)):
+				if r.completed.has(key):
+					gifts.append(str(sim.config.techs[key].name))
 				continue
 			pool += 1
 			if r.completed.has(key):
@@ -678,6 +715,7 @@ static func cards(sim: RefCounted) -> Array:
 					"offers": offers,
 					"running": running,
 					"finished": finished,
+					"gifts": gifts,
 					"pool": pool,
 				}
 			)

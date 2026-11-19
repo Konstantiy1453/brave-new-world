@@ -164,6 +164,33 @@ Also run the existing developer measure for saves and pages, as in 1.8:
 
 and compare with the 1.8 bar in `docs/v17/V18_BRIEF.md`.
 
+## 5b. Picture quality: the standard renderer and 高画质 (Forward+), added 2026-11-13
+
+The game ships with Godot's Compatibility renderer as the default. 高画质 is Forward+, chosen in
+「档案与显示设置 → 画质」. It is saved in `%APPDATA%\ColonyCharter\v19\graphics_override.cfg` and applies
+after a restart. Check on this PC:
+
+1. In the source project: run the frame-time probe once per renderer and keep both files.
+
+   ```powershell
+   & $engine --path game --rendering-method gl_compatibility --script res://tests/art/frame_time_probe.gd -- --size=1920x1080
+   & $engine --path game --rendering-method forward_plus --script res://tests/art/frame_time_probe.gd -- --size=1920x1080
+   & $engine --path game --rendering-method forward_plus --rendering-driver d3d12 --script res://tests/art/frame_time_probe.gd -- --size=1920x1080
+   ```
+
+   Same bar as §5. If Forward+ misses it, first try lowering the ambient occlusion (`HQ_AO` in
+   `game/world/map_view.gd`) and the number of lamp lights (`MAX_LAMP_LIGHTS` in
+   `game/world/region_view.gd`). Do not turn features off without asking.
+2. In the exported EXE:
+   - choose 高画质, press 「立即重启」, and check the settings page now says 「当前：高画质（Forward+）」;
+   - compare the region at noon and at night with the standard renderer (screenshots with F12, label:
+     screenshot viewed): bloom only on lights, soft shadows, warm lamp light on the ground at night,
+     no washed-out colours.
+3. Fallback: start the EXE with `--rendering-driver opengl3` while 高画质 is chosen. The game must run
+   and the settings page must say the card could not run high quality.
+4. Anti-aliasing: 「抗锯齿：高」 should show smooth edges on buildings, roads and shores in both
+   renderers. Report the frame-time cost of 「高」 against 「关」 if it is over 15%.
+
 ## 6. Export and try the EXE
 
 Open a **fresh** PowerShell (real `%APPDATA%`, the export needs it):

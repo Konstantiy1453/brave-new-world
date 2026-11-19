@@ -151,7 +151,7 @@ static func _unreachable_reason(variant: String) -> String:
 		return "两地之间没有可通行的海路"
 	if variant == "valley":
 		return "高山或海洋阻断河谷公路"
-	return "海洋阻断陆路；可以开辟沿海航线"
+	return "海洋阻断陆路；两地靠海时可以建小型货运码头开辟航线"
 
 
 static func _passable(terrain: Dictionary, cell: int, variant: String, ends: Array[int]) -> bool:

@@ -36,6 +36,23 @@ const OTHER_INCOME_MARGIN: float = 1.15
 const DIVERSIFY_CUSHION: float = 0.4
 const DOMINANT_SHARE: float = 0.5
 const EXPORT_WINDOW_DAYS: int = 30
+## Event effects in the bot's valuation (`_option_value`): the days a lasting effect counts for,
+## and the share of the colony's daily income each kind of effect touches.
+const EFFECT_YEAR: float = 360.0
+const EFFECT_SHARE: Dictionary = {
+	"all": 1.0,
+	"export_price": 0.6,
+	"mine": 0.45,
+	"processor": 0.3,
+	"port": 0.2,
+	"road_capacity": 0.2,
+	"power": 0.15,
+	"farm": 0.1,
+	"water": 0.1,
+	"research": 0.05,
+	"appeal": 0.05,
+}
+const EFFECT_SHARE_OTHER: float = 0.1
 const POLLUTION_CLEANUP_AT: float = 0.03
 const SCRUBBER_AT: float = 0.005
 const PORT_BUSY_SHARE: float = 0.9
@@ -174,7 +191,7 @@ func on_day() -> void:
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
-	_pave_busy_roads(reserve)
+	_upgrade_busy_links(reserve)
 	_megaprojects(reserve)
 	_ports(reserve)
 	_goal_projects(reserve)
@@ -225,21 +242,35 @@ func answer_events() -> void:
 			act("event_v2", {"instance_id": node.instance_id, "choice": best})
 
 
+## What an event option is worth in money: payments and rewards as the game scales them with the
+## colony's income, goods at their prices, and each effect over its days (EFFECT_YEAR when it
+## lasts) on the share of daily income its production touches, less its daily upkeep. A flat value
+## per effect, whatever its length, made the bot take every long production cut over paying to
+## avoid it.
 func _option_value(options: Array, id: String) -> float:
+	var scale: float = EventsV2.money_scale(sim)
+	var daily: float = scale * float(EventsV2.definitions().sampling.reference_income)
 	for option: Dictionary in options:
 		if option.id != id:
 			continue
-		var value: float = float(option.get("reward", 0.0)) - float(option.get("pay", 0.0))
+		var value: float = (
+			(float(option.get("reward", 0.0)) - float(option.get("pay", 0.0))) * scale
+		)
 		for good: String in option.get("goods_reward", {}):
 			value += float(option.goods_reward[good]) * float(sim.config.prices[good])
 		for good: String in option.get("goods_cost", {}):
 			value -= float(option.goods_cost[good]) * float(sim.config.prices[good])
 		for effect: Dictionary in option.get("effects", []):
-			value += (float(effect.factor) - 1.0) * 500.0
+			var days: float = float(effect.get("duration_days", 0.0))
+			if days <= 0.0:
+				days = EFFECT_YEAR
+			var share: float = float(EFFECT_SHARE.get(str(effect.kind), EFFECT_SHARE_OTHER))
+			value += (float(effect.factor) - 1.0) * days * daily * share
+			value -= float(effect.get("maintenance", 0.0)) * days
 		if option.has("build"):
-			value -= 400.0
+			value -= 400.0 * scale
 		if option.has("investigate"):
-			value += 50.0
+			value += 50.0 * scale
 		return value
 	return 0.0
 
@@ -616,15 +647,16 @@ func _shuttle_to(from: int, site: int, reserve: float) -> void:
 		act("connect", {"a": from, "b": site, "variant": sim.Keys.ROUTE_SHUTTLE})
 
 
-## A road that runs full holds up everything behind it.
-func _pave_busy_roads(reserve: float) -> void:
-	if not sim._has(str(sim.config.road_upgrade.tech)):
-		return
+## A link that runs full holds up everything behind it: pave or widen the road, or enlarge the
+## docks, when the next level is open and the money is there.
+func _upgrade_busy_links(reserve: float) -> void:
 	for road: Dictionary in sim.state.roads:
-		if bool(road.get("paved", false)) or str(road.get("variant", "")) in ["sea", "shuttle"]:
+		if float(road.sent_today) <= float(road.capacity):
 			continue
-		var cost: float = float(road.cost) * float(sim.config.road_upgrade.cost_factor)
-		if float(road.sent_today) > float(road.capacity) and float(sim.state.cash) > cost + reserve:
+		var step: Dictionary = sim.Logistics.next_level(sim, road)
+		if step.is_empty() or str(step.refusal) != "":
+			continue
+		if float(sim.state.cash) > float(step.cost) + reserve:
 			act("upgrade_road", {"road": int(road.id)})
 			return
 

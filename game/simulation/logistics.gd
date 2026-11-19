@@ -1,9 +1,11 @@
 extends RefCounted
 ## Trade, the road network, shipments and reservations. A road joins two settlements and comes in
 ## three variants (valley, engineered, sea); each one dispatches surplus to deficit on its own. A
-## short-range shuttle line (1.9) can join two settlements before any road: small, fast and dear,
-## it stands down once a road or sea route between the same two opens, and it is not part of the
-## network the contract asks for.
+## sea link is a pair of small cargo docks, one at each coastal end. Links climb levels (1.9): a
+## land road is paved and then widened, a sea link's docks grow to medium and large ones
+## (`road_levels` in economy.json). A short-range shuttle line (1.9) can join two settlements
+## before any road: small, fast and dear, it stands down once a road or sea route between the same
+## two opens, and it is not part of the network the contract asks for.
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -83,6 +85,10 @@ static func is_shuttle(r: Dictionary) -> bool:
 	return str(r.get("variant", "valley")) == Keys.ROUTE_SHUTTLE
 
 
+static func is_sea(r: Dictionary) -> bool:
+	return str(r.get("variant", "valley")) == Keys.ROUTE_SEA
+
+
 ## What building this road would take, with the reason it cannot be built yet.
 static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionary:
 	var found: Dictionary = route_between(sim, a, b, variant)
@@ -97,12 +103,10 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 		refusal = "两端都要是已建立的据点"
 	elif _link_blocks(sim, a, b, variant):
 		refusal = "两地已有运输连接"
-	elif variant == "sea":
-		refusal = _sea_refusal(sim, a, b)
 	if refusal == "" and float(sim.state.cash) < float(found.cost):
 		refusal = "路线投资需要 %.0f 资金" % float(found.cost)
 	if refusal == "" and _terminal_store(sim, a, b).is_empty():
-		refusal = "两端仓库都没有 %.0f 建材修建装卸设施" % TERMINAL_MATERIALS
+		refusal = "两端仓库都没有 %.0f t 建材修建装卸设施" % sim.tonnes(TERMINAL_MATERIALS)
 	found.refusal = refusal
 	var spec: Dictionary = sim.config.roads[variant]
 	found.upkeep = float(spec.upkeep)
@@ -134,13 +138,6 @@ static func _terminal_store(sim: RefCounted, a: int, b: int) -> Dictionary:
 	return {}
 
 
-static func _sea_refusal(sim: RefCounted, a: int, b: int) -> String:
-	for place: int in [a, b]:
-		if not _has_port(sim.settlement(place)):
-			return "两端都需要运转的货运站"
-	return ""
-
-
 static func _has_port(s: Dictionary) -> bool:
 	for building: Dictionary in s.buildings:
 		if building.kind == "port" and int(building.remaining) <= 0:
@@ -168,11 +165,18 @@ static func connect_road(
 	r.ready_day = int(sim.state.day) + int(r.build_days)
 	r.blocked_until = int(r.ready_day)
 	r.sent_today = 0.0
+	r.level = 1
 	sim.state.roads.append(r)
 	sim._log(
 		(
-			"线路开工：%.0f km，工期 %d 天；建成后单程 %d 天，每天双向合计 %.0f 吨。"
-			% [float(r.distance), int(r.build_days), int(r.days), float(r.capacity)]
+			"%s开工：%.0f km，工期 %d 天；建成后单程 %d 天，每天双向合计 %.0f 吨。"
+			% [
+				"两端小型货运码头" if is_sea(r) else "线路",
+				float(r.distance),
+				int(r.build_days),
+				int(r.days),
+				sim.tonnes(float(r.capacity))
+			]
 		)
 	)
 	return ""
@@ -319,9 +323,7 @@ static func dispatch(sim: RefCounted) -> void:
 static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
 	if is_shuttle(r):
 		return float(r.capacity) * (1.0 + Research.bonus(sim, "shuttle_capacity"))
-	var key: String = (
-		"sea_capacity" if str(r.get("variant", "valley")) == "sea" else "road_capacity"
-	)
+	var key: String = "sea_capacity" if is_sea(r) else "road_capacity"
 	return (
 		float(r.capacity)
 		* (1.0 + Research.bonus(sim, key) + _depot_bonus(sim, r))
@@ -341,7 +343,7 @@ static func _depot_bonus(sim: RefCounted, r: Dictionary) -> float:
 
 ## Days one way today: the road's length never changes, but trains and ships get faster.
 static func road_days(sim: RefCounted, r: Dictionary) -> int:
-	var key: String = "sea_speed" if str(r.get("variant", "valley")) == "sea" else "road_speed"
+	var key: String = "sea_speed" if is_sea(r) else "road_speed"
 	if is_shuttle(r):
 		key = "shuttle_speed"
 	var share: float = maxf(FASTEST_TRAVEL_SHARE, 1.0 - Research.bonus(sim, key))
@@ -519,8 +521,9 @@ static func closure_chance(sim: RefCounted, r: Dictionary) -> float:
 	var chance: float = float(
 		sim.config.roads[str(r.get("variant", "valley"))].closure_chance_per_day
 	)
-	if bool(r.get("paved", false)):
-		chance *= float(sim.config.road_upgrade.closure)
+	var steps: Array = level_steps(sim, r)
+	for index: int in range(1, mini(link_level(r), steps.size())):
+		chance *= float(steps[index].get("closure", 1.0))
 	return chance * maxf(0.1, 1.0 + Research.bonus(sim, "closure"))
 
 
@@ -537,7 +540,7 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 			sim._log("线路建成：%s ↔ %s，开始通行。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
 		return
 	if int(r.get("paving_until", 0)) == day:
-		_finish_paving(sim, r)
+		_finish_level(sim, r)
 	sim._public_expense(float(r.get("upkeep", 0.0)), "road.upkeep", "external")
 	var rules: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
 	var chance: float = closure_chance(sim, r)
@@ -640,43 +643,147 @@ static func _import(
 	return capacity - amount
 
 
-## Paved roads carry more, arrive sooner and close less often.
-static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
-	if road < 0 or road >= sim.state.roads.size():
-		return "还没有这条道路"
-	var r: Dictionary = sim.state.roads[road]
-	if str(r.get("variant", "valley")) == "sea":
-		return "海运航线无需铺装"
+## A link's level: 1 as built. Saves from before levels know only `paved`, which is level 2.
+static func link_level(r: Dictionary) -> int:
+	return int(r.get("level", 2 if bool(r.get("paved", false)) else 1))
+
+
+## The levels this kind of link climbs, level 1 first. A shuttle line has none.
+static func level_steps(sim: RefCounted, r: Dictionary) -> Array:
 	if is_shuttle(r):
-		return "穿梭机航线无需铺装"
-	if bool(r.get("paved", false)):
-		return "道路已经铺装"
-	if WorldGen.road_building(r, int(sim.state.day)):
-		return "道路尚未建成"
-	if int(r.get("paving_until", 0)) > int(sim.state.day):
-		return "这条路正在铺装"
-	var rules: Dictionary = sim.config.road_upgrade
-	if not sim._has(str(rules.tech)):
-		return "需要技术：" + str(sim.config.techs[rules.tech].name)
-	var cost: float = float(r.cost) * float(rules.cost_factor)
-	if float(sim.state.cash) < cost:
-		return "道路升级需要 %.0f 资金" % cost
-	var s: Dictionary = sim.settlement(int(r.a))
-	if float(s.stock.materials) < float(rules.materials):
-		return "起点仓库需要 %.0f 建材" % float(rules.materials)
-	sim._transfer("public", "external", cost, "invest.road", false, "paved")
-	sim._consume(s, "materials", float(rules.materials))
-	r.paving_until = int(sim.state.day) + int(rules.build_days)
-	sim._log("道路开始铺装，工期 %d 天；施工期间照常通行。" % int(rules.build_days))
+		return []
+	return sim.config.road_levels["sea" if is_sea(r) else "land"]
+
+
+## What a level is called on this link: 「铺装路面」, or 「中型货运码头 ×2」 for the two docks of a sea
+## link. -1 is the level the link has now.
+static func level_name(sim: RefCounted, r: Dictionary, level: int = -1) -> String:
+	var steps: Array = level_steps(sim, r)
+	var at: int = link_level(r) if level < 0 else level
+	if at < 1 or at > steps.size():
+		return ""
+	var name: String = str(steps[at - 1].name)
+	return name + " ×2" if is_sea(r) else name
+
+
+## The next level up, priced, with why it cannot be ordered now in `refusal` (empty if it can).
+## Empty when there is none: a shuttle line, or a link at its top level.
+static func next_level(sim: RefCounted, r: Dictionary) -> Dictionary:
+	var steps: Array = level_steps(sim, r)
+	var level: int = link_level(r)
+	if level >= steps.size():
+		return {}
+	var step: Dictionary = steps[level]
+	var cost: float = (
+		float(step.get("cost", 0.0))
+		+ float(r.get("cost", 0.0)) * float(step.get("cost_factor", 0.0))
+	)
+	var quote: Dictionary = {
+		"id": str(step.id),
+		"level": level + 1,
+		"top": steps.size(),
+		"name": level_name(sim, r, level + 1),
+		"tech": str(step.get("tech", "")),
+		"cost": cost,
+		"materials": float(step.get("materials", 0.0)),
+		"parts": float(step.get("parts", 0.0)),
+		"capacity": float(step.capacity),
+		"days": int(step.days),
+		"closure": float(step.get("closure", 1.0)),
+		"upkeep": float(step.get("upkeep", 0.0)),
+		"build_days": int(step.build_days),
+	}
+	quote.refusal = _level_refusal(sim, r, quote)
+	return quote
+
+
+static func _level_refusal(sim: RefCounted, r: Dictionary, step: Dictionary) -> String:
+	var day: int = int(sim.state.day)
+	if bool(r.get("retired", false)):
+		return "线路已停用"
+	if WorldGen.road_building(r, day):
+		return "线路尚未建成"
+	if int(r.get("paving_until", 0)) > day:
+		return "这条线路正在升级"
+	var tech: String = str(step.tech)
+	if tech != "" and not sim._has(tech):
+		return "需要技术：" + str(sim.config.techs[tech].name)
+	if float(sim.state.cash) < float(step.cost):
+		return "升级需要 %.0f 资金" % float(step.cost)
+	if _upgrade_store(sim, r, step).is_empty():
+		var parts: String = (
+			" 和 %.0f t 部件" % sim.tonnes(float(step.parts)) if float(step.parts) > 0.0 else ""
+		)
+		return "两端仓库都没有 %.0f t 建材%s" % [sim.tonnes(float(step.materials)), parts]
 	return ""
 
 
-static func _finish_paving(sim: RefCounted, r: Dictionary) -> void:
-	var rules: Dictionary = sim.config.road_upgrade
-	r.paved = true
-	r.capacity = int(round(float(r.capacity) * float(rules.capacity)))
-	r.days = maxi(1, int(r.days) + int(rules.days))
-	sim._log("道路铺装完成：单程 %d 天，每天 %d 吨。" % [int(r.days), int(r.capacity)])
+## Whichever end has all the materials and parts the work needs.
+static func _upgrade_store(sim: RefCounted, r: Dictionary, step: Dictionary) -> Dictionary:
+	for place: int in [int(r.a), int(r.b)]:
+		var s: Dictionary = sim.settlement(place)
+		if s.is_empty():
+			continue
+		var materials: bool = float(s.stock.materials) >= float(step.materials)
+		if materials and float(s.stock.parts) >= float(step.parts):
+			return s
+	return {}
+
+
+## Paves or widens a road, or enlarges both docks of a sea link: the next level up, paid now and
+## finished after its build days. Traffic keeps moving while the work goes on.
+static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
+	if road < 0 or road >= sim.state.roads.size():
+		return "还没有这条线路"
+	var r: Dictionary = sim.state.roads[road]
+	if is_shuttle(r):
+		return "穿梭机航线没有升级"
+	var step: Dictionary = next_level(sim, r)
+	if step.is_empty():
+		return "已是最高等级：" + level_name(sim, r)
+	if str(step.refusal) != "":
+		return str(step.refusal)
+	var store: Dictionary = _upgrade_store(sim, r, step)
+	sim._transfer("public", "external", float(step.cost), "invest.road", false, str(step.id))
+	sim._consume(store, "materials", float(step.materials))
+	if float(step.parts) > 0.0:
+		sim._consume(store, "parts", float(step.parts))
+	r.paving_until = int(sim.state.day) + int(step.build_days)
+	r.upgrade_to = int(step.level)
+	sim._log(
+		(
+			"%s ↔ %s 开始升级为%s，工期 %d 天；施工期间照常通行。"
+			% [_place_name(sim, r.a), _place_name(sim, r.b), str(step.name), int(step.build_days)]
+		)
+	)
+	return ""
+
+
+static func _finish_level(sim: RefCounted, r: Dictionary) -> void:
+	var steps: Array = level_steps(sim, r)
+	var level: int = link_level(r)
+	if level >= steps.size():
+		return
+	var step: Dictionary = steps[level]
+	r.level = level + 1
+	r.erase("upgrade_to")
+	if not is_sea(r):
+		r.paved = true
+	r.capacity = int(round(float(r.capacity) * float(step.capacity)))
+	r.days = maxi(1, int(r.days) + int(step.days))
+	r.upkeep = float(r.get("upkeep", 0.0)) + float(step.get("upkeep", 0.0))
+	sim._log(
+		(
+			"%s ↔ %s 升级完成：%s，单程 %d 天，每天 %.0f 吨。"
+			% [
+				_place_name(sim, r.a),
+				_place_name(sim, r.b),
+				level_name(sim, r),
+				int(r.days),
+				sim.tonnes(float(r.capacity))
+			]
+		)
+	)
 
 
 ## Settlements reachable from each other over open roads: the size of the largest group.
