@@ -6,6 +6,7 @@ const Keys = preload("res://simulation/keys.gd")
 const BuildPage = preload("res://ui/build_page.gd")
 const Graphics = preload("res://ui/graphics.gd")
 const EventLines = preload("res://ui/event_lines.gd")
+const PeopleLines = preload("res://ui/people_lines.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -379,6 +380,9 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 		),
 		16
 	)
+	var main: Dictionary = PeopleLines.limit(g.sim, s, g.sim.population_view(int(s.region)))
+	if str(main.key) != "none":
+		D.label(b, "增长受限：" + str(main.text), 15, D.GOLD)
 	D.label(b, "食品可吃 %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
 	D.label(
 		b,
@@ -1727,10 +1731,8 @@ static func population(g, b):
 		return
 	var v: Dictionary = g.sim.population_view(int(s.region))
 	D.label(b, s.name + " / 人口与移民", 24, D.TEAL)
-	D.label(b, "吸引力 %.2f  ·  约每月 %.1f 人迁入" % [v.attractiveness, v.arrivals_per_month], 20, D.GOLD)
-	D.label(b, "近 30 日迁入 %d 人 · 离开 %d 人" % [int(v.arrived_30), int(v.departed_30)], 17)
-	if float(v.prospects) < 1.0:
-		D.label(b, "失业的人多，新移民正在减少（就业前景 %.0f%%）。" % (float(v.prospects) * 100.0), 16, D.GOLD)
+	D.label(b, "吸引力 %.2f" % float(v.attractiveness), 20, D.GOLD)
+	PeopleLines.growth(g.sim, b, s, v)
 	var parts = D.card(b)
 	D.label(parts, "吸引力构成（基础 1.00）", 17, D.TEAL)
 	for key: String in v.parts:

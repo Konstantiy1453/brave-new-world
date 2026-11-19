@@ -829,3 +829,9 @@ factories, so the game's cycle and the payback bands stay as they are.
   globe and flat map show only what lights a route, where it leaves town and junctions, and the
   cargo moving on it, which now has its own node · turning the overlay off by default (players
   would lose the route view they know without asking for it).
+- Each town says why it grows or not (`ui/people_lines.gd`): the net change over 30 days, how many
+  want to come against the beds left after recruits on the way, and the main limit in the order
+  that binds first (no free beds, then joblessness, which stops arrivals at 35%, then food under 10
+  days, then appeal under 3 a month), with its remedy. The people page shows all of it; the town
+  panel shows the limit when there is one · a growth forecast (the readout states what is true
+  today; a forecast waits for crews and the bay, which change it).

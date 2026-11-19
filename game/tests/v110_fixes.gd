@@ -19,6 +19,7 @@ const Production = preload("res://simulation/production.gd")
 const SaveIo = preload("res://simulation/save_io.gd")
 const Research = preload("res://simulation/research.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
+const PeopleLines = preload("res://ui/people_lines.gd")
 const PROBE_ID: String = "v110_pump_probe"
 const SAVE_PATH: String = "user://v110_fixes.save"
 
@@ -49,6 +50,7 @@ func run() -> void:
 	_usable_farm()
 	_water_lesson()
 	_event_towns()
+	_growth_limits()
 	Events.definitions().definitions.erase(PROBE_ID)
 	await _interface()
 	print("V110_FIXES_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
@@ -440,3 +442,18 @@ func _row(sim: RefCounted, tech: String) -> Dictionary:
 		if str(row.id) == tech:
 			return row
 	return {}
+
+
+## The town says what holds its growth back: no free beds, then too many out of work.
+func _growth_limits() -> void:
+	var sim: RefCounted = _colony()
+	var home: Dictionary = sim.settlement(0)
+	home.population = int(home.housing)
+	var full: Dictionary = PeopleLines.limit(sim, home, sim.population_view(0))
+	check(
+		str(full.key) == "housing" and str(full.remedy).contains("床"), "a full town names housing"
+	)
+	home.population = int(home.housing) - 20
+	home.employed = 0
+	var idle: Dictionary = PeopleLines.limit(sim, home, sim.population_view(0))
+	check(str(idle.key) == "jobs", "a town with beds but no jobs names jobs: " + str(idle.text))
