@@ -313,7 +313,38 @@ func _update_markers() -> void:
 	for reg in world.regions:
 		if _marker_shown(reg):
 			_globe_marker(reg, labelled.has(int(reg.id)))
+	_globe_signals()
 	_draw_globe_climate()
+
+
+## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over
+## the water, the reason to come back once a harbour can send a survey boat.
+func _globe_signals() -> void:
+	for s: Dictionary in state.get("settlements", []):
+		var region: int = int(s.get("region", -1))
+		if signal_reading(region).is_empty():
+			continue
+		_fit_field()
+		var at: Vector2 = signal_point(region)
+		if not at.is_finite():
+			continue
+		var center: Vector3 = Geo.unit_point(at.x, at.y)
+		var root := Node3D.new()
+		root.set_meta("point", center * 3.05)
+		marker_root.add_child(root)
+		var u: Vector3 = center.cross(Vector3.UP)
+		if u.length() < 0.01:
+			u = center.cross(Vector3.RIGHT)
+		u = u.normalized()
+		var v: Vector3 = center.cross(u).normalized()
+		var reach: float = deg_to_rad(0.55)
+		var ring: Array[Vector3] = []
+		for i in range(33):
+			var angle: float = float(i) / 32.0 * TAU
+			var direction: Vector3 = u * cos(angle) + v * sin(angle)
+			ring.append((center * cos(reach) + direction * sin(reach)).normalized() * 3.05)
+		_line(root, ring, SIGNAL_COLOR, 1.1)
+		_sphere(root, center * 3.05, .01, _mat("signal_dot", SIGNAL_COLOR, 0, 1, 1.4), 8, 4)
 
 
 func _globe_marker(reg: Dictionary, with_label: bool) -> void:
@@ -416,6 +447,8 @@ func _update_transport() -> void:
 		if not bool(r.get("retired", false)):
 			_draw_road_on_globe(r)
 	_place_movers(globe_movers, sky.day_fraction)
+	globe_ships = _ship_movers(false)
+	place_ships(globe_ships, sky.day_fraction)
 
 
 func _road_color(r: Dictionary) -> Color:

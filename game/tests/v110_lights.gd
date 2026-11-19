@@ -4,7 +4,9 @@ extends SceneTree
 ## of the camp; the lit neighbourhood moves with them in the light list, in the painted night map
 ## and in the district. Also: homes light up in the order they were built as people arrive, a site
 ## under construction shows one lamp, a road shows lights only where it leaves town, and the same
-## state always gives the same lights.
+## state always gives the same lights. A coastal town's harbour: the district stands its building
+## site, then its quay; a ship light sails on the globe and the flat map on the district ship's own
+## line, berthing where it berths; the offshore signal is drawn where the district floats its buoy.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -12,6 +14,7 @@ const Map = preload("res://world/map_view.gd")
 const LightField = preload("res://world/light_field.gd")
 const NightLights = preload("res://world/night_lights.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Geo = preload("res://world/world_gen.gd")
 const SEED: int = 260129
 const HOMES: int = 3
 
@@ -74,6 +77,7 @@ func run() -> void:
 	_overlay(map)
 	root.remove_child(map)
 	map.free()
+	_harbour()
 	print("V110_LIGHTS_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -274,3 +278,79 @@ func _overlay(map: Node3D) -> void:
 	)
 	map.set_route_overlay(true)
 	check(map.transport_root.visible, "and back on")
+
+
+## A colony on the first coastal site with a quay spot builds its harbour; the views follow.
+func _harbour() -> void:
+	var sim: RefCounted = Sim.new()
+	sim.new_game(SEED, "capital", 1, "normal")
+	var map: Node3D = Map.new()
+	root.add_child(map)
+	map.setup(sim.geo)
+	var coast: int = -1
+	for reg: Dictionary in sim.geo.regions:
+		if bool(reg.get("coast", false)):
+			map._fit_field()
+			if not map.harbor_spot(int(reg.id)).is_empty():
+				coast = int(reg.id)
+				break
+	check(coast >= 0, "a coastal site with a quay spot: %d" % coast)
+	if coast >= 0:
+		_harbour_views(sim, map, coast)
+	root.remove_child(map)
+	map.free()
+
+
+func _harbour_views(sim: RefCounted, map: Node3D, coast: int) -> void:
+	sim.act("settle", {"site": coast})
+	sim._transfer("external", "public", 80000.0, "TEST funds", false)
+	for good: String in ["materials", "parts"]:
+		sim._produce(sim.settlement(coast), good, 200.0, "TEST stock")
+	check(sim.act("build", {"site": coast, "kind": "harbor"}) == "", "a harbour is ordered")
+	sim.tick()
+	map.sync_state(sim.state)
+	var town: Dictionary = sim.settlement(coast)
+	check(map._harbor_state(town) == "site", "the district stands its building site")
+	check(map.globe_ships.is_empty(), "no ship before the quay works")
+	var harbor: Dictionary = town.buildings.back()
+	for _day: int in range(int(harbor.remaining) + 2):
+		sim.tick()
+	map.sync_state(sim.state)
+	check(map._harbor_state(town) == "quay", "then its quay")
+	check(
+		map.globe_ships.size() == 1 and map.flat_ships.size() == 1,
+		"a ship light on the globe and on the flat map"
+	)
+	if map.globe_ships.is_empty():
+		return
+	var line: Array = map.ship_line(coast)
+	var berth: Vector3 = Geo.unit_point(line[1].x, line[1].y) * 3.05
+	var ship: Dictionary = map.globe_ships[0]
+	check(Vector3(ship.to).distance_to(berth) < 0.0001, "berthing where the district's ship berths")
+	var worst: float = 0.0
+	var at_berth: bool = false
+	var away: bool = false
+	for step: int in range(int(map.SHIP_DAYS) * 24):
+		map.state.day = int(sim.state.day) + int(step / 24.0)
+		map.place_ships(map.globe_ships, float(step % 24) / 24.0)
+		var node: Node3D = ship.node
+		if not node.visible:
+			away = true
+			continue
+		var from: Vector3 = ship.from
+		var to: Vector3 = ship.to
+		var closest: Vector3 = Geometry3D.get_closest_point_to_segment(node.position, from, to)
+		worst = maxf(worst, closest.distance_to(node.position))
+		at_berth = at_berth or node.position.distance_to(to) < 0.0001
+	map.state.day = int(sim.state.day)
+	check(worst < 0.0001, "on its line in every frame (%.6f off at most)" % worst)
+	check(at_berth and away, "it berths, and it sails away beyond the horizon")
+	var reading: Dictionary = map.signal_reading(coast)
+	check(not reading.is_empty(), "the town has an offshore signal still to read")
+	var at: Vector2 = map.signal_point(coast)
+	var mark: Vector3 = Geo.unit_point(at.x, at.y) * 3.05
+	var drawn: bool = false
+	for child: Node in map.marker_root.get_children():
+		if child.has_meta("point") and Vector3(child.get_meta("point")).distance_to(mark) < 0.0001:
+			drawn = true
+	check(drawn, "and it is drawn on the globe where the district floats its buoy")

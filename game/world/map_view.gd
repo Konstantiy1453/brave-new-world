@@ -91,6 +91,8 @@ func setup(data: Dictionary) -> void:
 	lights_signature = ""
 	globe_movers.clear()
 	flat_movers.clear()
+	globe_ships.clear()
+	flat_ships.clear()
 	_build_planet()
 	_build_flat()
 	show_planet()
@@ -143,7 +145,13 @@ func _marker_signature() -> String:
 				str(place.get("name", ""))
 			]
 		)
-	return "%d|%s|%s|%s" % [selected_region, str(settled), marker_filter, str(_event_places())]
+	var signals: Array = []
+	for place: Dictionary in state.get("settlements", []):
+		signals.append(not signal_reading(int(place.region)).is_empty())
+	return (
+		"%d|%s|%s|%s|%s"
+		% [selected_region, str(settled), marker_filter, str(_event_places()), str(signals)]
+	)
 
 
 ## Towns and lit roads change the night side; a few dozen people more do not.
@@ -158,7 +166,12 @@ func _transport_signature() -> String:
 	var moving: Array = []
 	for cargo: Dictionary in state.get("shipments", []):
 		moving.append([int(cargo.from), int(cargo.remaining), int(cargo.total_days)])
-	return "%s|%s" % [str(roads), str(moving)]
+	# A quay that starts work brings its ship light.
+	var quays: Array = []
+	var buildings: Dictionary = Rules.read("economy").buildings
+	for place: Dictionary in state.get("settlements", []):
+		quays.append(LightField.quay_working(state, place, buildings))
+	return "%s|%s|%s" % [str(roads), str(moving), str(quays)]
 
 
 func show_planet() -> void:
@@ -421,8 +434,10 @@ func _process(delta: float) -> void:
 		_animate_region(delta)
 	elif mode == "planet":
 		_place_movers(globe_movers, sky.day_fraction)
+		place_ships(globe_ships, sky.day_fraction)
 	elif mode == "flat":
 		_place_movers(flat_movers, sky.day_fraction)
+		place_ships(flat_ships, sky.day_fraction)
 	if marker_root != null and is_instance_valid(marker_root) and planet.visible:
 		var toward: Vector3 = planet.to_local(camera.global_position).normalized()
 		for child in marker_root.get_children():

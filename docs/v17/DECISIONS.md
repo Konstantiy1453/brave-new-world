@@ -909,5 +909,15 @@ factories, so the game's cycle and the payback bands stay as they are.
   Developing a rich signal waits for seabed extraction (plan D) · an orbital import surcharge to
   make the harbour pay (it would make every colony poorer) · a separate mine-road building (one
   project for the one crew is the brief's choice; the road is part of opening the mine).
+- The bay in the three views: while the crew builds the harbour, the district stands the shared
+  site kit at the shore; once it works, the quay and its cargo ship, which carries a cool masthead
+  lamp that brightens after dark like the quay's work lights. The globe and the flat map sail a
+  ship light on the district ship's own line (offing 30 units out, berth beside the quay): in over
+  the first third of a three-day call, at the berth, out, then away, from the game clock alone so
+  captures and replays agree (`v110_lights` checks the berth and that every frame stays on the
+  line). The offshore signal is a gold ring on the globe and the flat map and a lit buoy in the
+  district, 20 units out beyond the quay and off the shipping lane, while it is unknown or rich ·
+  a ship every game day (a blur at 6×) · the signal at the town's own marker (it would read as the
+  town's, not the sea's).
 - The first ore export and the first ship at a new harbour each raise a card once a game (「◆ 第一次」);
   a click opens that town's district. A loaded game marks what it already has.

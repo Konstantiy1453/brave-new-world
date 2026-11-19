@@ -20,10 +20,16 @@ const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
 ## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
 const FLAT_WRAP_JUMP: float = 9.0
+## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
+const SHIP_DAYS: float = 3.0
+const SHIP_LIGHT: Color = Color("d6f1ff")
 
 ## Cargo markers placed every frame along their route, between the daily updates.
 var globe_movers: Array = []
 var flat_movers: Array = []
+## The ship lights at working quays, placed every frame from the game clock.
+var globe_ships: Array = []
+var flat_ships: Array = []
 
 
 func _flat_point(lat: float, lon: float) -> Vector3:
@@ -194,6 +200,29 @@ func _update_flat_markers() -> void:
 	for reg in world.regions:
 		if _marker_shown(reg) and not labelled.has(int(reg.id)):
 			_flat_marker(reg, false, placed)
+	_flat_signals()
+
+
+## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over
+## the water, where the district floats its buoy.
+func _flat_signals() -> void:
+	for s: Dictionary in state.get("settlements", []):
+		var region: int = int(s.get("region", -1))
+		if signal_reading(region).is_empty():
+			continue
+		_fit_field()
+		var at: Vector2 = signal_point(region)
+		if not at.is_finite():
+			continue
+		var point := _flat_point(at.x, at.y) + Vector3(0, 0, .02)
+		var ring: Array[Vector3] = []
+		for i in range(33):
+			var angle := float(i) / 32.0 * TAU
+			ring.append(point + Vector3(cos(angle), sin(angle), 0) * .04)
+		var holder := Node3D.new()
+		flat_marker_root.add_child(holder)
+		_line(holder, ring, SIGNAL_COLOR, 1.1)
+		_sphere(holder, point, .012, _marker_material(SIGNAL_COLOR), 8, 4)
 
 
 func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
@@ -340,6 +369,8 @@ func _update_flat_transport() -> void:
 		if not bool(route.get("retired", false)):
 			_draw_road_on_flat(route)
 	_place_movers(flat_movers, sky.day_fraction)
+	flat_ships = _ship_movers(true)
+	place_ships(flat_ships, sky.day_fraction)
 
 
 func _draw_road_on_flat(route: Dictionary) -> void:
@@ -400,6 +431,68 @@ func _mover(
 		"total": maxf(float(shipment.get("total_days", 1)), 1.0),
 		"reverse": int(shipment.get("from", -1)) == int(route.get("b", -2)),
 	}
+
+
+## A light for each ship calling at a working quay, on the line the district's ship sails
+## (`ship_line`): on the flat map or on the globe.
+func _ship_movers(flat: bool) -> Array:
+	var found: Array = []
+	var holder: Node3D = flat_mover_root if flat else mover_root
+	if holder == null or not is_instance_valid(holder):
+		return found
+	var buildings: Dictionary = Rules.read("economy").buildings
+	for s: Dictionary in state.get("settlements", []):
+		var region: int = int(s.get("region", -1))
+		if region < 0 or region >= world.get("regions", []).size():
+			continue
+		if not bool(world.regions[region].get("coast", false)):
+			continue
+		if not LightField.quay_working(state, s, buildings):
+			continue
+		_fit_field()
+		var line: Array = ship_line(region)
+		if line.size() < 2:
+			continue
+		var ends: Array[Vector3] = []
+		for ll: Vector2 in line:
+			ends.append(
+				(
+					_flat_point(ll.x, ll.y) + Vector3(0, 0, .05)
+					if flat
+					else Geo.unit_point(ll.x, ll.y) * 3.05
+				)
+			)
+		var light := _sphere(
+			holder,
+			ends[0],
+			(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * 1.5,
+			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW * 1.6),
+			8,
+			4
+		)
+		found.append({"node": light, "from": ends[0], "to": ends[1], "phase": float(region) * 0.37})
+	return found
+
+
+## Each ship light where its call has got to: in from the offing over the first third of its
+## days, at the berth, out again, then away beyond the horizon. From the game clock alone, so a
+## capture or a replay shows the same.
+func place_ships(ships: Array, fraction: float) -> void:
+	var day: float = float(state.get("day", 0)) + fraction
+	for entry: Dictionary in ships:
+		if not is_instance_valid(entry.node):
+			continue
+		var node: Node3D = entry.node
+		var phase: float = fposmod(day + float(entry.phase), SHIP_DAYS) / SHIP_DAYS
+		var from: Vector3 = entry.from
+		var to: Vector3 = entry.to
+		node.visible = phase < 0.92
+		if phase < 0.34:
+			node.position = from.lerp(to, smoothstep(0.0, 1.0, phase / 0.34))
+		elif phase < 0.58:
+			node.position = to
+		else:
+			node.position = to.lerp(from, smoothstep(0.0, 1.0, (phase - 0.58) / 0.34))
 
 
 ## Glides every cargo marker to where it is part-way through the day.

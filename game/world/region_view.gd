@@ -20,6 +20,18 @@ const LANDMARK_LABEL_HEIGHT: float = 4.2
 const BRIDGE_DECK: float = 0.45
 const BRIDGE_LENGTH: float = 1.98
 const SHIP_CYCLE_S: Vector4 = Vector4(26.0, 12.0, 26.0, 14.0)
+## Where a harbour's ships sail, in district units from its quay: the berth beside it and the
+## offing far out over the water. The globe and the flat map sail their ship light on the same line.
+const SHIP_BERTH_OUT: float = 2.4
+const SHIP_BERTH_SIDE: float = 0.6
+const SHIP_OFFING_OUT: float = 30.0
+const SHIP_OFFING_SIDE: float = 6.0
+## The masthead lamp's height on the cargo ship model (2.03 tall).
+const SHIP_LAMP_HEIGHT: float = 2.2
+## The offshore signal: out beyond the quay, off the shipping lane (district units).
+const SIGNAL_OUT: float = 20.0
+const SIGNAL_SIDE: float = -9.0
+const SIGNAL_COLOR: Color = Color("f2c35e")
 ## A shuttle's day in town seconds: on the pad, lifting, flying out, away, flying back, landing.
 const SHUTTLE_CYCLE_S: Array[float] = [16.0, 3.0, 5.0, 14.0, 5.0, 3.0]
 const SHUTTLE_HOVER: float = 2.4
@@ -771,7 +783,8 @@ func _build_bridges() -> void:
 func _build_harbor(settlement: Dictionary) -> void:
 	ship = null
 	ship_route.clear()
-	if not field_has_sea or not _harbor_wanted(settlement):
+	var standing: String = _harbor_state(settlement)
+	if not field_has_sea:
 		return
 	var best: Dictionary = harbor_spot(selected_region)
 	if best.is_empty():
@@ -779,6 +792,12 @@ func _build_harbor(settlement: Dictionary) -> void:
 	var sea_level: float = sea_level()
 	var heading: Vector2 = best.heading
 	var shore: Vector2 = best.shore
+	_build_signal_buoy(best, sea_level)
+	if standing == "site":
+		_build_harbor_site(shore, heading, sea_level)
+		return
+	if standing != "quay":
+		return
 	var level: int = _dock_level()
 	var model: String = DOCK_MODELS[level - 1]
 	var grown: float = 1.0
@@ -802,11 +821,18 @@ func _build_harbor(settlement: Dictionary) -> void:
 	if vessel == null:
 		return
 	vessel.scale = Vector3.ONE * sqrt(grown) * float(calling[1])
-	var side := Vector2(-heading.y, heading.x)
-	var berth: Vector2 = shore + heading * 2.4 * grown + side * 0.6
-	var offing: Vector2 = berth + heading * 30.0 + side * 6.0
-	offing.x = clampf(offing.x, -half_width + 3.0, half_width - 3.0)
-	offing.y = clampf(offing.y, -half_depth + 3.0, half_depth - 3.0)
+	# A masthead lamp, cool like the quay's work lights, brightening after dark ("lamps").
+	_sphere(
+		vessel,
+		Vector3(0, SHIP_LAMP_HEIGHT, 0),
+		0.16,
+		_mat("lamps", Color("c4eee1"), .2, .4, 1.3),
+		8,
+		4
+	)
+	var ends: Array = _ship_ends(best, grown)
+	var berth: Vector2 = ends[0]
+	var offing: Vector2 = ends[1]
 	ship_route = [
 		Vector3(offing.x, sea_level - .02, offing.y), Vector3(berth.x, sea_level - .02, berth.y)
 	]
@@ -893,19 +919,102 @@ func _dock_level() -> int:
 
 ## A quay is drawn for a town with a finished harbour (1.10) or a sea link; an orbital freight
 ## station alone has none, so a town that chose its mine first has no pier.
-func _harbor_wanted(settlement: Dictionary) -> bool:
+## What stands at a coastal town's shore: "quay" once its harbour is finished or a sea link runs
+## there, "site" while its crew builds the harbour, "" otherwise.
+func _harbor_state(settlement: Dictionary) -> String:
+	var site: bool = false
 	for building: Dictionary in settlement.get("buildings", []):
 		var role: String = str(
 			Rules.read("economy").buildings.get(str(building.kind), {}).get("role", "")
 		)
-		if role == "harbor" and int(building.get("remaining", 0)) <= 0:
-			return true
+		if role != "harbor":
+			continue
+		if int(building.get("remaining", 0)) <= 0:
+			return "quay"
+		site = true
 	for route: Dictionary in state.get("roads", []):
 		if str(route.get("variant", "")) != "sea":
 			continue
 		if int(route.get("a", -1)) == selected_region or int(route.get("b", -1)) == selected_region:
-			return true
-	return false
+			return "quay"
+	return "site" if site else ""
+
+
+## The harbour while its crew builds it: the shared site kit at the shore, facing the water.
+func _build_harbor_site(shore: Vector2, heading: Vector2, sea_level: float) -> void:
+	var site: MeshInstance3D = ModelArt.instance(
+		"construction", func(slot: String) -> Material: return _art_material(slot, {}, true)
+	)
+	if site == null:
+		return
+	site.position = Vector3(shore.x, maxf(_ground(shore.x, shore.y), sea_level) + .02, shore.y)
+	site.rotation.y = atan2(-heading.x, -heading.y)
+	buildings_root.add_child(site)
+
+
+## The berth and the offing of a quay's ships, in district units: [berth, offing].
+func _ship_ends(spot: Dictionary, grown: float = 1.0) -> Array:
+	var heading: Vector2 = spot.heading
+	var side := Vector2(-heading.y, heading.x)
+	var berth: Vector2 = spot.shore + heading * SHIP_BERTH_OUT * grown + side * SHIP_BERTH_SIDE
+	var offing: Vector2 = berth + heading * SHIP_OFFING_OUT + side * SHIP_OFFING_SIDE
+	offing.x = clampf(offing.x, -half_width + 3.0, half_width - 3.0)
+	offing.y = clampf(offing.y, -half_depth + 3.0, half_depth - 3.0)
+	return [berth, offing]
+
+
+## The line a town's ships sail, as [lat, lon] points from the offing to the berth: the district's
+## cargo ship's line, for the ship light on the globe and the flat map. Empty without a quay spot.
+func ship_line(region: int) -> Array:
+	var spot: Dictionary = harbor_spot(region)
+	if spot.is_empty():
+		return []
+	var ends: Array = _ship_ends(spot)
+	var reg: Dictionary = world.regions[region]
+	return [_coordinate_in(reg, ends[1].x, ends[1].y), _coordinate_in(reg, ends[0].x, ends[0].y)]
+
+
+## A town's offshore signal while it is worth coming back for: not yet surveyed, or rich. Read from
+## the simulation's own world (bay.gd places it); empty otherwise.
+func signal_reading(region: int) -> Dictionary:
+	var regions: Array = state.get("world", {}).get("regions", [])
+	if region < 0 or region >= regions.size():
+		return {}
+	var reading: Dictionary = regions[region].get("offshore", {})
+	if reading.is_empty() or (bool(reading.get("surveyed", false)) and not bool(reading.rich)):
+		return {}
+	return reading
+
+
+## Where a town's offshore signal is drawn, [lat, lon]; not finite without a quay spot.
+func signal_point(region: int) -> Vector2:
+	var spot: Dictionary = harbor_spot(region)
+	if spot.is_empty():
+		return Vector2.INF
+	var local: Vector2 = _signal_local(spot)
+	return _coordinate_in(world.regions[region], local.x, local.y)
+
+
+func _signal_local(spot: Dictionary) -> Vector2:
+	var heading: Vector2 = spot.heading
+	var side := Vector2(-heading.y, heading.x)
+	return spot.shore + heading * SIGNAL_OUT + side * SIGNAL_SIDE
+
+
+## The district's buoy over the offshore signal, inside the field: gold, glowing after dark.
+func _build_signal_buoy(spot: Dictionary, sea_level: float) -> void:
+	if signal_reading(selected_region).is_empty():
+		return
+	var at: Vector2 = _signal_local(spot)
+	if absf(at.x) > half_width - 2.0 or absf(at.y) > half_depth - 2.0:
+		return
+	var buoy := Node3D.new()
+	buoy.position = Vector3(at.x, sea_level, at.y)
+	buildings_root.add_child(buoy)
+	var hull := _mat("signal_buoy", Color("d9a441"), .3, .5)
+	_box(buoy, Vector3(0, .15, 0), Vector3(.5, .3, .5), hull)
+	_box(buoy, Vector3(0, .7, 0), Vector3(.08, .9, .08), hull)
+	_sphere(buoy, Vector3(0, 1.2, 0), .16, _mat("lamps", Color("c4eee1"), .2, .4, 1.3), 8, 4)
 
 
 ## A shuttle line lands on a lit pad at the edge of town, where the service lane ends. The craft
