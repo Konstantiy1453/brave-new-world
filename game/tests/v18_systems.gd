@@ -235,25 +235,23 @@ func _old_saves() -> void:
 		check(clean, "and it plays on")
 
 
-func _digits(text: String) -> float:
-	return float(text.replace("+", "").replace("万", ""))
-
-
 func _resource_table() -> void:
 	for key: String in TABLE_KEYS:
 		check(game.top_cells.has(key), "the table has " + key)
 	game.refresh()
 	var cells: Dictionary = game.top_cells
 	var s: Dictionary = game.sim.settlement(0)
+	# Since 1.9 goods show in tonnes and every amount with grouped digits (`Labels.amount_text`).
 	check(
-		cells.ore.value.text == Labels.compact(float(s.stock.ore)), "iron shows the colony's total"
+		cells.ore.value.text == Labels.amount_text(Labels.tonnes(float(s.stock.ore))),
+		"iron shows the colony's total"
 	)
 	check(
-		cells.food.value.text == Labels.compact(float(s.stock.food)),
+		cells.food.value.text == Labels.amount_text(Labels.tonnes(float(s.stock.food))),
 		"food shows the colony's total"
 	)
 	check(
-		cells.money.value.text == Labels.compact(float(game.sim.state.cash)),
+		cells.money.value.text == Labels.amount_text(float(game.sim.state.cash)),
 		"money shows what is in the account"
 	)
 	check(
@@ -268,17 +266,22 @@ func _resource_table() -> void:
 		game.sim.tick()
 	game.refresh()
 	s = game.sim.settlement(0)
-	var window: Dictionary = game.sim.stats_window(30)
+	# Since 1.9 the change is a day's, averaged over the last week (`main.gd` DAILY_WINDOW).
+	var window: Dictionary = game.sim.stats_window(game.DAILY_WINDOW)
 	var flows: Array = window.goods.get("food", [0.0, 0.0, 0.0, 0.0, 0.0])
 	var change: float = (
-		float(flows[Stats.PRODUCED])
-		+ float(flows[Stats.IMPORTED])
-		- float(flows[Stats.CONSUMED])
-		- float(flows[Stats.EXPORTED])
+		(
+			float(flows[Stats.PRODUCED])
+			+ float(flows[Stats.IMPORTED])
+			- float(flows[Stats.CONSUMED])
+			- float(flows[Stats.EXPORTED])
+		)
+		/ maxi(1, int(window.days))
 	)
+	var shown: String = ("+" if change >= 0.0 else "") + Labels.amount_text(Labels.tonnes(change))
 	check(
-		is_equal_approx(_digits(cells.food.delta.text), float(roundi(change))),
-		"food's monthly change comes from the month's flows"
+		cells.food.delta.text == shown,
+		"food's daily change comes from the week's flows: %s, %s" % [cells.food.delta.text, shown]
 	)
 	for key: String in TABLE_KEYS:
 		check(cells[key].cell.tooltip_text != "", key + " explains itself")

@@ -61,7 +61,7 @@ func _bug1_event_build_checks_labour() -> void:
 	place.workers = int(place.workers) - spare + jobs - 1
 	place.population = int(place.children) + int(place.workers) + int(place.scientists)
 	var reason: String = Events._reason(sim, instance, build_option)
-	check(reason.contains("工程队"), "build option refused when one crew short: " + reason)
+	check(reason.contains("职工"), "build option refused when one worker short: " + reason)
 	check(
 		reason.contains(str(jobs)) and reason.contains(str(jobs - 1)),
 		"refusal states needed and free workers"

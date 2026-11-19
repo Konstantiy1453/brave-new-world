@@ -74,6 +74,13 @@ func _data_is_sound() -> void:
 	check(ids.size() == rules.steps.size(), "step ids are unique")
 
 
+func _all_built(sim: RefCounted) -> bool:
+	for b: Dictionary in sim.settlement(0).buildings:
+		if int(b.remaining) > 0:
+			return false
+	return true
+
+
 ## The planet the tutorial is pinned to has what its text promises.
 func _pinned_world() -> void:
 	var rules: Dictionary = Tutorial.data()
@@ -90,8 +97,12 @@ func _pinned_world() -> void:
 	check(sim.act("settle", {"site": 0}) == "", "landing works")
 	for kind: String in ["mine_ore", "mine_copper", "habitat"]:
 		check(sim.act("build", {"site": 0, "kind": kind}) == "", "building " + kind)
-	for _i: int in range(int(sim.config.buildings.habitat.days) + 2):
+	# One crew builds them one after another (1.10): wait until all three stand.
+	for _i: int in range(200):
+		if _all_built(sim):
+			break
 		sim.tick()
+	check(_all_built(sim), "the crew finishes the tutorial's first buildings")
 	check(sim.act("tutorial_shortage", {"site": 0}) == "", "the shortage can be started")
 	sim.tick()
 	var short: bool = false
@@ -221,6 +232,12 @@ func _run_tutorial() -> void:
 	await settle_coach()
 	check(step_id() == "research", "step: start research")
 	game.act("build", {"site": 0, "kind": "lab"})
+	# 1.10: one crew. The laboratory goes next (先建), as the step says.
+	var lab: Dictionary = game.sim.settlement(0).buildings.back()
+	check(
+		game.act("crew_next", {"site": 0, "uid": int(lab.uid)}) == "",
+		"the laboratory is told to go next"
+	)
 	# An event investigation may hold the research teams for a while; the refusal says so.
 	tick_until(func() -> bool: return _assign_scientists() == "", 40)
 	check(_assign_scientists() == "", "research teams assigned")
@@ -230,7 +247,7 @@ func _run_tutorial() -> void:
 	tick_until(func() -> bool: return Tutorial._staffed_projects(game.sim.state) > 0, 60)
 	await settle_coach()
 	check(step_id() == "stage", "step: finish stage one")
-	tick_until(func() -> bool: return int(game.sim.state.contract.stage) >= 2)
+	tick_until(_stage_two)
 	await settle_coach()
 	check(step_id() == "expedition", "step: expedition")
 	check(game.selected == 1, "the fertile site is selected")
@@ -244,6 +261,12 @@ func _run_tutorial() -> void:
 	await settle_coach()
 	check(step_id() == "farm", "step: feed the colony")
 	tick_until(func() -> bool: return game.act("build", {"site": 1, "kind": "farm"}) == "", 60)
+	# 1.10: the expedition left the capital its only crew; the step says to train one there.
+	check(
+		game.sim.Crews.teams_at(game.sim, 1).is_empty(), "the new town has no crew of its own yet"
+	)
+	tick_until(func() -> bool: return game.act("crew_train", {"site": 1}) == "", 60)
+	check(game.sim.Crews.teams_at(game.sim, 1).size() == 1, "and trains one")
 	tick_until(func() -> bool: return Tutorial._running(game.sim.state, "farm"), 90)
 	await settle_coach()
 	check(not game.coach.active(), "the tutorial ends with a running farm")
@@ -255,6 +278,17 @@ func _run_tutorial() -> void:
 
 func _assign_scientists() -> String:
 	return game.act("research_allocate", {"tech": "survey", "staff": 4})
+
+
+## Waiting for stage two as a player would: the contract page says a project must stay in
+## research, so another one starts when the first is done (1.10: one crew opens the second mine
+## later, and the first project can finish before the exports are in).
+func _stage_two() -> bool:
+	if game.sim.Contract.goal_value(game.sim, "research_staffed") < 1.0:
+		for tech: String in game.sim.config.techs.keys():
+			if game.sim.act("research_allocate", {"tech": tech, "staff": 4}) == "":
+				break
+	return int(game.sim.state.contract.stage) >= 2
 
 
 func _has_shortage(key: String) -> bool:
@@ -354,7 +388,7 @@ func _pages() -> void:
 		check(shown == open, "the catalogue shows only what can be built here: " + kind)
 	names = _labels(game.modal_box)
 	check(_contains(names, "回本"), "the dialog shows payback")
-	check(_contains(names, "空闲工程队"), "and free crews")
+	check(_contains(names, "空闲职工"), "and free workers")
 	var plots: OptionButton = game.modal_box.find_child("Plot_mine_ore", true, false)
 	check(plots != null and plots.item_count > 1, "a mine offers a choice of plots")
 	var before: int = int(game.sim.plot_choices(0, "mine_ore")[1].index)
@@ -398,7 +432,7 @@ func _pages() -> void:
 	game.open_page("population")
 	await process_frame
 	check(
-		_contains(_labels(game.modal_box), "近 30 日迁入"), "population shows arrivals and departures"
+		_contains(_labels(game.modal_box), "近 30 日净增"), "population shows arrivals and departures"
 	)
 	game.close_modal()
 	game.open_page("guide")

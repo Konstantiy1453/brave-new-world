@@ -842,3 +842,72 @@ factories, so the game's cycle and the payback bands stay as they are.
   has none, so a town that put its crew on the mine first has no pier. A working quay shows a compact
   group of cool lights along it · the district's terrain-based search (it can only run for the town
   on show, so the globe could not agree with it).
+- Mobile engineering crews (`simulation/crews.gd`, `population.json` `crews`):
+  - a building under construction moves on only on a day a crew works on it;
+  - the standing instruction: a project that fixes a shortage the town has today (water, power,
+    food: `crews.urgent` maps each shortage to the roles that fix it) goes first, even off a
+    project under way, which keeps its progress; then the one the player marked 先建 (build
+    next); then the oldest order;
+  - a crew can be sent over a finished link and takes the link's days.
+
+  A landing brings one crew, made from its workers, so the town keeps its people. An expedition
+  takes one crew from its source town, idle ones first, but never its last: a town founded from a
+  one-crew capital has none until it trains one or one is sent. Prefabricated kits assemble on
+  their own.
+  Training turns a worker into a crew (¥900, 15 days); crews draw a wage (2.0 a day). A save from
+  before crews gets one for each project under way, and at least one a town, taken from its
+  workers, so nothing stalls. Upgrades and inter-town roads still need no crew in this first
+  version (the brief's road repairs come with them) · crews for every job at once (too much to tune
+  in one step) · a crew pool per colony (the brief's choices are about which town gets the crew).
+- A crew recruited from outside comes through the same campaign as workers and research teams:
+  ¥1,500 (rising with recent campaigns like theirs), 30 days, a bed kept for it, one more resident
+  when it arrives. Training (¥900, 15 days) keeps the resident total but takes a worker off a job.
+  Sending a crew away says what it stops: its project's days left, and whether the queue it leaves
+  stops with it · recruiting at the training price (training would never be worth it).
+- Beds are not on the crews' shortage list: a growing town is nearly always short of them, and the
+  crew would never leave its housing · every shortage urgent (housing would swallow the crew) · no
+  urgency (the tutorial's pump waited two months behind the copper mine and the housing, so the
+  water lesson told the player to build a pump and then left them short of water).
+- Every project's expected start and finish come from its town's crews and queue (`Crews.eta`): the
+  sidebar's under-construction rows say who builds it or 「等工程队 · 约 X 开工，Y 完工」 with a 先建 chip,
+  the colony's building list counts days to the expected finish, and an order's ledger says when
+  it would start (at once for one that fixes a shortage). They are the days it really starts and
+  finishes while nothing changes (`v110_crews`); a new shortage can move them · remaining work days
+  as before (wrong for every order behind another).
+- The suites that test other systems with buildings ordered together (`sim_tests`,
+  `v16_events_tests`, `v16_event_order_probe`) run with every site moving on (`Crews.unlimited`, a
+  test hook no game sets); suites that waited a building's catalogue days read the building's own
+  days, which include a mine road. The tutorial suite plays the lesson as written: 先建 for the
+  laboratory, a crew trained at the second town, and another research project once the first is
+  done while the exports come in.
+- The tutorial teaches crews where they bite: the income step says there is one crew and where to see
+  its queue, the water step that a shortage fix goes first, the research step 先建, the farm step
+  that the new town has no crew and how to get one · a separate crews step (fourteen steps are
+  already many).
+- `v18_systems`' top-bar checks read the 1.9 format (goods in tonnes with grouped digits, the daily
+  change over the week): the bar changed on 2026-11-12 (`c6dbc6d`) and the three checks failed on
+  every platform since, unseen on Linux where the suite fails anyway on its Windows-recorded saves.
+- The workforce is 职工 (facility staff) and 工程队 means the mobile crews: 1.8 renamed every worker
+  工程队, which made the brief's distinction unsayable, and 1.8's bar still forbids 工人 in player
+  text (`v18_systems`), so the workforce takes a new word instead of going back. Staff are counted
+  in persons (人); crews and research teams in teams (支) · 工人 again (it would undo the user's 1.8
+  rename and fail its check).
+- The bay (`simulation/bay.gd`, economy.json `bay`, building `harbor`):
+  - **Mine road.** A mine beyond 18 units of the centre builds its mine road with it: 0.25 days and
+    ¥40 a unit beyond, so the richest far seam of the first landing costs about 7 days and ¥1,040 on
+    an 18-day, ¥2,100 mine. At first it was 0.5 days and ¥60: 13 days and ¥1,560, not a short road,
+    and it held the first export back long enough to starve the jobs that pull in immigrants.
+  - **Small harbour (小型码头).** ¥3,000, 20 days, 3 jobs. It catches 6 food a day, counted as the
+    town's own food. Food, materials and parts come in 25% cheaper by sea there, and it adds 60
+    capacity. It stands at the shore, with no plot, and its quay is what the district draws.
+  - **Offshore signal.** Each coastal town has one, fixed by the seed: copper or crystal, rich 60%
+    (about 4,000) or poor (300). A survey from a working harbour (¥1,500, 25 days) says which.
+    The simulation places it on the town's first day; pages only read it. At first the town panel
+    made it the first time it was shown, so a save's bytes depended on which pages the player had
+    opened (`v110_bay` now plays one game twice, one of them read the way the pages read it).
+
+  Developing a rich signal waits for seabed extraction (plan D) · an orbital import surcharge to
+  make the harbour pay (it would make every colony poorer) · a separate mine-road building (one
+  project for the one crew is the brief's choice; the road is part of opening the mine).
+- The first ore export and the first ship at a new harbour each raise a card once a game (「◆ 第一次」);
+  a click opens that town's district. A loaded game marks what it already has.

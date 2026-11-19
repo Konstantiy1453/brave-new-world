@@ -500,7 +500,9 @@ func _needs_first() -> void:
 func _depleted_mines() -> void:
 	var sim: RefCounted = make()
 	sim.act("build", {"region": 0, "kind": "mine_ore"})
-	for _i: int in range(int(sim.config.buildings.mine_ore.days) + 2):
+	# A far deposit builds its mine road with the mine (1.10): wait until the mine stands.
+	var site: Dictionary = sim.settlement(0).buildings.back()
+	for _i: int in range(int(site.remaining) + 2):
 		sim.tick()
 	var region: Dictionary = sim.state.world.regions[0]
 	for plot: Dictionary in region.plots:

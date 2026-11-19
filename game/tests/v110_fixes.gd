@@ -354,6 +354,9 @@ func _water_lesson() -> void:
 ## Events with several towns that qualify: drawn first, then spread by kind of work and recency.
 func _event_towns() -> void:
 	var sim: RefCounted = _colony()
+	# People enough at the capital for two expeditions.
+	sim.settlement(0).workers = int(sim.settlement(0).workers) + 30
+	sim.settlement(0).population = int(sim.settlement(0).population) + 30
 	var places: Array = [0]
 	for region: int in range(1, sim.state.world.regions.size()):
 		if places.size() >= 3:

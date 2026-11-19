@@ -9,11 +9,13 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
 
 | Phase | What | State |
 |---|---|---|
-| A. Verified feedback | building identity, research states, commissions, build ledger, tutorial, clock, event towns | in progress |
-| B. Nightscape from state | lights from real plots on globe, flat map and district; transport overlay apart | next |
-| C. The playable bay | crews apart from the workforce, mine road or harbour, offshore signal, first shipment | after B |
-| Reviews | 3 × 3 sheet, clip, gameplay review of the opening and stage three | after C |
+| A. Verified feedback | building uids (schema 6, own folder), research states, commission ETA, farm forecast by usable food, tutorial planet and water lesson, the clock's fraction, event towns after the draw, report-back days | **done** (`f1bf55f`, `0a30df2`); suite `v110_fixes`; harness `fixes-0a30df2` |
+| B. Nightscape from state | lights from real plots on globe, flat map and district (`light_field.gd`), windows by occupancy, landing camp and quay positions shared with the district, transport diagram as an overlay | **done** (`185a4b2`, `9c2816c`, `c7bda43`); suite `v110_lights` with the decisive test |
+| People readouts | each town's net change, demand against room, main growth limit and remedy | **done** (`112867b`) |
+| C. The playable bay | mobile crews apart from the workforce (`crews.gd`): one at the landing, trained from the town's 职工, sent over finished links, a standing instruction (shortages first, then 先建, then the oldest order), each project's start and finish from the queue; the workforce renamed 职工; the small harbour, mine roads for far deposits, the offshore signal and its survey (`bay.gd`); first-shipment cards; the tutorial teaches crews | in progress: wired, suite `v110_crews` (52 checks), older suites adapted; the harness with crews next |
+| Reviews | 3 × 3 sheet (tool `capture_nightscape.gd`), clip, gameplay review of the opening and stage three | after C |
 | D–G | radius slider, geology, prospecting, free siting, seabed; districts; people; stories and contracts | after the bay is judged |
+
 
 ---
 

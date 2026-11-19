@@ -9,6 +9,8 @@ func _init() -> void:
 	sim.new_game(20261029, "science", 1)
 	sim.act("settle", {"region": 0})
 	sim.state.events_v2.next_draw = 9999  # Explicit event fixture, real economy thereafter.
+	# About an order's delivery, not crews: every site moves on (1.10).
+	sim.Crews.unlimited(sim)
 	for kind in ["mine_ore", "mine_copper", "processor", "power"]:
 		sim.act("build", {"region": 0, "kind": kind})
 	for d in range(int(sim.config.buildings.processor.days) + 2):

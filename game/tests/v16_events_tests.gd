@@ -80,6 +80,8 @@ func make():
 	s.act("settle", {"region": 0})
 	E.ensure(s)
 	s.state.events_v2.next_draw = 9999
+	# These checks are about events, not crews: every site moves on (1.10).
+	s.Crews.unlimited(s)
 	return s
 
 
