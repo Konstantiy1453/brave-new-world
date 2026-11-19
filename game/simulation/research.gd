@@ -403,7 +403,7 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 			continue
 		var n: int = mini(int(p.staff), usable)
 		if project_count >= max_projects:
-			p.reason = "实验台已满或研究所未运作：检查维护工程队、水电与停用状态"
+			p.reason = "实验台已满或研究所未运作：检查维护职工、水电与停用状态"
 			continue
 		if n < int(sim.config.techs[key].get("minimum_staff", 3)):
 			p.reason = "可用团队或当地科研席位不足；调查优先"

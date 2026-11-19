@@ -470,7 +470,7 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 			return "本地建设材料不足"
 		var free: int = sim.free_workers(s)
 		if free < int(b.jobs):
-			return "需要 %d 支工程队，目前空闲 %d 支" % [int(b.jobs), free]
+			return "需要 %d 名职工，目前空闲 %d 名" % [int(b.jobs), free]
 		var free_specialists: int = sim.free_specialists(s)
 		if free_specialists < int(b.get("specialists", 0)):
 			return "需要 %d 支研究团队，目前空闲 %d 支" % [int(b.get("specialists", 0)), free_specialists]
@@ -487,10 +487,10 @@ static func _colony_reason(sim, s: Dictionary, option: Dictionary) -> String:
 		return "需要 %d 张空床位，目前 %d 张" % [beds, maxi(0, sim.Population.free_beds(sim, s))]
 	var hands: int = int(option.get("workers", 0))
 	if hands > 0 and sim.free_workers(s) < hands:
-		return "需要 %d 支空闲工程队，目前 %d 支" % [hands, sim.free_workers(s)]
+		return "需要 %d 名空闲职工，目前 %d 名" % [hands, sim.free_workers(s)]
 	var trained: int = int(option.get("train_scientists", 0))
 	if trained > 0 and int(s.workers) < trained + 8:
-		return "工程队太少，无法抽调培训"
+		return "职工太少，无法抽调培训"
 	if float(option.get("research_points", 0.0)) > 0.0 and not _project_running(sim):
 		return "目前没有进行中的科研项目"
 	if bool(option.get("found_enterprise", false)):
@@ -1070,14 +1070,14 @@ static func _description(
 	if int(option.get("admit_workers", 0)) + int(option.get("admit_scientists", 0)) > 0:
 		parts.append(
 			(
-				"迁入工程队 %d、研究团队 %d"
+				"迁入职工 %d、研究团队 %d"
 				% [int(option.get("admit_workers", 0)), int(option.get("admit_scientists", 0))]
 			)
 		)
 	if float(option.get("research_points", 0.0)) > 0.0:
 		parts.append("当前项目 +%.0f 研究量" % float(option.research_points))
 	if int(option.get("train_scientists", 0)) > 0:
-		parts.append("%d 支工程队转为研究团队" % int(option.train_scientists))
+		parts.append("%d 名职工转为研究团队" % int(option.train_scientists))
 	if option.has("distrust"):
 		parts.append("公司不信任 %+.1f" % float(option.distrust))
 	if option.has("pollution"):
@@ -1141,7 +1141,7 @@ static func _description(
 		)
 		var place: Dictionary = sim.settlement(int(inst.target_region))
 		if not place.is_empty():
-			parts.append("需要 %d 支工程队，目前空闲 %d 支" % [int(b.jobs), sim.free_workers(place)])
+			parts.append("需要 %d 名职工，目前空闲 %d 名" % [int(b.jobs), sim.free_workers(place)])
 	if option.has("order"):
 		parts.append(
 			(

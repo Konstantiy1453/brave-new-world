@@ -1,6 +1,8 @@
 extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
+const Bay = preload("res://simulation/bay.gd")
+const Crews = preload("res://simulation/crews.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
 const Market = preload("res://simulation/market.gd")
@@ -204,11 +206,16 @@ static func building_record(kind: String, remaining: int) -> Dictionary:
 	}
 
 
-static func build_preview(sim: RefCounted, region: int, kind: String) -> Dictionary:
+static func build_preview(sim: RefCounted, region: int, kind: String, plot: int = -1) -> Dictionary:
 	if not sim.config.buildings.has(kind) or region < 0 or region >= sim.state.world.regions.size():
 		return {}
 	var d: Dictionary = sim.config.buildings[kind].duplicate(true)
 	d.kind_id = kind
+	# A mine on a far deposit builds its mine road with it (bay.gd).
+	d.haul = {"days": 0, "cost": 0.0, "units": 0.0}
+	if str(d.get("role", "")) == "mine":
+		var spot: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+		d.haul = Bay.haul(sim, region, spot)
 	var great: bool = bool(d.get("megaproject", false))
 	var cheaper: float = Research.bonus(sim, "build_cost")
 	var faster: float = Research.bonus(sim, "build_speed")
@@ -232,7 +239,8 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 	d.cost *= 1.0 + surcharge
 	d.copy_number = copies + 1
 	d.copy_surcharge = surcharge
-	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster)))
+	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster))) + int(d.haul.days)
+	d.cost += float(d.haul.cost)
 	return d
 
 
@@ -244,19 +252,23 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "远征队尚在途中，请等待抵达"
 	if not sim.config.buildings.has(kind):
 		return "无此设施"
-	var d: Dictionary = build_preview(sim, region, kind)
 	var reg: Dictionary = sim.state.world.regions[region]
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var d: Dictionary = build_preview(sim, region, kind, chosen)
 	var place_refusal: String = _place_refusal(s, reg, d)
 	if place_refusal != "":
 		return place_refusal
-	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
-	if chosen < 0:
-		return _no_plot_reason(kind)
-	if chosen >= reg.plots.size() or not Sites.plot_fits(sim, reg.plots[chosen], kind):
-		return "这块地不适合此设施"
-	for existing: Dictionary in s.buildings:
-		if int(existing.plot) == chosen:
-			return "这块地已被占用"
+	if not plotless:
+		if chosen < 0:
+			return _no_plot_reason(kind)
+		if chosen >= reg.plots.size() or not Sites.plot_fits(sim, reg.plots[chosen], kind):
+			return "这块地不适合此设施"
+		for existing: Dictionary in s.buildings:
+			if int(existing.plot) == chosen:
+				return "这块地已被占用"
 	if d.has("requires_tech") and not sim._has(str(d.requires_tech)):
 		return "需要技术：" + str(sim.config.techs[d.requires_tech].name)
 	if bool(d.get("megaproject", false)):
@@ -332,13 +344,17 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	if refusal != "":
 		return refusal
 	var s: Dictionary = sim.settlement(region)
-	var d: Dictionary = build_preview(sim, region, kind)
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var d: Dictionary = build_preview(sim, region, kind, chosen)
 	_buy_supply_train(sim, s, d)
 	sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
 	var building: Dictionary = new_building(sim, kind, int(d.days))
-	building.plot = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+	building.plot = chosen
 	s.buildings.append(building)
 	sim._log(s.name + "开始建设" + d.name + "，工期 %d 天。" % int(d.days))
 	return ""
@@ -434,7 +450,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.specialists = 0
 		b.efficiency = 0.0
 		_advance_upgrade(sim, s, b)
-		if b.remaining > 0:
+		# A site moves on only on a day a crew works on it (crews.gd); kits assemble themselves.
+		if b.remaining > 0 and Crews.works_on(sim, b):
 			b.remaining -= 1
 			if b.remaining == 0:
 				sim._log(
@@ -564,6 +581,11 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		if eff <= 0.001:
 			continue
 		match role:
+			"harbor":
+				s.port_capacity += float(d.capacity) * eff
+				var catch: float = float(d.get("fish", 0.0)) * eff
+				produce(sim, s, "food", catch, "近海捕捞")
+				sim.state.contract.today_food = float(sim.state.contract.today_food) + catch
 			"port":
 				s.port_capacity += (
 					float(d.capacity)
@@ -1004,12 +1026,17 @@ static func farm_rate(sim: RefCounted, s: Dictionary, b: Dictionary) -> float:
 static func build_forecast(
 	sim: RefCounted, region: int, kind: String, plot: int = -1
 ) -> Dictionary:
-	var spec: Dictionary = build_preview(sim, region, kind)
+	if not sim.config.buildings.has(kind) or region < 0 or region >= sim.state.world.regions.size():
+		return {}
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var spec: Dictionary = build_preview(sim, region, kind, chosen)
 	if spec.is_empty():
 		return {}
 	var s: Dictionary = sim.settlement(region)
 	var reg: Dictionary = sim.state.world.regions[region]
-	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
 	var ground: Dictionary = reg.plots[chosen] if chosen >= 0 else {}
 	var fee: float = float(sim.config.economy.port_fee)
 	var outputs: Dictionary = {}
@@ -1133,6 +1160,7 @@ static func build_forecast(
 		"outputs": outputs,
 		"usable": usable,
 		"import_savings_per_day": savings,
+		"haul": spec.get("haul", {"days": 0, "cost": 0.0, "units": 0.0}),
 		"revenue_per_day": revenue,
 		"wages_per_day": wages,
 		"net_per_day": net,

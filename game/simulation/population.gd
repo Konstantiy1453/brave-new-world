@@ -328,7 +328,7 @@ static func _train(sim: RefCounted, s: Dictionary) -> void:
 				s.workers -= 1
 				s.scientists += 1
 				reconcile_jobs(sim, s)
-				sim._log(s.name + "教学研究所完成 1 支工程队的科研职业培训。")
+				sim._log(s.name + "教学研究所完成 1 名职工的科研职业培训。")
 				break
 
 
@@ -343,6 +343,11 @@ static func _recruit_arrivals(sim: RefCounted) -> void:
 			continue
 		var scientists: int = int(party.count) if party.kind == "scientist" else 0
 		_admit(sim, s, int(party.count) - scientists, scientists)
+		if str(party.kind) == "crew":
+			# A crew recruited from outside: one more resident, who works as a crew (crews.gd).
+			sim.Crews.found(sim, s, int(party.count))
+			sim._log("%s：%d 支招募的工程队抵达。" % [s.name, int(party.count)])
+			continue
 		sim._log("%s：%d 名招募人员抵达。" % [s.name, int(party.count)])
 	sim.state.recruits = keep
 
@@ -391,10 +396,12 @@ static func daily(sim: RefCounted) -> void:
 
 static func campaign_price(sim: RefCounted, kind: String) -> float:
 	var rules: Dictionary = sim.pop_rules.recruitment
-	var base: float = (
-		float(rules.scientist_price if kind == "scientist" else rules.worker_price)
-		* maxf(0.2, 1.0 + Research.bonus(sim, "recruit_price"))
-	)
+	var price: float = float(rules.worker_price)
+	if kind == "scientist":
+		price = float(rules.scientist_price)
+	elif kind == "crew":
+		price = float(rules.get("crew_price", rules.worker_price))
+	var base: float = price * maxf(0.2, 1.0 + Research.bonus(sim, "recruit_price"))
 	var window: int = int(rules.window_days)
 	var recent: int = 0
 	for day: Variant in sim.state.recruit_campaigns:
@@ -407,7 +414,7 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty() or int(s.arrival) > 0:
 		return "需要已经运转的据点"
-	if not kind in ["worker", "scientist"]:
+	if not kind in ["worker", "scientist", "crew"]:
 		return "未知招募类型"
 	var rules: Dictionary = sim.pop_rules.recruitment
 	if kind == "scientist" and not sim._has(str(rules.scientist_tech)):

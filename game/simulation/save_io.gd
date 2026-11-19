@@ -123,6 +123,9 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	var candidate: Variant = bytes_to_var(payload.decompress(raw_size, FileAccess.COMPRESSION_ZSTD))
 	if candidate is Dictionary:
 		_upgrade_old_schema(sim, candidate)
+		# Crews arrived within schema 6: a save from before them gets them. Only them: the other
+		# systems' upgrades run for older schemas, so a current save reloads byte for byte.
+		sim.Crews.ensure_state(candidate)
 	var error: String = validate(sim, candidate)
 	if error != "":
 		return error

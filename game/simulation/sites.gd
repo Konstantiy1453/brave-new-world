@@ -626,7 +626,7 @@ static func settle_refusal(
 		return str(road.get("reason", "此地区没有可达陆路，也没有航线"))
 	var fare: float = expedition_cash(sim, kind)
 	if int(src.workers) < int(rules.min_source_workers):
-		return "出发据点工程队不足 %d 支" % int(rules.min_source_workers)
+		return "出发据点职工不足 %d 名" % int(rules.min_source_workers)
 	var kit: float = _kit_shortfall_cost(sim, src)
 	if kit > 0.0 and not Logistics._has_port(src):
 		return (
@@ -763,9 +763,15 @@ static func settle(
 		"cohorts": [],
 		"port_used": 0.0,
 		"port_capacity": 0.0,
-		"food_consumed": 0.0
+		"food_consumed": 0.0,
+		"crew": 0
 	}
 	sim.state.settlements.append(s)
+	var crews: Dictionary = sim.pop_rules.get("crews", {})
+	if first:
+		sim.Crews.found(sim, s, int(crews.get("opening", 1)))
+	else:
+		sim.Crews.join_expedition(sim, src, region, int(road.days), int(crews.get("expedition", 1)))
 	if first:
 		for res in ["materials", "parts", "food"]:
 			sim._produce(s, res, float(op[res]), "初始公司物资")
@@ -825,8 +831,10 @@ static func _can_expand_from(sim: RefCounted, region: int) -> bool:
 	return false
 
 
+## A prefabricated kit: it assembles itself as the expedition travels, with no crew.
 static func _place_prefab(sim: RefCounted, s: Dictionary, kind: String, days: int) -> void:
 	var building: Dictionary = sim._building(kind, days)
+	building.prefab = true
 	building.plot = find_plot(sim, int(s.region), kind)
 	s.buildings.append(building)
 

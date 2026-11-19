@@ -22,6 +22,8 @@ const Market = preload("res://simulation/market.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
+const Crews = preload("res://simulation/crews.gd")
+const Bay = preload("res://simulation/bay.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -139,6 +141,8 @@ static func ensure_systems(target: Dictionary) -> void:
 	Sites.ensure_state(target)
 	EventsV2.ensure_state(target)
 	Stats.ensure_state(target)
+	# After Production.ensure_state: crews follow buildings by uid.
+	Crews.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -235,6 +239,14 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Research.set_contract(self, int(args.get("staff", 0)))
 		"career_transfer":
 			refusal = Career.transfer(self, float(args.get("amount", 0.0)))
+		"survey_offshore":
+			refusal = Bay.survey(self, _site_arg(args))
+		"crew_train":
+			refusal = Crews.train(self, int(args.get("region", args.get("site", -1))))
+		"crew_send":
+			refusal = Crews.send(self, int(args.get("crew", -1)), int(args.get("to", -1)))
+		"crew_next":
+			refusal = Crews.choose_next(self, _site_arg(args), int(args.get("uid", -1)))
 		"research_commission":
 			refusal = Research.commission(
 				self, str(args.get("tech", "")), int(args.get("level", 0))
@@ -287,6 +299,8 @@ func tick() -> void:
 	_repay()
 	Population.pay_services(self)
 	Logistics.advance_shipments(self)
+	# Which buildings a crew works on today (crews.gd); the rest of the sites wait.
+	Crews.daily(self)
 	for s: Dictionary in state.settlements:
 		if s.arrival > 0:
 			s.arrival -= 1
@@ -302,8 +316,10 @@ func tick() -> void:
 	Logistics.dispatch(self)
 	Logistics.road_daily(self)
 	Sites.daily(self)
+	Bay.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
+	_public_expense(Crews.wages(self), "crew.wages", "residents")
 	Population.daily(self)
 	Company.social_environment(self)
 	Pollution.daily(self)
@@ -430,7 +446,7 @@ func _resolve_legacy_event(id: String, choice: String) -> String:
 				s.scientists += 4
 				s.population += 8
 				state.immigrants_total += 8
-				_log("4 支研究团队与 4 支工程队入住首府。")
+				_log("4 支研究团队与 4 名职工入住首府。")
 	return ""
 
 
@@ -662,7 +678,10 @@ func audit() -> Array:
 		errors.append("cash conservation")
 	var holdings: Dictionary = _stock()
 	for s: Dictionary in state.settlements:
-		if int(s.population) != int(s.children) + int(s.workers) + int(s.scientists):
+		if (
+			int(s.population)
+			!= int(s.children) + int(s.workers) + int(s.scientists) + int(s.get("crew", 0))
+		):
 			errors.append("population partition")
 		if s.employed_workers > s.workers or s.employed_scientists > s.scientists:
 			errors.append("duplicate job allocation")
@@ -680,6 +699,7 @@ func audit() -> Array:
 		if int(party.count) <= 0 or settlement(int(party.region)).is_empty():
 			errors.append("recruit party invalid")
 	errors.append_array(_audit_sites())
+	errors.append_array(Crews.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")
 	for s: Dictionary in state.settlements:

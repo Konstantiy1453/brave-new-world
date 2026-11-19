@@ -180,6 +180,7 @@ func on_day() -> void:
 		return
 	home = int(sim.state.settlements[0].region)
 	var reserve: float = daily_expense() * reserve_days
+	_crews(reserve)
 	_utilities()
 	_environment(reserve)
 	# Before the day's other building, so neither the plot nor the money it saved goes elsewhere.
@@ -210,6 +211,49 @@ func on_day() -> void:
 	_commissions()
 	_seek_late_work_tech()
 	_career_transfer()
+
+
+## Crews (1.10): orders wait for an engineering crew. An idle crew goes to a linked town whose
+## orders wait with no crew of its own; otherwise a town whose orders outnumber its crews trains
+## one, while the colony can afford it.
+func _crews(reserve: float) -> void:
+	var rule: Dictionary = sim.pop_rules.get("crews", {})
+	if rule.is_empty():
+		return
+	var view: Dictionary = sim.Crews.view(sim)
+	for place: Dictionary in sim.state.settlements:
+		var region: int = int(place.region)
+		var waiting: int = view.waiting.get(region, []).size()
+		if waiting == 0:
+			continue
+		var here: int = 0
+		for team: Dictionary in view.teams:
+			if int(team.region) == region and str(team.task) != "travel":
+				here += 1
+			elif str(team.task) == "travel" and int(team.target) == region:
+				here += 1
+		if here == 0 and _send_idle_crew(view, region):
+			continue
+		var spare: int = int(place.workers) - int(place.employed_workers)
+		if (
+			waiting > here
+			and spare > 1
+			and float(sim.state.cash) >= float(rule.train_cost) + reserve
+		):
+			act("crew_train", {"region": region})
+
+
+func _send_idle_crew(view: Dictionary, region: int) -> bool:
+	for team: Dictionary in view.teams:
+		if str(team.task) != "":
+			continue
+		var from: int = int(team.region)
+		if not view.waiting.get(from, []).is_empty():
+			continue
+		if sim.Crews.travel_days(sim, from, region) < 0:
+			continue
+		return act("crew_send", {"crew": int(team.id), "to": region}) == ""
+	return false
 
 
 ## Lands on the start that looks richest from orbit, among those with a farming partner in reach.

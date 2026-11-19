@@ -111,7 +111,7 @@
       "materials": 250.0,
       "parts": 80.0,
       "food": 450.0,
-      "description": "更多工程队和预制物资，自带一处住区，生产展开最快。",
+      "description": "更多职工和预制物资，自带一处住区，生产展开最快。",
       "prefab": [
         "habitat"
       ]
@@ -134,6 +134,18 @@
         "survey": 60.0
       }
     }
+  },
+  "bay": {
+    "haul_reach": 18.0,
+    "haul_days_per_unit": 0.25,
+    "haul_cost_per_unit": 40.0,
+    "sea_goods": ["food", "materials", "parts"],
+    "sea_discount": 0.25,
+    "signal_rich_chance": 0.6,
+    "signal_rich_tonnes": 4000.0,
+    "signal_poor_tonnes": 300.0,
+    "survey_cost": 1500.0,
+    "survey_days": 25
   },
   "buildings": {
     "habitat": {
@@ -229,7 +241,7 @@
       "power": 2.0,
       "water": 2.0,
       "maintenance": 5.0,
-      "description": "提供 80 张床位，让常驻工程队住得像样一点。",
+      "description": "提供 80 张床位，让常驻职工住得像样一点。",
       "housing": 80,
       "site_kinds": [
         "frontier"
@@ -249,7 +261,7 @@
       "power": 0.0,
       "water": 0.0,
       "maintenance": 5.0,
-      "description": "提供 32 电力；需 2 支工程队维护。",
+      "description": "提供 32 电力；需 2 名职工维护。",
       "capacity": 32.0
     },
     "wind_farm": {
@@ -414,6 +426,26 @@
       "description": "每日共用 9000 吨进出口吞吐，贸易另收 4% 港务费。首府免费配备一座。",
       "capacity": 90.0
     },
+    "harbor": {
+      "name": "小型码头",
+      "category": "utilities",
+      "role": "harbor",
+      "cost": 3000.0,
+      "materials": 40.0,
+      "parts": 8.0,
+      "days": 20,
+      "jobs": 3,
+      "power": 2.0,
+      "water": 0.0,
+      "maintenance": 4.0,
+      "capacity": 60.0,
+      "fish": 6.0,
+      "needs_coast": true,
+      "unique_local": true,
+      "plotless": true,
+      "description": "海边的小码头：渔船每天带回 600 吨鱼，食品和建材走海运进口便宜四分之一，另加 6000 吨吞吐；有了它才能派测量船查明近海信号。",
+      "model": "harbor"
+    },
     "depot": {
       "name": "区域物流中心",
       "category": "utilities",
@@ -577,7 +609,7 @@
       "power": 20.0,
       "water": 6.0,
       "maintenance": 22.0,
-      "description": "只要 6 支工程队看守，日产 2400 吨。只能建在边疆据点。",
+      "description": "只要 6 名职工看守，日产 2400 吨。只能建在边疆据点。",
       "output": "ore",
       "rate": 24.0,
       "pollution": 0.25,
@@ -599,7 +631,7 @@
       "power": 22.0,
       "water": 6.0,
       "maintenance": 28.0,
-      "description": "只要 6 支工程队看守，日产 1400 吨。只能建在边疆据点。",
+      "description": "只要 6 名职工看守，日产 1400 吨。只能建在边疆据点。",
       "output": "copper",
       "rate": 14.0,
       "pollution": 0.25,
@@ -621,7 +653,7 @@
       "power": 26.0,
       "water": 6.0,
       "maintenance": 36.0,
-      "description": "只要 6 支工程队看守，日产 850 吨。只能建在边疆据点。",
+      "description": "只要 6 名职工看守，日产 850 吨。只能建在边疆据点。",
       "output": "crystal",
       "rate": 8.5,
       "pollution": 0.25,
@@ -1411,7 +1443,7 @@
       "day": 135,
       "duration": 0,
       "title": "科研移民申请",
-      "text": "4 支研究团队与 4 支技术工程队申请定居，并自带 800 资金。公共安置费 180，需 8 个住房空位。",
+      "text": "4 支研究团队与 4 名技术职工申请定居，并自带 800 资金。公共安置费 180，需 8 个住房空位。",
       "choices": [
         {
           "id": "invite",

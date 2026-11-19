@@ -4,6 +4,8 @@ extends RefCounted
 
 const Rules = preload("res://simulation/rules.gd")
 const Keys = preload("res://simulation/keys.gd")
+## The scripted water fault leaves the pumps this share of what the town uses, at most.
+const SHORTAGE_DEPTH: float = 0.6
 
 
 static func data() -> Dictionary:
@@ -210,6 +212,13 @@ static func start_shortage(sim: RefCounted, site: int) -> String:
 	if s.is_empty():
 		return "请选择已建立的据点"
 	var rules: Dictionary = data().shortage
+	# Deep enough to show whatever the crew has built so far: the pumps fall below the town's use.
+	var supply: float = float(s.get("water_supply", 0.0))
+	var factor: float = float(rules.factor)
+	if supply > 0.0:
+		factor = clampf(
+			minf(factor, SHORTAGE_DEPTH * float(s.get("water_demand", 0.0)) / supply), 0.02, 1.0
+		)
 	(
 		sim
 		. state
@@ -220,7 +229,7 @@ static func start_shortage(sim: RefCounted, site: int) -> String:
 				"source": "tutorial",
 				"region": site,
 				"kind": str(rules.kind),
-				"factor": float(rules.factor),
+				"factor": factor,
 				"start": int(sim.state.day) + 1,
 				"until": int(sim.state.day) + 1 + int(rules.days),
 				"duration_days": int(rules.days),

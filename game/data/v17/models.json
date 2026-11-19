@@ -180,6 +180,9 @@
       "construction": "port_construction",
       "model": "port"
     },
+    "harbor": {
+      "model": "harbor"
+    },
     "power": {
       "construction": "power_construction",
       "model": "power"

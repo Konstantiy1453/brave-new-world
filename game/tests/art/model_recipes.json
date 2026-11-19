@@ -184,6 +184,7 @@
     "atmospheric_water": {"model": "atmospheric_water", "construction": "atmospheric_water_construction"},
     "port": {"model": "port", "construction": "port_construction"},
     "depot": {"model": "depot", "construction": "depot_construction"},
+    "harbor": {"model": "harbor"},
     "scrubber": {"model": "scrubber"},
     "mine_ore": {"model": "mine_ore", "construction": "mine_ore_construction", "ore": "ore"},
     "mine_copper": {"model": "mine_copper", "construction": "mine_copper_construction", "ore": "copper"},

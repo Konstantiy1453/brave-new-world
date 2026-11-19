@@ -7,6 +7,7 @@ extends RefCounted
 ## before any road: small, fast and dear, it stands down once a road or sea route between the same
 ## two opens, and it is not part of the network the contract asks for.
 
+const Bay = preload("res://simulation/bay.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Routes = preload("res://world/routes.gd")
@@ -630,7 +631,12 @@ static func _import(
 		maxf(0.0, target - stock - incoming(sim, int(s.region), key, horizon))
 		+ maxf(0.0, _road_demand(sim, s, key) - maxf(0.0, stock - target))
 	)
-	var price: float = float(sim.config.prices[key]) * (1.0 + float(sim.config.economy.port_fee))
+	# Sea freight through a working harbour comes in cheaper than by orbit (bay.gd).
+	var price: float = (
+		float(sim.config.prices[key])
+		* (1.0 + float(sim.config.economy.port_fee))
+		* (1.0 - Bay.sea_discount(sim, s, key))
+	)
 	var amount: float = minf(minf(capacity, need), maxf(0.0, float(sim.state.cash)) / price)
 	if amount <= 0:
 		return capacity

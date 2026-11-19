@@ -96,7 +96,7 @@ static func run(sim: RefCounted) -> void:
 		b.status = Keys.B_RESTRICTED
 		if e.loss_days >= lasts:
 			e.status = Keys.E_CLOSED
-			sim._log("服务社已停业：可雇用工程队或现金不足持续 %d 天。" % lasts)
+			sim._log("服务社已停业：可雇用职工或现金不足持续 %d 天。" % lasts)
 		return
 	e.employees = employees
 	s.employed_workers += employees

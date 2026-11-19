@@ -11,6 +11,18 @@
     "outpost": 24,
     "frontier": 30
   },
+  "crews": {
+    "opening": 1,
+    "expedition": 1,
+    "wage": 2.0,
+    "train_cost": 900.0,
+    "train_days": 15,
+    "urgent": {
+      "water": ["water"],
+      "power": ["power"],
+      "starving": ["farm", "indoor_farm", "harbor"]
+    }
+  },
   "immigration": {
     "base_per_month": 11.0,
     "savings_per_person": 60.0,
@@ -52,6 +64,7 @@
   "recruitment": {
     "worker_price": 400.0,
     "scientist_price": 700.0,
+    "crew_price": 1500.0,
     "travel_days": 30,
     "price_step": 0.2,
     "window_days": 180,

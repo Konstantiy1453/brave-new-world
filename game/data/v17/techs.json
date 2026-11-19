@@ -345,7 +345,7 @@
         "electronics"
       ],
       "minimum_staff": 3,
-      "description": "解锁边疆据点的自动钻场：只要几支工程队看守。",
+      "description": "解锁边疆据点的自动钻场：只要几名职工看守。",
       "effects": {}
     },
     "seawater_extraction": {
