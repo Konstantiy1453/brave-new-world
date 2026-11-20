@@ -30,10 +30,14 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
   - The tutorial's pump waited two months behind the copper mine (shortages first).
   - The harbour's order showed no income.
   - Every mine paid its whole road again, which cost the bots a fifth of their people.
-- **Suites.** All headless suites pass but the four Linux-known ones, each identical to its Linux
-  baseline, and `v19_payback`, whose light iron mine pays back in 62 days against its 70–150 band
-  (balance, below). `v18_systems`' top-bar checks had failed on every platform since 2026-11-12 and
-  now read the 1.9 format.
+- **Suites (final run on `faa0f97`).** 45 of 50 headless suites pass. The four Linux-known ones fail
+  exactly as their Linux baselines. `v19_payback` misses twice:
+  - the smelter, 372 days in year 4 against 120–300, as on the branch base;
+  - food processing in year 6, 357 days against 100–220, where only one of five colonies has one to
+    measure.
+
+  `v18_systems`' top-bar checks had failed on every platform since 2026-11-12 and now read the 1.9
+  format.
 - **Openings (bot play, five seeds).** Both openings met stage three on every seed. Harbour first
   was sooner on four seeds, and later on a start with its own farmland.
 - **Harness `spur-21fef0f`.**
