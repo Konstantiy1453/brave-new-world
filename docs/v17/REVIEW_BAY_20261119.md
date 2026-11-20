@@ -26,7 +26,7 @@ covers them).
   - recruiting from outside (¥1,500, 30 days, one more resident and a bed);
   - sending a crew over a finished link, with what that stops.
 
-  *Automated test (`v110_crews`, 52 checks: the dates match the real start and finish), screenshot
+  *Automated test (`v110_crews`, 60 checks: the dates match the real start and finish), screenshot
   viewed.*
 - **The first decision: what the crew builds first.**
   - **The mine road.** The inland iron deposit with its road: on the five bay starts below the road
@@ -89,7 +89,7 @@ bot plays the rest for six years (`game/tests/balance/bay_openings.gd`, run `spu
 
 ## Stage three: how long, and what held growth
 
-- **How long.** From 200 to 600 people (stage three's goal) took 490–845 days (median 573), and stage
+- **How long.** From 200 to 600 people (stage three's goal) took 490–845 days (median 584), and stage
   three was met on days 993–1,469.
 - **What held growth: jobs.** The people page's own limit (`people_lines.gd`) at the capital said
   "jobs" on 90–100% of those days. Unemployment above the threshold stops immigration. This is the
