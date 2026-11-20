@@ -85,6 +85,8 @@ func _play(seed_value: int, opening: String) -> Dictionary:
 	if site < 0:
 		return {}
 	sim.act("settle", {"site": site})
+	# The opening mine's road, before any order: later mines build only a spur.
+	var road_days: int = int(sim.Production.build_preview(sim, site, "mine_ore").haul.days)
 	if opening == "harbour":
 		sim.act("build", {"site": site, "kind": "harbor"})
 	sim.act("build", {"site": site, "kind": "mine_ore"})
@@ -95,7 +97,7 @@ func _play(seed_value: int, opening: String) -> Dictionary:
 		"seed": seed_value,
 		"opening": opening,
 		"site": site,
-		"mine_road_days": int(sim.Production.build_preview(sim, site, "mine_ore").haul.days),
+		"mine_road_days": road_days,
 		"first_export": -1,
 		"first_ship": -1,
 		"stages": {},
