@@ -19,6 +19,27 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
 | Radius, stage three, tutorial, prospecting | radius slider 0.70–1.30 with km and gravity; stage three by one operating route of three, 600 people an achievement (measured on six seeds, `STAGE_THREE_ROUTES.md`); the tutorial opens on a bay with the mine-or-harbour decision; prospecting one resource at a time (orbit, field survey, drilling) | **done** (`0d8ed9d`, `4604991`, `3a35730`, `c5dda12`); suite `v110_audit` (102 checks) |
 | Not done from the Nov 20 brief | offshore surveying tech, seabed extraction and its cargo; nickel and cobalt; larger districts, natural slopes, landform clues and close-range surfaces; the farmer occupation and one population unit everywhere; crews for roads, repairs and surveys with standing orders and costlier crews; local consequences by kind of town; the immigrant transport tied to the homes it fills | open |
 
+**This round (2026-11-20).** The November 20 brief: free placement first, then the audit.
+- **Build.** `ColonyCharter-1.10.1-preview-20261120-placement`, commit `1853590`, PCK SHA-256
+  `78181ECC…786F`. Handoff with the plain status of every requirement: `docs/v17/HANDOFF_20261120.md`.
+- **Free placement on the shipped PCK.** The Linux runtime with `--main-pack`, driven through the real
+  interface by `tools/verify/placement_driver.gd`: 95 of 95 checks over six cases (two capitals, the
+  seed 3 regression, refusals, inland and coastal expeditions). Records are in `docs/v17/placement/`.
+  The Windows EXE was not run.
+- **Saves.** A save made by the 1.10.0 PCK carries over on the 1.10.1 PCK, 13 of 13 checks
+  (`save_carry_driver.gd`). The before and after files are in `docs/v17/placement/save_files/`.
+- **Night in ordinary play.** `docs/v17/bay/play/`: the first lived-in home now changes the globe and
+  flat-map night images (1,397 and 2,458 pixels).
+- **Suites (final run on `1853590`).** 47 of 52 headless suites pass. The four Linux-known ones fail as
+  their baselines. `v19_payback` misses three bands: iron mine 64 days against 70–150, smelter 461,
+  food processing 614.
+- **Harness `placement-c5dda12`.**
+  - Audits 0 errors; determinism 3 of 3 identical.
+  - Population 333 at year 2 and 940 at year 4; the balanced bot is awarded at a median of day 2646.
+  - Misses: the labour lever and the sloppy bot on hard (both standing), and openings (research-first
+    is best with every opening; new).
+- **Open.** See the "Not done" row above and the handoff's failing list.
+
 **This round (2026-11-19/20).** Phase C and the reviews.
 - **What changed.**
   - A player now lands with one crew. Every building waits for a crew, and the town says who builds
