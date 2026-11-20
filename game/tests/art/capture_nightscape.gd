@@ -112,15 +112,15 @@ func run() -> void:
 			"homes_lit": _homes_lit(shown),
 			"sea_cargo": shown.settlements[0].get("sea_cargo", {}),
 		}
-		stage = ("play_" if playing else "") + stage
 		report.stages[stage].ships = map.globe_ships.size()
+		var shot: String = ("play_" if playing else "") + stage
 		var views: PackedStringArray = str(options.views).split(",")
 		if views.has("globe"):
-			await _globe(home, stage)
+			await _globe(home, shot)
 		if views.has("flat"):
-			await _flat(home, stage)
+			await _flat(home, shot)
 		if views.has("district"):
-			await _district(home, stage)
+			await _district(home, shot)
 		if stage == "harbour" and str(options.clip) == "on":
 			await _clips(home)
 	var file := FileAccess.open(folder + "/report.json", FileAccess.WRITE)
