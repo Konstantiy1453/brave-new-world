@@ -152,7 +152,14 @@ Quick harness, recorded in `docs/v17/BALANCE.md` ("1.10 crews and the bay"):
 - **`crews-234a06c`, crews and full roads for every mine.** It lost a fifth of the population (296 /
   783 at years 2 and 4, against 374 / 1014) and 6 of 27 well-played runs. A probe found the cause:
   every mine paid its whole road again.
-- **`spur-acef816`, roads that carry the next mine.** Measured after it (see BALANCE.md).
+- **`spur-21fef0f`, roads that carry the next mine.**
+  - Population is back above the bar (332 / 982), and the balanced bot's award is day 2584 with 8 of 9
+    awarded.
+  - 19 targets are met; the 3 misses are the standing ones (sloppy failure, the labour lever, the
+    services budget).
+  - Late failures remain at 5 of 27 well-played runs against 1 of 27 before crews. Mostly the rush
+    and research-first bots miss stage five by the contract's last date, where late projects now wait
+    for a crew.
 
 ## Needs player feedback
 
@@ -164,7 +171,9 @@ Quick harness, recorded in `docs/v17/BALANCE.md` ("1.10 crews and the bay"):
 4. **Jobs as the limit to growth.** It held growth on 90–100% of the days from 200 to 600 people in
    every game. Stage three's rebalance (600) and the logistics achievement are plan F.
 5. **The mine road's price:** 0.25 days and ¥40 a unit beyond 18 units, and a spur after the first.
-6. **The tutorial.** It now teaches the crew: one crew, shortages first, 先建, training at the second
+6. **Whether the late game is now too slow.** The bots that award near the contract's last date fail
+   more often with crews. Letting several crews work one great work would help, if players feel it.
+7. **The tutorial.** It now teaches the crew: one crew, shortages first, 先建, training at the second
    town. It finishes in 272 game days in the suite.
 
 ## Not in this round

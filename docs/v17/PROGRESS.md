@@ -36,6 +36,12 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
   now read the 1.9 format.
 - **Openings (bot play, five seeds).** Both openings met stage three on every seed. Harbour first
   was sooner on four seeds, and later on a start with its own farmland.
+- **Harness `spur-21fef0f`.**
+  - 19 targets met. The 3 misses are standing: sloppy failure, the labour lever, the services
+    budget.
+  - Population at years 2 and 4 is 332 / 982.
+  - The well-played bots fail 5 of 27 runs against 1 before crews, mostly the rush and
+    research-first bots at stage five's last date.
 - **Open for the player.**
   - How scarce crews should be: at ¥900 the bots train 12–24.
   - What the bay should look like from orbit, on a real GPU.

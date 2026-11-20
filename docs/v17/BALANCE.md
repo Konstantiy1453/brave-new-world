@@ -264,16 +264,16 @@ covers plan C on top of `fixes-0a30df2`: one engineering crew at the landing and
 waiting for a crew (the bots train and send crews), mine roads to far deposits, the small harbour
 and the offshore signal (the bots build no harbour).
 
-| Row | fixes-0a30df2 | crews-234a06c |
-|---|---|---|
-| Balanced award, normal | 2529, 9 of 9 | 2646, 7 of 9 (PASS) |
-| Failures of the balanced, rush and research-first bots | 1 of 27 | 6 of 27 |
-| Population, year 2 / year 4 | 374 / 1014 | 296 / 783 (MISS) |
-| Income ×, year 2 to year 6 | ×4.04 | ×5.29 (PASS) |
-| Cash cover before the award, median / p90 | 16 / 78 days | 27 / 99 days (PASS) |
-| Labour lever | +16% | +5% (MISS) |
-| Research-first | 72 techs, day 2036 (MISS) | 78 techs, day 2312 (PASS) |
-| Services budget | 6 of 9 runs (MISS) | 8 of 9 runs (PASS) |
+| Row | fixes-0a30df2 | crews-234a06c | spur-21fef0f |
+|---|---|---|---|
+| Balanced award, normal | 2529, 9 of 9 | 2646, 7 of 9 (PASS) | 2584, 8 of 9 (PASS) |
+| Failures of the balanced, rush and research-first bots | 1 of 27 | 6 of 27 | 5 of 27 |
+| Population, year 2 / year 4 | 374 / 1014 | 296 / 783 (MISS) | 332 / 982 (PASS) |
+| Income ×, year 2 to year 6 | ×4.04 | ×5.29 (PASS) | ×4.79 (PASS) |
+| Cash cover before the award, median / p90 | 16 / 78 days | 27 / 99 days (PASS) | 22 / 99 days (PASS) |
+| Labour lever | +16% | +5% (MISS) | +10% (MISS) |
+| Research-first | 72 techs, day 2036 (MISS) | 78 techs, day 2312 (PASS) | 74 techs, day 2171 (PASS) |
+| Services budget | 6 of 9 runs (MISS) | 8 of 9 runs (PASS) | 7 of 9 runs (MISS) |
 
 The lost people were not the crews' doing. A probe of the balanced bot on three seeds, four years
 each, with each part of plan C switched off in turn (population at year 2):
@@ -288,7 +288,31 @@ each, with each part of plan C switched off in turn (population at year 2):
 Every mine paid its whole road from the town centre, so the bots built fewer mines, jobs held
 immigration (the people page's limit was "jobs" on 89-100% of the days from 200 to 600 people in
 `bay_openings`), and seed 42 stalled at 300 people for two years. A road now carries the next mine,
-which pays only the spur from the nearest mine (DECISIONS). The next run measures it.
+which pays only the spur from the nearest mine (DECISIONS).
+
+Quick run `spur-21fef0f` (2026-11-20, Linux, 51 runs, 0 audit errors, 3/3 replays identical)
+measures it, with the harbour's forecast and the night views (neither touches the bots).
+- **What recovered.** Population is back above the bar (332 / 982), and the balanced bot's award
+  moves to day 2584 with 8 of 9 awarded.
+- **The misses are the standing ones.** Sloppy failure; the labour lever, which ran from +3% to +35%
+  on dice alone in the 1.9 probes; and the services budget, which has moved between 6 and 8 of 9
+  runs from one run to the next.
+- **What crews still cost.** The well-played bots fail 5 of 27 runs against 1 of 27 before crews.
+  - Four of the five meet stage four and miss stage five by the contract's last date, with their
+    capital hall built and 1,900–2,600 people.
+  - The rush and research-first bots award close to that date even when they succeed (rush on days
+    2,896–3,123 against 3,240), so the late projects that now wait for a crew push some of them
+    over.
+  - One research-first run misses stage three's deadline at 546 people.
+
+  Neither bot is a target row. The next step, if players find the late game slow too, is to let
+  several crews work one big project (a great work is one crew's job today); it is not tuned in this
+  round.
+
+The bay's own measure is `game/tests/balance/bay_openings.gd`: mine road against harbour first on
+five seeds (`docs/v17/REVIEW_BAY_20261119.md`). With spurs, all ten colonies meet stage three,
+harbour first sooner on four seeds; without them (`bay-c39e828`) one harbour-first colony was taken
+over.
 
 ## Before and after
 
