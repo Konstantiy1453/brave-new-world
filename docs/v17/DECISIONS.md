@@ -1052,3 +1052,12 @@ factories, so the game's cycle and the payback bands stay as they are.
   bot runs the colony and two ordinary orders queue a home and the harbour; the stages are the
   first day a new home has lit windows and the first day a ship lands cargo. The staged-fixture
   sheets stay, labelled as staged.
+- Stage three is met by three operating goals (3 towns connected, 14 technologies, a 15% non-mining
+  share) and one operating route of three, measured over 30 days (`operating_routes.gd`,
+  contract.json `routes`): a food corridor (900 units of food carried between towns, 80% grown
+  locally), a remote mining network (2,400 units mined outside the capital, two mining towns) or a
+  coastal trade network (900 units exported through harbours or carried on sea links, two coastal
+  towns). 600 people is an achievement paid once (¥ 6,000) · 600 people and a frontier town as
+  conditions (the audited wait from day 1170 to 1250). Thresholds from the bots' 30-day values on six
+  seeds (`docs/v17/STAGE_THREE_ROUTES.md`); the everyday imports through a harbour do not count as
+  coastal trade. Saves mid-stage-three are judged by the new goals.

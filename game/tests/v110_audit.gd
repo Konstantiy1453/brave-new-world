@@ -49,6 +49,7 @@ func run() -> void:
 	_farm_forecast()
 	_water_lesson()
 	_radius()
+	_stage_three()
 	print("V110_AUDIT_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -604,3 +605,45 @@ func _radius() -> void:
 	var again: RefCounted = Sim.new()
 	check(again.load_game(path) == "", "and loads")
 	check(is_equal_approx(float(again.geo.radius_km), 7008.1), "with its radius")
+
+
+## Stage three: any one operating route, not 600 people; 600 people is an achievement paid once.
+func _stage_three() -> void:
+	var sim: RefCounted = _colony()
+	var goals: Dictionary = sim.contract_rules.stages[2].goals
+	check(
+		goals.has("operating_route") and not goals.has("population"),
+		"stage three asks for a route, not 600 people"
+	)
+	var routes: Array = sim.Contract.OperatingRoutes.view(sim)
+	check(routes.size() == 3, "three routes: %s" % ", ".join(routes.map(func(r): return r.name)))
+	check(sim.Contract.OperatingRoutes.operating(sim) == 0.0, "none works in a new colony")
+	# A month of food carried between towns, with the colony feeding itself, makes a food corridor.
+	var rule: Dictionary = sim.contract_rules.routes.food_corridor
+	for _day: int in range(30):
+		sim.Contract.OperatingRoutes.add(sim, "food_moved", float(rule.food_moved) / 30.0 + 0.01)
+		sim.Contract.OperatingRoutes.close_day(sim)
+	sim.state.contract.food_window = []
+	for _day: int in range(int(sim.contract_rules.windows.local_food)):
+		sim.state.contract.food_window.append([10.0, 10.0])
+	var corridor: Dictionary = {}
+	for route: Dictionary in sim.Contract.OperatingRoutes.view(sim):
+		if str(route.id) == "food_corridor":
+			corridor = route
+	check(bool(corridor.get("ok", false)), "a month's food corridor works")
+	check(
+		sim.Contract.goal_value(sim, "operating_route") == 1.0, "and meets the stage's route goal"
+	)
+	var before: float = float(sim.state.cash)
+	sim.settlement(int(sim.state.settlements[0].region)).population = 600
+	sim.Contract.OperatingRoutes.check_achievements(sim)
+	var paid: float = float(sim.state.cash) - before
+	sim.Contract.OperatingRoutes.check_achievements(sim)
+	check(
+		(
+			sim.state.contract.achievements.has("population_600")
+			and is_equal_approx(paid, float(sim.contract_rules.achievements[0].reward_cash))
+			and is_equal_approx(float(sim.state.cash) - before, paid)
+		),
+		"600 people is an achievement, paid once: ¥ %.0f" % paid
+	)

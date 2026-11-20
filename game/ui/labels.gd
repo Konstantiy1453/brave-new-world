@@ -269,6 +269,12 @@ static func goal(row: Dictionary) -> Dictionary:
 			}
 		"frontiers":
 			return {"text": "边疆据点 %d / %d" % [value, target], "hint": "派远征队时选择边疆据点", "page": ""}
+		"operating_route":
+			return {
+				"text": "运转的网络（三选一）" + ("：已达成" if value >= target else "：尚未达成"),
+				"hint": "粮食走廊、远程矿区网络或沿海贸易网，任意一条运转起来即可；合同页列出各自的进度",
+				"page": "contract"
+			}
 		"capital_population":
 			return {
 				"text": "首府人口 %d / %d" % [value, target],

@@ -10,6 +10,7 @@ extends RefCounted
 
 const Keys = preload("res://simulation/keys.gd")
 const Bay = preload("res://simulation/bay.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 
 const MINED: Array[String] = ["ore", "copper", "crystal"]
 const VEHICLES: Dictionary = {"ore": "矿车", "ship": "货船"}
@@ -118,6 +119,9 @@ static func _by_sea(
 	if harbour.is_empty():
 		return
 	ensure_state(sim.state)
+	# Stage three's coastal trade counts what is sold abroad by sea, not the everyday imports.
+	if direction == "export":
+		OperatingRoutes.add(sim, "sea_cargo", amount)
 	s.sea_cargo = {
 		"day": int(sim.state.day),
 		"direction": direction,

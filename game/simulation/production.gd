@@ -2,6 +2,7 @@ extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
 const Bay = preload("res://simulation/bay.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const Placement = preload("res://simulation/placement.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Keys = preload("res://simulation/keys.gd")
@@ -620,6 +621,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 				elif int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
 					reg.deposits[resource] = maxf(0.0, float(reg.deposits[resource]) - amount)
 				produce(sim, s, resource, amount, "矿产开采")
+				if not sim.state.settlements.is_empty() and s != sim.state.settlements[0]:
+					OperatingRoutes.add(sim, "remote_mined", amount)
 				if amount <= 0.001:
 					b.active = false
 					b.status = Keys.B_DEPLETED

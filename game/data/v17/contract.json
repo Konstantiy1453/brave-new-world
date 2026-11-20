@@ -3,7 +3,7 @@
   "units": {
     "time": "game day",
     "money": "account units",
-    "share": "fraction 0-1"
+    "share": "fraction 0-1", "routes": "goods units (100 t) moved, mined or carried by sea over the routes window; coastal_towns and mining_towns are counts"
   },
   "scaled_goals": [
     "exports_total",
@@ -43,8 +43,17 @@
   "overdue_distrust_per_day": 0.3,
   "windows": {
     "local_food": 30,
-    "non_mining": 60
+    "non_mining": 60,
+    "routes": 30
   },
+  "routes": {
+    "food_corridor": {"name": "粮食走廊", "food_moved": 900.0, "local_food_share": 0.8},
+    "mining_network": {"name": "远程矿区网络", "remote_mined": 2400.0, "mining_towns": 2},
+    "coastal_trade": {"name": "沿海贸易网", "sea_cargo": 900.0, "coastal_towns": 2}
+  },
+  "achievements": [
+    {"id": "population_600", "name": "六百人的殖民地", "goal": "population", "target": 600, "reward_cash": 6000.0}
+  ],
   "settlement_cap": {
     "initial": 1,
     "expedition": 2,
@@ -84,10 +93,9 @@
       "licence": "network",
       "goals": {
         "connected": 3,
-        "frontiers": 1,
-        "population": 600,
         "technologies": 14,
-        "non_mining_share": 0.15
+        "non_mining_share": 0.15,
+        "operating_route": 1
       }
     },
     {

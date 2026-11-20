@@ -855,6 +855,29 @@ static func _contract_stage(g, b, stage: Dictionary, current: int):
 			fix.custom_minimum_size.y = 30
 		elif not goal_row.ok:
 			D.label(line, str(text.hint), 15, D.MUTED, false)
+		if str(goal_row.key) == "operating_route":
+			_route_lines(g, card)
+
+
+## Stage three's three routes, each with its measures over the last 30 days (operating_routes.gd).
+static func _route_lines(g, card: Control) -> void:
+	for route: Dictionary in g.sim.Contract.OperatingRoutes.view(g.sim):
+		var parts: PackedStringArray = []
+		for part: Dictionary in route.parts:
+			var value: float = float(part.value)
+			var target: float = float(part.target)
+			if target < 1.0:
+				parts.append("%s %.0f%% / %.0f%%" % [part.label, value * 100.0, target * 100.0])
+			elif str(part.label) == "沿海据点":
+				parts.append("%s %d / %d" % [part.label, int(value), int(target)])
+			else:
+				parts.append("%s %s / %s" % [part.label, Labels.t(value), Labels.t(target)])
+		D.label(
+			card,
+			"　%s %s：%s" % ["✓" if bool(route.ok) else "·", route.name, " · ".join(parts)],
+			15,
+			D.TEAL if bool(route.ok) else D.MUTED
+		)
 
 
 ## The public services budget: an optional running cost that keeps people, by level.

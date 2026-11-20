@@ -9,6 +9,7 @@ extends RefCounted
 
 const Bay = preload("res://simulation/bay.gd")
 const Consignments = preload("res://simulation/consignments.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Routes = preload("res://world/routes.gd")
@@ -296,9 +297,22 @@ static func advance_shipments(sim: RefCounted) -> void:
 			var s: Dictionary = sim.settlement(int(cargo.to))
 			s.stock[cargo.resource] += float(cargo.amount)
 			sim.state.transported_total += float(cargo.amount)
+			_count_route(sim, cargo)
 		else:
 			keep.append(cargo)
 	sim.state.shipments = keep
+
+
+## A delivery between towns counts for stage three's routes: food for a food corridor, anything
+## by a sea link for coastal trade (operating_routes.gd).
+static func _count_route(sim: RefCounted, cargo: Dictionary) -> void:
+	if bool(cargo.get("expedition", false)):
+		return
+	if str(cargo.resource) == "food":
+		OperatingRoutes.add(sim, "food_moved", float(cargo.amount))
+	var road: int = int(cargo.get("road", -1))
+	if road >= 0 and road < sim.state.roads.size() and is_sea(sim.state.roads[road]):
+		OperatingRoutes.add(sim, "sea_cargo", float(cargo.amount))
 
 
 static func _waiting_on_closure(sim: RefCounted, cargo: Dictionary) -> bool:
