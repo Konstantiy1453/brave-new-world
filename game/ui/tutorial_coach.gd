@@ -94,6 +94,28 @@ static func completed() -> bool:
 	return bool(preferences.get_value("tutorial", "done", false))
 
 
+## The lessons follow the town the player actually founded, wherever that is.
+func _follow_home() -> void:
+	if not game.sim.state.settlements.is_empty():
+		var landed: int = int(game.sim.state.settlements[0].region)
+		if int(context.home) != landed:
+			context.home = landed
+			_show_step()
+
+
+## A step's words: inland ones where the player's town is not on the coast (no harbour there).
+func step_text(step: Dictionary) -> String:
+	if step.has("text_inland") and not _home_coastal():
+		return str(step.text_inland)
+	return str(step.text)
+
+
+func _home_coastal() -> bool:
+	var home: int = int(context.get("home", Tutorial.data().start_site))
+	var regions: Array = game.sim.state.world.get("regions", [])
+	return home >= 0 and home < regions.size() and bool(regions[home].get("coast", false))
+
+
 func start() -> void:
 	context = Tutorial.new_context()
 	context.home = int(Tutorial.data().start_site)
@@ -166,7 +188,7 @@ func _show_step() -> void:
 	var step: Dictionary = steps()[index]
 	progress_label.text = "新手引导 · %d / %d" % [index + 1, steps().size()]
 	title_label.text = str(step.title)
-	text_label.text = str(step.text)
+	text_label.text = str(step_text(step))
 	back_button.visible = index > 0
 	end_button.visible = true
 	_update_next_button()
@@ -222,6 +244,7 @@ func _process(delta: float) -> void:
 	since_check = 0.0
 	if not active():
 		return
+	_follow_home()
 	visible = not game.menu_open
 	if not reviewing and _done():
 		_advance()

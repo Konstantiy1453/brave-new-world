@@ -2,14 +2,15 @@
   "version": 1,
   "units": {
     "days": "game days",
-    "factor": "multiplier on the output named by kind"
+    "factor": "multiplier on the output named by kind",
+    "first_choice": "a mine or the small harbour queued at the home town"
   },
   "seed": 260129,
   "size": 1,
   "difficulty": "easy",
   "opening": "capital",
-  "start_site": 0,
-  "partner_site": 1,
+  "start_site": 11,
+  "partner_site": 10,
   "first_event_day": 120,
   "shortage": {
     "kind": "water",
@@ -45,7 +46,7 @@
     {
       "id": "land",
       "title": "建立首府",
-      "text": "这个地点矿藏丰富，水源够用，附近也有能耕作的土地。点「在此建立首府」，给它起个名字。",
+      "text": "这片海湾（地点 12）内陆有铁矿和铜矿，岸边能建小型码头，附近还有可以耕作的土地。点「在此建立首府」，给它起个名字。你也可以在地图上任选别的地点：点任何一块地面，侧栏会写出那里的地形、淡水、海岸和矿产信号，能不能建据点，不能的话为什么。",
       "target": [
         "SiteNameConfirm",
         "SettleButton"
@@ -58,17 +59,17 @@
     },
     {
       "id": "income",
-      "title": "开始赚钱",
-      "text": "矿场是第一笔收入。打开建设设施，在矿床地块上各建一座铁矿和铜矿。殖民地只有一支工程队，它按下单顺序一项一项地建，建设页上方能看到它在建什么、还排着什么。",
+      "title": "第一个决定：矿场还是码头",
+      "text": "你只有一支工程队，先建哪个很重要。先建矿场：矿石运到货运站就能出口，钱来得早；远处的矿床要连同矿区道路一起修，工期和费用都会写在建设页上。先建小型码头：渔船每天带回鱼，少买进口食品，建材和部件走海运便宜四分之一，还能派测量船查明近海信号。打开建设设施，选一样下单；另一样排在它后面也行。",
       "target": [
         "Build_mine_ore",
+        "Build_harbor",
         "OpenBuild"
       ],
       "done": {
-        "name": "buildings_queued",
-        "prefix": "mine_",
-        "count": 2
-      }
+        "name": "first_choice"
+      },
+      "text_inland": "这里不靠海，不能建码头：先建矿场。打开建设设施，在矿床地块上建一座铁矿；离据点中心远的矿床要连同矿区道路一起修，工期和费用都写在建设页上。殖民地只有一支工程队，它按下单顺序一项一项地建。"
     },
     {
       "id": "clock",
@@ -84,14 +85,15 @@
     },
     {
       "id": "export",
-      "title": "第一笔出口",
-      "text": "矿石到了货运站就自动卖出。顶部这张表是全殖民地的家底：先是总量，后面是每天的变化（近 7 天的日均）。盯着资金那一格。",
+      "title": "第一车矿石或第一艘货船",
+      "text": "矿石到了货运站就自动卖出；码头建成后，第一船货物进港。哪一样先来，卡片会写出货物、数量和价值，点它就到那个地方。顶部这张表是全殖民地的家底：先是总量，后面是每天的变化（近 7 天的日均）。盯着资金那一格。",
       "target": [
         "TopStats"
       ],
       "done": {
-        "name": "exports_total"
-      }
+        "name": "first_shipment"
+      },
+      "text_inland": "矿石到了货运站就自动卖出，第一车矿石出发时会弹出卡片，写明从哪座矿运出、多少吨、卖了多少钱。顶部这张表是全殖民地的家底：先是总量，后面是每天的变化（近 7 天的日均）。盯着资金那一格。"
     },
     {
       "id": "ledger",

@@ -1061,3 +1061,10 @@ factories, so the game's cycle and the payback bands stay as they are.
   conditions (the audited wait from day 1170 to 1250). Thresholds from the bots' 30-day values on six
   seeds (`docs/v17/STAGE_THREE_ROUTES.md`); the everyday imports through a harbour do not count as
   coastal trade. Saves mid-stage-three are judged by the new goals.
+- The tutorial starts at a bay on its planet (site 12, a coastal mining basin; partner site 11) and
+  its money lesson is the first decision: a mine first (export income sooner, a road for a far
+  deposit) or the small harbour first (fish, cheaper sea freight, the offshore survey), both
+  explained, either completing the step; the next step completes on the first recorded
+  consignment of either kind. Landing elsewhere stays open (the landing step accepts any site and
+  says how to judge ground); the lessons follow the town actually founded, and an inland town gets
+  inland words (no harbour) · keeping the inland start and its two-mine instruction.

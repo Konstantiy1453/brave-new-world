@@ -47,6 +47,16 @@ static func check(sim: RefCounted, condition: Dictionary, context: Dictionary) -
 			return int(state.day) >= count
 		"exports_total":
 			return float(state.exports_total) > 0.0
+		"first_choice":
+			# The bay's first decision: a mine or the small harbour ordered at the home town.
+			return _buildings(state, "mine_") >= 1 or _buildings(state, "harbor") >= 1
+		"first_shipment":
+			# A recorded first consignment (consignments.gd): the first ore truck or ship.
+			for kind: String in ["ore", "ship"]:
+				var entry: Dictionary = state.get("firsts", {}).get(kind, {})
+				if not entry.is_empty() and not bool(entry.get("legacy", false)):
+					return true
+			return false
 		"shortage_cleared":
 			return _shortage_cleared(sim, context, str(condition.shortage))
 		"project_staffed":

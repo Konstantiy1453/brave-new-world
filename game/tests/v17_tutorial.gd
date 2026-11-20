@@ -75,7 +75,7 @@ func _data_is_sound() -> void:
 
 
 func _all_built(sim: RefCounted) -> bool:
-	for b: Dictionary in sim.settlement(0).buildings:
+	for b: Dictionary in sim.settlement(int(Tutorial.data().start_site)).buildings:
 		if int(b.remaining) > 0:
 			return false
 	return true
@@ -84,6 +84,7 @@ func _all_built(sim: RefCounted) -> bool:
 ## The planet the tutorial is pinned to has what its text promises.
 func _pinned_world() -> void:
 	var rules: Dictionary = Tutorial.data()
+	var home: int = int(rules.start_site)
 	var sim: RefCounted = Sim.new()
 	sim.new_game(int(rules.seed), str(rules.opening), int(rules.size), str(rules.difficulty))
 	var start: Dictionary = sim.state.world.regions[int(rules.start_site)]
@@ -94,26 +95,26 @@ func _pinned_world() -> void:
 	check(int(partner.id) in start.neighbors, "and shares a landmass with the start")
 	check(sim.plot_choices(int(partner.id), "farm").size() > 0, "and has farm plots")
 	# The scripted shortage really happens on this planet with the tutorial's buildings.
-	check(sim.act("settle", {"site": 0}) == "", "landing works")
+	check(sim.act("settle", {"site": home}) == "", "landing works")
 	for kind: String in ["mine_ore", "mine_copper", "habitat"]:
-		check(sim.act("build", {"site": 0, "kind": kind}) == "", "building " + kind)
+		check(sim.act("build", {"site": home, "kind": kind}) == "", "building " + kind)
 	# One crew builds them one after another (1.10): wait until all three stand.
 	for _i: int in range(200):
 		if _all_built(sim):
 			break
 		sim.tick()
 	check(_all_built(sim), "the crew finishes the tutorial's first buildings")
-	check(sim.act("tutorial_shortage", {"site": 0}) == "", "the shortage can be started")
+	check(sim.act("tutorial_shortage", {"site": home}) == "", "the shortage can be started")
 	sim.tick()
 	var short: bool = false
-	for entry: Dictionary in sim.settlement(0).shortages:
+	for entry: Dictionary in sim.settlement(home).shortages:
 		short = short or entry.key == "water"
 	check(short, "the scripted first shortage happens")
-	check(sim.act("build", {"site": 0, "kind": "water"}) == "", "a second pump can be ordered")
+	check(sim.act("build", {"site": home, "kind": "water"}) == "", "a second pump can be ordered")
 	for _i: int in range(int(sim.config.buildings.water.days) + 2):
 		sim.tick()
 	var cleared: bool = true
-	for entry: Dictionary in sim.settlement(0).shortages:
+	for entry: Dictionary in sim.settlement(home).shortages:
 		cleared = cleared and entry.key != "water"
 	check(cleared, "a second pump clears it")
 	check(sim.audit().is_empty(), "the shortage passes the audit")
@@ -156,6 +157,8 @@ func _takes_scientists(options: Array, choice: Dictionary) -> bool:
 
 
 func _run_tutorial() -> void:
+	var home: int = int(Tutorial.data().start_site)
+	var partner_site: int = int(Tutorial.data().partner_site)
 	game.start_tutorial()
 	await process_frame
 	check(game.coach.active(), "the tutorial starts")
@@ -167,10 +170,10 @@ func _run_tutorial() -> void:
 	check(step_id() == "cards", "step: read site cards")
 	game.select_region(3)
 	game.coach._draw_outline()
-	game.select_region(0)
+	game.select_region(home)
 	await settle_coach()
 	check(step_id() == "land", "step: land")
-	check(game.selected == 0, "the recommended site is selected")
+	check(game.selected == home, "the recommended site is selected")
 	var settle_button: Control = game.ui.find_child("SettleButton", true, false)
 	check(settle_button != null and settle_button.is_visible_in_tree(), "the target exists")
 	check(game.coach._target() == settle_button, "and is outlined")
@@ -183,7 +186,7 @@ func _run_tutorial() -> void:
 	game.modal_box.find_child("SiteNameEdit", true, false).text = "第一个家"
 	confirm.pressed.emit()
 	await settle_coach()
-	check(game.sim.settlement(0).name == "第一个家", "the capital has the typed name")
+	check(game.sim.settlement(home).name == "第一个家", "the capital has the typed name")
 	check(not is_instance_valid(game.overlay), "and the dialog closes")
 	check(step_id() == "income", "step: start income")
 	game.open_page("build")
@@ -192,8 +195,8 @@ func _run_tutorial() -> void:
 		game.coach._target() == game.ui.find_child("Build_mine_ore", true, false),
 		"the build button is outlined"
 	)
-	game.act("build", {"site": 0, "kind": "mine_ore"})
-	game.act("build", {"site": 0, "kind": "mine_copper"})
+	game.act("build", {"site": home, "kind": "mine_ore"})
+	game.act("build", {"site": home, "kind": "mine_copper"})
 	game.close_modal()
 	await settle_coach()
 	check(step_id() == "clock", "step: run time")
@@ -208,7 +211,7 @@ func _run_tutorial() -> void:
 	game.close_modal()
 	await settle_coach()
 	check(step_id() == "beds", "step: make room for people")
-	game.act("build", {"site": 0, "kind": "habitat"})
+	game.act("build", {"site": home, "kind": "habitat"})
 	await settle_coach()
 	check(step_id() == "problem", "step: fix a problem")
 	check(int(game.coach.context.shortage_day) >= 0, "the shortage has begun")
@@ -224,18 +227,18 @@ func _run_tutorial() -> void:
 		game.current_page == "build" and game.build_category == "utilities",
 		"which opens the right page"
 	)
-	game.sim._produce(game.sim.settlement(0), "parts", 10.0, "test")
-	game.act("build", {"site": 0, "kind": "water"})
+	game.sim._produce(game.sim.settlement(home), "parts", 10.0, "test")
+	game.act("build", {"site": home, "kind": "water"})
 	game.close_modal()
 	var pump_days: int = int(game.sim.config.buildings.water.days)
 	tick_until(func() -> bool: return not _has_shortage("water"), pump_days + 6)
 	await settle_coach()
 	check(step_id() == "research", "step: start research")
-	game.act("build", {"site": 0, "kind": "lab"})
+	game.act("build", {"site": home, "kind": "lab"})
 	# 1.10: one crew. The laboratory goes next (先建), as the step says.
-	var lab: Dictionary = game.sim.settlement(0).buildings.back()
+	var lab: Dictionary = game.sim.settlement(home).buildings.back()
 	check(
-		game.act("crew_next", {"site": 0, "uid": int(lab.uid)}) == "",
+		game.act("crew_next", {"site": home, "uid": int(lab.uid)}) == "",
 		"the laboratory is told to go next"
 	)
 	# An event investigation may hold the research teams for a while; the refusal says so.
@@ -250,23 +253,28 @@ func _run_tutorial() -> void:
 	tick_until(_stage_two)
 	await settle_coach()
 	check(step_id() == "expedition", "step: expedition")
-	check(game.selected == 1, "the fertile site is selected")
-	tick_until(func() -> bool: return game.act("settle", {"site": 1}) == "", 60)
+	check(game.selected == partner_site, "the fertile site is selected")
+	tick_until(func() -> bool: return game.act("settle", {"site": partner_site}) == "", 60)
 	await settle_coach()
 	check(step_id() == "road", "step: compare roads")
-	check(not game.sim.settlement(1).is_empty(), "the expedition has left")
-	tick_until(func() -> bool: return int(game.sim.settlement(1).get("arrival", 0)) <= 0, 120)
-	var road: String = game.act("connect", {"a": 0, "b": 1, "variant": "valley"})
+	check(not game.sim.settlement(partner_site).is_empty(), "the expedition has left")
+	tick_until(
+		func() -> bool: return int(game.sim.settlement(partner_site).get("arrival", 0)) <= 0, 120
+	)
+	var road: String = game.act("connect", {"a": home, "b": partner_site, "variant": "valley"})
 	check(road == "", "a road is built: " + road)
 	await settle_coach()
 	check(step_id() == "farm", "step: feed the colony")
-	tick_until(func() -> bool: return game.act("build", {"site": 1, "kind": "farm"}) == "", 60)
+	tick_until(
+		func() -> bool: return game.act("build", {"site": partner_site, "kind": "farm"}) == "", 60
+	)
 	# 1.10: the expedition left the capital its only crew; the step says to train one there.
 	check(
-		game.sim.Crews.teams_at(game.sim, 1).is_empty(), "the new town has no crew of its own yet"
+		game.sim.Crews.teams_at(game.sim, partner_site).is_empty(),
+		"the new town has no crew of its own yet"
 	)
-	tick_until(func() -> bool: return game.act("crew_train", {"site": 1}) == "", 60)
-	check(game.sim.Crews.teams_at(game.sim, 1).size() == 1, "and trains one")
+	tick_until(func() -> bool: return game.act("crew_train", {"site": partner_site}) == "", 60)
+	check(game.sim.Crews.teams_at(game.sim, partner_site).size() == 1, "and trains one")
 	tick_until(func() -> bool: return Tutorial._running(game.sim.state, "farm"), 90)
 	await settle_coach()
 	check(not game.coach.active(), "the tutorial ends with a running farm")

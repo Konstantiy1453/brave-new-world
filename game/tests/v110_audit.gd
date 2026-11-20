@@ -50,6 +50,7 @@ func run() -> void:
 	_water_lesson()
 	_radius()
 	_stage_three()
+	_tutorial_bay()
 	print("V110_AUDIT_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -646,4 +647,36 @@ func _stage_three() -> void:
 			and is_equal_approx(float(sim.state.cash) - before, paid)
 		),
 		"600 people is an achievement, paid once: ¥ %.0f" % paid
+	)
+
+
+## The tutorial opens on a bay and its first decision: a mine or the small harbour completes the
+## step, and the first recorded consignment of either kind the next one; inland words exist.
+func _tutorial_bay() -> void:
+	var rules: Dictionary = Tutorial.data()
+	var sim: RefCounted = Sim.new()
+	sim.new_game(int(rules.seed), str(rules.opening), int(rules.size), str(rules.difficulty))
+	var home: int = int(rules.start_site)
+	check(bool(sim.state.world.regions[home].get("coast", false)), "the tutorial's start is a bay")
+	check(sim.act("settle", {"site": home}) == "", "landing there works")
+	sim._transfer("external", "public", 20000.0, "TEST funds", false)
+	var context: Dictionary = Tutorial.new_context()
+	var choice: Dictionary = {"name": "first_choice"}
+	var shipment: Dictionary = {"name": "first_shipment"}
+	check(not Tutorial.check(sim, choice, context), "the decision waits for an order")
+	check(sim.act("build", {"site": home, "kind": "harbor"}) == "", "the harbour first")
+	check(Tutorial.check(sim, choice, context), "is a choice the lesson accepts")
+	check(not Tutorial.check(sim, shipment, context), "no consignment yet")
+	Consignments.imported(sim, sim.settlement(home), "food", 1.0, 3.0)
+	check(not Tutorial.check(sim, shipment, context), "nor while the harbour is still being built")
+	var steps: Dictionary = {}
+	for step: Dictionary in rules.steps:
+		steps[str(step.id)] = step
+	check(
+		steps.income.has("text_inland") and steps.export.has("text_inland"),
+		"the opening has words for an inland landing"
+	)
+	check(
+		str(steps.income.text).contains("码头") and str(steps.income.text).contains("矿"),
+		"and explains both ways"
 	)
