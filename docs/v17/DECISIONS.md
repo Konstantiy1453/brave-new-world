@@ -1068,3 +1068,12 @@ factories, so the game's cycle and the payback bands stay as they are.
   consignment of either kind. Landing elsewhere stays open (the landing step accepts any site and
   says how to judge ground); the lessons follow the town actually founded, and an inland town gets
   inland words (no harbour) · keeping the inland start and its two-mine instruction.
+- Prospecting goes one resource at a time and works anywhere on the planet's own deposits
+  (`prospecting.gd`, geography.json `prospecting`): an orbital observation of a resource at a point
+  (¥400, 3 days) turns each deposit of it that orbit can see within 445 km into an anomaly zone 2°
+  across, drawn up to 1.5° off; a field survey (¥1,800, 20 days, from a town within 1,200 km)
+  narrows one to 0.5°, enough to choose where to found a town; drilling (¥2,600, 15 days, after the
+  field survey) gives grade, depth and the reserve left and shows its plots in every town that
+  reaches it. Anomalies are rings on both maps in the resource's colour. The ground panel offers the
+  next step for each resource at the picked point. The old per-site survey stays for recommended
+  sites · a survey that tightens all three resources at once.

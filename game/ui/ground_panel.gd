@@ -81,6 +81,7 @@ static func panel(g, b: Control) -> void:
 		D.label(b, "淡水：" + _water_words(report), 15, D.INK)
 		D.label(b, "海岸：" + ("靠海，可以建码头、走海运" if bool(report.coast) else "内陆，货物要走陆路"), 15, D.INK)
 		D.label(b, "矿产信号（轨道观测）：" + _signal_words(report.signals), 15, D.INK)
+		_prospecting_lines(g, b, report)
 		D.label(
 			b, "可建设地块约 %d 块 · %.1f°C" % [int(report.slots), float(report.temperature)], 15, D.MUTED
 		)
@@ -271,3 +272,70 @@ static func found(g, typed: String) -> String:
 		g.map.selected_region = regions
 		g.map.sync_state(g.sim.state)
 	return error
+
+
+## Prospecting one resource at this point (prospecting.gd): the anomaly that covers it and what
+## is known of it, or an orbital observation to order; the next step for what is known.
+static func _prospecting_lines(g, b: Control, report: Dictionary) -> void:
+	var sim: RefCounted = g.sim
+	var lat: float = float(report.lat)
+	var lon: float = float(report.lon)
+	var here: Array = sim.Prospecting.anomalies_at(sim, lat, lon)
+	D.label(b, "勘探（每次选一种矿产）", 14, D.TEAL)
+	for resource: String in SIGNAL_NAMES:
+		var line: HBoxContainer = D.row(b)
+		var known: Dictionary = {}
+		for entry: Dictionary in here:
+			if str(entry.resource) == resource and known.is_empty():
+				known = entry
+		var words: String = "%s：" % SIGNAL_NAMES[resource]
+		var step: String = "orbital"
+		if known.is_empty():
+			words += "未观测"
+		elif str(known.stage) == "orbital":
+			words += "轨道异常区（约 ±%.0f km），位置还很粗" % _km(sim, float(known.zone))
+			step = "field"
+		elif str(known.stage) == "field":
+			words += (
+				"实地勘察：%s，约 ±%.0f km"
+				% [
+					"矿脉" if str(known.get("kind", "")) == "vein" else "矿囊",
+					_km(sim, float(known.zone))
+				]
+			)
+			step = "drill"
+		else:
+			words += (
+				"钻探：品位 %.2f · %s · 剩余约 %s"
+				% [
+					float(known.grade),
+					"浅层" if int(known.depth) == 0 else "深层",
+					Labels.t(float(known.reserve))
+				]
+			)
+			step = ""
+		var text: Label = D.label(line, words, 14, D.INK if known.is_empty() else D.TEAL, true)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if step == "":
+			continue
+		var quote: Dictionary = sim.Prospecting.quote(sim, step, lat, lon, int(known.get("id", 0)))
+		var action: String = {"orbital": "轨道观测", "field": "实地勘察", "drill": "钻探"}[step]
+		var id: int = int(known.get("id", 0))
+		var button: Button = D.button(
+			line,
+			"%s · ¥%.0f · %d 天" % [action, float(quote.cost), int(quote.days)],
+			func():
+				if step == "orbital":
+					g.act("prospect_observe", {"resource": resource, "lat": lat, "lon": lon})
+				else:
+					g.act("prospect_send", {"step": step, "id": id}),
+			str(quote.refusal),
+			"Prospect_%s_%s" % [resource, step],
+			"chip"
+		)
+		button.disabled = str(quote.refusal) != ""
+		D.font_size(button, 13)
+
+
+static func _km(sim: RefCounted, degrees: float) -> float:
+	return deg_to_rad(degrees) * float(sim.geo.get("radius_km", 6371.0))

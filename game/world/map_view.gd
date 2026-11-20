@@ -153,6 +153,9 @@ func _marker_signature() -> String:
 	var signals: Array = []
 	for place: Dictionary in state.get("settlements", []):
 		signals.append(not signal_reading(int(place.region)).is_empty())
+	# Prospecting anomalies are drawn as rings: their stages and zones change what is shown.
+	for anomaly: Dictionary in state.get("prospecting", {}).get("anomalies", []):
+		signals.append([int(anomaly.id), str(anomaly.stage), snappedf(float(anomaly.zone), 0.01)])
 	return (
 		"%d|%s|%s|%s|%s"
 		% [selected_region, str(settled), marker_filter, str(_event_places()), str(signals)]

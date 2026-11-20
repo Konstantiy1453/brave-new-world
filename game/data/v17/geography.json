@@ -801,6 +801,15 @@
       "size_bands": "Earth radii: below the first the small planet's site layout (fewer, sparser sites), at or above the second the large one's; the geography itself does not change with the radius"
     }
   },
+  "prospecting": {
+    "orbital": {"cost": 400.0, "days": 3, "reach_km": 445.0, "offset_degrees": 1.5, "zone_degrees": 2.0},
+    "field": {"cost": 1800.0, "days": 20, "offset_degrees": 0.25, "zone_degrees": 0.5, "reach_km": 1200.0},
+    "drill": {"cost": 2600.0, "days": 15, "reach_km": 1200.0},
+    "units": {
+      "cost": "account units", "days": "game days", "reach_km": "km: how far a reading takes in (orbital) or a team travels from a town (field, drill)",
+      "offset_degrees": "the most the anomaly's drawn centre lies from the deposit's", "zone_degrees": "the anomaly's drawn radius"
+    }
+  },
   "placement": {
     "units": {
       "angles": "degrees of the planet",

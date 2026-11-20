@@ -28,6 +28,10 @@ const SHIP_LIGHT: Color = Color("d6f1ff")
 ## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
 const GROUND_CURSOR_DEGREES: float = 1.2
 const GROUND_CURSOR_COLOR: Color = Color("f4fbff")
+## Prospecting anomalies by resource: iron rust, copper green, crystal violet.
+const ANOMALY_COLORS: Dictionary = {
+	"ore": Color("d9895a"), "copper": Color("4fc3a1"), "crystal": Color("b493e8")
+}
 
 ## Cargo markers placed every frame along their route, between the daily updates.
 var globe_movers: Array = []
@@ -206,6 +210,7 @@ func _update_flat_markers() -> void:
 		if _marker_shown(reg) and not labelled.has(int(reg.id)):
 			_flat_marker(reg, false, placed)
 	_flat_signals()
+	_flat_anomalies()
 	_flat_ground_cursor()
 
 
@@ -229,6 +234,24 @@ func _flat_ground_cursor() -> void:
 			]
 			_line(holder, tick, GROUND_CURSOR_COLOR, 1.4)
 	_sphere(holder, point, .01, _marker_material(GROUND_CURSOR_COLOR), 8, 4)
+
+
+## The prospecting anomalies (prospecting.gd): a ring per anomaly, its zone's size, in its
+## resource's colour; a drilled deposit gets a dot in the middle.
+func _flat_anomalies() -> void:
+	for anomaly: Dictionary in state.get("prospecting", {}).get("anomalies", []):
+		var colour: Color = ANOMALY_COLORS.get(str(anomaly.resource), Color.WHITE)
+		var point := _flat_point(float(anomaly.lat), float(anomaly.lon)) + Vector3(0, 0, .025)
+		var size: float = float(anomaly.zone) / 20.0
+		var ring: Array[Vector3] = []
+		for i in range(49):
+			var angle := float(i) / 48.0 * TAU
+			ring.append(point + Vector3(cos(angle), sin(angle), 0) * size)
+		var holder := Node3D.new()
+		flat_marker_root.add_child(holder)
+		_line(holder, ring, colour, 1.2)
+		if str(anomaly.stage) == "drilled":
+			_sphere(holder, point, .014, _marker_material(colour), 8, 4)
 
 
 ## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over

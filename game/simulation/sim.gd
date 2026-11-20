@@ -26,6 +26,7 @@ const Crews = preload("res://simulation/crews.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
 const Consignments = preload("res://simulation/consignments.gd")
+const Prospecting = preload("res://simulation/prospecting.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -161,6 +162,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Crews.ensure_state(target)
 	Placement.ensure_state(target)
 	Consignments.ensure_state(target)
+	Prospecting.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -217,6 +219,15 @@ func act(action: String, args: Dictionary = {}) -> String:
 			)
 		"survey":
 			refusal = Sites.survey(self, _site_arg(args))
+		"prospect_observe":
+			refusal = Prospecting.observe(
+				self,
+				str(args.get("resource", "")),
+				float(args.get("lat", 0.0)),
+				float(args.get("lon", 0.0))
+			)
+		"prospect_send":
+			refusal = Prospecting.send(self, str(args.get("step", "")), int(args.get("id", 0)))
 		"tutorial_begin":
 			refusal = Tutorial.begin(self)
 		"tutorial_shortage":
@@ -343,6 +354,7 @@ func tick() -> void:
 	Logistics.dispatch(self)
 	Logistics.road_daily(self)
 	Sites.daily(self)
+	Prospecting.daily(self)
 	Bay.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
@@ -729,6 +741,7 @@ func audit() -> Array:
 	errors.append_array(_audit_sites())
 	errors.append_array(Crews.audit(state))
 	errors.append_array(Consignments.audit(state))
+	errors.append_array(Prospecting.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")
 	for s: Dictionary in state.settlements:

@@ -314,11 +314,37 @@ func _update_markers() -> void:
 		if _marker_shown(reg):
 			_globe_marker(reg, labelled.has(int(reg.id)))
 	_globe_signals()
+	_globe_anomalies()
 	_globe_ground_cursor()
 	_draw_globe_climate()
 
 
 ## The picked ground (1.10 free placement): a white ring and cross at the exact point.
+## The prospecting anomalies on the globe, as on the flat map (`_flat_anomalies`).
+func _globe_anomalies() -> void:
+	for anomaly: Dictionary in state.get("prospecting", {}).get("anomalies", []):
+		var colour: Color = ANOMALY_COLORS.get(str(anomaly.resource), Color.WHITE)
+		var center: Vector3 = Geo.unit_point(float(anomaly.lat), float(anomaly.lon))
+		var root := Node3D.new()
+		root.set_meta("point", center * 3.05)
+		marker_root.add_child(root)
+		var u: Vector3 = center.cross(Vector3.UP)
+		if u.length() < 0.01:
+			u = center.cross(Vector3.RIGHT)
+		u = u.normalized()
+		var v: Vector3 = center.cross(u).normalized()
+		var reach: float = deg_to_rad(float(anomaly.zone))
+		var ring: Array[Vector3] = []
+		for i in range(49):
+			var angle: float = float(i) / 48.0 * TAU
+			var direction: Vector3 = u * cos(angle) + v * sin(angle)
+			ring.append((center * cos(reach) + direction * sin(reach)).normalized() * 3.05)
+		_line(root, ring, colour, 1.4)
+		if str(anomaly.stage) == "drilled":
+			var dot: Material = _mat("anomaly_" + str(anomaly.resource), colour, 0, 1, 1.4)
+			_sphere(root, center * 3.05, .014, dot, 8, 4)
+
+
 func _globe_ground_cursor() -> void:
 	if ground_point.is_empty():
 		return

@@ -21,6 +21,7 @@ const WorldGen = preload("res://world/world_gen.gd")
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const SiteGenScript = preload("res://world/geo2/site_gen.gd")
+const Geology = preload("res://world/geo2/geology.gd")
 const SEED: int = 20261029
 
 var checks: int = 0
@@ -51,6 +52,7 @@ func run() -> void:
 	_radius()
 	_stage_three()
 	_tutorial_bay()
+	_prospecting()
 	print("V110_AUDIT_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
 
@@ -680,3 +682,108 @@ func _tutorial_bay() -> void:
 		str(steps.income.text).contains("码头") and str(steps.income.text).contains("矿"),
 		"and explains both ways"
 	)
+
+
+## Prospecting one resource at a time: orbit shows broad anomalies of that resource only, a field
+## survey narrows one close to its deposit, drilling gives the deposit's grade, depth and reserve.
+func _prospecting() -> void:
+	var sim: RefCounted = _colony(false)
+	var home: Dictionary = sim.state.world.regions[int(sim.state.settlements[0].region)]
+	var rules: Dictionary = sim.Prospecting.rules(sim)
+	# A player observes where the orbital signal is strong: the nearest deposit orbit can see within
+	# a field team's reach of the town.
+	var reach: float = float(rules.field.reach_km) / (deg_to_rad(1.0) * float(sim.geo.radius_km))
+	var spot: Dictionary = {}
+	for hit: Dictionary in Geology.reaching(sim.geo, home.lat, home.lon, reach * 0.8):
+		if spot.is_empty() and not bool(hit.deposit.hidden):
+			spot = hit.deposit
+	check(not spot.is_empty(), "a visible deposit within a team's reach of the town")
+	if spot.is_empty():
+		return
+	var chosen: String = ""
+	for resource: String in ["ore", "copper", "crystal"]:
+		check(
+			(
+				sim.act(
+					"prospect_observe", {"resource": resource, "lat": spot.lat, "lon": spot.lon}
+				)
+				== ""
+			),
+			"an orbital observation of %s is ordered" % resource
+		)
+		for _day: int in range(int(rules.orbital.days) + 1):
+			sim.tick()
+		var count: int = 0
+		var mixed: bool = false
+		for anomaly: Dictionary in sim.state.prospecting.anomalies:
+			if str(anomaly.resource) == resource:
+				count += 1
+			var deposit: Dictionary = sim.Prospecting._deposit(sim, str(anomaly.deposit))
+			mixed = mixed or str(deposit.resource) != str(anomaly.resource)
+		if resource == str(spot.resource):
+			chosen = resource
+		check(
+			not mixed, "%s: %d anomalies, each on a deposit of its own resource" % [resource, count]
+		)
+	check(chosen != "", "at least one resource shows an anomaly near the town")
+	if chosen == "":
+		return
+	var target: Dictionary = {}
+	for anomaly: Dictionary in sim.state.prospecting.anomalies:
+		if str(anomaly.deposit) == str(spot.id):
+			target = anomaly
+	check(not target.is_empty(), "the observed deposit shows as an anomaly")
+	if target.is_empty():
+		return
+	var deposit: Dictionary = sim.Prospecting._deposit(sim, str(target.deposit))
+	var truth := Vector2(float(deposit.lat), float(deposit.lon))
+	check(
+		(
+			float(target.zone) == float(rules.orbital.zone_degrees)
+			and (
+				_degrees(Vector2(target.lat, target.lon), truth)
+				<= float(rules.orbital.offset_degrees) * 1.5 + 0.01
+			)
+		),
+		"orbit: a broad zone (%.1f°) near the deposit" % float(target.zone)
+	)
+	check(
+		sim.act("prospect_send", {"step": "drill", "id": int(target.id)}) != "",
+		"no drilling before a field survey"
+	)
+	check(
+		sim.act("prospect_send", {"step": "field", "id": int(target.id)}) == "",
+		"a field survey goes out"
+	)
+	for _day: int in range(int(rules.field.days) + 1):
+		sim.tick()
+	check(
+		(
+			str(target.stage) == "field"
+			and float(target.zone) == float(rules.field.zone_degrees)
+			and (
+				_degrees(Vector2(target.lat, target.lon), truth)
+				<= float(rules.field.offset_degrees) * 1.5 + 0.01
+			)
+		),
+		"the field survey narrows it to %.1f° round the deposit" % float(target.zone)
+	)
+	check(sim.act("prospect_send", {"step": "drill", "id": int(target.id)}) == "", "then drilling")
+	for _day: int in range(int(rules.drill.days) + 1):
+		sim.tick()
+	check(
+		(
+			str(target.stage) == "drilled"
+			and is_equal_approx(float(target.grade), float(deposit.grade))
+			and int(target.depth) == int(deposit.depth)
+		),
+		(
+			"drilling gives its grade %.2f and depth %d"
+			% [float(target.get("grade", 0.0)), int(target.get("depth", -1))]
+		)
+	)
+	check(sim.audit().is_empty(), "the audit holds: %s" % str(sim.audit()))
+
+
+static func _degrees(a: Vector2, b: Vector2) -> float:
+	return rad_to_deg(WorldGen.unit_point(a.x, a.y).angle_to(WorldGen.unit_point(b.x, b.y)))
