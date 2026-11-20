@@ -23,6 +23,8 @@ var gates: Array = []
 ## The ore run (consignments.gd): {"from", "to"} stop indices, the mine and the cargo station. A
 ## truck of its own carries the ore between them while the town sells ore; empty otherwise.
 var ore_run: Dictionary = {}
+## The newcomers' run: {"from", "to"} stop indices, the landing pads and the newest lived-in home.
+var arrival_run: Dictionary = {}
 var running: bool = true
 var rate: float = 1.0
 var _vehicles: Array = []
@@ -58,6 +60,30 @@ func setup(seed_value: int, count: int) -> void:
 		_place(vehicle)
 	if not ore_run.is_empty():
 		_add_ore_truck()
+	if not arrival_run.is_empty():
+		_add_shuttle("bus", "ArrivalBus", arrival_run)
+
+
+## A vehicle that runs one fixed route back and forth: `run` {"from", "to"} stop indices.
+func _add_shuttle(kind: String, name_text: String, run: Dictionary) -> void:
+	var body := MeshInstance3D.new()
+	body.name = name_text
+	body.mesh = vehicle_meshes.get(kind, vehicle_meshes.values()[0])
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(body)
+	var vehicle: Dictionary = {
+		"node": body,
+		"kind": "run",
+		"run": run,
+		"path": PackedVector2Array(),
+		"lengths": PackedFloat32Array(),
+		"at": 0.0,
+		"wait": 0.0,
+		"stop": int(run.from),
+	}
+	_vehicles.append(vehicle)
+	_next_trip(vehicle)
+	_place(vehicle)
 
 
 ## The ore truck: out from the mine to the cargo station, back empty, and again.
@@ -114,7 +140,12 @@ func _pick_kind(index: int) -> String:
 func _next_trip(vehicle: Dictionary) -> void:
 	var from: Dictionary = stops[int(vehicle.stop)]
 	var points := PackedVector2Array()
-	if str(vehicle.kind) == "ore":
+	if str(vehicle.kind) == "run":
+		var route: Dictionary = vehicle.run
+		var onward: int = int(route.to) if int(vehicle.stop) == int(route.from) else int(route.from)
+		points = stop_path(from, stops[onward], street_x)
+		vehicle.stop = onward
+	elif str(vehicle.kind) == "ore":
 		var next: int = (
 			int(ore_run.to) if int(vehicle.stop) == int(ore_run.from) else int(ore_run.from)
 		)

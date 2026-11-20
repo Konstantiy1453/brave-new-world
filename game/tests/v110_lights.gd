@@ -160,11 +160,41 @@ func _district(map: Node3D, site: int, west: Dictionary, east: Dictionary) -> vo
 				count += 1
 		sides.append(xs / maxf(1.0, float(count)))
 		check(count == HOMES, "the district draws the %d homes (%d)" % [HOMES, count])
+		_newcomers_bus(map, site, shown)
 		map.show_planet()
 	check(
 		sides[1] - sides[0] > 4.0,
 		"on the same sides of town: x %.1f against %.1f" % [sides[0], sides[1]]
 	)
+
+
+## After people arrive, a bus runs from the landing pads to the newest home people live in; with
+## no arrivals that week there is none.
+func _newcomers_bus(map: Node3D, site: int, shown: Dictionary) -> void:
+	var run: Dictionary = map._arrival_run(map.traffic.stops, site)
+	if not shown.get("stats", {}).get("today", {}).get("arrivals", {}).has(str(site)):
+		var quiet: bool = run.is_empty() or int(run.get("people", 0)) > 0
+		check(quiet, "no newcomers' bus without arrivals (or arrivals this week: %s)" % str(run))
+	var arrived: Dictionary = shown.duplicate(true)
+	if not arrived.has("stats"):
+		arrived.stats = {"today": {"arrivals": {}}, "days": []}
+	arrived.stats.today.arrivals[str(site)] = 6
+	map.state = arrived
+	var bus: Dictionary = map._arrival_run(map.traffic.stops, site)
+	var newest: int = -1
+	var shares: Dictionary = LightField.housing_shares(arrived.settlements[0], buildings)
+	for b: Dictionary in arrived.settlements[0].buildings:
+		if float(shares.get(int(b.get("uid", 0)), 0.0)) > 0.0:
+			newest = maxi(newest, int(b.uid))
+	check(
+		(
+			not bus.is_empty()
+			and int(bus.home) == newest
+			and str(map.traffic.stops[int(bus.from)].kind) == "base"
+		),
+		"six newcomers: the bus runs from the pads to the newest lived-in home (uid %d)" % newest
+	)
+	map.state = shown
 
 
 ## The landing camp's first lights stand where the district stands its pods.

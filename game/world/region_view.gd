@@ -5,6 +5,8 @@ extends "res://world/region_ground.gd"
 
 const Traffic = preload("res://world/traffic.gd")
 const Consignments = preload("res://simulation/consignments.gd")
+## The newcomers' bus runs while the town has had arrivals within this many days.
+const ARRIVAL_DAYS: int = 7
 const ModelArt = preload("res://world/model_art.gd")
 const Landmarks = preload("res://world/landmarks.gd")
 ## Landmarks around the town (`_landmark_spots`): rings in units from the town's centre, spots per
@@ -1437,6 +1439,7 @@ func _build_traffic(stops: Array, offset: float, region: int) -> void:
 	traffic.stops = stops
 	traffic.gates = region_gates.duplicate()
 	traffic.ore_run = _ore_run(stops, region)
+	traffic.arrival_run = _arrival_run(stops, region)
 	traffic.setup(int(world.seed) * 31 + region, 2 + working / 2 + region_gates.size() * 2)
 
 
@@ -1460,6 +1463,41 @@ func _ore_run(stops: Array, region: int) -> Dictionary:
 	if from < 0 or to < 0:
 		return {}
 	return {"from": from, "to": to, "mine": mine}
+
+
+## The newcomers' bus: from the landing pads to the newest home people live in, while the town has
+## had arrivals in the last week (the daily stats), so the bus goes where its passengers' windows
+## are lit. Stop indices, or empty.
+func _arrival_run(stops: Array, region: int) -> Dictionary:
+	var arrived: int = int(
+		state.get("stats", {}).get("today", {}).get("arrivals", {}).get(str(region), 0)
+	)
+	var days: Array = state.get("stats", {}).get("days", [])
+	for index: int in range(maxi(0, days.size() - ARRIVAL_DAYS), days.size()):
+		arrived += int(days[index].get("arrivals", {}).get(str(region), 0))
+	if arrived <= 0:
+		return {}
+	var town: Dictionary = {}
+	for s: Dictionary in state.get("settlements", []):
+		if int(s.get("region", -1)) == region:
+			town = s
+	var buildings: Dictionary = Rules.read("economy").buildings
+	var shares: Dictionary = LightField.housing_shares(town, buildings)
+	var newest: int = -1
+	for b: Dictionary in town.get("buildings", []):
+		var lived_in: bool = float(shares.get(int(b.get("uid", 0)), 0.0)) > 0.0
+		if lived_in and int(b.get("uid", 0)) > newest:
+			newest = int(b.uid)
+	var from: int = -1
+	var to: int = -1
+	for index: int in range(stops.size()):
+		if str(stops[index].kind) == "base" and from < 0:
+			from = index
+		if newest > 0 and int(stops[index].get("uid", -1)) == newest:
+			to = index
+	if from < 0 or to < 0:
+		return {}
+	return {"from": from, "to": to, "home": newest, "people": arrived}
 
 
 func _call_days() -> int:

@@ -1077,3 +1077,6 @@ factories, so the game's cycle and the payback bands stay as they are.
   reaches it. Anomalies are rings on both maps in the resource's colour. The ground panel offers the
   next step for each resource at the picked point. The old per-site survey stays for recommended
   sites · a survey that tightens all three resources at once.
+- Newcomers ride a bus in the district from the landing pads to the newest home people live in,
+  while the town has had arrivals in the last 7 days (the daily stats), so the vehicle and the lit
+  windows it goes to are the same arrival · a shuttle landing per arrival (no model yet).
