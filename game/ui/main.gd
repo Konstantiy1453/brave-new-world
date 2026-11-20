@@ -74,6 +74,8 @@ const PAGE_VARIANTS: Dictionary = {
 ## The pages that lay out side by side get a wider panel, up to this, inside the window.
 const WIDE_PAGES: Array[String] = ["build", "research"]
 const WIDE_MODAL: int = 1320
+## A click within this many pixels of a recommended site's marker selects the site (1.10).
+const MARKER_CLICK_PX: float = 14.0
 var sim = Sim.new()
 var map: Node3D
 var ui: Control
@@ -106,6 +108,13 @@ var tutorial_on: bool = true
 var naming_site: int = 0
 var naming_again: bool = false
 var naming_kind: String = "residential"
+## The ground the player picked on a map (1.10 free placement): {lat, lon, precision, view}, or empty.
+## While it is set, the sidebar shows it and the founding button acts on it and nothing else.
+var ground: Dictionary = {}
+## The departure town chosen for an expedition to the picked ground; -1 for the nearest that can go.
+var ground_from: int = -1
+## Whether the naming dialog founds on the picked ground rather than at a recommended site.
+var naming_ground: bool = false
 var menu_seed: String = ""
 var planet_preview: Label
 var local_view: bool = false
@@ -844,13 +853,47 @@ func _unhandled_input(event):
 			map.zoom(1)
 			coach.note_camera()
 		if event.button_index == MOUSE_BUTTON_LEFT and not local_view:
-			map.pick_region(event.position)
+			click_map(event.position)
+
+
+## A click on the globe or the flat map: a recommended site's marker right under the pointer selects
+## that site; anywhere else selects the ground there, the exact coordinate under the pointer.
+func click_map(position: Vector2) -> void:
+	if map.pick_region(position, MARKER_CLICK_PX) >= 0:
+		return
+	var point: Dictionary = map.pick_ground(position)
+	if not point.is_empty():
+		select_ground(point)
+
+
+func select_ground(point: Dictionary) -> void:
+	ground = point.duplicate()
+	ground_from = -1
+	naming_ground = false
+	map.set_ground(ground)
+	refresh_sidebar()
+
+
+func clear_ground() -> void:
+	ground = {}
+	map.set_ground({})
+	map.selected_region = selected
+	refresh_sidebar()
 
 
 func select_region(id: int):
 	selected = id
+	if not ground.is_empty():
+		ground = {}
+		map.set_ground({})
+		map.selected_region = id
 	coach.note_site(id)
 	refresh_sidebar()
+
+
+## Founding on the picked ground: the name is asked as at a recommended site (ground_panel.gd).
+func ask_ground_name() -> void:
+	Pages.GroundPanel.ask_name(self)
 
 
 ## A settlement gets its name from the player: asked when settling, and whenever they rename it.
@@ -863,6 +906,7 @@ func ask_site_name(again: bool):
 			return
 	naming_site = selected
 	naming_again = again
+	naming_ground = false
 	open_page("name_site")
 	var edit: LineEdit = modal_box.find_child("SiteNameEdit", true, false)
 	edit.text = str(sim.state.world.regions[selected].name) if again else ""
@@ -874,6 +918,8 @@ func confirm_site_name(_typed: String = ""):
 	var error: String = ""
 	if naming_again:
 		error = act("rename", {"site": naming_site, "name": edit.text})
+	elif naming_ground and not ground.is_empty():
+		error = Pages.GroundPanel.found(self, edit.text)
 	else:
 		error = act("settle", {"site": naming_site, "name": edit.text, "kind": naming_kind})
 	if error == "":

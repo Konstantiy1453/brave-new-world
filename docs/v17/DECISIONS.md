@@ -976,3 +976,22 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Routes run between grid cells but start and end at the towns' exact coordinates, so a road to a placed
   town ends at the town.
 - A save may hold up to 96 sites (64 before): generated sites plus the ones players found.
+- A left click on the globe or the flat map selects a recommended site only when its marker is within
+  14 px of the pointer (`main.MARKER_CLICK_PX`); any other click selects the ground under the pointer
+  (`map_view.pick_ground`: the ray meets the globe's sphere or the flat sheet). The 43 px radius is kept
+  for hover names only · the old 43 px click radius (a click near a marker could not reach the ground).
+- The documented picking precision is the ground one screen pixel covers at the current zoom, shown
+  under the coordinate (「点选精度 ±0.07°」). At the closest zoom a player can reach on a 1600×900
+  window it is about 0.07° on the globe (distance 7.0) and 0.09° on the flat map (size 4.2).
+- The picked ground shows a white ring with ticks on both maps; the marker selection clears, so the
+  founding button can only act on the picked point.
+- The ground panel prices an expedition for the kind of town that would be founded: a frontier town
+  by default for a later town, or the kind chosen in the naming dialog, and names it next to the cost ·
+  pricing by the previous dialog's kind (the verification run showed ¥ 4,586 and charged ¥ 3,146).
+- The ground panel reports the ground cover under the point (forest, grassland, tundra… as the maps
+  draw it) beside the site type, so a player can tell what they clicked.
+- Free placement is verified by `tools/verify/placement_driver.gd`, which drives the real interface
+  (menu, mouse clicks on both maps, the ground panel, the naming dialog, Ctrl+S, continue) against the
+  source project or a packaged PCK (`--main-pack`). It lives outside `game/` because the export leaves
+  out `tests/`. The colony is played to the expansion licence by the balanced bot through `Sim.act`;
+  the expedition itself goes through the interface.

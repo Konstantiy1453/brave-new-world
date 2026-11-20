@@ -399,6 +399,11 @@ static func _take_name(n: Node, key: String) -> void:
 	n.name = key
 
 
+## Names a node a test or a driver finds by name, in a panel that reuses its nodes.
+static func named(n: Node, key: String) -> void:
+	_take_name(n, key)
+
+
 static func _container(parent: Node, type_name: String) -> Node:
 	var made: Node = _take(parent, type_name)
 	if parent.has_meta(CURSOR):

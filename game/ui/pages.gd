@@ -9,6 +9,7 @@ const EventLines = preload("res://ui/event_lines.gd")
 const PeopleLines = preload("res://ui/people_lines.gd")
 const BayLines = preload("res://ui/bay_lines.gd")
 const CrewPanel = preload("res://ui/crew_panel.gd")
+const GroundPanel = preload("res://ui/ground_panel.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -31,6 +32,10 @@ const CORE_GOODS: Array[String] = ["ore", "copper", "crystal", "food", "material
 
 
 static func region(g, b):
+	# Picked ground (1.10): the point itself, not the recommended site last selected.
+	if not g.ground.is_empty():
+		GroundPanel.panel(g, b)
+		return
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
 	var title = D.row(b)
@@ -77,6 +82,9 @@ static func region(g, b):
 
 ## The buttons under the sidebar's scrolling part, so the next action is always on screen.
 static func region_actions(g, b):
+	if not g.ground.is_empty():
+		GroundPanel.actions(g, b)
+		return
 	var known: Dictionary = g.sim.site_view(g.selected)
 	if g.settlement().is_empty():
 		_site_actions(g, b, known)
@@ -149,12 +157,17 @@ static func _site_actions(g, b, known: Dictionary):
 static func name_site(g, b):
 	var reg: Dictionary = g.sim.state.world.regions[g.naming_site]
 	var first: bool = g.sim.state.settlements.is_empty()
-	D.label(b, Labels.site_label(reg), 22, D.TEAL)
+	if g.naming_ground and not g.ground.is_empty():
+		GroundPanel.naming_lines(g, b)
+	else:
+		D.label(b, Labels.site_label(reg), 22, D.TEAL)
 	if first:
 		D.label(b, "第一座据点是首府，也是一座居住据点：人们要在这里安家。", 17, D.MUTED)
 	elif not g.naming_again:
 		_site_kind_choice(g, b)
 	var fallback: String = str(reg.name)
+	if g.naming_ground and not g.ground.is_empty():
+		fallback = g.sim.Sites.SiteGen.site_number(g.sim.state.world.regions.size())
 	var hint: String = "写什么都行，最多 %d 个字。" % g.sim.Sites.NAME_LIMIT
 	if not g.naming_again:
 		hint += "留空就叫「%s」。" % fallback
@@ -190,7 +203,11 @@ static func _site_kind_choice(g, b):
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_color_override("font_color", D.GOLD if g.naming_kind == kind else D.INK)
 	D.label(b, str(Labels.SITE_KIND_TEXT[g.naming_kind]), 17, D.MUTED)
-	var refusal: String = g.sim.settle_refusal(g.naming_site, g.naming_kind)
+	var refusal: String = (
+		str(GroundPanel.view(g).refusal)
+		if g.naming_ground and not g.ground.is_empty()
+		else g.sim.settle_refusal(g.naming_site, g.naming_kind)
+	)
 	if refusal != "":
 		D.label(b, refusal, 16, D.GOLD)
 

@@ -778,6 +778,8 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 		"fertility": float(cell.get("fertility", 0.0)),
 		"archetype": "",
 		"terrain": "海洋" if not land else "",
+		# The ground cover under the point, as the maps draw it (forest, grassland, tundra...).
+		"biome": str(here.get("biome", "ocean")) if land else "ocean",
 		"signals":
 		Geology.orbital_signals(world, lat, lon, float(rules.placement.signal_radius_degrees)),
 		"slots": 0,

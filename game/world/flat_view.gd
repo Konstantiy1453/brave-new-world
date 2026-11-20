@@ -23,6 +23,9 @@ const FLAT_WRAP_JUMP: float = 9.0
 ## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
 const SHIP_DAYS: float = 3.0
 const SHIP_LIGHT: Color = Color("d6f1ff")
+## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
+const GROUND_CURSOR_DEGREES: float = 1.2
+const GROUND_CURSOR_COLOR: Color = Color("f4fbff")
 
 ## Cargo markers placed every frame along their route, between the daily updates.
 var globe_movers: Array = []
@@ -201,6 +204,29 @@ func _update_flat_markers() -> void:
 		if _marker_shown(reg) and not labelled.has(int(reg.id)):
 			_flat_marker(reg, false, placed)
 	_flat_signals()
+	_flat_ground_cursor()
+
+
+## The picked ground (1.10 free placement): a white ring and cross at the exact point.
+func _flat_ground_cursor() -> void:
+	if ground_point.is_empty():
+		return
+	var point := _flat_point(float(ground_point.lat), float(ground_point.lon)) + Vector3(0, 0, .03)
+	var holder := Node3D.new()
+	flat_marker_root.add_child(holder)
+	var size: float = GROUND_CURSOR_DEGREES / 20.0
+	var ring: Array[Vector3] = []
+	for i in range(41):
+		var angle := float(i) / 40.0 * TAU
+		ring.append(point + Vector3(cos(angle), sin(angle), 0) * size)
+	_line(holder, ring, GROUND_CURSOR_COLOR, 1.4)
+	for axis: Vector3 in [Vector3.RIGHT, Vector3.UP]:
+		for side: float in [-1.0, 1.0]:
+			var tick: Array[Vector3] = [
+				point + axis * size * 0.5 * side, point + axis * size * 1.6 * side
+			]
+			_line(holder, tick, GROUND_CURSOR_COLOR, 1.4)
+	_sphere(holder, point, .01, _marker_material(GROUND_CURSOR_COLOR), 8, 4)
 
 
 ## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over

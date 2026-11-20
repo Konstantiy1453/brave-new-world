@@ -314,7 +314,42 @@ func _update_markers() -> void:
 		if _marker_shown(reg):
 			_globe_marker(reg, labelled.has(int(reg.id)))
 	_globe_signals()
+	_globe_ground_cursor()
 	_draw_globe_climate()
+
+
+## The picked ground (1.10 free placement): a white ring and cross at the exact point.
+func _globe_ground_cursor() -> void:
+	if ground_point.is_empty():
+		return
+	var center: Vector3 = Geo.unit_point(float(ground_point.lat), float(ground_point.lon))
+	var root := Node3D.new()
+	root.set_meta("point", center * 3.05)
+	marker_root.add_child(root)
+	var u: Vector3 = center.cross(Vector3.UP)
+	if u.length() < 0.01:
+		u = center.cross(Vector3.RIGHT)
+	u = u.normalized()
+	var v: Vector3 = center.cross(u).normalized()
+	var ring: Array[Vector3] = []
+	for i in range(41):
+		var angle: float = float(i) / 40.0 * TAU
+		var reach: float = deg_to_rad(GROUND_CURSOR_DEGREES)
+		var direction: Vector3 = u * cos(angle) + v * sin(angle)
+		ring.append((center * cos(reach) + direction * sin(reach)).normalized() * 3.052)
+	_line(root, ring, GROUND_CURSOR_COLOR, 1.6)
+	for axis: Vector3 in [u, v]:
+		var cross: Array[Vector3] = []
+		for t: float in [-1.6, -0.5]:
+			var reach: float = deg_to_rad(GROUND_CURSOR_DEGREES * t)
+			cross.append((center * cos(reach) + axis * sin(reach)).normalized() * 3.052)
+		_line(root, cross, GROUND_CURSOR_COLOR, 1.6)
+		cross = []
+		for t: float in [0.5, 1.6]:
+			var reach: float = deg_to_rad(GROUND_CURSOR_DEGREES * t)
+			cross.append((center * cos(reach) + axis * sin(reach)).normalized() * 3.052)
+		_line(root, cross, GROUND_CURSOR_COLOR, 1.6)
+	_sphere(root, center * 3.052, .012, _mat("ground_dot", GROUND_CURSOR_COLOR, 0, 1, 1.6), 8, 4)
 
 
 ## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over

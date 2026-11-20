@@ -17,6 +17,11 @@ const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
 ## globe's 0.05, and ground and water no longer flicker where they meet.
 const REGION_NEAR: float = 0.5
 const SUN_ENERGY: float = 1.12
+## Pixels around a marker that a hover shows its name for (and a click picked before 1.10).
+const HOVER_RADIUS: float = 43.0
+## The planet sphere's radius and the flat map's surface plane, as the maps draw them.
+const GLOBE_RADIUS: float = 3.0
+const FLAT_SURFACE_Z: float = 0.035
 ## Forward+ (高画质) tuning. Colour grade (brightness, contrast, saturation) that brings Forward+
 ## to the Compatibility palette; ambient occlusion in the town (radius in units, intensity,
 ## power); glow (intensity, bloom, HDR threshold); how far shadow edges soften.
@@ -348,12 +353,12 @@ func pan(dx: float, dy: float) -> void:
 	camera_pivot.z = clampf(camera_pivot.z, -26.0, 26.0)
 
 
-## The site marker under a screen position, among those the filter shows.
-func _region_at(screen_pos: Vector2) -> int:
+## The site marker under a screen position, among those the filter shows, within `radius` pixels.
+func _region_at(screen_pos: Vector2, radius: float = HOVER_RADIUS) -> int:
 	if mode not in ["planet", "flat"] or camera == null:
 		return -1
 	var nearest: int = -1
-	var best: float = 43.0
+	var best: float = radius
 	for reg in world.regions:
 		if not _marker_shown(reg):
 			continue
@@ -387,9 +392,10 @@ func set_marker_filter(key: String) -> void:
 		_update_markers()
 
 
-func pick_region(screen_pos: Vector2) -> int:
-	var nearest: int = _region_at(screen_pos)
+func pick_region(screen_pos: Vector2, radius: float = HOVER_RADIUS) -> int:
+	var nearest: int = _region_at(screen_pos, radius)
 	if nearest >= 0:
+		ground_point = {}
 		selected_region = nearest
 		if mode == "planet":
 			sky.hold_spin()
@@ -398,9 +404,82 @@ func pick_region(screen_pos: Vector2) -> int:
 	return nearest
 
 
+## The ground under a screen position on the globe or the flat map (1.10 free placement):
+## {lat, lon, precision (degrees one pixel spans there), view}, or empty off the planet.
+func pick_ground(screen_pos: Vector2) -> Dictionary:
+	if camera == null or mode not in ["planet", "flat"]:
+		return {}
+	var here: Variant = _ground_hit(screen_pos)
+	if here == null:
+		return {}
+	var beside: Variant = _ground_hit(screen_pos + Vector2(1.0, 0.0))
+	var below: Variant = _ground_hit(screen_pos + Vector2(0.0, 1.0))
+	var at: Vector2 = here
+	var precision: float = 0.0
+	for other: Variant in [beside, below]:
+		if other == null:
+			continue
+		var step: Vector2 = other
+		var scale: float = cos(deg_to_rad(at.x))
+		precision = maxf(
+			precision, Vector2(wrapf(step.y - at.y, -180.0, 180.0) * scale, step.x - at.x).length()
+		)
+	return {"lat": at.x, "lon": at.y, "precision": precision, "view": mode}
+
+
+## The coordinate (lat, lon) under a screen position, or null when the pointer is off the planet.
+func _ground_hit(screen_pos: Vector2) -> Variant:
+	var origin: Vector3 = camera.project_ray_origin(screen_pos)
+	var direction: Vector3 = camera.project_ray_normal(screen_pos)
+	if mode == "planet":
+		if planet == null:
+			return null
+		var local_origin: Vector3 = planet.to_local(origin)
+		var local_direction: Vector3 = (planet.global_basis.inverse() * direction).normalized()
+		var b: float = local_origin.dot(local_direction)
+		var c: float = local_origin.length_squared() - GLOBE_RADIUS * GLOBE_RADIUS
+		var disc: float = b * b - c
+		if disc < 0.0:
+			return null
+		var t: float = -b - sqrt(disc)
+		if t < 0.0:
+			return null
+		var p: Vector3 = (local_origin + local_direction * t).normalized()
+		return Vector2(rad_to_deg(asin(clampf(p.y, -1.0, 1.0))), rad_to_deg(atan2(p.x, p.z)))
+	if flat_world == null:
+		return null
+	var flat_origin: Vector3 = flat_world.to_local(origin)
+	var flat_direction: Vector3 = flat_world.global_basis.inverse() * direction
+	if absf(flat_direction.z) < 0.000001:
+		return null
+	var hit: Vector3 = (
+		flat_origin + flat_direction * ((FLAT_SURFACE_Z - flat_origin.z) / flat_direction.z)
+	)
+	var lat: float = hit.y * 20.0
+	if absf(lat) > 90.0:
+		return null
+	return Vector2(lat, wrapf(hit.x * 20.0, -180.0, 180.0))
+
+
+## Shows the picked ground on both maps, or none with an empty point. The marker selection clears:
+## the ground is what the founding button acts on now.
+func set_ground(point: Dictionary) -> void:
+	ground_point = point.duplicate() if not point.is_empty() else {}
+	if not ground_point.is_empty():
+		selected_region = -1
+	_update_markers()
+
+
+func focus_ground(lat: float) -> void:
+	focus_site = -1
+	sky.hold_spin()
+	planet_pitch = deg_to_rad(lat) * .75
+
+
 func focus_region(id: int) -> void:
 	if id < 0 or id >= world.regions.size():
 		return
+	ground_point = {}
 	selected_region = id
 	focus_site = id
 	sky.hold_spin()

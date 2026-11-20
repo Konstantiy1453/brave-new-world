@@ -26,6 +26,8 @@ var world: Dictionary = {}
 var state: Dictionary = {}
 var mode: String = "planet"
 var selected_region: int = 0
+## The ground the player picked (1.10 free placement): {lat, lon}, or empty.
+var ground_point: Dictionary = {}
 var hovered_region: int = -1
 var marker_filter: String = "all"
 var camera: Camera3D
