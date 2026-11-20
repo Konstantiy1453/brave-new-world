@@ -730,6 +730,33 @@ static func option(
 	return n
 
 
+## A horizontal slider named `key`, reused like every other control here; `fn` gets each value.
+static func slider(
+	parent: Node,
+	key: String,
+	low: float,
+	high: float,
+	step: float,
+	value: float,
+	fn: Callable = Callable()
+) -> HSlider:
+	var n: HSlider = _take(parent, "HSlider")
+	_take_name(n, key)
+	n.min_value = low
+	n.max_value = high
+	n.step = step
+	n.custom_minimum_size = Vector2(220, 28)
+	n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if fn.is_valid():
+		if not n.has_meta(META_FN):
+			n.value_changed.connect(func(changed: float): n.get_meta(META_FN).call(changed))
+		n.set_meta(META_FN, fn)
+	if not n.has_meta(META_LAST) or not is_equal_approx(float(n.get_meta(META_LAST)), value):
+		n.set_value_no_signal(value)
+		n.set_meta(META_LAST, value)
+	return n
+
+
 static func _selected(index: int, n: OptionButton) -> void:
 	var fn: Callable = n.get_meta(META_FN)
 	fn.call(index)

@@ -16,6 +16,8 @@ const UNITS_PER_DEGREE: float = 4.0
 const SPREAD: float = 0.9
 ## Beds behind one lit window.
 const BEDS_PER_WINDOW: float = 15.0
+## The first window of a lived-in home: bright enough to show at the maps' usual zoom.
+const FIRST_WINDOW: float = 0.7
 ## A building site's lamp.
 const SITE_LAMP: float = 0.35
 ## Lights a running facility shows, by role: [warm count, cold count, brightness].
@@ -114,7 +116,7 @@ static func settlement_lights(
 	var pods: int = int(s.get("base_housing", 0))
 	if pods > 0:
 		var windows: int = maxi(1, ceili(float(pods) / BEDS_PER_WINDOW))
-		var lit: int = roundi(windows * float(shares.get(CAMP, 0.0)))
+		var lit: int = lit_windows(windows, float(shares.get(CAMP, 0.0)))
 		for index: int in range(lit):
 			var glow: float = 0.5 + 0.25 * _hash01(int(s.region) * 31 + 7, index)
 			found.append(
@@ -135,9 +137,10 @@ static func settlement_lights(
 		var role: String = str(spec.get("role", "service" if b.kind == "service" else ""))
 		if role == "housing":
 			var windows: int = maxi(1, ceili(float(spec.get("housing", 15)) / BEDS_PER_WINDOW))
-			var lit: int = roundi(windows * float(shares.get(uid, 0.0)))
+			var lit: int = lit_windows(windows, float(shares.get(uid, 0.0)))
 			for index: int in range(lit):
-				var glow: float = 0.45 + 0.3 * _hash01(uid, index)
+				# The first window of a home is the one a player looks for at the map's zoom.
+				var glow: float = (FIRST_WINDOW if index == 0 else 0.45) + 0.3 * _hash01(uid, index)
 				found.append(_light(world, reg, spot + _offset(uid, index, windows), glow, 0.0))
 			continue
 		if not bool(b.get("active", false)) or not WORK_LIGHTS.has(role):
@@ -191,7 +194,15 @@ static func home_lit(b: Dictionary, buildings: Dictionary, shares: Dictionary) -
 	if str(spec.get("role", "")) != "housing":
 		return true
 	var windows: int = maxi(1, ceili(float(spec.get("housing", 15)) / BEDS_PER_WINDOW))
-	return roundi(windows * float(shares.get(int(b.get("uid", 0)), 0.0))) >= 1
+	return lit_windows(windows, float(shares.get(int(b.get("uid", 0)), 0.0))) >= 1
+
+
+## Lit windows of a home with `windows` windows and this share of its beds lived in: one as soon
+## as anyone lives there, then in step with the people, none while it stands empty.
+static func lit_windows(windows: int, share: float) -> int:
+	if share <= 0.0:
+		return 0
+	return clampi(roundi(windows * share), 1, windows)
 
 
 ## A building's plot centre in district units; a building without a plot stands in the centre.
@@ -243,7 +254,9 @@ static func signature(state: Dictionary, buildings: Dictionary) -> String:
 		var pods: int = int(s.get("base_housing", 0))
 		if pods > 0:
 			var windows: int = maxi(1, ceili(float(pods) / BEDS_PER_WINDOW))
-			parts.append("c%d:%d" % [int(s.region), roundi(windows * float(shares.get(CAMP, 0.0)))])
+			parts.append(
+				"c%d:%d" % [int(s.region), lit_windows(windows, float(shares.get(CAMP, 0.0)))]
+			)
 		for b: Dictionary in s.get("buildings", []):
 			var spec: Dictionary = buildings.get(str(b.kind), {})
 			var windows: int = maxi(1, ceili(float(spec.get("housing", 15)) / BEDS_PER_WINDOW))
@@ -255,7 +268,7 @@ static func signature(state: Dictionary, buildings: Dictionary) -> String:
 						int(b.get("plot", -1)),
 						1 if int(b.get("remaining", 0)) > 0 else 0,
 						1 if bool(b.get("active", false)) else 0,
-						roundi(windows * float(shares.get(int(b.get("uid", 0)), 0.0)))
+						lit_windows(windows, float(shares.get(int(b.get("uid", 0)), 0.0)))
 					]
 				)
 			)

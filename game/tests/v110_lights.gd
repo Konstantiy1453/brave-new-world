@@ -207,6 +207,24 @@ func _filling(sim: RefCounted, site: int, camps: Dictionary) -> void:
 	s.population = int(s.base_housing) + HOMES * int(buildings.habitat.housing)
 	var more: int = _warm(LightField.settlement_lights(s, sim.geo, buildings, camps[site])).size()
 	check(more > lit, "people moving in light more windows (%d -> %d)" % [lit, more])
+	# The audited run: 60 beds in the landing camp, 66 people, the first home just finished. The
+	# six in it light a window at the home's own plot, and the night map changes.
+	s.population = int(s.base_housing) + 6
+	var first_home: Dictionary = {}
+	for b: Dictionary in s.buildings:
+		if str(b.kind) == "habitat" and first_home.is_empty():
+			first_home = b
+	var shares: Dictionary = LightField.housing_shares(s, buildings)
+	check(
+		LightField.home_lit(first_home, buildings, shares),
+		"six people in the first home light it (share %.2f)" % float(shares[int(first_home.uid)])
+	)
+	var camp_only: Dictionary = shown.duplicate(true)
+	camp_only.settlements[0].population = int(s.base_housing)
+	check(
+		LightField.signature(shown, buildings) != LightField.signature(camp_only, buildings),
+		"so the night map is repainted when they move in"
+	)
 
 
 ## A building site shows one lamp; finished and running, its work lights.
@@ -317,9 +335,18 @@ func _harbour_views(sim: RefCounted, map: Node3D, coast: int) -> void:
 		sim.tick()
 	map.sync_state(sim.state)
 	check(map._harbor_state(town) == "quay", "then its quay")
+	if town.get("sea_cargo", {}).is_empty():
+		check(map.globe_ships.is_empty(), "no ship while the harbour has carried nothing")
+	# The town runs short of food: the first cargo comes by sea, and with it the ship.
+	sim._consume(town, "food", float(town.stock.food))
+	sim.tick()
+	map.sync_state(sim.state)
 	check(
 		map.globe_ships.size() == 1 and map.flat_ships.size() == 1,
-		"a ship light on the globe and on the flat map"
+		(
+			"a ship light on the globe and on the flat map, with the cargo: %s"
+			% str(town.get("sea_cargo", {}))
+		)
 	)
 	if map.globe_ships.is_empty():
 		return

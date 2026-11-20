@@ -340,13 +340,20 @@ static func _build_ledger(
 				D.GOLD,
 				good
 			)
+	var food: Dictionary = forecast.get("food", {})
+	if not food.is_empty():
+		_food_lines(rows, food, float(forecast.get("usable", {}).get("food", 0.0)))
 	if float(forecast.get("import_savings_per_day", 0.0)) > 0.0:
 		D.pair(
 			rows,
 			"省下进口",
 			"¥ %.0f/日" % float(forecast.import_savings_per_day),
 			D.INK,
-			"按可用部分替代进口食品计",
+			(
+				"按可用部分替代进口食品计，到岸价 ¥ %.1f/百吨" % float(food.get("import_price", 0.0))
+				if not food.is_empty()
+				else "按可用部分替代进口食品计"
+			),
 			D.MUTED
 		)
 	if float(forecast.get("sea_savings_per_day", 0.0)) > 0.0:
@@ -406,3 +413,32 @@ static func _chosen_plot(g, key: String, choices: Array) -> int:
 		if int(row.index) == wanted:
 			return wanted
 	return int(choices[0].index)
+
+
+## Why a food building's crop is or is not all useful: what the town needs a day, what it already
+## grows and lands, what is already being built, and what is left for the new one.
+static func _food_lines(rows: Control, food: Dictionary, useful: float) -> void:
+	var need: String = (
+		"本地每日需要 %s（口粮 %s" % [Labels.per_day(float(food.need)), Labels.per_day(float(food.eaten))]
+	)
+	if float(food.foodworks) > 0.0:
+		need += " · 食品厂 %s" % Labels.per_day(float(food.foodworks))
+	if float(food.refill) > 0.0:
+		need += " · 补足库存 %s" % Labels.per_day(float(food.refill))
+	need += "）"
+	var have: String = (
+		"已有：农场 %s · 码头渔获 %s"
+		% [Labels.per_day(float(food.grown)), Labels.per_day(float(food.caught))]
+	)
+	if float(food.queued) > 0.0:
+		have += " · 在建 %s" % Labels.per_day(float(food.queued))
+	var line: Label = D.label(rows, need, D.CAPTION, D.MUTED)
+	D.named(line, "FoodNeed")
+	D.label(rows, have, D.CAPTION, D.MUTED)
+	var left: Label = D.label(
+		rows,
+		"还缺 %s，新设施能用上 %s" % [Labels.per_day(float(food.shortfall)), Labels.per_day(useful)],
+		D.CAPTION,
+		D.TEAL if useful > 0.0 else D.GOLD
+	)
+	D.named(left, "FoodUseful")

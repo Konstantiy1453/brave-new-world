@@ -8,6 +8,7 @@ extends RefCounted
 ## two opens, and it is not part of the network the contract asks for.
 
 const Bay = preload("res://simulation/bay.gd")
+const Consignments = preload("res://simulation/consignments.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Routes = preload("res://world/routes.gd")
@@ -229,6 +230,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 			payment * float(sim.config.economy.port_fee), "food_order.port_fee", "external"
 		)
 		sim.state.exports_total += payment
+		Consignments.exported(sim, s, "food", float(d.food_input) * scale, payment)
 		cap -= float(d.food_input) * scale
 	# Sell only surplus after promised cross-region stock.
 	for key in EXPORT_ORDER:
@@ -263,6 +265,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		sim._transfer("external", "public", revenue, "export", true, key)
 		sim._public_expense(revenue * sim.config.economy.port_fee, "export.port_fee", "external")
 		sim.state.exports_total += revenue
+		Consignments.exported(sim, s, key, amount, revenue)
 		cap -= amount
 		if sim.state.exports_total == revenue:
 			sim._log("第一笔出口到账：%.0f。所有进出口共用本地港口吞吐。" % revenue)
@@ -646,6 +649,7 @@ static func _import(
 		sim._transfer("public", "external", amount * price, "import.stock", false, key)
 	sim._produce(s, key, amount, Keys.SOURCE_IMPORT)
 	sim.state.imports_total += amount * price
+	Consignments.imported(sim, s, key, amount, amount * price)
 	return capacity - amount
 
 

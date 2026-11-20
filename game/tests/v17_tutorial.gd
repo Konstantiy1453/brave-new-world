@@ -432,7 +432,8 @@ func _pages() -> void:
 	game.open_page("population")
 	await process_frame
 	check(
-		_contains(_labels(game.modal_box), "近 30 日净增"), "population shows arrivals and departures"
+		_contains(_labels(game.modal_box), "日净变化") and _contains(_labels(game.modal_box), "迁入"),
+		"population shows its measured change, with arrivals and departures"
 	)
 	game.close_modal()
 	game.open_page("guide")
@@ -612,7 +613,10 @@ func _new_game_choices() -> void:
 		"the seed box does not hold the tutorial's seed"
 	)
 	check(not game.seed_edit.editable, "while the tutorial is on, the seed cannot be typed")
-	check(game.size_option.disabled and game.difficulty_option.disabled, "nor size and difficulty")
+	check(
+		not game.radius_slider.editable and game.difficulty_option.disabled,
+		"nor radius and difficulty"
+	)
 	check(game.planet_preview.text.contains("专用星球"), "and the menu says why")
 	game._reroll_seed()
 	await process_frame

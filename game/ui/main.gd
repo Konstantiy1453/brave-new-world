@@ -13,6 +13,7 @@ const DistrustGauge = preload("res://ui/distrust_gauge.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
+const RadiusSlider = preload("res://ui/radius_slider.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
@@ -126,7 +127,8 @@ var last_status: String = "planning"
 var current_page: String = ""
 var advantage: String = "capital"
 var seed_edit: LineEdit
-var size_option: OptionButton
+var radius_slider: HSlider
+var menu_radius: float = 1.0
 var accumulator: float = 0
 var toast_time: float = 0
 ## Research notices: one card per finished technology under the top bar, for a few seconds.
@@ -526,39 +528,58 @@ func _watch_events() -> void:
 	event_seen = newest
 
 
-## The first shipment worth watching (1.10 plan C): the first ore leaving camp, and the first ship
-## at a new harbour. Each is announced once; a new or loaded game only marks what it has already.
+## The first shipments worth watching (1.10): the first truckload of ore and the first ship at a new
+## harbour, each a consignment the simulation recorded (`state.firsts`, consignments.gd). The card
+## names the town, the building, the cargo and its value, and opens that town. Each is announced
+## once; a new or loaded game only marks what it has already.
 func _watch_firsts() -> void:
-	var now: Dictionary = _firsts_now()
+	var now: Dictionary = sim.state.get("firsts", {})
 	if not is_same(sim.state, firsts_watch):
 		firsts_watch = sim.state
-		firsts_seen = now
+		firsts_seen = now.duplicate()
 		return
-	if int(now.get("export", -1)) >= 0 and int(firsts_seen.get("export", -1)) < 0:
-		_post_first(
-			"FirstOre", int(now.export), "第一车矿石运出营地", "矿车把第一批矿石运回营地，装上了货运站：殖民地有了第一笔出口收入。点这里去地区里看看。"
-		)
-	if int(now.get("harbor", -1)) >= 0 and int(firsts_seen.get("harbor", -1)) < 0:
-		_post_first(
-			"FirstShip",
-			int(now.harbor),
-			"第一艘货船靠上新码头",
-			"渔船和货船开始进港，食品和建材走海运便宜四分之一。点这里去码头看看，夜里码头会亮起冷色的工作灯。"
-		)
-	firsts_seen = now
+	for kind: String in ["ore", "ship"]:
+		if now.has(kind) and not firsts_seen.has(kind) and not bool(now[kind].get("legacy", false)):
+			_announce_first(kind, now[kind])
+	firsts_seen = now.duplicate()
 
 
-## Where each first has happened: the town of the first export, the town of the first harbour.
-func _firsts_now() -> Dictionary:
-	var found: Dictionary = {}
-	if float(sim.state.get("exports_total", 0.0)) > 0.0 and not sim.state.settlements.is_empty():
-		found.export = int(sim.state.settlements[0].region)
-	for s: Dictionary in sim.state.get("settlements", []):
-		for b: Dictionary in s.get("buildings", []):
-			var role: String = str(sim.config.buildings.get(b.kind, {}).get("role", ""))
-			if role == "harbor" and int(b.remaining) <= 0 and bool(b.get("active", false)):
-				found.harbor = int(s.region)
-	return found
+func _announce_first(kind: String, entry: Dictionary) -> void:
+	var good: String = str(sim.config.resources.get(str(entry.resource), str(entry.resource)))
+	var building: String = str(
+		sim.config.buildings.get(str(entry.building_kind), {}).get("name", entry.building_kind)
+	)
+	var tonnes: float = sim.tonnes(float(entry.amount))
+	if kind == "ore":
+		var sold: String = ""
+		if int(entry.get("sold_at", entry.region)) != int(entry.region):
+			sold = "，经公路运到「%s」" % str(entry.sold_town)
+		_post_first(
+			"FirstOre",
+			int(entry.region),
+			"第一车矿石运出营地",
+			(
+				"「%s」%s的矿车把第一车 %.0f 吨%s运到货运站%s，卖出 ¥ %.0f。点这里去「%s」看看。"
+				% [entry.town, building, tonnes, good, sold, float(entry.value), entry.town]
+			)
+		)
+		return
+	_post_first(
+		"FirstShip",
+		int(entry.region),
+		"第一艘货船靠上新码头",
+		(
+			"「%s」的%s：货船%s %.0f 吨%s，货值 ¥ %.0f。点这里去码头看看，夜里码头会亮起冷色的工作灯。"
+			% [
+				entry.town,
+				building,
+				"卸下" if str(entry.direction) == "import" else "装走",
+				tonnes,
+				good,
+				float(entry.value),
+			]
+		)
+	)
 
 
 func _post_first(card_name: String, region: int, title_text: String, line: String) -> void:
@@ -1384,13 +1405,6 @@ func show_menu():
 	seed_edit.editable = not tutorial_on
 	if not seed_edit.text_changed.is_connected(_on_seed_changed):
 		seed_edit.text_changed.connect(_on_seed_changed)
-	size_option = D.option(
-		r,
-		"SizeOption",
-		["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"],
-		int(lesson.size) if tutorial_on else 1
-	)
-	size_option.disabled = tutorial_on
 	difficulty_option = D.option(
 		r,
 		"DifficultyOption",
@@ -1400,6 +1414,10 @@ func show_menu():
 	difficulty_option.disabled = tutorial_on
 	var reroll = D.button(r, "换个种子", _reroll_seed, "只更换输入框中的种子；新建后生成对应星球")
 	D.font_size(reroll, 15)
+	var radius: float = RadiusSlider.of_size(int(lesson.size)) if tutorial_on else menu_radius
+	radius_slider = RadiusSlider.add(
+		v, "RadiusSlider", radius, not tutorial_on, func(value: float): menu_radius = value
+	)
 	planet_preview = D.label(v, "", 16, D.GOLD)
 	_show_planet_preview()
 	D.label(v, "开局合作方案", 15, D.TEAL)
@@ -1531,9 +1549,9 @@ func start_game():
 		return
 	var text = seed_edit.text
 	var seed_value: Variant = text
-	var scale_id = size_option.selected
+	var scale_id: int = 1
 	difficulty = DIFFICULTIES[difficulty_option.selected]
-	_begin_world(seed_value, advantage, scale_id, difficulty)
+	_begin_world(seed_value, advantage, scale_id, difficulty, menu_radius)
 	menu_seed = ""
 	coach.stop(false)
 	open_page("contract")
@@ -1556,8 +1574,10 @@ func start_tutorial():
 	refresh()
 
 
-func _begin_world(seed_value: Variant, opening: String, scale_id: int, level: String):
-	sim.new_game(seed_value, opening, scale_id, level)
+func _begin_world(
+	seed_value: Variant, opening: String, scale_id: int, level: String, radius: float = 0.0
+):
+	sim.new_game(seed_value, opening, scale_id, level, radius)
 	Career.capture_checkpoint(sim)
 	selected = 0
 	local_view = false
@@ -1621,7 +1641,8 @@ func career_action(action: String, args: Dictionary = {}):
 			str(args.get("opening", sim.state.advantage)),
 			str(args.get("difficulty", sim.state.get("difficulty", "normal"))),
 			SAVE_MANUAL,
-			int(args.get("size", sim.state.world.size))
+			int(args.get("size", sim.state.world.size)),
+			float(args.get("radius", 0.0))
 		)
 	elif action == "restart":
 		error = Career.restart(sim, str(args.get("difficulty", "normal")), SAVE_MANUAL)

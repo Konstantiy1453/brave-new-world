@@ -356,6 +356,9 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	consume(sim, s, "parts", float(d.parts))
 	var building: Dictionary = new_building(sim, kind, int(d.days))
 	building.plot = chosen
+	# The mine road built with it, and the mine whose road it branches from (bay.gd).
+	if int(d.haul.days) > 0:
+		building.haul = d.haul.duplicate()
 	s.buildings.append(building)
 	sim._log(s.name + "开始建设" + d.name + "，工期 %d 天。" % int(d.days))
 	return ""
@@ -374,6 +377,7 @@ static func demolish(sim: RefCounted, region: int, index: int) -> String:
 	if str(b.kind) in ["port", "power", "water"] and _last_of(s, str(b.kind)):
 		return "这是本据点最后一座，不能拆除"
 	s.buildings.remove_at(index)
+	Bay.reroute(sim, s, b)
 	_reclaim_plot(sim, s, b)
 	sim._log("%s · 拆除了%s。" % [s.name, sim.config.buildings[b.kind].name])
 	sim._refresh(s)
@@ -988,18 +992,64 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 static func usable_food(sim: RefCounted, s: Dictionary, nominal: float) -> float:
 	if s.is_empty():
 		return nominal
-	var need: float = float(s.population) * float(sim.config.economy.food_per_person)
+	return clampf(float(food_balance(sim, s).shortfall), 0.0, nominal)
+
+
+## A town's food a day, for a forecast: what it eats (and its foodworks take), what it already
+## grows or lands (farms, indoor farms, the harbour's catch), what food buildings already queued will
+## add, and the stock still to fill to its reserve, spread over economy `forecast_food_refill_days`.
+## `shortfall` is what a new food building could still put to use; the rest of its crop stands idle.
+static func food_balance(sim: RefCounted, s: Dictionary) -> Dictionary:
+	var eaten: float = float(s.population) * float(sim.config.economy.food_per_person)
+	var works: float = 0.0
 	var grown: float = 0.0
+	var caught: float = 0.0
+	var queued: float = 0.0
 	for b: Dictionary in s.buildings:
-		if b.kind == "service" or int(b.remaining) > 0 or not bool(b.get("enabled", true)):
+		if b.kind == "service" or not bool(b.get("enabled", true)):
 			continue
 		var d: Dictionary = sim.config.buildings.get(b.kind, {})
+		var done: bool = int(b.remaining) <= 0
+		var share: float = float(b.get("efficiency", 1.0)) if done else 1.0
 		match str(d.get("role", "")):
 			"foodworks":
-				need += float(d.get("food_input", 0.0)) * float(b.get("efficiency", 1.0))
+				if done:
+					works += float(d.get("food_input", 0.0)) * share
 			"farm", "indoor_farm":
-				grown += float(farm_rate(sim, s, b)) * float(b.get("efficiency", 1.0))
-	return clampf(need - grown, 0.0, nominal)
+				var crop: float = float(farm_rate(sim, s, b)) * share
+				if done:
+					grown += crop
+				else:
+					queued += crop
+			"harbor":
+				var catch: float = float(d.get("fish", 0.0)) * share
+				if done:
+					caught += catch
+				else:
+					queued += catch
+	var target: float = eaten * (float(sim.state.policy.food_reserve) + 1.0)
+	var arriving: float = sim.Logistics.incoming(sim, int(s.region), "food")
+	var spread: float = float(sim.config.economy.get("forecast_food_refill_days", 30))
+	var refill: float = maxf(0.0, target - float(s.stock.food) - arriving) / maxf(1.0, spread)
+	var need: float = eaten + works + refill
+	return {
+		"eaten": eaten,
+		"foodworks": works,
+		"refill": refill,
+		"need": need,
+		"grown": grown,
+		"caught": caught,
+		"queued": queued,
+		"shortfall": maxf(0.0, need - grown - caught - queued),
+		"import_price": delivered_price(sim, s, "food"),
+	}
+
+
+## What a good costs the town delivered at its cargo station: the import price with the port fee,
+## less what a working harbour saves on sea freight (as `Logistics._import` pays).
+static func delivered_price(sim: RefCounted, s: Dictionary, good: String) -> float:
+	var discount: float = Bay.sea_discount(sim, s, good) if not s.is_empty() else 0.0
+	return _import_price(sim, good) * (1.0 - discount)
 
 
 ## A standing farm's daily food at full staffing, as run_settlement grows it.
@@ -1087,7 +1137,7 @@ static func build_forecast(
 		)
 		outputs.food = rate
 		usable.food = usable_food(sim, s, rate)
-		revenue = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		revenue = float(usable.food) * delivered_price(sim, s, "food")
 		savings = revenue
 	elif role == "harbor":
 		# The catch replaces imported food as a farm's crop does; sea freight makes what the town
@@ -1095,7 +1145,8 @@ static func build_forecast(
 		var catch: float = float(spec.get("fish", 0.0))
 		outputs.food = catch
 		usable.food = usable_food(sim, s, catch)
-		savings = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		# Before the harbour works, food comes in at the full orbital price.
+		savings = float(usable.food) * _import_price(sim, "food")
 		sea = Bay.sea_savings(sim, s)
 		revenue = savings + sea
 	elif role == "indoor_farm":
@@ -1104,7 +1155,7 @@ static func build_forecast(
 		)
 		outputs.food = rate
 		usable.food = usable_food(sim, s, rate)
-		revenue = float(usable.food) * float(sim.config.prices.food) * (1.0 + fee)
+		revenue = float(usable.food) * delivered_price(sim, s, "food")
 		savings = revenue
 	elif role == "factory":
 		var boost: float = _factory_boost(sim, {"kind": kind})
@@ -1176,6 +1227,7 @@ static func build_forecast(
 		"usable": usable,
 		"import_savings_per_day": savings,
 		"sea_savings_per_day": sea,
+		"food": food_balance(sim, s) if not s.is_empty() and outputs.has("food") else {},
 		"haul": spec.get("haul", {"days": 0, "cost": 0.0, "units": 0.0}),
 		"revenue_per_day": revenue,
 		"wages_per_day": wages,

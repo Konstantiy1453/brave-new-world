@@ -22,6 +22,8 @@ const CLIMATE_RING_DEGREES: float = 35.0
 const FLAT_WRAP_JUMP: float = 9.0
 ## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
 const SHIP_DAYS: float = 3.0
+## Where in its call a ship is on the day of its town's latest sea cargo: alongside the quay.
+const SHIP_BERTH_PHASE: float = 0.45
 const SHIP_LIGHT: Color = Color("d6f1ff")
 ## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
 const GROUND_CURSOR_DEGREES: float = 1.2
@@ -466,7 +468,9 @@ func _ship_movers(flat: bool) -> Array:
 	var holder: Node3D = flat_mover_root if flat else mover_root
 	if holder == null or not is_instance_valid(holder):
 		return found
-	var buildings: Dictionary = Rules.read("economy").buildings
+	var economy: Dictionary = Rules.read("economy")
+	var buildings: Dictionary = economy.buildings
+	var call_days: int = int(economy.get("bay", {}).get("ship_call_days", 30))
 	for s: Dictionary in state.get("settlements", []):
 		var region: int = int(s.get("region", -1))
 		if region < 0 or region >= world.get("regions", []).size():
@@ -474,6 +478,9 @@ func _ship_movers(flat: bool) -> Array:
 		if not bool(world.regions[region].get("coast", false)):
 			continue
 		if not LightField.quay_working(state, s, buildings):
+			continue
+		# A ship calls only with cargo: a harbour that has moved none yet has an empty berth.
+		if not Consignments.ship_calling(state, s, call_days):
 			continue
 		_fit_field()
 		var line: Array = ship_line(region)
@@ -496,7 +503,9 @@ func _ship_movers(flat: bool) -> Array:
 			8,
 			4
 		)
-		found.append({"node": light, "from": ends[0], "to": ends[1], "phase": float(region) * 0.37})
+		var cargo_day: float = float(s.get("sea_cargo", {}).get("day", float(region) * 0.37))
+		var phase: float = SHIP_BERTH_PHASE * SHIP_DAYS - cargo_day
+		found.append({"node": light, "from": ends[0], "to": ends[1], "phase": phase})
 	return found
 
 

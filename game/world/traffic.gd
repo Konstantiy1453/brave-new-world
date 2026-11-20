@@ -20,6 +20,9 @@ var street_x: float = 0.0
 var stops: Array = []
 ## [{"end": Vector2, "junction": Vector2 (optional)}] route gates at the edge of the region.
 var gates: Array = []
+## The ore run (consignments.gd): {"from", "to"} stop indices, the mine and the cargo station. A
+## truck of its own carries the ore between them while the town sells ore; empty otherwise.
+var ore_run: Dictionary = {}
 var running: bool = true
 var rate: float = 1.0
 var _vehicles: Array = []
@@ -53,6 +56,29 @@ func setup(seed_value: int, count: int) -> void:
 		# Spread them out along their first trip.
 		vehicle.at = _rng.randf() * float(vehicle.lengths[vehicle.lengths.size() - 1])
 		_place(vehicle)
+	if not ore_run.is_empty():
+		_add_ore_truck()
+
+
+## The ore truck: out from the mine to the cargo station, back empty, and again.
+func _add_ore_truck() -> void:
+	var body := MeshInstance3D.new()
+	body.name = "OreTruck"
+	body.mesh = vehicle_meshes.get("truck", vehicle_meshes.values()[0])
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(body)
+	var vehicle: Dictionary = {
+		"node": body,
+		"kind": "ore",
+		"path": PackedVector2Array(),
+		"lengths": PackedFloat32Array(),
+		"at": 0.0,
+		"wait": 0.0,
+		"stop": int(ore_run.from),
+	}
+	_vehicles.append(vehicle)
+	_next_trip(vehicle)
+	_place(vehicle)
 
 
 func vehicle_count() -> int:
@@ -88,7 +114,13 @@ func _pick_kind(index: int) -> String:
 func _next_trip(vehicle: Dictionary) -> void:
 	var from: Dictionary = stops[int(vehicle.stop)]
 	var points := PackedVector2Array()
-	if not gates.is_empty() and str(vehicle.kind) == "truck" and _rng.randf() < 0.3:
+	if str(vehicle.kind) == "ore":
+		var next: int = (
+			int(ore_run.to) if int(vehicle.stop) == int(ore_run.from) else int(ore_run.from)
+		)
+		points = stop_path(from, stops[next], street_x)
+		vehicle.stop = next
+	elif not gates.is_empty() and str(vehicle.kind) == "truck" and _rng.randf() < 0.3:
 		var gate: Dictionary = gates[_rng.randi_range(0, gates.size() - 1)]
 		points = gate_path(from, gate, street_x)
 	else:

@@ -30,6 +30,8 @@ static func haul(sim: RefCounted, region: int, plot: int) -> Dictionary:
 		return {"days": 0, "cost": 0.0, "units": 0.0}
 	var at := Vector2(float(plots[plot].x), float(plots[plot].z))
 	var beyond: float = maxf(0.0, at.length() - float(rule.haul_reach))
+	# The mine whose road this one would branch from (its uid), 0 for a road from the town's edge.
+	var via: int = 0
 	for b: Dictionary in sim.settlement(region).get("buildings", []):
 		var index: int = int(b.get("plot", -1))
 		if index < 0 or index >= plots.size() or index == plot:
@@ -37,14 +39,49 @@ static func haul(sim: RefCounted, region: int, plot: int) -> Dictionary:
 		if str(sim.config.buildings.get(str(b.kind), {}).get("role", "")) != "mine":
 			continue
 		var spur: float = at.distance_to(Vector2(float(plots[index].x), float(plots[index].z)))
-		beyond = minf(beyond, spur)
+		if spur < beyond:
+			beyond = spur
+			via = int(b.get("uid", 0))
 	if beyond <= 0.0:
-		return {"days": 0, "cost": 0.0, "units": 0.0}
+		return {"days": 0, "cost": 0.0, "units": 0.0, "via": 0}
 	return {
 		"days": ceili(beyond * float(rule.haul_days_per_unit)),
 		"cost": beyond * float(rule.haul_cost_per_unit),
-		"units": beyond
+		"units": beyond,
+		"via": via,
 	}
+
+
+## A mine cancelled before it was finished takes its unbuilt road with it: a mine ordered to branch
+## off that road builds the main road itself. Its days grow by the difference; the road money the
+## cancelled mine had paid covers the extra cost first, and the rest is charged now.
+static func reroute(sim: RefCounted, s: Dictionary, gone: Dictionary) -> void:
+	var uid: int = int(gone.get("uid", 0))
+	if uid <= 0 or int(gone.get("remaining", 0)) <= 0:
+		return
+	var budget: float = float(gone.get("haul", {}).get("cost", 0.0))
+	for b: Dictionary in s.get("buildings", []):
+		var before: Dictionary = b.get("haul", {})
+		if int(before.get("via", 0)) != uid or int(b.remaining) <= 0:
+			continue
+		var fresh: Dictionary = haul(sim, int(s.region), int(b.get("plot", -1)))
+		var extra_days: int = maxi(0, int(fresh.days) - int(before.get("days", 0)))
+		var extra_cost: float = maxf(0.0, float(fresh.cost) - float(before.get("cost", 0.0)))
+		var covered: float = minf(budget, extra_cost)
+		budget -= covered
+		var charged: float = sim._transfer(
+			"public", "external", extra_cost - covered, "invest.build", false, str(b.kind)
+		)
+		b.remaining = int(b.remaining) + extra_days
+		b.total_days = int(b.get("total_days", 0)) + extra_days
+		b.haul = fresh
+		var name: String = str(sim.config.buildings.get(str(b.kind), {}).get("name", b.kind))
+		sim._log(
+			(
+				"%s · 原定接在被取消的矿场道路上的%s改修自己的矿区道路：工期 +%d 天，费用 +¥%.0f（其中 ¥%.0f 由已付的道路款抵扣，补交 ¥%.0f）。"
+				% [s.name, name, extra_days, extra_cost, covered, charged]
+			)
+		)
 
 
 ## What sea freight would save this town a day on what it imports now: the discount on its share

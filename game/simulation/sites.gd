@@ -2,6 +2,7 @@ extends RefCounted
 ## Candidate sites and their plots: founding settlements, what is known about a site, surveys,
 ## and which plot a building stands on. `state.world.regions` is the list of sites.
 
+const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Contract = preload("res://simulation/contract.gd")
@@ -720,6 +721,7 @@ static func settle(
 		# Expedition population migrates; food stays physically in its convoy until arrival.
 		src.workers -= expedition_workers(sim, site_kind)
 		src.population -= expedition_workers(sim, site_kind)
+		Stats.count(sim.state, "moves", int(src.region), -expedition_workers(sim, site_kind))
 		sim._reconcile_jobs(src)
 	var op: Dictionary = sim.config.openings[sim.state.advantage]
 	var workers: int = int(op.workers) if first else expedition_workers(sim, site_kind)
@@ -767,6 +769,8 @@ static func settle(
 		"crew": 0
 	}
 	sim.state.settlements.append(s)
+	# The landing party or the expedition moves in: the town's first people.
+	Stats.count(sim.state, "moves", region, int(s.population))
 	var crews: Dictionary = sim.pop_rules.get("crews", {})
 	if first:
 		sim.Crews.found(sim, s, int(crews.get("opening", 1)))

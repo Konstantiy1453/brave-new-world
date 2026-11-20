@@ -51,23 +51,67 @@ static func limit(sim: RefCounted, s: Dictionary, v: Dictionary) -> Dictionary:
 	return {"key": "none", "text": "没有明显的限制", "remedy": ""}
 
 
+## What made a town's change: immigration, departures, births, people moved with expeditions,
+## crews and workers following jobs, and anything the records do not name.
+static func _change_parts(change: Dictionary) -> String:
+	var parts: PackedStringArray = [
+		"迁入 +%d" % int(change.arrivals),
+		"离开 −%d" % int(change.departures),
+		"出生 +%d" % int(change.births),
+		"远征、工程队与调动 %+d" % int(change.moves),
+	]
+	if int(change.other) != 0:
+		parts.append("其他 %+d" % int(change.other))
+	return " · ".join(parts)
+
+
 ## The growth lines for the people page: change, demand against room, and the limit.
 static func growth(sim: RefCounted, b: Control, s: Dictionary, v: Dictionary) -> void:
-	var arrived: int = int(v.get("arrived_30", 0))
-	var left: int = int(v.get("departed_30", 0))
-	var net: int = arrived - left
-	D.label(
-		b,
-		"近 30 日净增 %+d 人（迁入 %d，离开 %d）" % [net, arrived, left],
-		18,
-		D.TEAL if net > 0 else (D.GOLD if net == 0 else D.RED)
-	)
+	var change: Dictionary = v.get("change", {})
+	if bool(change.get("known", false)):
+		var net: int = int(change.net)
+		var head: Label = D.label(
+			b,
+			"近 %d 日净变化 %+d 人（%d → %d）" % [int(change.days), net, int(change.then), int(change.now)],
+			18,
+			D.TEAL if net > 0 else (D.GOLD if net == 0 else D.RED)
+		)
+		D.named(head, "PopulationNet")
+		D.label(b, "　" + _change_parts(change), 16, D.MUTED)
+	else:
+		D.label(
+			b,
+			(
+				"近 30 日迁入 %d 人，离开 %d 人（完整的人口变化记录从下个月开始）"
+				% [int(v.get("arrived_30", 0)), int(v.get("departed_30", 0))]
+			),
+			17
+		)
 	var demand: float = float(v.get("arrivals_per_month", 0.0))
 	var room: int = maxi(0, int(v.get("free_beds", 0)))
 	D.label(
 		b,
-		"每月约 %.1f 人想来 · 能住下 %d 人（空床位已扣除招募预留 %d）" % [demand, room, int(v.get("in_transit", 0))],
+		(
+			"每月约 %.1f 人想来 · 能住下 %d 人（空床位已扣除招募预留 %d）· 预计 30 天迁入约 %d 人"
+			% [demand, room, int(v.get("in_transit", 0)), int(v.get("expected_30", 0))]
+		),
 		17
+	)
+	(
+		D
+		. label(
+			b,
+			(
+				"失业率 %.0f%%：超过 %.0f%% 想来的人开始减少，达到 %.0f%% 时没人再来"
+				% [
+					100.0 * float(v.get("jobless_share", 0.0)),
+					100.0 * float(v.get("jobless_free", 0.0)),
+					100.0 * float(v.get("jobless_stop", 0.0)),
+				]
+			),
+			16,
+			D.MUTED
+		)
 	)
 	var main: Dictionary = limit(sim, s, v)
 	D.label(b, "主要限制：" + str(main.text), 17, D.TEAL if str(main.key) == "none" else D.GOLD)

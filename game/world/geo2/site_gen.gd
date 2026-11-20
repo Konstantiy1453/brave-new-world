@@ -731,6 +731,13 @@ static func _placed_plots(
 ## (relief against the limit, 0-1), slope_word, river,
 ## lake, water, coast, landmass, signals (per resource, 0-1 from orbit), slots (land plot slots),
 ## temperature, fertility}.
+## How far round a point an orbital reading takes in, in degrees: a fixed ground distance
+## (placement `signal_radius_km`), so it covers more of a smaller planet's arc.
+static func signal_degrees(world: Dictionary, rules: Dictionary) -> float:
+	var km_per_degree: float = deg_to_rad(1.0) * float(world.get("radius_km", 6371.0))
+	return float(rules.placement.signal_radius_km) / maxf(1.0, km_per_degree)
+
+
 static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float) -> Dictionary:
 	var index: int = land_cell_at(world, lat, lon)
 	if index < 0:
@@ -780,8 +787,7 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 		"terrain": "海洋" if not land else "",
 		# The ground cover under the point, as the maps draw it (forest, grassland, tundra...).
 		"biome": str(here.get("biome", "ocean")) if land else "ocean",
-		"signals":
-		Geology.orbital_signals(world, lat, lon, float(rules.placement.signal_radius_degrees)),
+		"signals": Geology.orbital_signals(world, lat, lon, signal_degrees(world, rules)),
 		"slots": 0,
 	}
 	if not land or not bool(cell.get("land", false)):

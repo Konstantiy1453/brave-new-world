@@ -171,11 +171,13 @@ func _transport_signature() -> String:
 	var moving: Array = []
 	for cargo: Dictionary in state.get("shipments", []):
 		moving.append([int(cargo.from), int(cargo.remaining), int(cargo.total_days)])
-	# A quay that starts work brings its ship light.
+	# A quay that starts work, and then its first cargo, bring its ship light.
 	var quays: Array = []
-	var buildings: Dictionary = Rules.read("economy").buildings
+	var economy: Dictionary = Rules.read("economy")
+	var calls: int = int(economy.get("bay", {}).get("ship_call_days", 30))
 	for place: Dictionary in state.get("settlements", []):
-		quays.append(LightField.quay_working(state, place, buildings))
+		quays.append(LightField.quay_working(state, place, economy.buildings))
+		quays.append(Consignments.ship_calling(state, place, calls))
 	return "%s|%s|%s" % [str(roads), str(moving), str(quays)]
 
 

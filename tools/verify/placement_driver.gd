@@ -40,6 +40,7 @@ var options: Dictionary = {
 	"out": "",
 	"coast": "0",
 	"bots": "",
+	"pck": "",
 }
 var game: Node
 var record: Dictionary = {"checks": [], "ok": true}
@@ -54,7 +55,13 @@ func _initialize() -> void:
 	record.engine = Engine.get_version_info().string
 	record.game_version = str(ProjectSettings.get_setting("application/config/version"))
 	record.viewport = [root.get_visible_rect().size.x, root.get_visible_rect().size.y]
-	record.main_pack = OS.get_cmdline_args().has("--main-pack")
+	# Which build answered: the export leaves out `tests/`, so a packaged PCK has none of it. The
+	# engine takes `--main-pack` for itself, so the run names its PCK again with `--pck=` for the record.
+	record.res_has_tests = ResourceLoader.exists("res://tests/v110_placement.gd")
+	record.build = "source project" if record.res_has_tests else "packaged PCK"
+	if str(options.get("pck", "")) != "":
+		record.pck = str(options.pck)
+		record.pck_sha256 = FileAccess.get_sha256(str(options.pck))
 	_watchdog(1500.0)
 	call_deferred("run")
 

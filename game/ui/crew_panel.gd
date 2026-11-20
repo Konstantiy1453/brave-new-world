@@ -72,6 +72,8 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 				"工程队 #%d · 前往 %s，%d 天后到"
 				% [int(team.id), str(to.get("name", "")), maxi(0, int(team.until) - day)]
 			)
+			if bool(team.get("held", false)):
+				text += "（线路封闭，停在途中等待，与货运相同）"
 	var words: Label = D.label(line, text, D.SMALL, D.INK, false)
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if str(team.task) in ["train", "travel"]:
@@ -80,8 +82,15 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 		var to: int = int(other.region)
 		if to == int(team.region):
 			continue
-		var days: int = g.sim.Crews.travel_days(g.sim, int(team.region), to)
+		var link: Dictionary = g.sim.Crews.travel_link(g.sim, int(team.region), to)
+		var days: int = int(link.days)
 		if days < 0:
+			# A closed link is shown, so the player sees why the crew cannot go.
+			if str(link.reason).contains("封闭"):
+				var closed: Label = D.label(
+					line, "%s：%s" % [str(other.name), str(link.reason)], D.CAPTION, D.MUTED, false
+				)
+				D.named(closed, "CrewRouteClosed_%d" % to)
 			continue
 		var crew: int = int(team.id)
 		var send: Button = D.button(

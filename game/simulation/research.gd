@@ -522,6 +522,9 @@ static func _commissions(sim: RefCounted, advance: bool, finished: Array) -> voi
 		var quote: Dictionary = commission_quote(
 			sim, key, int(sim.state.research.projects[key].commission)
 		)
+		# Nothing is charged while the project's own team is held up (the quote prices that pace).
+		if str(quote.state) == "no_team":
+			continue
 		if float(quote.cost) <= 0.0 or sim.optional_room() < float(quote.cost):
 			continue
 		sim._transfer("public", "external", float(quote.cost), "research.commission", false, key)
@@ -542,19 +545,35 @@ static func commission_quote(sim: RefCounted, tech: String, level: int) -> Dicti
 	var others: int = (
 		_commissioned(sim).filter(func(key: String) -> bool: return key != tech).size()
 	)
-	var rate: float = float(p.get("rate", 0.0))
-	var extra: float = rate * float(rules.speedup[clampi(level, 0, rules.speedup.size() - 1)])
+	var pace: float = float(p.get("rate", 0.0))
+	# A project whose team is held up: the price and the days saved once the team works, at the
+	# pace its assigned team will have (at least the project's minimum team).
+	var planned: bool = pace <= 0.0
+	if planned:
+		var team: int = maxi(
+			int(p.get("staff", 0)), int(sim.config.techs[tech].get("minimum_staff", 3))
+		)
+		pace = rate(team, float(sim.progression.research.reference_rate)) * _speed_factor(sim)
+	var extra: float = pace * float(rules.speedup[clampi(level, 0, rules.speedup.size() - 1)])
 	var cost: float = extra * commission_price(sim, tech, others)
 	var left: float = maxf(0.0, float(sim.config.techs[tech].cost) - float(p.get("work", 0.0)))
 	var saved: int = 0
-	if rate > 0.0 and extra > 0.0:
-		saved = ceili(left / rate) - ceili(left / (rate + extra))
+	if pace > 0.0 and extra > 0.0:
+		saved = ceili(left / pace) - ceili(left / (pace + extra))
 	var state: String = "running"
 	if int(p.get("effective", 0)) <= 0:
 		state = "no_team"
 	elif sim.optional_room() < cost:
 		state = "no_cash"
-	return {"level": level, "extra": extra, "cost": cost, "days_saved": saved, "state": state}
+	return {
+		"level": level,
+		"extra": extra,
+		"cost": cost,
+		"days_saved": saved,
+		"state": state,
+		"planned": planned,
+		"blocked_reason": str(p.get("reason", "")) if planned else "",
+	}
 
 
 ## Windfall research goes to the project with the most work already done.

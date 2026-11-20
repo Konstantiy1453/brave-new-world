@@ -3,6 +3,7 @@ const D = preload("res://ui/design.gd")
 const Career = preload("res://simulation/career.gd")
 const Labels = preload("res://ui/labels.gd")
 const ResearchPage = preload("res://ui/research_page.gd")
+const RadiusSlider = preload("res://ui/radius_slider.gd")
 
 
 static func populate(g, b, page: String):
@@ -364,11 +365,8 @@ static func career(g, b):
 		var next_row = D.row(b)
 		var next_seed = D.line_edit(next_row, "NextSeed", str(int(g.sim.state.world.seed) + 1))
 		next_seed.custom_minimum_size.x = 170
-		var next_size = D.option(
-			next_row,
-			"NextSize",
-			["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"],
-			int(g.sim.state.world.size)
+		var next_radius: HSlider = RadiusSlider.add(
+			b, "NextRadius", float(g.sim.state.world.radius_km) / 6371.0, true
 		)
 		var opening_keys: Array = g.sim.config.openings.keys()
 		var opening_names: Array = []
@@ -397,7 +395,7 @@ static func career(g, b):
 							"handover",
 							{
 								"seed": next_seed.text,
-								"size": next_size.selected,
+								"radius": next_radius.value,
 								"opening": opening_keys[next_opening.selected],
 								"difficulty": level_keys[next_level.selected]
 							}

@@ -297,6 +297,7 @@ static func _births(sim: RefCounted, s: Dictionary) -> void:
 		s.children += 1
 		s.population += 1
 		sim.state.births_total += 1
+		Stats.count(sim.state, "births", int(s.region), 1)
 		s.cohorts.append(
 			{"count": 1, "mature_day": int(sim.state.day) + int(sim.config.economy.mature_days)}
 		)
@@ -378,6 +379,8 @@ static func _move_workers(sim: RefCounted, from: Dictionary, to: Dictionary, lim
 	from.population = int(from.population) - moving
 	to.workers = int(to.workers) + moving
 	to.population = int(to.population) + moving
+	Stats.count(sim.state, "moves", int(from.region), -moving)
+	Stats.count(sim.state, "moves", int(to.region), moving)
 	to.employed = int(to.employed) + moving
 
 
@@ -477,7 +480,19 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 		"prospects": job_prospects(sim, s),
 		"arrived_30": int(_people_30(sim, "arrivals", region)),
 		"departed_30": int(_people_30(sim, "departures", region)),
+		# The town's measured change and what made it (stats.gd).
+		"change": Stats.population_change(sim.state, region),
+		"jobless_share": _jobless_share(s),
+		"jobless_free": float(sim.pop_rules.immigration.jobless_free_share),
+		"jobless_stop": float(sim.pop_rules.immigration.jobless_stop_share),
+		# Who would come in the next 30 days, within the beds free after reservations.
+		"expected_30": mini(roundi(rate), maxi(0, free_beds(sim, s))),
 	}
+
+
+static func _jobless_share(s: Dictionary) -> float:
+	var adults: int = maxi(1, int(s.workers) + int(s.scientists))
+	return float(maxi(0, adults - int(s.employed))) / adults
 
 
 ## Beds in one housing building at its level.

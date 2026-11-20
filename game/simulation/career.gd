@@ -383,7 +383,13 @@ static func invest(sim, amount: float) -> String:
 
 
 static func handover(
-	sim, seed_value: Variant, advantage: String, difficulty: String, path: String, size_id: int = -1
+	sim,
+	seed_value: Variant,
+	advantage: String,
+	difficulty: String,
+	path: String,
+	size_id: int = -1,
+	radius: float = 0.0
 ) -> String:
 	ensure(sim)
 	if sim.state.status != "success":
@@ -448,7 +454,11 @@ static func handover(
 	c.checkpoint = ""
 	var next = sim.get_script().new()
 	next.new_game(
-		seed_value, advantage, int(sim.state.world.size) if size_id < 0 else size_id, difficulty
+		seed_value,
+		advantage,
+		int(sim.state.world.size) if size_id < 0 else size_id,
+		difficulty,
+		radius
 	)
 	next.state.career = c
 	next.blobs.archives = sim.blobs.archives.duplicate()

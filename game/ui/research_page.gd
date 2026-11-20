@@ -270,9 +270,27 @@ static func _commission_switch(g, c, row: Dictionary) -> void:
 		if state == "running":
 			D.label(c, "委托生效：从明天起每天收 ¥%.0f，团队停工或现金不足的日子不收" % float(quote.cost), D.CAPTION, D.TEAL)
 		elif state == "no_team":
-			D.label(c, "团队还没在这个课题上开工：开工后才开始收费", D.CAPTION, D.GOLD)
+			var why: String = str(quote.get("blocked_reason", ""))
+			(
+				D
+				. label(
+					c,
+					(
+						"团队还没开工%s：开工的次日起每天收 ¥%.0f，提前约 %d 天；之前不收"
+						% [
+							"（%s）" % why if why != "" else "",
+							float(quote.cost),
+							int(quote.days_saved),
+						]
+					),
+					D.CAPTION,
+					D.GOLD
+				)
+			)
 		elif state == "no_cash":
 			D.label(c, "现金不够今天的委托（先留足日常开支）：现金够时才收费", D.CAPTION, D.GOLD)
+	elif bool(quotes[0].get("planned", false)):
+		D.label(c, "按团队开工后的速度估价：开工的次日起按日收费；停工的日子不收", D.CAPTION, D.MUTED)
 	else:
 		D.label(c, "选一级后从明天起按日收费；团队停工的日子不收", D.CAPTION, D.MUTED)
 

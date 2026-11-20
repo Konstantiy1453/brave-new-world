@@ -14,6 +14,9 @@ const YEAR_DAYS: int = 360
 const NUMBER_COLUMNS: Array[String] = [
 	"income", "expense", "invest", "funding", "arrivals", "departures"
 ]
+## Per town, newer than some saves' rows (1.10): births, people moved between towns (expeditions,
+## crews, workers following jobs; a landing counts as moved in) and the population at the day's end.
+const PEOPLE_COLUMNS: Array[String] = ["births", "moves"]
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -47,6 +50,8 @@ static func _blank() -> Dictionary:
 		"goods": {},
 		"arrivals": {},
 		"departures": {},
+		"births": {},
+		"moves": {},
 	}
 
 
@@ -60,6 +65,9 @@ static func validate(candidate: Dictionary) -> String:
 			return "统计数据无效"
 		for column: String in NUMBER_COLUMNS:
 			if not _numbers_only(row.get(column)):
+				return "统计数据无效"
+		for column: String in PEOPLE_COLUMNS + ["pop"]:
+			if row.has(column) and not _numbers_only(row[column]):
 				return "统计数据无效"
 	for row: Variant in stats.days:
 		if not (row.get("cash") is float or row.get("cash") is int):
@@ -106,6 +114,16 @@ static func goods(state: Dictionary, good: String, column: int, amount: float) -
 	row[good][column] = float(row[good][column]) + amount
 
 
+## Adds to a per-town count of today: "births" or "moves" (signed: in is positive).
+static func count(state: Dictionary, column: String, region: int, amount: int) -> void:
+	if not state.has("stats") or amount == 0:
+		return
+	if not state.stats.today.has(column):
+		state.stats.today[column] = {}
+	var row: Dictionary = state.stats.today[column]
+	row[str(region)] = int(row.get(str(region), 0)) + amount
+
+
 static func people(state: Dictionary, region: int, arriving: bool, count: int) -> void:
 	if not state.has("stats"):
 		return
@@ -130,6 +148,9 @@ static func close_day(state: Dictionary) -> void:
 				"funding": today.funding,
 				"arrivals": today.arrivals,
 				"departures": today.departures,
+				"births": today.get("births", {}),
+				"moves": today.get("moves", {}),
+				"pop": _populations(state),
 			}
 		)
 	)
@@ -139,6 +160,59 @@ static func close_day(state: Dictionary) -> void:
 	while stats.goods_days.size() > GOODS_DAYS:
 		stats.goods_days.pop_front()
 	stats.today = _blank()
+
+
+static func _populations(state: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for s: Dictionary in state.get("settlements", []):
+		result[str(int(s.region))] = int(s.population)
+	return result
+
+
+## A town's population over the last `window_days` closed days: where it stood, where it stands, the
+## net change and what made it (immigration, departures, births, people moved in or out with
+## expeditions, crews and workers following jobs, and anything else). `known` is false while the
+## history is too short or older than the records.
+static func population_change(state: Dictionary, region: int, window_days: int = 30) -> Dictionary:
+	var days: Array = state.get("stats", {}).get("days", [])
+	var key: String = str(region)
+	var result: Dictionary = {
+		"known": false,
+		"days": 0,
+		"then": 0,
+		"now": 0,
+		"net": 0,
+		"arrivals": 0,
+		"departures": 0,
+		"births": 0,
+		"moves": 0,
+		"other": 0,
+	}
+	if days.is_empty() or not days.back().has("pop"):
+		return result
+	var first: int = maxi(0, days.size() - window_days)
+	var start: Dictionary = days[first - 1] if first > 0 else {}
+	if first > 0 and not start.has("pop"):
+		return result
+	result.then = int(start.get("pop", {}).get(key, 0))
+	result.now = int(days.back().pop.get(key, 0))
+	for index: int in range(first, days.size()):
+		var row: Dictionary = days[index]
+		result.days = int(result.days) + 1
+		result.arrivals = int(result.arrivals) + int(row.arrivals.get(key, 0))
+		result.departures = int(result.departures) + int(row.departures.get(key, 0))
+		result.births = int(result.births) + int(row.get("births", {}).get(key, 0))
+		result.moves = int(result.moves) + int(row.get("moves", {}).get(key, 0))
+	result.net = int(result.now) - int(result.then)
+	result.other = (
+		int(result.net)
+		- int(result.arrivals)
+		+ int(result.departures)
+		- int(result.births)
+		- int(result.moves)
+	)
+	result.known = true
+	return result
 
 
 ## Engineering crews and research teams in every settlement: the colony's labour force.

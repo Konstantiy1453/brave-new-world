@@ -788,6 +788,19 @@
     "max_latitude": 74.0,
     "slot_reach": 0.55
   },
+  "planet_radius": {
+    "min": 0.7,
+    "max": 1.3,
+    "default": 1.0,
+    "step": 0.05,
+    "earth_km": 6371.0,
+    "size_bands": [0.85, 1.15],
+    "units": {
+      "min": "Earth radii", "max": "Earth radii", "default": "Earth radii", "step": "Earth radii",
+      "earth_km": "km, Earth's mean radius",
+      "size_bands": "Earth radii: below the first the small planet's site layout (fewer, sparser sites), at or above the second the large one's; the geography itself does not change with the radius"
+    }
+  },
   "placement": {
     "units": {
       "angles": "degrees of the planet",
@@ -800,7 +813,7 @@
     "min_separation_degrees": 8.0,
     "min_land_slots": 18,
     "fresh_water_min": 0.18,
-    "signal_radius_degrees": 4.0,
+    "signal_radius_km": 445.0,
     "max_relief_m": 3000.0,
     "relief_degrees": 0.4,
     "max_deposit_plots": 14,

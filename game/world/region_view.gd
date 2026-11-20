@@ -4,6 +4,7 @@ extends "res://world/region_ground.gd"
 ## plots are instanced; each building kind is one baked mesh.
 
 const Traffic = preload("res://world/traffic.gd")
+const Consignments = preload("res://simulation/consignments.gd")
 const ModelArt = preload("res://world/model_art.gd")
 const Landmarks = preload("res://world/landmarks.gd")
 ## Landmarks around the town (`_landmark_spots`): rings in units from the town's centre, spots per
@@ -467,21 +468,36 @@ func _build_colony() -> void:
 			_construction_frame(model)
 		if reach.is_empty():
 			_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
-			stops.append({"end": slot, "z": slot.y, "kind": str(b.kind), "active": active})
+			(
+				stops
+				. append(
+					{
+						"end": slot,
+						"z": slot.y,
+						"kind": str(b.kind),
+						"active": active,
+						"uid": int(b.get("uid", 0)),
+					}
+				)
+			)
 		else:
 			var lane: float = float(reach.lane)
 			var front: Vector2 = reach.front
 			_road(Vector3(offset, 0, lane), Vector3(slot.x, 0, lane))
 			_road(Vector3(slot.x, 0, lane), Vector3(front.x, 0, front.y))
 			street_ends = Vector2(minf(street_ends.x, lane), maxf(street_ends.y, lane))
-			stops.append(
-				{
-					"end": front,
-					"via": Vector2(slot.x, lane),
-					"z": lane,
-					"kind": str(b.kind),
-					"active": active
-				}
+			(
+				stops
+				. append(
+					{
+						"end": front,
+						"via": Vector2(slot.x, lane),
+						"z": lane,
+						"kind": str(b.kind),
+						"active": active,
+						"uid": int(b.get("uid", 0)),
+					}
+				)
 			)
 		if active and lit:
 			pools.append([model.position, 2.6])
@@ -816,6 +832,9 @@ func _build_harbor(settlement: Dictionary) -> void:
 	quay.scale = Vector3.ONE * grown
 	buildings_root.add_child(quay)
 	_build_quay_lamps(best, sea_level)
+	# A ship lies at the quay only with cargo the game recorded (consignments.gd): none before.
+	if not Consignments.ship_calling(state, settlement, _call_days()):
+		return
 	var calling: Array = _gift_ship()
 	var vessel: MeshInstance3D = ModelArt.instance(
 		str(calling[0]), func(slot: String) -> Material: return _art_material(slot, {}, true)
@@ -1417,7 +1436,34 @@ func _build_traffic(stops: Array, offset: float, region: int) -> void:
 	traffic.street_x = offset
 	traffic.stops = stops
 	traffic.gates = region_gates.duplicate()
+	traffic.ore_run = _ore_run(stops, region)
 	traffic.setup(int(world.seed) * 31 + region, 2 + working / 2 + region_gates.size() * 2)
+
+
+## The ore truck's run: from the mine whose ore the town last sold (consignments.gd) to the cargo
+## station, as stop indices, or empty while the town sells no ore.
+func _ore_run(stops: Array, region: int) -> Dictionary:
+	var town: Dictionary = {}
+	for s: Dictionary in state.get("settlements", []):
+		if int(s.get("region", -1)) == region:
+			town = s
+	var mine: int = Consignments.ore_run(state, town, _call_days()) if not town.is_empty() else 0
+	if mine <= 0:
+		return {}
+	var from: int = -1
+	var to: int = -1
+	for index: int in range(stops.size()):
+		if int(stops[index].get("uid", -1)) == mine:
+			from = index
+		elif str(stops[index].kind) == "port" and to < 0:
+			to = index
+	if from < 0 or to < 0:
+		return {}
+	return {"from": from, "to": to, "mine": mine}
+
+
+func _call_days() -> int:
+	return int(Rules.read("economy").get("bay", {}).get("ship_call_days", 30))
 
 
 ## Trucks of the red-ball express (a gift technology): their own model once one is delivered, the

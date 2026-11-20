@@ -36,7 +36,10 @@ static func unit(lat: float, lon: float) -> Vector3:
 
 ## Packed copies of what the search reads. One per world, shared.
 static func _prepared(world: Dictionary) -> Dictionary:
-	var key: String = str(world.get("terrain_key", world.get("hash", "")))
+	# Distances are in km: two games on one seed at different radii must not share them.
+	var key: String = (
+		"%s|%.1f" % [str(world.get("terrain_key", world.get("hash", ""))), float(world.radius_km)]
+	)
 	if _terrain.has(key):
 		return _terrain[key]
 	var grid: Array = world.grid

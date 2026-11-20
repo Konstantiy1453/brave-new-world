@@ -3,21 +3,30 @@ extends SceneTree
 ## built on one side, an operating harbour), each seen from three distances: the globe at its
 ## default distance, the flat map at its closest, and the district. Local midnight at the town,
 ## clouds off, and the camera held the same within each row, so only the town changes.
-## STAGED FIXTURES: the stages after the landing are written straight into a copy of the state
-## (buildings finished, people moved in, the harbour working), not reached through play; the
-## landing is real. The harbour stage puts its ship three quarters of the way in to the berth on
+## STAGED FIXTURES (the default): the stages after the landing are written straight into a copy
+## of the state (buildings finished, people moved in, the harbour working), not reached through
+## play; the landing is real. `--play=on` reaches every stage through ordinary play instead: the
+## balanced bot runs the colony, and two ordinary orders (`Sim.act`) put a home and the small
+## harbour in its queue; the stages are the first day a new home is lived in (its windows lit) and
+## the first day a ship lands cargo at the harbour. Shots in play mode are named `play_*`. The
+## harbour stage puts its ship three quarters of the way in to the berth on
 ## every view. `--clip=on` also writes two frame sequences: the ship sailing in to the berth in the
 ## district, and the globe zooming in on the town, each lit by the same state.
 ##
 ## godot --path game --script res://tests/art/capture_nightscape.gd -- --seed=260129
 ##   --out=<folder> [--size=1920x1080] [--labels=on|off] [--side=inland|west|east]
 ##   [--stages=landing,housing,harbour] [--site=<id>] [--clip=on] [--views=globe,flat,district]
+##   [--play=on]
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Map = preload("res://world/map_view.gd")
 const LightField = preload("res://world/light_field.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Consignments = preload("res://simulation/consignments.gd")
+const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
+## Play mode gives up on a stage after this many days.
+const PLAY_LIMIT: int = 720
 ## Homes the housing stage adds, and how many people move into them.
 const HOMES: int = 3
 const FLAT_CLOSEST: float = 4.2
@@ -40,7 +49,8 @@ var options: Dictionary = {
 	"stages": "landing,housing,harbour",
 	"site": "",
 	"clip": "off",
-	"views": "globe,flat,district"
+	"views": "globe,flat,district",
+	"play": "off",
 }
 var map: Node3D
 var folder: String = ""
@@ -75,25 +85,34 @@ func run() -> void:
 	while map.atlas_refining:
 		await process_frame
 	var home: Dictionary = sim.geo.regions[site]
+	var playing: bool = str(options.play) == "on"
 	var stages: Dictionary = {"landing": sim.state.duplicate(true)}
-	stages.housing = _with_housing(sim, stages.landing, site)
-	stages.harbour = _with_harbour(sim, stages.housing, site)
+	if playing:
+		stages.merge(_played_stages(sim, site), true)
+	else:
+		stages.housing = _with_housing(sim, stages.landing, site)
+		stages.harbour = _with_harbour(sim, stages.housing, site)
+	report.mode = "ordinary play" if playing else "staged fixtures after the landing"
 	for stage: String in str(options.stages).split(","):
 		if not stages.has(stage):
 			continue
 		var shown: Dictionary = stages[stage]
-		if stage == "harbour":
+		if stage == "harbour" and not playing:
 			shown.day = _ship_day(int(shown.day), site)
 		map.sync_state(shown)
 		var lights: Array = LightField.lights(
 			shown, sim.geo, Rules.read("economy").buildings, map.landing_camps()
 		)
 		report.stages[stage] = {
+			"day": int(shown.day),
 			"lights": lights.size(),
 			"centroid": var_to_str(LightField.centroid(lights)),
 			"population": int(shown.settlements[0].population),
-			"buildings": shown.settlements[0].buildings.size()
+			"buildings": shown.settlements[0].buildings.size(),
+			"homes_lit": _homes_lit(shown),
+			"sea_cargo": shown.settlements[0].get("sea_cargo", {}),
 		}
+		stage = ("play_" if playing else "") + stage
 		report.stages[stage].ships = map.globe_ships.size()
 		var views: PackedStringArray = str(options.views).split(",")
 		if views.has("globe"):
@@ -114,6 +133,70 @@ func run() -> void:
 		)
 	)
 	quit(0 if report.failures.is_empty() else 1)
+
+
+## ORDINARY PLAY: the balanced bot runs the colony from the landing; a home is ordered on the third
+## day and the small harbour once that home is lived in, both through `Sim.act`, as a player's
+## clicks would. Returns the state on the first day a new home has lit windows, and on the first day
+## a ship lands cargo at the harbour.
+func _played_stages(sim: RefCounted, site: int) -> Dictionary:
+	var found: Dictionary = {}
+	var bot: RefCounted = Bot.new()
+	bot.begin(sim, int(options.seed))
+	bot.home = site
+	var buildings: Dictionary = Rules.read("economy").buildings
+	var calls: int = int(Rules.read("economy").bay.ship_call_days)
+	var ordered_home: bool = false
+	var ordered_harbour: bool = false
+	while int(sim.state.day) < PLAY_LIMIT and found.size() < 2:
+		bot.on_day()
+		var town: Dictionary = sim.settlement(site)
+		if not ordered_home and int(sim.state.day) >= 3:
+			ordered_home = sim.act("build", {"site": site, "kind": "habitat"}) == ""
+		sim.tick()
+		if not found.has("housing") and _homes_lit(sim.state) > 0:
+			found.housing = sim.state.duplicate(true)
+			report.housing_day = int(sim.state.day)
+		if found.has("housing") and not ordered_harbour:
+			ordered_harbour = (
+				_has_kind(town, "harbor")
+				or sim.act("build", {"site": site, "kind": "harbor"}) == ""
+			)
+		if (
+			found.has("housing")
+			and not found.has("harbour")
+			and Consignments.ship_calling(sim.state, town, calls)
+			and sim.Bay.harbor_working(sim, town)
+		):
+			found.harbour = sim.state.duplicate(true)
+			report.harbour_day = int(sim.state.day)
+	if not found.has("housing"):
+		report.failures.append("no home was lived in by day %d" % PLAY_LIMIT)
+	if not found.has("harbour"):
+		report.failures.append("no ship landed cargo by day %d" % PLAY_LIMIT)
+	report.played_by = "balanced bot + orders: habitat (day 3), harbour (after the home is lived in)"
+	return found
+
+
+## Homes built after the landing (not the landing camp) with at least one lit window.
+func _homes_lit(state: Dictionary) -> int:
+	var buildings: Dictionary = Rules.read("economy").buildings
+	var lit: int = 0
+	for s: Dictionary in state.get("settlements", []):
+		var shares: Dictionary = LightField.housing_shares(s, buildings)
+		for b: Dictionary in s.get("buildings", []):
+			if str(buildings.get(str(b.kind), {}).get("role", "")) != "housing":
+				continue
+			if int(b.get("remaining", 0)) <= 0 and LightField.home_lit(b, buildings, shares):
+				lit += 1
+	return lit
+
+
+static func _has_kind(town: Dictionary, kind: String) -> bool:
+	for b: Dictionary in town.get("buildings", []):
+		if str(b.kind) == kind:
+			return true
+	return false
 
 
 ## The first coastal start the world suggests, or the one asked for.

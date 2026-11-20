@@ -995,3 +995,60 @@ factories, so the game's cycle and the payback bands stay as they are.
   source project or a packaged PCK (`--main-pack`). It lives outside `game/` because the export leaves
   out `tests/`. The colony is played to the expansion licence by the balanced bot through `Sim.act`;
   the expedition itself goes through the interface.
+- The first ore truck and the first ship are consignments the simulation records when they move
+  (`consignments.gd`, `state.firsts`): ore only from a town with a finished mine of that good (or
+  a linked town's mine whose ore came in by road), a ship only for cargo bought or sold through a
+  working harbour. The notice names the town, the building, the good, the tonnes and the value, and
+  opens the mine's or the harbour's town · counting any export (a food order set off "first ore")
+  and any working harbour (a ship with no cargo).
+- Vehicles follow the records: a map ship light and the district's quay ship only while the
+  harbour has had sea cargo in the last `bay.ship_call_days` (30) days or sea-link freight is under
+  way, at the berth on the cargo's day; the district's ore truck runs from the mine whose ore the
+  town last sold to its cargo station. Saves from before the records count a first that evidently
+  happened (mined goods sold, a finished harbour) as already announced.
+- A mine ordered to branch off another mine's road records that mine (`haul.via`). Cancelling
+  that mine before it is finished gives the branch mine the main road: its days grow by the
+  difference, the road money the cancelled mine paid covers the extra cost first, and only the
+  rest is charged · charging the full difference again (the colony would pay one road twice) ·
+  leaving it as it was (the audited bug). The crews build the road's mine before the branch mine,
+  even when the branch mine is chosen to go next; with two crews at one town both may still work
+  at once (not modelled further).
+- Crews travel by freight's rule (`Crews.travel_link`): a built, open, unretired link at freight's
+  days (`Logistics.road_days`); a crew on the road when its link closes waits, day by day, as
+  cargo does, and the crew panel says so · crews crossing a closed link (the audited bug).
+- A town's 30-day change is measured: each day's stats row keeps every town's population at the
+  close, its births and the people moved in or out (expeditions, landings, crews, workers
+  following jobs), beside the existing arrivals and departures. The page shows the change with
+  its parts, and the audit suite checks that the parts explain it exactly · arrivals minus
+  departures (it showed +9 while a capital fell from 90 to 86).
+- The people page adds the expected arrivals in the next 30 days (would-come, capped by the beds
+  free after reservations) and the unemployment rate with both thresholds (immigration falls off
+  above `jobless_free_share`, stops at `jobless_stop_share`, 35%).
+- A food building's forecast counts the town's whole food balance (`Production.food_balance`):
+  what it eats and its foodworks take, the stock still to fill to its reserve over
+  `forecast_food_refill_days` (30), and what its farms grow, its harbour lands and food buildings
+  already queued will add. Savings are at the delivered price (port fee, less the harbour's sea
+  freight discount). The page lists each part · counting farms only (a harbour landing 600 t was
+  ignored).
+- A commission on a project whose team is held up is quoted at the pace its assigned team (at
+  least the project's minimum) will have: the price a day and the days saved, with the reason it
+  is held up and "charged from the day after it starts" · ¥0 and 0 days while blocked.
+- The water lesson is passed only by a new pump at work on the day the shortage ends; a pump
+  still being built when the filter recovers is named as such, with its days left, and the lesson
+  counts as waited out · any pump ordered (one with 14 days still to build was credited).
+- The planet's size is a radius slider from 0.70 to 1.30 Earth radii in steps of 0.05, centred on
+  1.00 (geography.json `planet_radius`); the menu shows it in Earth radii and km, and the surface
+  gravity at Earth's mean density beside it, named as gravity. The seed's ground does not change
+  with the radius; the recommended sites take one of three densities by radius band (below 0.85
+  the small layout, from 1.15 the large), as the three old presets did. Every distance is in km
+  from `radius_km`: routes (their days and costs follow), the placement report, pollution, and the
+  orbital reading's reach (`signal_radius_km`, 445 km, 4° at one Earth radius). The route terrain
+  cache keys on the radius. The tutorial keeps its planet's preset. Saves keep the radius.
+- A home lights a window as soon as anyone lives in it, then more as it fills
+  (`LightField.lit_windows`), and its first window is bright enough for the maps' usual zoom · the
+  rounded count (six people in a three-window home lit nothing, so the night map of a 66-person
+  colony with a new home was the landing's, pixel for pixel). The landing camp still fills first.
+- The night captures have an ordinary-play mode (`capture_nightscape.gd --play=on`): the balanced
+  bot runs the colony and two ordinary orders queue a home and the harbour; the stages are the
+  first day a new home has lit windows and the first day a ship lands cargo. The staged-fixture
+  sheets stay, labelled as staged.

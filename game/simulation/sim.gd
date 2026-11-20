@@ -25,6 +25,7 @@ const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
+const Consignments = preload("res://simulation/consignments.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -57,14 +58,28 @@ func _init() -> void:
 	market_rules = Rules.read("market")
 
 
+## A new game on the world of `seed_value`. `radius` is the planet's radius in Earth radii (the
+## new-game slider, geography.json `planet_radius`); without one, the old size presets apply. The
+## radius picks the site layout's band (`size`) and sets every distance; the ground is the seed's.
 func new_game(
-	seed_value: Variant, advantage: String, size: int = 1, difficulty: String = "normal"
+	seed_value: Variant,
+	advantage: String,
+	size: int = 1,
+	difficulty: String = "normal",
+	radius: float = 0.0
 ) -> void:
 	if not progression.difficulty.has(difficulty):
 		difficulty = "normal"
 	if not config.openings.has(advantage):
 		advantage = "capital"
+	var planet: Dictionary = progression_geo().planet_radius
+	if radius > 0.0:
+		radius = clampf(radius, float(planet.min), float(planet.max))
+		var bands: Array = planet.size_bands
+		size = 0 if radius < float(bands[0]) else (2 if radius >= float(bands[1]) else 1)
 	geo = WorldGen.new().build(seed_value, size)
+	if radius > 0.0:
+		geo.radius_km = snappedf(radius * float(planet.earth_km), 0.1)
 	blobs = {"checkpoint": PackedByteArray(), "archives": {}}
 	tech_effects_count = -1
 	state = {
@@ -145,6 +160,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	# After Production.ensure_state: crews follow buildings by uid.
 	Crews.ensure_state(target)
 	Placement.ensure_state(target)
+	Consignments.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -457,6 +473,7 @@ func _resolve_legacy_event(id: String, choice: String) -> String:
 				s.scientists += 4
 				s.population += 8
 				state.immigrants_total += 8
+				Stats.people(state, int(s.region), true, 8)
 				_log("4 支研究团队与 4 名职工入住首府。")
 	return ""
 
@@ -711,6 +728,7 @@ func audit() -> Array:
 			errors.append("recruit party invalid")
 	errors.append_array(_audit_sites())
 	errors.append_array(Crews.audit(state))
+	errors.append_array(Consignments.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")
 	for s: Dictionary in state.settlements:

@@ -316,7 +316,8 @@ func _usable_farm() -> void:
 	)
 
 
-## The water lesson: waiting for the fault to pass is not fixing it; a new pump is.
+## The water lesson: waiting for the fault to pass is not fixing it; a new pump that ends the
+## shortage is (v110_audit plays the lesson's own fault both ways).
 func _water_lesson() -> void:
 	for invest: bool in [false, true]:
 		var sim: RefCounted = _colony()
@@ -339,7 +340,15 @@ func _water_lesson() -> void:
 		)
 		var note: String = Tutorial.note(sim, {"name": "shortage_cleared"}, context)
 		if invest:
-			check(done, "a new pump completes the water lesson")
+			# This fault is far harsher than the lesson's: the new pump runs at 1% too, so the
+			# shortage lasts until the fault passes. That is the filter recovering, not the pump.
+			check(
+				not done and Tutorial.waited(sim, context) and note.contains("泵站"),
+				(
+					"a pump that could not end the shortage is not credited, and the note names it: "
+					+ note
+				)
+			)
 		else:
 			check(not done and Tutorial.waited(sim, context), "waiting it out does not complete it")
 			check(
@@ -404,7 +413,9 @@ func _interface() -> void:
 	check(
 		(
 			scene.difficulty_option.selected == scene.DIFFICULTIES.find(str(lesson.difficulty))
-			and scene.size_option.selected == int(lesson.size)
+			and is_equal_approx(
+				scene.radius_slider.value, scene.RadiusSlider.of_size(int(lesson.size))
+			)
 		),
 		"and its size and difficulty"
 	)

@@ -11,6 +11,8 @@ extends RefCounted
 ## on their own.
 
 const Keys = preload("res://simulation/keys.gd")
+const WorldGen = preload("res://world/world_gen.gd")
+const Stats = preload("res://simulation/stats.gd")
 
 const IDLE: String = ""
 const BUILD: String = "build"
@@ -109,6 +111,7 @@ static func join_expedition(
 			team.until = int(sim.state.day) + maxi(1, days)
 			src.crew = int(src.get("crew", 0)) - 1
 			src.population = int(src.population) - 1
+			Stats.count(sim.state, "moves", int(src.region), -1)
 			sent += 1
 
 
@@ -127,6 +130,12 @@ static func daily(sim: RefCounted) -> Dictionary:
 	ensure_state(sim.state)
 	var day: int = int(sim.state.day)
 	for team: Dictionary in sim.state.crews.teams:
+		# On a closed link a crew waits where it is, as freight does (logistics._waiting_on_closure).
+		if str(team.task) == TRAVEL and _link_closed(sim, team):
+			team.until = int(team.until) + 1
+			team.held = true
+			continue
+		team.erase("held")
 		if str(team.task) == TRAVEL and day >= int(team.until):
 			var s: Dictionary = sim.settlement(int(team.target))
 			team.region = int(team.target)
@@ -135,6 +144,7 @@ static func daily(sim: RefCounted) -> Dictionary:
 			if not s.is_empty():
 				s.crew = int(s.get("crew", 0)) + 1
 				s.population = int(s.population) + 1
+				Stats.count(sim.state, "moves", int(s.region), 1)
 				sim._log("%s · 一支工程队抵达。" % s.name)
 		elif str(team.task) == TRAIN and day >= int(team.until):
 			team.task = IDLE
@@ -217,7 +227,25 @@ static func queue(sim: RefCounted, s: Dictionary, working: Dictionary) -> Array:
 			rest.append(b)
 	urgent.sort_custom(_older)
 	rest.sort_custom(_older)
-	return urgent + chosen + rest
+	return _roads_first(urgent + chosen + rest)
+
+
+## A mine that branches off another mine's road waits for that mine: the main road is built first.
+static func _roads_first(order: Array) -> Array:
+	var result: Array = order.duplicate()
+	for b: Dictionary in order:
+		var via: int = int(b.get("haul", {}).get("via", 0))
+		if via <= 0:
+			continue
+		var at: int = result.find(b)
+		var road: int = -1
+		for index: int in range(result.size()):
+			if int(result[index].get("uid", 0)) == via:
+				road = index
+		if road > at:
+			result.remove_at(at)
+			result.insert(road, b)
+	return result
 
 
 ## The project the player chose to build next at a town, while it still waits: its uid, or 0.
@@ -343,31 +371,52 @@ static func send(sim: RefCounted, crew_id: int, to: int) -> String:
 	var dest: Dictionary = sim.settlement(to)
 	if dest.is_empty() or to == int(team.region):
 		return "请选择另一个已建立的据点"
-	var days: int = travel_days(sim, int(team.region), to)
+	var link: Dictionary = travel_link(sim, int(team.region), to)
+	var days: int = int(link.days)
 	if days < 0:
-		return "两地之间还没有通车的线路"
+		return str(link.reason)
 	from.crew = int(from.get("crew", 0)) - 1
 	from.population = int(from.population) - 1
+	Stats.count(sim.state, "moves", int(from.region), -1)
 	team.task = TRAVEL
 	team.target = to
+	team.road = int(link.road)
 	team.until = int(sim.state.day) + days
 	sim._log("%s · 一支工程队出发前往%s，%d 天后到达。" % [from.name, dest.name, days])
 	return ""
 
 
-## Days a crew needs between two towns: the quickest finished link, -1 when there is none.
+## Days a crew needs between two towns: the quickest open link, -1 when there is none.
 static func travel_days(sim: RefCounted, from: int, to: int) -> int:
-	var best: int = -1
+	return int(travel_link(sim, from, to).days)
+
+
+## The quickest link a crew can take between two towns today, by the rule freight follows
+## (logistics._dispatch_road): built, not closed, not retired, at freight's days. {"days", "road",
+## "reason"}; days -1 and the reason when there is none.
+static func travel_link(sim: RefCounted, from: int, to: int) -> Dictionary:
+	var best: Dictionary = {"days": -1, "road": -1, "reason": "两地之间还没有通车的线路"}
+	var day: int = int(sim.state.day)
 	for road: Dictionary in sim.state.get("roads", []):
-		if int(road.get("ready_day", 0)) >= int(sim.state.day):
-			continue
 		var ends: Array = [int(road.a), int(road.b)]
-		if not (ends.has(from) and ends.has(to)):
+		if not (ends.has(from) and ends.has(to)) or bool(road.get("retired", false)):
 			continue
-		var days: int = maxi(1, int(road.get("days", 1)))
-		if best < 0 or days < best:
-			best = days
+		if WorldGen.road_blocked(road, day):
+			if not WorldGen.road_building(road, day):
+				best.reason = "两地之间的线路封闭中，货运同样停运"
+			continue
+		var days: int = sim.Logistics.road_days(sim, road)
+		if int(best.days) < 0 or days < int(best.days):
+			best = {"days": days, "road": int(road.get("id", -1)), "reason": ""}
 	return best
+
+
+static func _link_closed(sim: RefCounted, team: Dictionary) -> bool:
+	var road: int = int(team.get("road", -1))
+	var roads: Array = sim.state.get("roads", [])
+	if road < 0 or road >= roads.size():
+		return false
+	return WorldGen.road_blocked(roads[road], int(sim.state.day))
 
 
 ## Trains one of a town's workers as a crew: the town keeps its people, pays the fee, and the

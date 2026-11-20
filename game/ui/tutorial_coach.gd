@@ -155,6 +155,7 @@ func _enter() -> void:
 	if str(step.get("enter", "")) == "shortage" and int(context.shortage_day) < 0:
 		context.shortage_day = int(game.sim.state.day)
 		context.water_built = Tutorial.water_count(game.sim, int(context.home))
+		context.water_working = Tutorial.water_count(game.sim, int(context.home), true)
 		game.act("tutorial_shortage", {"site": int(context.home)})
 		game.selected = int(context.home)
 		game.refresh_sidebar()

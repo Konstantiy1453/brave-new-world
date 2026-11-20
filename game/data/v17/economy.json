@@ -39,6 +39,7 @@
     "wage": 1.5,
     "scientist_wage": 2.5,
     "food_per_person": 0.16,
+    "forecast_food_refill_days": 30,
     "admin": 8.0,
     "port_fee": 0.04,
     "immigration_period": 24,
@@ -145,7 +146,8 @@
     "signal_rich_tonnes": 4000.0,
     "signal_poor_tonnes": 300.0,
     "survey_cost": 1500.0,
-    "survey_days": 25
+    "survey_days": 25,
+    "ship_call_days": 30
   },
   "buildings": {
     "habitat": {
