@@ -12,9 +12,34 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
 | A. Verified feedback | building uids (schema 6, own folder), research states, commission ETA, farm forecast by usable food, tutorial planet and water lesson, the clock's fraction, event towns after the draw, report-back days | **done** (`f1bf55f`, `0a30df2`); suite `v110_fixes`; harness `fixes-0a30df2` |
 | B. Nightscape from state | lights from real plots on globe, flat map and district (`light_field.gd`), windows by occupancy, landing camp and quay positions shared with the district, transport diagram as an overlay | **done** (`185a4b2`, `9c2816c`, `c7bda43`); suite `v110_lights` with the decisive test |
 | People readouts | each town's net change, demand against room, main growth limit and remedy | **done** (`112867b`) |
-| C. The playable bay | mobile crews apart from the workforce (`crews.gd`): one at the landing, trained from the town's 职工, sent over finished links, a standing instruction (shortages first, then 先建, then the oldest order), each project's start and finish from the queue; the workforce renamed 职工; the small harbour, mine roads for far deposits, the offshore signal and its survey (`bay.gd`); first-shipment cards; the tutorial teaches crews | in progress: wired, suite `v110_crews` (52 checks), older suites adapted; the harness with crews next |
-| Reviews | 3 × 3 sheet (tool `capture_nightscape.gd`), clip, gameplay review of the opening and stage three | after C |
+| C. The playable bay | mobile crews apart from the workforce (`crews.gd`): one at the landing, trained from the town's 职工 or recruited from outside, sent over finished links, a standing instruction (shortages first, then 先建, then the oldest order), each project's start and finish from the queue; the workforce renamed 职工; the small harbour with its forecast, mine roads for far deposits that carry the next mine, the offshore signal and its survey (`bay.gd`); first-shipment cards; the tutorial teaches crews; the bay in the three views (harbour site, quay lamps, masthead lamp, ship light, signal ring and buoy, round halos) | **done** (`aab8519`, `3e89426`, `234a06c`, `c39e828`, `5491ef0`, `acef816`, `21fef0f`); suites `v110_crews`, `v110_bay`, `v110_lights`; harness `crews-234a06c`, `spur-21fef0f` |
+| Reviews | 3 × 3 night sheet with labels and clean (`docs/v17/bay`), ship and zoom clips, gameplay review of the opening on five seeds and of stage three (`REVIEW_BAY_20261119.md`, tool `bay_openings.gd`) | **done** (`f67a608`); human playtest NOT_RUN |
 | D–G | radius slider, geology, prospecting, free siting, seabed; districts; people; stories and contracts | after the bay is judged |
+
+**This round (2026-11-19/20).** Phase C and the reviews.
+- **What changed.**
+  - A player now lands with one crew. Every building waits for a crew, and the town says who builds
+    what and when.
+  - The crew's first job is a choice: the mine road to the inland iron, or the small harbour.
+  - The first export and the first ship each get a card. Every coastal town has an offshore signal a
+    harbour can survey.
+  - The nightscape shows the quay's lamps and a ship sailing in, on all three views.
+- **Fixes found on the way.**
+  - The town panel wrote the offshore signal into the save when first shown (the read is now pure,
+    tested).
+  - The tutorial's pump waited two months behind the copper mine (shortages first).
+  - The harbour's order showed no income.
+  - Every mine paid its whole road again, which cost the bots a fifth of their people.
+- **Suites.** All headless suites pass but the four Linux-known ones, each identical to its Linux
+  baseline, and `v19_payback`, whose light iron mine pays back in 62 days against its 70–150 band
+  (balance, below). `v18_systems`' top-bar checks had failed on every platform since 2026-11-12 and
+  now read the 1.9 format.
+- **Openings (bot play, five seeds).** Both openings met stage three on every seed. Harbour first
+  was sooner on four seeds, and later on a start with its own farmland.
+- **Open for the player.**
+  - How scarce crews should be: at ¥900 the bots train 12–24.
+  - What the bay should look like from orbit, on a real GPU.
+  - Jobs, which held growth from 200 to 600 people in every game.
 
 
 ---
