@@ -96,8 +96,33 @@ static func find(
 	if found.reachable and a != low:
 		found.path.reverse()
 		found.coordinates.reverse()
+	# Cells, not places: the route runs between cell centres but starts and ends at the towns
+	# themselves, which a player may have put anywhere in their cells.
+	if found.reachable and not found.coordinates.is_empty():
+		found.coordinates[0] = [float(regions[a].lat), float(regions[a].lon)]
+		found.coordinates[found.coordinates.size() - 1] = [
+			float(regions[b].lat), float(regions[b].lon)
+		]
 	found.a = a
 	found.b = b
+	return found
+
+
+## A route from site `a` to a point no site stands on yet: what an expedition there would travel.
+## The point is a site for the search only; the world is not changed.
+static func find_to_point(
+	world: Dictionary, a: int, lat: float, lon: float, variant: String, rules: Dictionary
+) -> Dictionary:
+	var width: int = int(world.grid_width)
+	var height: int = int(world.grid_height)
+	var row: int = clampi(int((90.0 - lat) / 180.0 * height), 0, height - 1)
+	var column: int = posmod(int(floor((lon + 180.0) / 360.0 * width)), width)
+	var probe: Dictionary = {"lat": lat, "lon": lon, "grid_index": row * width + column}
+	var view: Dictionary = world.duplicate(false)
+	view.regions = world.regions.duplicate(false)
+	view.regions.append(probe)
+	var found: Dictionary = find(view, a, view.regions.size() - 1, variant, rules)
+	found.b = -1
 	return found
 
 

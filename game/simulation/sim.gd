@@ -24,6 +24,7 @@ const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Bay = preload("res://simulation/bay.gd")
+const Placement = preload("res://simulation/placement.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -143,6 +144,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Stats.ensure_state(target)
 	# After Production.ensure_state: crews follow buildings by uid.
 	Crews.ensure_state(target)
+	Placement.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -166,6 +168,15 @@ func act(action: String, args: Dictionary = {}) -> String:
 		return "本局已经结束，请读取存档或开始新局"
 	var refusal: String = "未知操作"
 	match action:
+		"settle_at":
+			refusal = Placement.settle_at(
+				self,
+				float(args.get("lat", 0.0)),
+				float(args.get("lon", 0.0)),
+				int(args.get("from", -1)),
+				str(args.get("name", "")),
+				str(args.get("kind", Keys.SITE_RESIDENTIAL))
+			)
 		"settle":
 			refusal = Sites.settle(
 				self,
@@ -755,11 +766,21 @@ func _audit_sites() -> Array:
 			used[plot] = true
 	for reg: Dictionary in state.world.regions:
 		var known: Dictionary = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
+		var counted: Dictionary = {}
 		for plot: Dictionary in reg.plots:
 			if plot.kind != "deposit":
 				continue
 			if float(plot.reserves) < -0.00001:
 				errors.append("negative reserves")
+			# Plots on one planetary deposit share its reserve: it counts once.
+			var shared: String = str(plot.get("deposit", ""))
+			if shared != "":
+				if counted.has(shared):
+					continue
+				counted[shared] = true
+				var left: Variant = state.get("geology", {}).get("remaining", {}).get(shared)
+				if left != null and absf(float(left) - float(plot.reserves)) > 0.01:
+					errors.append("shared deposit out of step")
 			if (
 				not bool(plot.hidden)
 				and (int(plot.depth) == 0 or bool(reg.get("deep_known", false)))

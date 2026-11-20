@@ -2,6 +2,7 @@ extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
 const Bay = preload("res://simulation/bay.gd")
+const Placement = preload("res://simulation/placement.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
@@ -609,7 +610,10 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					)
 				)
 				seam.reserves = float(seam.reserves) - amount
-				if int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
+				if str(seam.get("deposit", "")) != "":
+					# A planetary deposit: every town on it sees the same reserve left.
+					Placement.share(sim, seam)
+				elif int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
 					reg.deposits[resource] = maxf(0.0, float(reg.deposits[resource]) - amount)
 				produce(sim, s, resource, amount, "矿产开采")
 				if amount <= 0.001:

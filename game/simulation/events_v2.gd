@@ -761,10 +761,7 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 static func _revise_deposits(sim, s: Dictionary, band: Array) -> void:
 	var site: Dictionary = sim.state.world.regions[int(s.region)]
 	var factor: float = lerpf(float(band[0]), float(band[1]), _rng(sim.state.events_v2))
-	for plot: Dictionary in site.plots:
-		if plot.kind == "deposit" and not bool(plot.hidden):
-			plot.reserves = float(plot.reserves) * factor
-	sim.Sites.SiteGen.refresh_deposits(site)
+	sim.Placement.scale_reserves(sim, site, factor)
 
 
 static func _advance_order(sim, inst: Dictionary) -> void:

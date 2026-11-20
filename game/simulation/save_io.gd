@@ -24,7 +24,8 @@ const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
 const ARCHIVE_SUFFIX: String = ".arch"
 const RUN_STATUSES: Array[String] = ["planning", "active", "success", "failed"]
-const MAX_SITES: int = 64
+## Generated sites and the ones players found at coordinates of their own choosing (1.10).
+const MAX_SITES: int = 96
 
 
 ## Serializes on the calling thread. Returns everything a worker needs to finish the write.

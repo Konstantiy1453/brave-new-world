@@ -943,3 +943,36 @@ factories, so the game's cycle and the payback bands stay as they are.
   bay should read from orbit is for the player to judge on a real GPU.
 - The first ore export and the first ship at a new harbour each raise a card once a game (「◆ 第一次」);
   a click opens that town's district. A loaded game marks what it already has.
+
+## 1.10: free placement and the November 20 audit (2026-11-20)
+
+- A settlement founded at a coordinate gets a site of its own at that exact point (`site_gen.site_at`),
+  appended to `state.world.regions`. Its climate, water, coast and landmass come from the grid cell
+  under it (the nearest land cell for a shore point in a mostly-sea cell), its plots from the slots
+  around the point, and its deposits from the planet's geology. Everything keyed by a site (district,
+  plots, roads, lights, saves) follows the point. Generated sites stay as recommended shortcuts · snapping
+  to the nearest generated site (the audited bug) · moving a generated site to the click (two games could
+  not share a world record).
+- Each mineable resource has its own planetary deposits (`geology.gd`, geography.json `geology`): veins
+  and pockets drawn from the seed, weighted by that resource's potential in the grid, barren ground
+  between, overlapping where belts meet. About 360 on a world: a placed site reaches median 3–6
+  deposit plots, up to 14, and about one in six reaches none. Generated sites keep their own deposits
+  for now (their worlds and saves are unchanged).
+- Plots on one planetary deposit name it and share one reserve, in every town that reaches it
+  (`Placement.share`, `state.geology.remaining`); a town's totals and the audit count it once.
+- A placed site takes at most 3 plots per deposit and 14 in all, chosen in a seeded order so the centre
+  and the edge are alike · deposits on the outer slots first, as generated sites do (82% on the outer ring
+  in the release audit).
+- Placement rules (geography.json `placement`):
+  - land only, not on a lake;
+  - latitude within 74°;
+  - local relief up to 3,000 m. Slope is read as the height range within 0.4° of the point, because the
+    grid's ruggedness is saturated (1.0) on most land;
+  - at least 18 land plot slots;
+  - at least 8° (about 890 km at one Earth radius) from another settlement;
+  - a capital must be able to expand: a coast, or a landmass of at least 16 grid cells.
+
+  Each refusal names its reason and the number behind it.
+- Routes run between grid cells but start and end at the towns' exact coordinates, so a road to a placed
+  town ends at the town.
+- A save may hold up to 96 sites (64 before): generated sites plus the ones players found.

@@ -710,5 +710,101 @@
         "sea_partners": true
       }
     }
+  },
+  "geology": {
+    "units": {
+      "angles": "degrees of the planet",
+      "reserve": "goods units (one unit is 100 t on the pages)",
+      "share": "fraction 0-1"
+    },
+    "resources": [
+      "ore",
+      "copper",
+      "crystal"
+    ],
+    "veins": {
+      "ore": 70,
+      "copper": 56,
+      "crystal": 36
+    },
+    "pockets": {
+      "ore": 80,
+      "copper": 68,
+      "crystal": 48
+    },
+    "vein_reserve": {
+      "ore": [
+        5000.0,
+        14000.0
+      ],
+      "copper": [
+        3500.0,
+        9000.0
+      ],
+      "crystal": [
+        2000.0,
+        5500.0
+      ]
+    },
+    "pocket_reserve": {
+      "ore": [
+        1200.0,
+        3500.0
+      ],
+      "copper": [
+        900.0,
+        2500.0
+      ],
+      "crystal": [
+        500.0,
+        1500.0
+      ]
+    },
+    "vein_segments": [
+      2,
+      5
+    ],
+    "segment_degrees": [
+      1.2,
+      2.6
+    ],
+    "turn_degrees": 35.0,
+    "vein_width": [
+      0.45,
+      0.8
+    ],
+    "pocket_radius": [
+      0.3,
+      0.6
+    ],
+    "grade": [
+      0.8,
+      1.25
+    ],
+    "deep_share": 0.3,
+    "deep_grade": 1.25,
+    "hidden_share": 0.35,
+    "potential_power": 2.2,
+    "max_latitude": 74.0,
+    "slot_reach": 0.55
+  },
+  "placement": {
+    "units": {
+      "angles": "degrees of the planet",
+      "distance": "km",
+      "slots": "plot slots",
+      "relief": "m of height range within relief_degrees of the point",
+      "cells": "grid cells of 2.5 x 2.5 degrees"
+    },
+    "max_latitude": 74.0,
+    "min_separation_degrees": 8.0,
+    "min_land_slots": 18,
+    "fresh_water_min": 0.18,
+    "signal_radius_degrees": 4.0,
+    "max_relief_m": 3000.0,
+    "relief_degrees": 0.4,
+    "max_deposit_plots": 14,
+    "plots_per_deposit": 3,
+    "expansion_cells": 16
   }
 }
