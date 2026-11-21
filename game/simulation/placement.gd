@@ -295,6 +295,9 @@ static func scale_reserves(sim: RefCounted, site: Dictionary, factor: float) -> 
 static func marker_site(sim: RefCounted, reg: Dictionary) -> Dictionary:
 	if bool(reg.get("placed", false)) or not sim.settlement(int(reg.get("id", -1))).is_empty():
 		return reg
+	# A world from before the generator (1.6 saves) has no ground to found on: its sites are all.
+	if not WorldGen.is_generated(str(sim.geo.get("version", ""))):
+		return reg
 	return site_for(sim, float(reg.lat), float(reg.lon))
 
 
