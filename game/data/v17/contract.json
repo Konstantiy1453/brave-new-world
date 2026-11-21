@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -55,18 +55,15 @@
     {"id": "population_600", "name": "六百人的殖民地", "goal": "population", "target": 600, "reward_cash": 6000.0}
   ],
   "settlement_cap": {
-    "initial": 1,
-    "expedition": 2,
-    "third_settlement": 3,
-    "network": 5,
-    "self_reliance": 7,
-    "after_award": 12
+    "note": "1.11: settlements allowed in total, capital included, while each stage is under way: two in stage one, three in stage two, five in stage three; 0 is unlimited (stages four and five, and after the award). save_limit is the most a save may hold.",
+    "by_stage": [2, 3, 5, 0, 0],
+    "save_limit": 96
   },
   "stages": [
     {
       "id": "foothold",
       "reward_cash": 8000.0,
-      "licence": "expedition",
+      "licence": "third_settlement",
       "goals": {
         "settlements": 1,
         "exports_total": 40000.0,
@@ -78,7 +75,7 @@
     {
       "id": "division",
       "reward_cash": 15000.0,
-      "licence": "third_settlement",
+      "licence": "network",
       "goals": {
         "connected": 2,
         "local_food_share": 0.8,
@@ -90,7 +87,7 @@
     {
       "id": "network",
       "reward_cash": 25000.0,
-      "licence": "network",
+      "licence": "unlimited",
       "goals": {
         "connected": 3,
         "technologies": 14,
@@ -101,7 +98,7 @@
     {
       "id": "self_reliance",
       "reward_cash": 40000.0,
-      "licence": "self_reliance",
+      "licence": "",
       "goals": {
         "connected": 4,
         "population": 1000,

@@ -159,8 +159,9 @@ const STAGE_NAMES: Dictionary = {
 }
 const LICENCE_NAMES: Dictionary = {
 	"expedition": "第二据点远征许可",
-	"third_settlement": "第三据点许可",
-	"network": "第四、第五据点许可",
+	"third_settlement": "据点上限升为 3 处",
+	"network": "据点上限升为 5 处",
+	"unlimited": "据点数量不再限制",
 	"self_reliance": "第六、第七据点许可",
 }
 const ATTRACTIVENESS_PARTS: Dictionary = {

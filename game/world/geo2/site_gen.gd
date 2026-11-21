@@ -800,6 +800,54 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 	return report
 
 
+## What the sea off a coordinate yields a small harbour (1.11, economy.json `bay.fishery`): a factor
+## on the harbour's catch from the water within `sample_degrees`: shallow shelf water (shallower than
+## `shelf_depth_m`) feeds fish, cold water more, a river mouth a little. 0 inland. Reads the world
+## only: {factor, sea_share, shelf_share, sea_temperature, river}.
+static func fishery(world: Dictionary, rule: Dictionary, lat: float, lon: float) -> Dictionary:
+	var noise: FastNoiseLite = _noise(world)
+	var spread: float = float(rule.get("sample_degrees", 1.5))
+	var stretch: float = 1.0 / maxf(0.25, cos(deg_to_rad(lat)))
+	var sea: int = 0
+	var shelf: int = 0
+	var samples: int = 0
+	var warmth: float = 0.0
+	for step_y: int in range(-2, 3):
+		for step_x: int in range(-2, 3):
+			var at_lat: float = clampf(lat + spread * 0.5 * step_y, -89.0, 89.0)
+			var at_lon: float = wrapf(lon + spread * 0.5 * step_x * stretch, -180.0, 180.0)
+			var here: Dictionary = Plates.sample_with_context(at_lat, at_lon, noise, world.plates)
+			samples += 1
+			if bool(here.land):
+				continue
+			sea += 1
+			warmth += float(here.temperature)
+			if float(here.get("ocean_depth_m", 0.0)) <= float(rule.get("shelf_depth_m", 200.0)):
+				shelf += 1
+	var index: int = cell_at(world, lat, lon)
+	var cell: Dictionary = world.grid[index] if index >= 0 else {}
+	var river: bool = bool(cell.get("river", false)) or float(cell.get("discharge", 0.0)) > 0.8
+	if sea == 0:
+		return {
+			"factor": 0.0, "sea_share": 0.0, "shelf_share": 0.0, "sea_temperature": 0.0,
+			"river": river
+		}
+	var temperature: float = warmth / sea
+	var shelf_share: float = float(shelf) / sea
+	var factor: float = float(rule.get("base", 0.55)) + float(rule.get("shelf", 1.0)) * shelf_share
+	if temperature < float(rule.get("cold_below", 14.0)):
+		factor += float(rule.get("cold", 0.35))
+	if river:
+		factor += float(rule.get("river", 0.2))
+	return {
+		"factor": clampf(factor, float(rule.get("min", 0.5)), float(rule.get("max", 1.8))),
+		"sea_share": float(sea) / samples,
+		"shelf_share": shelf_share,
+		"sea_temperature": temperature,
+		"river": river,
+	}
+
+
 ## Viable start pairs, best start first. Puts the best start at index 0 and its partner at 1.
 static func validate(world: Dictionary, rules: Dictionary) -> Dictionary:
 	var spec: Dictionary = rules.validator

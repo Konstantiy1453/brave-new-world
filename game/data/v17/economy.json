@@ -147,7 +147,24 @@
     "signal_poor_tonnes": 300.0,
     "survey_cost": 1500.0,
     "survey_days": 25,
-    "ship_call_days": 30
+    "ship_call_days": 30,
+    "fishery_note": "1.11: how much a coast yields to a small harbour, from the sea around the point (fishery_degrees): shallow shelf water, cold water and a river mouth raise it; the harbour's fish is multiplied by it. Shown on the site card before founding.",
+    "fishery": {"base": 0.55, "shelf": 1.0, "cold": 0.35, "cold_below": 14.0, "river": 0.2, "min": 0.5, "max": 1.8, "sample_degrees": 1.5, "shelf_depth_m": 200.0, "productive": 1.15, "poor": 0.8}
+  },
+  "supply": {
+    "note": "1.11 supply orders: an off-world buyer's standing order for what a town grows (food, through its cargo station) or lands (catch, through its small harbour). Paid on delivery at price (per 100 t) less the port fee; only food grown or landed in that town is delivered, and never below the residents' reserve (the trade reserve, food_reserve + 1 + keep_extra_days days of food, which the port keeps topped up). An order filled before its days are up renews at growth x its size, up to max_size; one that runs out of days renews at lapse_factor x its size, never below first_size. Payments are export receipts and count towards the charter's export goal. min_daily: the least a town must be able to grow or land a day (units) for the buyer to offer the order.",
+    "keep_extra_days": 0.0,
+    "history": 12,
+    "food": {"name": "粮食供应合同", "short": "粮食", "price": 10.0, "first_size": 400.0, "days": 90, "growth": 1.5, "max_size": 3600.0, "lapse_factor": 0.75, "needs": "port", "min_daily": 3.0},
+    "catch": {"name": "渔获交付合同", "short": "渔获", "price": 11.0, "first_size": 300.0, "days": 90, "growth": 1.5, "max_size": 2400.0, "lapse_factor": 0.75, "needs": "harbor", "min_daily": 2.0}
+  },
+  "stock_rules": {
+    "note": "1.11 per-town stock controls (units of 100 t): reserve, the least kept in the town (ordinary exports and supply orders stop at it; building, food and factory inputs still use it); slowdown, the stock at which the town's production of that good stops. A reserve above the slowdown lifts the slowdown to it, so a warehouse filling a reserve keeps its output. auto values are the rules of 1.10.",
+    "max_units": 10000.0
+  },
+  "shifts": {
+    "note": "1.11 reduced shifts: a facility whose output stood idle the day before because its town's stock reached the slowdown level keeps its staff on reduced shifts at reduced_wage of their pay; it returns to full shifts the day its output is wanted again. Each town can turn this off.",
+    "reduced_wage": 0.5
   },
   "buildings": {
     "habitat": {

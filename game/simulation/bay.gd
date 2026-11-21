@@ -10,6 +10,7 @@ extends RefCounted
 ## Every number is in economy.json `bay`; the harbour is the building `harbor`.
 
 const Keys = preload("res://simulation/keys.gd")
+const SiteGen = preload("res://world/geo2/site_gen.gd")
 
 ## Days of imports a harbour's forecast looks back over.
 const SAVINGS_WINDOW: int = 30
@@ -99,6 +100,37 @@ static func sea_savings(sim: RefCounted, s: Dictionary) -> float:
 	return float(rule.sea_discount) * spent / days * minf(1.0, float(s.population) / people)
 
 
+## What the sea off a coordinate yields a small harbour (1.11): a factor on its catch, 0 inland.
+## Reads only.
+static func fishery_at(sim: RefCounted, lat: float, lon: float) -> Dictionary:
+	return SiteGen.fishery(sim.geo, rules(sim).get("fishery", {}), lat, lon)
+
+
+## A site's fishery factor: the one stored when its town was founded, else read from the world (an
+## older town gets it stored on its first day, `daily`). 0 inland.
+static func fishery_of(sim: RefCounted, region: int) -> float:
+	var reg: Dictionary = sim.state.world.regions[region]
+	if not bool(reg.get("coast", false)):
+		return 0.0
+	if reg.has("fishery"):
+		return float(reg.fishery)
+	if rules(sim).get("fishery", {}).is_empty():
+		return 1.0
+	return float(fishery_at(sim, float(reg.lat), float(reg.lon)).factor)
+
+
+## How the site card and the town page name a fishery factor.
+static func fishery_word(sim: RefCounted, factor: float) -> String:
+	var rule: Dictionary = rules(sim).get("fishery", {})
+	if factor <= 0.0:
+		return "无"
+	if factor >= float(rule.get("productive", 1.15)):
+		return "丰富"
+	if factor < float(rule.get("poor", 0.8)):
+		return "贫瘠"
+	return "一般"
+
+
 ## A town with a working harbour.
 static func harbor_working(sim: RefCounted, s: Dictionary) -> bool:
 	for b: Dictionary in s.get("buildings", []):
@@ -173,10 +205,14 @@ static func survey(sim: RefCounted, region: int) -> String:
 	return ""
 
 
-## Each day: a new coastal town gets its signal, and a survey boat back in port tells what it is.
+## Each day: a new coastal town gets its signal and its fishery, and a survey boat back in port tells
+## what the signal is.
 static func daily(sim: RefCounted) -> void:
 	for s: Dictionary in sim.state.get("settlements", []):
 		_place_signal(sim, int(s.region))
+		var site: Dictionary = sim.state.world.regions[int(s.region)]
+		if bool(site.get("coast", false)) and not site.has("fishery"):
+			site.fishery = fishery_of(sim, int(s.region))
 		var reg: Dictionary = sim.state.world.regions[int(s.region)]
 		var reading: Dictionary = reg.get("offshore", {})
 		if reading.is_empty() or bool(reading.surveyed) or int(reading.survey_until) < 0:

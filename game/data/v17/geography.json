@@ -827,6 +827,8 @@
     "relief_degrees": 0.4,
     "max_deposit_plots": 14,
     "plots_per_deposit": 3,
-    "expansion_cells": 16
+    "expansion_cells": 16,
+    "estimate_note": "1.11 site card: the band (share either side of the true value, off centre by a fixed seeded amount so the truth is always inside) of each mineral estimate by the best survey of that resource covering the point: the free orbital reading (signal), a paid orbital scan of that resource (scan), a field survey of its anomaly (field), drilling (drilled); soil for farm yields.",
+    "estimate_bands": {"signal": 0.6, "scan": 0.35, "field": 0.15, "drilled": 0.0, "soil": 0.15}
   }
 }

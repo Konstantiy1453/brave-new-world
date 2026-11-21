@@ -16,7 +16,12 @@ const Contract = preload("res://simulation/contract.gd")
 
 ## Stored coordinates keep four decimals of a degree (a few metres on any planet in the game).
 const PRECISION: float = 10000.0
+const SITE_CACHE_LIMIT: int = 64
 const RESOURCES: Array[String] = ["ore", "copper", "crystal"]
+
+
+## The world part of `site_for` by point (it depends on the seed and the point alone).
+static var _site_cache: Dictionary = {}
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -80,8 +85,9 @@ static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 			"离「%s」太近（%.0f km）：两处据点的地区会重叠，至少相隔 %.0f km"
 			% [str(nearest.name), float(nearest.km), _km(sim, float(rule.min_separation_degrees))]
 		)
-	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
-		return "需要先完成合同阶段，取得下一处据点的远征许可"
+	var capped: String = Contract.cap_refusal(sim)
+	if capped != "":
+		return capped
 	if bool(report.first) and not _can_expand(sim, report):
 		return "这里既没有陆路能到的其他地点，也不靠海，以后无法建立第二处据点"
 	return ""
@@ -207,18 +213,16 @@ static func settle_at(
 		return str(report.refusal)
 	var regions: Array = sim.state.world.regions
 	var id: int = regions.size()
-	var site: Dictionary = SiteGen.site_at(
-		sim.geo, sim.progression_geo(), float(report.lat), float(report.lon), id
-	)
+	# The very site the card showed (`site_for`): the same plots, deposits and reserves.
+	var site: Dictionary = site_for(sim, float(report.lat), float(report.lon)).duplicate(true)
+	site.id = id
+	site.name = SiteGen.site_number(id)
 	for plot: Dictionary in site.plots:
 		var shared: String = str(plot.get("deposit", ""))
-		if shared == "":
-			continue
-		if sim.state.geology.remaining.has(shared):
-			plot.reserves = float(sim.state.geology.remaining[shared])
-		else:
+		if shared != "" and not sim.state.geology.remaining.has(shared):
 			sim.state.geology.remaining[shared] = float(plot.reserves)
-	SiteGen.refresh_deposits(site)
+	if bool(site.get("coast", false)):
+		site.fishery = float(sim.Bay.fishery_at(sim, float(site.lat), float(site.lon)).factor)
 	for other: Dictionary in regions:
 		if int(other.get("landmass", -2)) == int(site.landmass):
 			site.neighbors.append(int(other.id))
@@ -273,3 +277,464 @@ static func scale_reserves(sim: RefCounted, site: Dictionary, factor: float) -> 
 			scaled[shared] = true
 			share(sim, plot)
 	SiteGen.refresh_deposits(site)
+
+
+## The site a town founded at this coordinate would get, as of today: `site_at` from the world (the
+## same rules whether the point is a recommended site or not), with the reserve each shared deposit
+## has left and the deposits a drill has seen made visible. Read-only; the world part is cached.
+## settle_at founds exactly this site, so what the card showed is what the town finds.
+static func site_for(sim: RefCounted, lat: float, lon: float) -> Dictionary:
+	lat = snap(clampf(lat, -89.99, 89.99))
+	lon = snap(wrapf(lon, -180.0, 180.0))
+	var key: String = "%s|%s|%.4f|%.4f" % [str(sim.geo.get("seed", 0)), str(sim.geo.get("radius_km", 0)), lat, lon]
+	if not _site_cache.has(key):
+		if _site_cache.size() > SITE_CACHE_LIMIT:
+			_site_cache.clear()
+		var id: int = sim.state.world.regions.size()
+		_site_cache[key] = SiteGen.site_at(sim.geo, sim.progression_geo(), lat, lon, id)
+	var site: Dictionary = _site_cache[key].duplicate(true)
+	var remaining: Dictionary = sim.state.get("geology", {}).get("remaining", {})
+	var drilled: Dictionary = sim.Prospecting.drilled_deposits(sim)
+	for plot: Dictionary in site.plots:
+		var shared: String = str(plot.get("deposit", ""))
+		if shared == "":
+			continue
+		if remaining.has(shared):
+			plot.reserves = float(remaining[shared])
+		if drilled.has(shared):
+			plot.hidden = false
+	site.deep_known = sim._has("deep_mining")
+	SiteGen.refresh_deposits(site)
+	return site
+
+
+## Everything the one site card shows about a coordinate (1.11), for the capital and every later
+## town, recommended point or not: the ground (`view`: terrain, relief, water, coast, signals,
+## eligibility, the expedition), and from the site a town would get here (`site_for`): buildable
+## plots by type, each mineral's estimate with the band of the survey behind it, farmland and what
+## a farm would grow, the fishery, what building here costs, and plans for what the first town here
+## can sell first. Changes nothing.
+static func preview(
+	sim: RefCounted, lat: float, lon: float, from: int = -1, kind: String = Keys.SITE_RESIDENTIAL
+) -> Dictionary:
+	var report: Dictionary = view(sim, lat, lon, from, kind)
+	if not bool(report.land) or bool(report.get("lake_here", false)) or int(report.slots) <= 0:
+		return report
+	var site: Dictionary = site_for(sim, float(report.lat), float(report.lon))
+	report.has_site = true
+	report.plots = _plot_counts(sim, site)
+	report.minerals = _minerals(sim, site)
+	report.farming = _farming(sim, site, str(report.kind))
+	report.fishing = _fishing(sim, site)
+	report.building = _building(sim, site)
+	report.water_supply = _water(sim, site)
+	report.plans = _plans(sim, report, site)
+	return report
+
+
+## Plots a town here would have, by type: general ground for the town, farmland, and deposits
+## by resource (shallow ones, deep ones too once deep mining is known; hidden ones not at all).
+static func _plot_counts(sim: RefCounted, site: Dictionary) -> Dictionary:
+	var counts: Dictionary = {
+		"general": 0, "farm": 0, "deposits": {"ore": 0, "copper": 0, "crystal": 0}, "deep": 0
+	}
+	var deep: bool = sim._has("deep_mining")
+	for plot: Dictionary in site.plots:
+		match str(plot.kind):
+			"general":
+				counts.general = int(counts.general) + 1
+			"farm":
+				counts.farm = int(counts.farm) + 1
+			"deposit":
+				if bool(plot.hidden):
+					continue
+				if int(plot.depth) > 0 and not deep:
+					counts.deep = int(counts.deep) + 1
+					continue
+				counts.deposits[str(plot.resource)] = int(counts.deposits[str(plot.resource)]) + 1
+	return counts
+
+
+## Each mineral at this site: the true tonnage and plots a town would find (`site_for`), seen
+## through the best survey of that resource covering the point: its band, the range shown (always
+## holding the truth, off centre by a seeded amount), the free orbital signal's word, and for a
+## scan that found nothing, `none_detected`.
+static func _minerals(sim: RefCounted, site: Dictionary) -> Dictionary:
+	var bands: Dictionary = rules(sim).get("estimate_bands", {})
+	var signals: Dictionary = SiteGen.Geology.orbital_signals(
+		sim.geo,
+		float(site.lat),
+		float(site.lon),
+		SiteGen.signal_degrees(sim.geo, sim.progression_geo())
+	)
+	var counts: Dictionary = _plot_counts(sim, site)
+	var result: Dictionary = {}
+	var salt: int = 0
+	for good: String in RESOURCES:
+		salt += 1
+		var ids: Dictionary = {}
+		var grade_sum: float = 0.0
+		var grade_count: int = 0
+		for plot: Dictionary in site.plots:
+			if str(plot.kind) != "deposit" or str(plot.resource) != good or bool(plot.hidden):
+				continue
+			if str(plot.get("deposit", "")) != "":
+				ids[str(plot.deposit)] = true
+			grade_sum += float(plot.grade)
+			grade_count += 1
+		var tonnes: float = float(site.deposits.get(good, 0.0))
+		var plots: int = int(counts.deposits[good])
+		var known: Dictionary = sim.Prospecting.knowledge(
+			sim, good, float(site.lat), float(site.lon), ids
+		)
+		var level: String = str(known.level) if str(known.level) != "" else "signal"
+		var band: float = float(bands.get(level, 0.6))
+		var range: Dictionary = estimate(sim, site, tonnes, band, salt + 10 * _level_rank(level))
+		var plot_low: int = plots
+		var plot_high: int = plots
+		if band > 0.0:
+			plot_low = maxi(0, floori(plots * (1.0 - band)))
+			plot_high = ceili(plots * (1.0 + band))
+		var strength: float = float(signals.get(good, 0.0))
+		result[good] = {
+			"level": level,
+			"band": band,
+			"day": int(known.day),
+			"low": float(range.low),
+			"high": float(range.high),
+			"mid": float(range.mid),
+			"plots_low": plot_low,
+			"plots_high": plot_high,
+			"signal": strength,
+			"signal_word": signal_word(strength),
+			"none_detected": level == "scan" and tonnes <= 0.0,
+			"grade": grade_sum / grade_count if grade_count > 0 else 0.0,
+			"truth": {"tonnes": tonnes, "plots": plots},
+		}
+	return result
+
+
+static func _level_rank(level: String) -> int:
+	return {"signal": 0, "scan": 1, "field": 2, "drilled": 3}.get(level, 0)
+
+
+## A free orbital reading in words (the ground card's mineral signals).
+static func signal_word(strength: float) -> String:
+	if strength >= 0.6:
+		return "强"
+	if strength >= 0.3:
+		return "中"
+	if strength > 0.05:
+		return "弱"
+	return "无"
+
+
+## A true value seen through a band: a range `band` of the value wide on either side in all (2 x
+## band x value), placed off centre by a fixed amount per point and salt so the truth is always
+## inside but not in the middle; a closer survey visibly narrows towards it.
+static func estimate(
+	sim: RefCounted, site: Dictionary, value: float, band: float, salt: int
+) -> Dictionary:
+	if band <= 0.0 or value <= 0.0:
+		return {"low": value, "high": value, "mid": value}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(
+		(
+			"%d|estimate|%.4f|%.4f|%d"
+			% [int(sim.geo.get("seed", 0)), float(site.lat), float(site.lon), salt]
+		)
+	)
+	var u: float = rng.randf_range(0.15, 0.85)
+	var low: float = maxf(0.0, value * (1.0 - 2.0 * band * u))
+	var high: float = value * (1.0 + 2.0 * band * (1.0 - u))
+	return {"low": low, "high": high, "mid": (low + high) * 0.5}
+
+
+## Farmland here: plots, their soil, what one greenhouse farm would grow a day on the best of them
+## (a range by the soil band), and how many people that feeds.
+static func _farming(sim: RefCounted, site: Dictionary, kind: String) -> Dictionary:
+	var fertility: Array = []
+	for plot: Dictionary in site.plots:
+		if str(plot.kind) == "farm":
+			fertility.append(float(plot.get("fertility", site.fertility)))
+	fertility.sort()
+	fertility.reverse()
+	var climate: float = sim.Production.farm_climate_of(sim, site)
+	var spec: Dictionary = sim.config.buildings.farm
+	var frontier: float = 1.0
+	if kind == Keys.SITE_FRONTIER:
+		frontier += float(sim.config.site_rules.frontier_output)
+	var bonus: float = 1.0 + sim.Research.bonus(sim, "farm_output")
+	var outputs: Array = []
+	for soil: float in fertility:
+		outputs.append(float(spec.rate) * soil * climate * frontier * bonus)
+	var band: float = float(rules(sim).get("estimate_bands", {}).get("soil", 0.15))
+	var best: float = float(outputs[0]) if not outputs.is_empty() else 0.0
+	var total: float = 0.0
+	for value: float in outputs:
+		total += value
+	var range: Dictionary = estimate(sim, site, best, band, 41)
+	return {
+		"plots": fertility.size(),
+		"fertility": float(fertility[0]) if not fertility.is_empty() else 0.0,
+		"climate": climate,
+		"per_farm": best,
+		"per_farm_low": float(range.low),
+		"per_farm_high": float(range.high),
+		"all_farms": total,
+		"feeds": floori(best / float(sim.config.economy.food_per_person)),
+		"temperature": float(site.temperature),
+		"word": _soil_word(best),
+	}
+
+
+static func _soil_word(per_farm: float) -> String:
+	if per_farm >= 14.0:
+		return "肥沃"
+	if per_farm >= 8.0:
+		return "中等"
+	if per_farm > 0.0:
+		return "贫瘠"
+	return "没有农田"
+
+
+## The sea off the point: the fishery factor and what a small harbour would land a day.
+static func _fishing(sim: RefCounted, site: Dictionary) -> Dictionary:
+	if not bool(site.get("coast", false)):
+		return {"coast": false, "factor": 0.0, "catch": 0.0, "word": "内陆"}
+	var reading: Dictionary = sim.Bay.fishery_at(sim, float(site.lat), float(site.lon))
+	var fish: float = float(sim.config.buildings.harbor.get("fish", 0.0))
+	return {
+		"coast": true,
+		"factor": float(reading.factor),
+		"catch": fish * float(reading.factor),
+		"word": sim.Bay.fishery_word(sim, float(reading.factor)),
+		"shelf_share": float(reading.shelf_share),
+		"sea_temperature": float(reading.sea_temperature),
+		"river": bool(reading.river),
+	}
+
+
+## What building here costs against a plain site, and for each mineral the mine road its first
+## mine would need: a mine takes the richest plot (Sites.find_plot), and beyond the haul reach its
+## road is built with it (bay.gd).
+static func _building(sim: RefCounted, site: Dictionary) -> Dictionary:
+	var bay: Dictionary = sim.config.get("bay", {})
+	var reach: float = float(bay.get("haul_reach", INF))
+	var roads: Dictionary = {}
+	var far: int = 0
+	for good: String in RESOURCES:
+		var best: Dictionary = {}
+		for plot: Dictionary in site.plots:
+			if str(plot.kind) != "deposit" or str(plot.resource) != good or bool(plot.hidden):
+				continue
+			if int(plot.depth) > 0 and not sim._has("deep_mining"):
+				continue
+			if best.is_empty() or float(plot.grade) > float(best.grade):
+				best = plot
+		if best.is_empty():
+			continue
+		var beyond: float = maxf(0.0, Vector2(float(best.x), float(best.z)).length() - reach)
+		if beyond > 0.0:
+			far += 1
+		roads[good] = {
+			"days": ceili(beyond * float(bay.get("haul_days_per_unit", 0.0))),
+			"cost": beyond * float(bay.get("haul_cost_per_unit", 0.0)),
+		}
+	return {
+		"cost_factor": float(site.get("development_multiplier", 1.0)),
+		"ruggedness": float(site.get("ruggedness", 0.0)),
+		"far_deposits": far,
+		"roads": roads,
+	}
+
+
+## What one water pump would supply here: its capacity on this site's water (Production rules).
+static func _water(sim: RefCounted, site: Dictionary) -> Dictionary:
+	var spec: Dictionary = sim.config.buildings.water
+	var supply: float = (
+		float(spec.capacity) * (float(spec.site_floor) + float(site.water) * float(spec.site_gain))
+	)
+	return {"pump": supply, "water": float(site.water)}
+
+
+## What the first town here can sell first: a plan per way of earning, best first. Each names the
+## facilities it needs (and what a town founded here brings), what they cost and when the crew can
+## have them working, a reasonable first shipment (when, how much, what it fetches) and what that
+## does for the charter's export goal of the current stage.
+static func _plans(sim: RefCounted, report: Dictionary, site: Dictionary) -> Array:
+	var plans: Array = []
+	var first: bool = bool(report.first)
+	var cost_factor: float = float(report.building.cost_factor)
+	var fee: float = float(sim.config.economy.port_fee)
+	var goal: Dictionary = _export_goal(sim)
+	var people: int = _people(sim, first, str(report.kind))
+	var eaten: float = people * float(sim.config.economy.food_per_person)
+	var port_here: bool = first or str(report.get("route", {}).get("variant", "")) == "sea"
+	for good: String in RESOURCES:
+		var mineral: Dictionary = report.minerals[good]
+		if float(mineral.mid) <= 0.0 or int(mineral.plots_high) <= 0:
+			continue
+		var kind: String = "mine_" + good
+		var spec: Dictionary = sim.config.buildings[kind]
+		var rate: float = (
+			float(spec.rate)
+			* maxf(0.5, float(mineral.grade))
+			* sim.Production._good_bonus(sim, good)
+			* (1.0 + float(sim.config.site_rules.frontier_output) if str(report.kind) == Keys.SITE_FRONTIER else 1.0)
+		)
+		var price: float = sim.Market.price(sim, good)
+		var road: Dictionary = report.building.roads.get(good, {"days": 0, "cost": 0.0})
+		var days: int = int(spec.days) + int(road.days)
+		var reserve: float = float(sim.config.economy.export_reserve.get(good, 0.0))
+		var lead: int = days + ceili(reserve / maxf(0.1, rate)) + 1
+		var needs: Array = [
+			{
+				"kind": kind,
+				"name": str(spec.name),
+				"cost": float(spec.cost) * cost_factor + float(road.cost),
+				"days": days,
+				"road_days": int(road.days),
+			}
+		]
+		if not port_here:
+			needs.append(_port_need(sim, cost_factor))
+		plans.append(
+			_plan(
+				"mine",
+				good,
+				"%s出口" % str(sim.config.resources.get(good, good)),
+				needs,
+				lead,
+				rate,
+				rate * price * (1.0 - fee),
+				goal,
+				"按卖出价 ¥%.1f/百吨（市场越卖越便宜）；储量估计 %.0f–%.0f t（%s）" % [price, sim.tonnes(float(mineral.low)), sim.tonnes(float(mineral.high)), LEVEL_NAMES.get(str(mineral.level), "")],
+				mineral.level == "signal"
+			)
+		)
+	var farming: Dictionary = report.farming
+	var food_rule: Dictionary = sim.config.get("supply", {}).get("food", {})
+	if int(farming.plots) > 0 and not food_rule.is_empty():
+		var spec: Dictionary = sim.config.buildings.farm
+		var farms: int = mini(int(farming.plots), 2)
+		var grown: float = float(farming.per_farm) * farms
+		if grown >= float(food_rule.get("min_daily", 0.0)):
+			var needs: Array = []
+			for index: int in range(farms):
+				needs.append({"kind": "farm", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)})
+			if not port_here:
+				needs.append(_port_need(sim, cost_factor))
+			var price: float = float(food_rule.price)
+			plans.append(
+				_plan(
+					"food",
+					"food",
+					str(food_rule.name),
+					needs,
+					int(spec.days) + 1,
+					float(farming.per_farm),
+					grown * price * (1.0 - fee),
+					goal,
+					"每座温室农场约 %.0f t/天（%s，%.0f–%.0f t）；%d 人每天吃 %.0f t，%.0f 天口粮储备留在仓库，货运站补足；合同价 ¥%.1f/百吨，首期 %.0f t、%d 天，交齐后续签加量" % [sim.tonnes(float(farming.per_farm)), str(farming.word), sim.tonnes(float(farming.per_farm_low)), sim.tonnes(float(farming.per_farm_high)), people, sim.tonnes(eaten), float(sim.state.policy.food_reserve) + 1.0, price, sim.tonnes(float(food_rule.first_size)), int(food_rule.days)],
+					false
+				)
+			)
+	var fishing: Dictionary = report.fishing
+	var catch_rule: Dictionary = sim.config.get("supply", {}).get("catch", {})
+	if bool(fishing.coast) and not catch_rule.is_empty() and float(fishing.catch) >= float(catch_rule.get("min_daily", 0.0)):
+		var spec: Dictionary = sim.config.buildings.harbor
+		var price: float = float(catch_rule.price)
+		plans.append(
+			_plan(
+				"catch",
+				"food",
+				str(catch_rule.name),
+				[{"kind": "harbor", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)}],
+				int(spec.days) + 1,
+				float(fishing.catch),
+				float(fishing.catch) * price * (1.0 - fee),
+				goal,
+				"渔场%s：一座小型码头每天约 %.0f t；合同价 ¥%.1f/百吨，首期 %.0f t、%d 天；码头还能走海运，进口便宜 %.0f%%" % [str(fishing.word), sim.tonnes(float(fishing.catch)), price, sim.tonnes(float(catch_rule.first_size)), int(catch_rule.days), float(sim.config.bay.sea_discount) * 100.0],
+				false
+			)
+		)
+	plans.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.per_day) > float(b.per_day))
+	if not plans.is_empty():
+		plans[0].best = true
+	return plans
+
+
+const LEVEL_NAMES: Dictionary = {
+	"signal": "轨道粗测",
+	"scan": "轨道观测",
+	"field": "实地勘察",
+	"drilled": "钻探",
+}
+
+
+static func _port_need(sim: RefCounted, cost_factor: float) -> Dictionary:
+	var spec: Dictionary = sim.config.buildings.port
+	return {"kind": "port", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)}
+
+
+## The people a town founded here starts with: the landing party, or an expedition.
+static func _people(sim: RefCounted, first: bool, kind: String) -> int:
+	if first:
+		var opening: Dictionary = sim.config.openings[sim.state.advantage]
+		return int(opening.workers) + int(opening.scientists) + int(opening.children)
+	return sim.Sites.expedition_workers(sim, kind)
+
+
+## The current stage's export goal: {target, value, left, deadline}; empty when the stage has none.
+static func _export_goal(sim: RefCounted) -> Dictionary:
+	var stage: int = int(sim.state.get("contract", {}).get("stage", 1))
+	if stage > Contract.STAGE_COUNT:
+		return {}
+	var goals: Dictionary = sim.contract_rules.stages[stage - 1].goals
+	if not goals.has("exports_total"):
+		return {}
+	var target: float = Contract.goal_target(sim, stage, "exports_total")
+	var value: float = float(sim.state.get("exports_total", 0.0))
+	return {
+		"stage": stage,
+		"target": target,
+		"value": value,
+		"left": maxf(0.0, target - value),
+		"deadline": Contract.deadline(sim, stage),
+	}
+
+
+static func _plan(
+	key: String,
+	good: String,
+	title: String,
+	needs: Array,
+	lead: int,
+	first_amount: float,
+	per_day: float,
+	goal: Dictionary,
+	note: String,
+	uncertain: bool
+) -> Dictionary:
+	var cost: float = 0.0
+	for need: Dictionary in needs:
+		cost += float(need.cost)
+	var plan: Dictionary = {
+		"key": key,
+		"good": good,
+		"title": title,
+		"needs": needs,
+		"cost": cost,
+		"first_day": lead,
+		"first_amount": first_amount,
+		"per_day": per_day,
+		"note": note,
+		"uncertain": uncertain,
+		"best": false,
+	}
+	if not goal.is_empty() and per_day > 0.0:
+		plan.goal_days = ceili(float(goal.left) / per_day)
+		plan.goal_day = lead + int(plan.goal_days)
+		plan.goal = goal
+	return plan

@@ -22,6 +22,8 @@ const MAX_DAYS_PER_FRAME: int = 3
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
+const V110_SAVE_MANUAL: String = "/ColonyCharter/v110/manual.save"
+const V110_SAVE_AUTO: String = "/ColonyCharter/v110/autosave.save"
 const V19_SAVE_MANUAL: String = "/ColonyCharter/v19/manual.save"
 const V19_SAVE_AUTO: String = "/ColonyCharter/v19/autosave.save"
 const V18_SAVE_MANUAL: String = "/ColonyCharter/v18/manual.save"
@@ -1113,12 +1115,13 @@ func _refresh_top() -> Dictionary:
 			% [labour, _crew_count(state), people, employed, children]
 		)
 	)
+	var cap: Dictionary = Contract.cap_view(sim)
 	_set_cell_text(
 		"places",
-		"%d / %d" % [state.settlements.size(), Contract.settlement_cap(sim)],
+		"%d / %s" % [int(cap.used), "不限" if bool(cap.unlimited) else str(int(cap.cap))],
 		"",
 		0.0,
-		"已建立的据点 / 合同许可的上限"
+		"已建立的据点（含首府）/ 本阶段合同允许的上限：第一阶段 2 处，第二阶段 3 处，第三阶段 5 处，之后不限"
 	)
 	var utility_note: String = "\n电和水不能储存：第一个数是全部据点的供给，后面是供给减需求。\n"
 	_set_cell_flow("power", power, power - power_used, "电力" + utility_note + "\n".join(places))
@@ -1505,10 +1508,12 @@ func old_save_path(relative: String) -> String:
 	return OS.get_environment("APPDATA") + relative
 
 
-## The newer of the manual and automatic saves; a 1.9, 1.8, 1.7 or 1.6 save if this version has none
-## yet. Older versions' files are only read: saving writes to this version's own folder.
+## The newer of the manual and automatic saves; a 1.10, 1.9, 1.8, 1.7 or 1.6 save if this version
+## has none yet. Older versions' files are only read: saving writes to this version's own folder.
 func _latest_save() -> String:
 	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(V110_SAVE_MANUAL), old_save_path(V110_SAVE_AUTO)])
 	if best == "":
 		best = _newest_of([old_save_path(V19_SAVE_MANUAL), old_save_path(V19_SAVE_AUTO)])
 	if best == "":

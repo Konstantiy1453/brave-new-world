@@ -35,6 +35,8 @@ const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
 const Copies = preload("res://simulation/copies.gd")
+const Stocks = preload("res://simulation/stocks.gd")
+const Supply = preload("res://simulation/supply.gd")
 const HUB_FOOD_DAYS: float = 3.0
 const HUNGRY_DAYS: float = 7.0
 const TERMINAL_MATERIALS: float = 24.0
@@ -192,8 +194,10 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		* float(sim.config.economy.food_per_person)
 		* (float(sim.state.policy.food_reserve) + 1.0)
 	)
-	# Needs before sales: food and the construction stock get first call on the port.
-	cap = _import(sim, s, "food", target_food, cap)
+	# Needs before sales: food and the construction stock get first call on the port. What supply
+	# orders take of the town's own produce today is bought back in as rations, so the residents'
+	# reserve stays whole (supply.gd).
+	cap = _import(sim, s, "food", target_food + Supply.selling_today(sim, s), cap)
 	for key in ["materials", "parts"]:
 		cap = _import(sim, s, key, _construction_stock(sim, key), cap)
 	# Recurring external buyer receives real farm input through actual local port.
@@ -201,11 +205,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		if b.kind != "foodworks" or not b.active:
 			continue
 		var d: Dictionary = sim.config.buildings.foodworks
-		var keep: float = (
-			float(s.population)
-			* float(sim.config.economy.food_per_person)
-			* (float(sim.state.policy.food_reserve) + 1)
-		)
+		var keep: float = Stocks.keep(sim, s, "food")
 		var scale: float = minf(
 			float(b.efficiency),
 			minf(
@@ -232,25 +232,15 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		)
 		sim.state.exports_total += payment
 		Consignments.exported(sim, s, "food", float(d.food_input) * scale, payment)
+		Supply.record_sale(sim, s, "food", float(d.food_input) * scale, payment, "export")
 		cap -= float(d.food_input) * scale
-	# Sell only surplus after promised cross-region stock.
+	# Supply orders (1.11): food grown or landed here, above the residents' reserve.
+	cap = Supply.deliver(sim, s, cap)
+	# Sell only what is free: the one availability figure the pages quote (stocks.gd) — after the
+	# town's reserve, planned projects, promises to other towns and event orders.
+	var promises: Dictionary = reserved(sim, s)
 	for key in EXPORT_ORDER:
-		var reserve: float = (
-			float(sim.config.economy.export_reserve.get(key, 0.0))
-			+ float(reserved(sim, s).get(key, 0.0))
-		)
-		var amount: float = minf(cap, maxf(0.0, float(s.stock[key]) - reserve))
-		if key in ["materials", "parts"]:
-			amount = minf(
-				amount,
-				maxf(
-					0.0,
-					(
-						float(s.get("exportable", {}).get(key, 0.0))
-						- EventsV2.reserved(sim, int(s.region), key)
-					)
-				)
-			)
+		var amount: float = minf(cap, float(Stocks.availability(sim, s, key, promises).sellable))
 		if amount <= 0:
 			continue
 		var price: float = Market.price(sim, key)
@@ -267,6 +257,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		sim._public_expense(revenue * sim.config.economy.port_fee, "export.port_fee", "external")
 		sim.state.exports_total += revenue
 		Consignments.exported(sim, s, key, amount, revenue)
+		Supply.record_sale(sim, s, key, amount, revenue, "export")
 		cap -= amount
 		if sim.state.exports_total == revenue:
 			sim._log("第一笔出口到账：%.0f。所有进出口共用本地港口吞吐。" % revenue)
@@ -422,6 +413,9 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 				target = reserve
 			elif dst.port_capacity > 0:
 				target = 80.0
+			# What the player keeps here and what planned projects hold back stay (stocks.gd).
+			if resource != "food" or Stocks.set_reserve(src, resource) >= 0.0:
+				reserve = maxf(reserve, _player_hold(src, resource))
 			target = maxf(target, _factory_need(sim, dst, resource))
 			if resource in ["food", "materials", "parts"]:
 				target += _road_demand(sim, dst, resource, int(r.id))
@@ -462,6 +456,11 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			)
 			cap -= amount
 			r.sent_today += amount
+
+
+## What the player's controls hold back at a town: its set reserve and planned projects.
+static func _player_hold(s: Dictionary, resource: String) -> float:
+	return maxf(0.0, Stocks.set_reserve(s, resource)) + Stocks.planned(s, resource)
 
 
 static func _arriving_by(sim: RefCounted, road: int, region: int, resource: String) -> bool:

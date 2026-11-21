@@ -80,6 +80,8 @@ const SERVICE_PEOPLE: Dictionary = {
 }
 const COMMERCE_PEOPLE: int = 150
 const HALL_TECH: String = "capital_planning"
+## Stage one's second town waits for this share of the stage's export goal (1.11).
+const EARLY_EXPANSION_GOAL_SHARE: float = 0.25
 const RESHUFFLE_PERIOD: int = 90
 const IDLE_STATUSES: Array[String] = ["no_input", "idle", "target_full"]
 const RECRUIT_JOBLESS_LIMIT: float = 0.15
@@ -187,6 +189,7 @@ func on_day() -> void:
 	_late_great_works()
 	_laboratory(reserve)
 	_staff_research(reserve)
+	_supply_orders()
 	_second_settlement(reserve)
 	_feed_towns(reserve)
 	_food(reserve)
@@ -211,6 +214,29 @@ func on_day() -> void:
 	_commissions()
 	_seek_late_work_tech()
 	_career_transfer()
+
+
+## Stage one allows a second town (1.11), but a sound player founds it once the first one earns: a
+## quarter of the stage's export goal in, and cash for the expedition twice over besides the reserve.
+func _early_expansion_ok(reserve: float) -> bool:
+	if int(sim.state.contract.stage) != 1:
+		return true
+	var goal: float = sim.Contract.goal_target(sim, 1, "exports_total")
+	if float(sim.state.exports_total) < goal * EARLY_EXPANSION_GOAL_SHARE:
+		return false
+	var fare: float = sim.Sites.expedition_cash(sim, "frontier")
+	return float(sim.state.cash) >= 2.0 * fare + reserve
+
+
+## Supply orders (1.11): every order a town qualifies for is signed; it costs nothing and buys only
+## what the town grows or lands above its residents' reserve.
+func _supply_orders() -> void:
+	for place: Dictionary in sim.state.settlements:
+		if int(place.arrival) > 0:
+			continue
+		for row: Dictionary in sim.Supply.offers(sim, place):
+			if str(row.refusal) == "":
+				act("supply_sign", {"site": int(place.region), "kind": str(row.kind)})
 
 
 ## Crews (1.10): orders wait for an engineering crew. An idle crew goes to a linked town whose
@@ -855,6 +881,8 @@ func _second_settlement(reserve: float) -> void:
 	_connect_settlements(reserve)
 	if _saving_for_road() or sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
 		return
+	if not _early_expansion_ok(reserve):
+		return
 	var next: Dictionary = _next_site(reserve)
 	if not next.is_empty():
 		act("settle", {"site": next.site, "from": next.from, "kind": next.kind})
@@ -1107,7 +1135,13 @@ func _options(reserve: float) -> Array:
 	var leading_good: String = _dominant_export()
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
-		for kind: String in _kinds_with_roles(INVEST_ROLES, place):
+		# Farms and harbours earn like mines while a supply order buys what they make (1.11).
+		var roles: Array[String] = INVEST_ROLES.duplicate()
+		if not sim.Supply.open_order(sim, region, "food").is_empty():
+			roles.append("farm")
+		if not sim.Supply.open_order(sim, region, "catch").is_empty():
+			roles.append("harbor")
+		for kind: String in _kinds_with_roles(roles, place):
 			var role: String = sim.Production.role_of(sim, kind)
 			if other_income and role in EXTRACTION_ROLES:
 				continue

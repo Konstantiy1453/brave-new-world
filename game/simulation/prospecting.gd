@@ -20,6 +20,10 @@ const NAMES: Dictionary = {"ore": "铁矿", "copper": "铜矿", "crystal": "工�
 static func ensure_state(state: Dictionary) -> void:
 	if not state.has("prospecting"):
 		state.prospecting = {"anomalies": [], "jobs": [], "next_id": 1}
+	# 1.11: each orbital observation is kept, with what it found, so the site card can say that a
+	# scan saw nothing of a resource at a point.
+	if not state.prospecting.has("scans"):
+		state.prospecting.scans = []
 
 
 static func rules(sim: RefCounted) -> Dictionary:
@@ -216,6 +220,16 @@ static func _report_orbit(sim: RefCounted, resource: String, lat: float, lon: fl
 		)
 		sim.state.prospecting.next_id = int(sim.state.prospecting.next_id) + 1
 		found += 1
+	sim.state.prospecting.scans.append(
+		{
+			"resource": resource,
+			"lat": lat,
+			"lon": lon,
+			"reach": reach,
+			"day": int(sim.state.day),
+			"found": found,
+		}
+	)
 	sim._log(
 		(
 			(
@@ -223,7 +237,10 @@ static func _report_orbit(sim: RefCounted, resource: String, lat: float, lon: fl
 				% [NAMES[resource], found, _km(sim, float(rule.zone_degrees))]
 			)
 			if found > 0
-			else "轨道观测结果：这一带看不到%s异常。" % NAMES[resource]
+			else (
+				"轨道观测结果：本次观测未探测到%s（北纬 %.1f°、东经 %.1f° 周围 %.0f km）。"
+				% [NAMES[resource], lat, lon, float(rule.reach_km)]
+			)
 		)
 	)
 
@@ -290,6 +307,47 @@ static func _report_drill(sim: RefCounted, target: Dictionary) -> void:
 			)
 		)
 	)
+
+
+## What the colony's prospecting knows of one resource at a point, for the site card: the best of a
+## drilled or field-surveyed anomaly on a deposit the site reaches (`deposits`, its plots' deposit
+## ids), and the latest orbital scan of that resource whose reach covers the point. {level:
+## "drilled" | "field" | "scan" | "", day, found (the scan's anomaly count)}.
+static func knowledge(
+	sim: RefCounted, resource: String, lat: float, lon: float, deposits: Dictionary
+) -> Dictionary:
+	ensure_state(sim.state)
+	var best: Dictionary = {"level": "", "day": -1, "found": -1}
+	for entry: Dictionary in sim.state.prospecting.anomalies:
+		if str(entry.resource) != resource or not deposits.has(str(entry.deposit)):
+			continue
+		var stage: String = str(entry.stage)
+		if stage == "drilled":
+			return {"level": "drilled", "day": int(entry.get("day", -1)), "found": 1}
+		if stage == "field":
+			best = {"level": "field", "day": int(entry.get("day", -1)), "found": 1}
+	if str(best.level) != "":
+		return best
+	var here: Vector3 = WorldGen.unit_point(lat, lon)
+	for scan: Dictionary in sim.state.prospecting.get("scans", []):
+		if str(scan.resource) != resource:
+			continue
+		var centre: Vector3 = WorldGen.unit_point(float(scan.lat), float(scan.lon))
+		if rad_to_deg(here.angle_to(centre)) > float(scan.reach):
+			continue
+		if int(scan.day) >= int(best.day):
+			best = {"level": "scan", "day": int(scan.day), "found": int(scan.found)}
+	return best
+
+
+## Deposits a drill has seen are visible in every town that reaches them, a town founded later too.
+static func drilled_deposits(sim: RefCounted) -> Dictionary:
+	ensure_state(sim.state)
+	var seen: Dictionary = {}
+	for entry: Dictionary in sim.state.prospecting.anomalies:
+		if str(entry.stage) == "drilled":
+			seen[str(entry.deposit)] = true
+	return seen
 
 
 static func _deposit(sim: RefCounted, id: String) -> Dictionary:

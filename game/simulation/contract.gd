@@ -11,6 +11,8 @@ const Research = preload("res://simulation/research.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
+## No limit on settlements (stages four and five, and after the award).
+const UNLIMITED: int = 1 << 20
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
 
 
@@ -64,15 +66,57 @@ static func overdue(sim: RefCounted) -> bool:
 	return int(sim.state.day) > deadline(sim, int(contract.stage))
 
 
+## Settlements the colony may have in total, capital included, while the current stage is under way
+## (contract.json `settlement_cap.by_stage`, 1.11): two in stage one, three in stage two, five in
+## stage three, then no limit. The one rule the map, the contract page, the expedition dialog and
+## the simulation all ask. UNLIMITED stands for no limit.
 static func settlement_cap(sim: RefCounted) -> int:
-	var rules: Dictionary = sim.contract_rules.settlement_cap
-	var cap: int = int(rules.initial)
+	return _cap_for_stage(sim, _cap_stage(sim))
+
+
+static func _cap_stage(sim: RefCounted) -> int:
 	if sim.state.status == "success":
-		cap = int(rules.after_award)
-	else:
-		for licence: String in sim.state.contract.licences:
-			cap = maxi(cap, int(rules.get(licence, 0)))
-	return cap
+		return STAGE_COUNT + 1
+	return clampi(int(sim.state.contract.stage), 1, STAGE_COUNT + 1)
+
+
+static func _cap_for_stage(sim: RefCounted, stage: int) -> int:
+	var caps: Array = sim.contract_rules.settlement_cap.get("by_stage", [])
+	if stage > STAGE_COUNT or caps.is_empty():
+		return UNLIMITED
+	var cap: int = int(caps[mini(stage, caps.size()) - 1])
+	return UNLIMITED if cap <= 0 else cap
+
+
+## Why no further settlement can be founded now, or "" when one can: the same words everywhere.
+static func cap_refusal(sim: RefCounted) -> String:
+	var view: Dictionary = cap_view(sim)
+	if not bool(view.full):
+		return ""
+	var later: String = "不再限制" if bool(view.next_unlimited) else "%d 处" % int(view.next_cap)
+	return (
+		"据点已达本阶段上限：%d / %d 处（含首府）；完成第 %d 阶段后上限为%s"
+		% [int(view.used), int(view.cap), int(view.stage), later]
+	)
+
+
+## The cap as the interface shows it: how many there are, how many this stage allows, whether it is
+## full, and what the next stage allows.
+static func cap_view(sim: RefCounted) -> Dictionary:
+	var stage: int = _cap_stage(sim)
+	var cap: int = _cap_for_stage(sim, stage)
+	var next: int = _cap_for_stage(sim, stage + 1)
+	var used: int = sim.state.get("settlements", []).size()
+	return {
+		"stage": mini(stage, STAGE_COUNT),
+		"used": used,
+		"cap": cap,
+		"unlimited": cap >= UNLIMITED,
+		"full": used >= cap,
+		"left": maxi(0, cap - used) if cap < UNLIMITED else UNLIMITED,
+		"next_cap": next,
+		"next_unlimited": next >= UNLIMITED,
+	}
 
 
 static func population_total(sim: RefCounted) -> int:

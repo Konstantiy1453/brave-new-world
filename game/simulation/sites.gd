@@ -612,8 +612,9 @@ static func settle_refusal(
 		return "请选择候选地区"
 	if not sim.settlement(region).is_empty():
 		return "此地区已经建立据点"
-	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
-		return "需要先完成合同阶段，取得下一处据点的远征许可"
+	var capped: String = Contract.cap_refusal(sim)
+	if capped != "":
+		return capped
 	if sim.state.settlements.is_empty():
 		if not _can_expand_from(sim, region):
 			return "该登陆点既没有陆路相邻的地点，也不靠海，无法履行双据点合同"
@@ -766,7 +767,11 @@ static func settle(
 		"port_used": 0.0,
 		"port_capacity": 0.0,
 		"food_consumed": 0.0,
-		"crew": 0
+		"crew": 0,
+		"stock_rules": {},
+		"reservations": [],
+		"auto_shifts": true,
+		"supply_pool": {"farm": 0.0, "catch": 0.0},
 	}
 	sim.state.settlements.append(s)
 	# The landing party or the expedition moves in: the town's first people.

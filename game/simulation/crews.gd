@@ -271,6 +271,19 @@ static func choose_next(sim: RefCounted, region: int, uid: int) -> String:
 	return ""
 
 
+## A project taken back before work began (Production.withdraw): a crew that had taken it up is free
+## for the next one, and it is no longer the town's chosen next project.
+static func release_target(sim: RefCounted, region: int, uid: int) -> void:
+	ensure_state(sim.state)
+	for team: Dictionary in sim.state.crews.teams:
+		if str(team.task) == BUILD and int(team.target) == uid and int(team.region) == region:
+			team.task = IDLE
+			team.target = 0
+	sim.state.crews.get("working", {}).erase(uid)
+	if int(sim.state.crews.get("next", {}).get(str(region), 0)) == uid:
+		sim.state.crews.next.erase(str(region))
+
+
 ## When each project at a town is expected to start and finish, from its crews and its queue as
 ## they stand today: {uid: {"start", "finish", "crew"}}, the first and the last working day;
 ## both -1 for a project no crew here can reach (none at the town, none coming). A crew's last busy

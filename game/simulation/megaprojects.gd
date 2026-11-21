@@ -127,8 +127,12 @@ static func port_factor(sim: RefCounted, s: Dictionary) -> float:
 ## Climate change at the region at this index: near a finished regulator, and planet-wide for
 ## every terraforming stage (temperature toward the comfortable band, more rain).
 static func climate(sim: RefCounted, region: int) -> Dictionary:
+	return climate_of(sim, sim.state.world.regions[region])
+
+
+## The same for a site record that need not be in the world's list yet (a site card's preview).
+static func climate_of(sim: RefCounted, here: Dictionary) -> Dictionary:
 	var shift: Dictionary = {"temperature": 0.0, "rainfall": 1.0}
-	var here: Dictionary = sim.state.world.regions[region]
 	var at: Dictionary = host(sim, "climate_regulator")
 	if not at.is_empty():
 		var rules: Dictionary = sim.config.megaprojects.climate_regulator

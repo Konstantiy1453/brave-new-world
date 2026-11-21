@@ -27,6 +27,8 @@ const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
 const Consignments = preload("res://simulation/consignments.gd")
 const Prospecting = preload("res://simulation/prospecting.gd")
+const Stocks = preload("res://simulation/stocks.gd")
+const Supply = preload("res://simulation/supply.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -163,6 +165,8 @@ static func ensure_systems(target: Dictionary) -> void:
 	Placement.ensure_state(target)
 	Consignments.ensure_state(target)
 	Prospecting.ensure_state(target)
+	Stocks.ensure_state(target)
+	Supply.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -257,6 +261,20 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Production.batch_toggle(self, args)
 		"stock_target":
 			refusal = Production.set_stock_target(self, args)
+		"stock_rule":
+			refusal = Stocks.set_rule(self, args)
+		"reserve_for":
+			refusal = Stocks.reserve_for(self, args)
+		"reserve_release":
+			refusal = Stocks.release(self, args)
+		"shifts":
+			refusal = Stocks.set_shifts(self, args)
+		"supply_sign":
+			refusal = Supply.sign(self, _site_arg(args), str(args.get("kind", "")))
+		"supply_cancel":
+			refusal = Supply.cancel(self, _site_arg(args), str(args.get("kind", "")))
+		"withdraw":
+			refusal = Production.withdraw(self, _site_arg(args), int(args.get("uid", -1)))
 		"policy":
 			refusal = _set_policy(args)
 		"event_v2":
@@ -353,6 +371,7 @@ func tick() -> void:
 			Population.feed(self, s)
 	Logistics.dispatch(self)
 	Logistics.road_daily(self)
+	Supply.daily(self)
 	Sites.daily(self)
 	Prospecting.daily(self)
 	Bay.daily(self)
@@ -742,6 +761,8 @@ func audit() -> Array:
 	errors.append_array(Crews.audit(state))
 	errors.append_array(Consignments.audit(state))
 	errors.append_array(Prospecting.audit(state))
+	errors.append_array(Stocks.audit(state))
+	errors.append_array(Supply.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")
 	for s: Dictionary in state.settlements:
