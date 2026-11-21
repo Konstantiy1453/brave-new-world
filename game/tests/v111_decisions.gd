@@ -34,6 +34,7 @@ func check(ok: bool, label: String) -> void:
 
 func run() -> void:
 	_caps()
+	_markers_read_the_card()
 	_preview_matches_arrival()
 	_scan_finds_nothing()
 	_supply_orders()
@@ -160,6 +161,30 @@ func _land_point(
 				if str(view.refusal) == "" or str(view.refusal).begins_with("据点已达"):
 					return {"lat": float(view.lat), "lon": float(view.lon)}
 	return {}
+
+
+## A recommended site's marker stands for the site its card shows: the deposits it is filtered and
+## ranked by, and the bots' start score, are the card's, not the generator's own draw.
+func _markers_read_the_card() -> void:
+	var sim: RefCounted = _game("1")
+	var same: bool = true
+	var scored: bool = true
+	for reg: Dictionary in sim.state.world.regions.slice(0, 8):
+		var marker: Dictionary = sim.Placement.marker_site(sim, reg)
+		var card: Dictionary = sim.Placement.preview(sim, float(reg.lat), float(reg.lon))
+		if card.get("minerals", {}).is_empty():
+			continue
+		for good: String in ["ore", "copper", "crystal"]:
+			var truth: float = float(card.minerals[good].truth.tonnes)
+			same = same and is_equal_approx(float(marker.deposits.get(good, 0.0)), truth)
+		scored = (
+			scored
+			and is_equal_approx(
+				sim.Sites.start_score(sim, int(reg.id)), sim.Placement.site_score(sim, reg)
+			)
+		)
+	check(same, "a marker's deposits are the ones its card shows")
+	check(scored, "the start score is the card site's")
 
 
 ## What the card says before founding is what the town finds: plots by type exactly, each mineral's
