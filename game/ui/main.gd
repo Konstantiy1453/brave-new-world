@@ -894,6 +894,7 @@ func select_ground(point: Dictionary) -> void:
 	ground_from = -1
 	naming_ground = false
 	map.set_ground(ground)
+	coach.note_site(int(point.get("marker", -1)), point)
 	refresh_sidebar()
 
 
@@ -904,7 +905,26 @@ func clear_ground() -> void:
 	refresh_sidebar()
 
 
+## A town's marker selects the town. A recommended site that no town stands on is only a point on
+## the map (1.11): it opens the same ground card as any other point, at its coordinate, and founding
+## there follows the same rules (Placement.settle_at).
 func select_region(id: int):
+	if (
+		id >= 0
+		and id < sim.state.get("world", {}).get("regions", []).size()
+		and sim.settlement(id).is_empty()
+	):
+		var site: Dictionary = sim.state.world.regions[id]
+		select_ground(
+			{
+				"lat": float(site.lat),
+				"lon": float(site.lon),
+				"precision": 0.0,
+				"view": map_mode,
+				"marker": id,
+			}
+		)
+		return
 	selected = id
 	if not ground.is_empty():
 		ground = {}

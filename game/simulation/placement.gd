@@ -559,10 +559,11 @@ static func _water(sim: RefCounted, site: Dictionary) -> Dictionary:
 
 
 ## What the first town here can sell first: a plan per way of earning, best first. Each names the
-## facilities it needs (and what a town founded here brings), what they cost and when the crew can
-## have them working, a reasonable first shipment (when, how much, what it fetches) and what that
-## does for the charter's export goal of the current stage.
-static func _plans(sim: RefCounted, report: Dictionary, site: Dictionary) -> Array:
+## facilities it needs (up to two mines or farms, or one harbour, as the estimates allow, built one
+## after the other by the town's first crew), what they cost and when each is working, a reasonable
+## first shipment (when, how much, what it fetches), the daily earnings once all stand, and what
+## that does for the charter's export goal of the current stage.
+static func _plans(sim: RefCounted, report: Dictionary, _site: Dictionary) -> Array:
 	var plans: Array = []
 	var first: bool = bool(report.first)
 	var cost_factor: float = float(report.building.cost_factor)
@@ -571,6 +572,9 @@ static func _plans(sim: RefCounted, report: Dictionary, site: Dictionary) -> Arr
 	var people: int = _people(sim, first, str(report.kind))
 	var eaten: float = people * float(sim.config.economy.food_per_person)
 	var port_here: bool = first or str(report.get("route", {}).get("variant", "")) == "sea"
+	var frontier: float = 1.0
+	if str(report.kind) == Keys.SITE_FRONTIER:
+		frontier += float(sim.config.site_rules.frontier_output)
 	for good: String in RESOURCES:
 		var mineral: Dictionary = report.minerals[good]
 		if float(mineral.mid) <= 0.0 or int(mineral.plots_high) <= 0:
@@ -581,36 +585,54 @@ static func _plans(sim: RefCounted, report: Dictionary, site: Dictionary) -> Arr
 			float(spec.rate)
 			* maxf(0.5, float(mineral.grade))
 			* sim.Production._good_bonus(sim, good)
-			* (1.0 + float(sim.config.site_rules.frontier_output) if str(report.kind) == Keys.SITE_FRONTIER else 1.0)
+			* frontier
 		)
-		var price: float = sim.Market.price(sim, good)
+		var price: float = sim.Market.price(sim, good) * (1.0 - fee)
 		var road: Dictionary = report.building.roads.get(good, {"days": 0, "cost": 0.0})
-		var days: int = int(spec.days) + int(road.days)
-		var reserve: float = float(sim.config.economy.export_reserve.get(good, 0.0))
-		var lead: int = days + ceili(reserve / maxf(0.1, rate)) + 1
-		var needs: Array = [
-			{
-				"kind": kind,
-				"name": str(spec.name),
-				"cost": float(spec.cost) * cost_factor + float(road.cost),
-				"days": days,
-				"road_days": int(road.days),
-			}
-		]
+		var count: int = clampi(roundi((int(mineral.plots_low) + int(mineral.plots_high)) * 0.5), 1, 2)
+		var steps: Array = []
+		for index: int in range(count):
+			var days: int = int(spec.days) + (int(road.days) if index == 0 else 0)
+			(
+				steps
+				. append(
+					{
+						"kind": kind,
+						"name": str(spec.name),
+						"cost": float(spec.cost) * cost_factor + (float(road.cost) if index == 0 else 0.0),
+						"days": days,
+						"road_days": int(road.days) if index == 0 else 0,
+						"rate": rate,
+						"value": rate * price,
+					}
+				)
+			)
 		if not port_here:
-			needs.append(_port_need(sim, cost_factor))
-		plans.append(
-			_plan(
-				"mine",
-				good,
-				"%s出口" % str(sim.config.resources.get(good, good)),
-				needs,
-				lead,
-				rate,
-				rate * price * (1.0 - fee),
-				goal,
-				"按卖出价 ¥%.1f/百吨（市场越卖越便宜）；储量估计 %.0f–%.0f t（%s）" % [price, sim.tonnes(float(mineral.low)), sim.tonnes(float(mineral.high)), LEVEL_NAMES.get(str(mineral.level), "")],
-				mineral.level == "signal"
+			steps.push_front(_port_need(sim, cost_factor))
+		var reserve: float = float(sim.config.economy.export_reserve.get(good, 0.0))
+		var note: String = (
+			"每座约 %s/天，按卖出价 ¥%.1f/百吨（市场越卖越便宜）；储量估计 %s–%s（%s）"
+			% [
+				_t(sim, rate),
+				sim.Market.price(sim, good),
+				_t(sim, float(mineral.low)),
+				_t(sim, float(mineral.high)),
+				LEVEL_NAMES.get(str(mineral.level), "")
+			]
+		)
+		(
+			plans
+			. append(
+				_plan(
+					"mine",
+					good,
+					"%s出口" % str(sim.config.resources.get(good, good)),
+					steps,
+					ceili(reserve / maxf(0.1, rate)),
+					goal,
+					note,
+					str(mineral.level) == "signal"
+				)
 			)
 		)
 	var farming: Dictionary = report.farming
@@ -620,49 +642,84 @@ static func _plans(sim: RefCounted, report: Dictionary, site: Dictionary) -> Arr
 		var farms: int = mini(int(farming.plots), 2)
 		var grown: float = float(farming.per_farm) * farms
 		if grown >= float(food_rule.get("min_daily", 0.0)):
-			var needs: Array = []
-			for index: int in range(farms):
-				needs.append({"kind": "farm", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)})
+			var price: float = float(food_rule.price) * (1.0 - fee)
+			var steps: Array = []
 			if not port_here:
-				needs.append(_port_need(sim, cost_factor))
-			var price: float = float(food_rule.price)
-			plans.append(
-				_plan(
-					"food",
-					"food",
-					str(food_rule.name),
-					needs,
-					int(spec.days) + 1,
-					float(farming.per_farm),
-					grown * price * (1.0 - fee),
-					goal,
-					"每座温室农场约 %.0f t/天（%s，%.0f–%.0f t）；%d 人每天吃 %.0f t，%.0f 天口粮储备留在仓库，货运站补足；合同价 ¥%.1f/百吨，首期 %.0f t、%d 天，交齐后续签加量" % [sim.tonnes(float(farming.per_farm)), str(farming.word), sim.tonnes(float(farming.per_farm_low)), sim.tonnes(float(farming.per_farm_high)), people, sim.tonnes(eaten), float(sim.state.policy.food_reserve) + 1.0, price, sim.tonnes(float(food_rule.first_size)), int(food_rule.days)],
-					false
+				steps.append(_port_need(sim, cost_factor))
+			for index: int in range(farms):
+				(
+					steps
+					. append(
+						{
+							"kind": "farm",
+							"name": str(spec.name),
+							"cost": float(spec.cost) * cost_factor,
+							"days": int(spec.days),
+							"rate": float(farming.per_farm),
+							"value": float(farming.per_farm) * price,
+						}
+					)
 				)
+			var note: String = (
+				"每座温室农场约 %s/天（%s，%s–%s）；%d 人每天吃 %s，%.0f 天口粮储备留在仓库、由货运站补足；合同价 ¥%.1f/百吨，首期 %s、%d 天，交齐后续签加量"
+				% [
+					_t(sim, float(farming.per_farm)),
+					str(farming.word),
+					_t(sim, float(farming.per_farm_low)),
+					_t(sim, float(farming.per_farm_high)),
+					people,
+					_t(sim, eaten),
+					float(sim.state.policy.food_reserve) + 1.0,
+					float(food_rule.price),
+					_t(sim, float(food_rule.first_size)),
+					int(food_rule.days)
+				]
 			)
+			plans.append(_plan("food", "food", str(food_rule.name), steps, 0, goal, note, false))
 	var fishing: Dictionary = report.fishing
 	var catch_rule: Dictionary = sim.config.get("supply", {}).get("catch", {})
-	if bool(fishing.coast) and not catch_rule.is_empty() and float(fishing.catch) >= float(catch_rule.get("min_daily", 0.0)):
+	if (
+		bool(fishing.coast)
+		and not catch_rule.is_empty()
+		and float(fishing.catch) >= float(catch_rule.get("min_daily", 0.0))
+	):
 		var spec: Dictionary = sim.config.buildings.harbor
-		var price: float = float(catch_rule.price)
-		plans.append(
-			_plan(
-				"catch",
-				"food",
-				str(catch_rule.name),
-				[{"kind": "harbor", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)}],
-				int(spec.days) + 1,
-				float(fishing.catch),
-				float(fishing.catch) * price * (1.0 - fee),
-				goal,
-				"渔场%s：一座小型码头每天约 %.0f t；合同价 ¥%.1f/百吨，首期 %.0f t、%d 天；码头还能走海运，进口便宜 %.0f%%" % [str(fishing.word), sim.tonnes(float(fishing.catch)), price, sim.tonnes(float(catch_rule.first_size)), int(catch_rule.days), float(sim.config.bay.sea_discount) * 100.0],
-				false
-			)
+		var price: float = float(catch_rule.price) * (1.0 - fee)
+		var steps: Array = [
+			{
+				"kind": "harbor",
+				"name": str(spec.name),
+				"cost": float(spec.cost) * cost_factor,
+				"days": int(spec.days),
+				"rate": float(fishing.catch),
+				"value": float(fishing.catch) * price,
+			}
+		]
+		var note: String = (
+			"渔场%s：一座小型码头每天约 %s；合同价 ¥%.1f/百吨，首期 %s、%d 天；码头还能走海运，进口便宜 %.0f%%"
+			% [
+				str(fishing.word),
+				_t(sim, float(fishing.catch)),
+				float(catch_rule.price),
+				_t(sim, float(catch_rule.first_size)),
+				int(catch_rule.days),
+				float(sim.config.bay.sea_discount) * 100.0
+			]
 		)
-	plans.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.per_day) > float(b.per_day))
+		plans.append(_plan("catch", "food", str(catch_rule.name), steps, 0, goal, note, false))
+	plans.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool: return int(a.goal_day) < int(b.goal_day)
+	)
 	if not plans.is_empty():
 		plans[0].best = true
 	return plans
+
+
+static func _t(sim: RefCounted, units: float) -> String:
+	var tonnes: float = sim.tonnes(units)
+	if tonnes >= 10000.0:
+		return "%.1f 万 t" % (tonnes / 10000.0)
+	return "%.0f t" % tonnes
 
 
 const LEVEL_NAMES: Dictionary = {
@@ -705,36 +762,62 @@ static func _export_goal(sim: RefCounted) -> Dictionary:
 	}
 
 
+## A plan from its steps, built one after the other by the town's first crew from day 1: the first
+## shipment the day after the first earning facility works (plus `lag` days to fill its export
+## reserve), the daily earnings once all stand, and the day the stage's export goal would be met.
 static func _plan(
 	key: String,
 	good: String,
 	title: String,
-	needs: Array,
-	lead: int,
-	first_amount: float,
-	per_day: float,
+	steps: Array,
+	lag: int,
 	goal: Dictionary,
 	note: String,
 	uncertain: bool
 ) -> Dictionary:
 	var cost: float = 0.0
-	for need: Dictionary in needs:
-		cost += float(need.cost)
+	var day: int = 0
+	var first_day: int = -1
+	var first_amount: float = 0.0
+	var timeline: Array = []
+	for step: Dictionary in steps:
+		cost += float(step.cost)
+		day += int(step.days)
+		step.ready_day = day
+		if float(step.get("value", 0.0)) > 0.0:
+			timeline.append([day + 1 + lag, float(step.value)])
+			if first_day < 0:
+				first_day = day + 1 + lag
+				first_amount = float(step.rate)
+	var per_day: float = 0.0
+	for entry: Array in timeline:
+		per_day += float(entry[1])
 	var plan: Dictionary = {
 		"key": key,
 		"good": good,
 		"title": title,
-		"needs": needs,
+		"needs": steps,
 		"cost": cost,
-		"first_day": lead,
+		"first_day": first_day,
 		"first_amount": first_amount,
 		"per_day": per_day,
 		"note": note,
 		"uncertain": uncertain,
 		"best": false,
+		"goal_day": 1 << 20,
 	}
-	if not goal.is_empty() and per_day > 0.0:
-		plan.goal_days = ceili(float(goal.left) / per_day)
-		plan.goal_day = lead + int(plan.goal_days)
-		plan.goal = goal
+	if goal.is_empty() or per_day <= 0.0:
+		return plan
+	# Day by day: what is earned as each facility comes in, until the goal's remainder is covered.
+	var earned: float = 0.0
+	var at: int = first_day
+	while earned < float(goal.left) and at < first_day + 20000:
+		for entry: Array in timeline:
+			if at >= int(entry[0]):
+				earned += float(entry[1])
+		at += 1
+	plan.goal = goal
+	plan.goal_day = at
+	plan.goal_days = at - first_day
+	plan.late = at > int(goal.deadline)
 	return plan

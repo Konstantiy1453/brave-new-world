@@ -171,9 +171,9 @@ func _enter() -> void:
 	if step.has("site"):
 		var rules: Dictionary = Tutorial.data()
 		var site: int = int(rules.start_site if step.site == "start" else rules.partner_site)
-		game.selected = site
+		# The lesson's site opens on the one ground card, as a click on its marker would (1.11).
 		game.map.focus_region(site)
-		game.refresh_sidebar()
+		game.select_region(site)
 	if str(step.get("enter", "")) == "shortage" and int(context.shortage_day) < 0:
 		context.shortage_day = int(game.sim.state.day)
 		context.water_built = Tutorial.water_count(game.sim, int(context.home))
@@ -320,8 +320,12 @@ func note_camera() -> void:
 	context.camera_moved = true
 
 
-func note_site(site: int) -> void:
-	context.sites_viewed[site] = true
+## A site card read: a recommended site by its number, any other point by its coordinate.
+func note_site(site: int, point: Dictionary = {}) -> void:
+	if site >= 0:
+		context.sites_viewed[str(site)] = true
+	elif not point.is_empty():
+		context.sites_viewed["%.2f,%.2f" % [float(point.lat), float(point.lon)]] = true
 
 
 func note_page(page: String) -> void:

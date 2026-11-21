@@ -49,6 +49,7 @@
       "text": "这片海湾（地点 12）内陆有铁矿和铜矿，岸边能建小型码头，附近还有可以耕作的土地。点「在此建立首府」，给它起个名字。你也可以在地图上任选别的地点：点任何一块地面，侧栏会写出那里的地形、淡水、海岸和矿产信号，能不能建据点，不能的话为什么。",
       "target": [
         "SiteNameConfirm",
+        "SettleGroundButton",
         "SettleButton"
       ],
       "site": "start",
@@ -165,6 +166,7 @@
       "text": "这里土地肥沃，适合种粮。点「派遣远征队建立据点」，选边疆据点，给它起个名字；队伍路上要走十几天。",
       "target": [
         "SiteNameConfirm",
+        "SettleGroundButton",
         "SettleButton"
       ],
       "site": "partner",

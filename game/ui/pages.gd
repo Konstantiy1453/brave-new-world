@@ -36,6 +36,10 @@ static func region(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.panel(g, b)
 		return
+	# 1.11: a place without a town is only ever shown through the ground card.
+	if g.settlement().is_empty():
+		GroundPanel.intro(g, b)
+		return
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
 	var title = D.row(b)
@@ -85,9 +89,7 @@ static func region_actions(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.actions(g, b)
 		return
-	var known: Dictionary = g.sim.site_view(g.selected)
 	if g.settlement().is_empty():
-		_site_actions(g, b, known)
 		return
 	var line = D.row(b)
 	for entry: Array in [

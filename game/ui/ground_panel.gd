@@ -33,10 +33,32 @@ static func coordinate_text(lat: float, lon: float) -> String:
 ## What the game says about the picked ground, priced for the kind of town that would be founded:
 ## the one chosen in the naming dialog while it is open, else the default for the next town (the
 ## capital lives where people settle; a later town starts as a frontier town, as its dialog does).
+## The full card (`Placement.preview`) is kept for the day, the cash and the choices it depends on.
 static func view(g) -> Dictionary:
-	return g.sim.Placement.view(
-		g.sim, float(g.ground.lat), float(g.ground.lon), int(g.ground_from), kind(g)
+	var key: String = (
+		"%.4f|%.4f|%d|%s|%d|%d|%d"
+		% [
+			float(g.ground.lat),
+			float(g.ground.lon),
+			int(g.ground_from),
+			kind(g),
+			int(g.sim.state.day),
+			int(float(g.sim.state.cash)),
+			g.sim.state.settlements.size(),
+		]
 	)
+	if str(_cached.get("key", "")) != key:
+		_cached = {
+			"key": key,
+			"report":
+			g.sim.Placement.preview(
+				g.sim, float(g.ground.lat), float(g.ground.lon), int(g.ground_from), kind(g)
+			),
+		}
+	return _cached.report
+
+
+static var _cached: Dictionary = {}
 
 
 static func kind(g) -> String:
@@ -47,9 +69,21 @@ static func kind(g) -> String:
 	return Keys.SITE_FRONTIER
 
 
+## The one site card (1.11): for the capital and every later town, for a recommended site's point
+## and for any other ground alike. Where it is, the ground, building costs, water, the coast and its
+## fishery, buildable plots by type, each mineral's estimate with the survey behind it, farmland and
+## what a farm grows, what the first town here can sell first, the neighbourhood, and whether a
+## town can be founded here now.
 static func panel(g, b: Control) -> void:
 	var report: Dictionary = view(g)
-	D.label(b, "GROUND  /  自选地点", 13, D.TEAL)
+	var marker: int = int(g.ground.get("marker", -1))
+	var head: HBoxContainer = D.row(b)
+	var caption: String = "GROUND  /  自选地点"
+	if marker >= 0 and marker < g.sim.state.world.regions.size():
+		caption = "推荐地点  /  " + Labels.site_label(g.sim.state.world.regions[marker])
+	var tag: Label = D.label(head, caption, 13, D.TEAL, false)
+	tag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	overlay_toggle(g, head)
 	var where: Label = D.label(b, coordinate_text(float(report.lat), float(report.lon)), 24, D.INK)
 	D.named(where, "GroundCoordinates")
 	var precision: float = float(g.ground.get("precision", 0.0))
@@ -57,8 +91,12 @@ static func panel(g, b: Control) -> void:
 	D.label(
 		b,
 		(
-			"点选精度 ±%.2f°（约 %.0f km）· 在%s上选定"
-			% [precision, km, "球面" if str(g.ground.get("view", "")) == "planet" else "平铺地图"]
+			"推荐地点的坐标；规则与任何一块地相同"
+			if marker >= 0
+			else (
+				"点选精度 ±%.2f°（约 %.0f km）· 在%s上选定"
+				% [precision, km, "球面" if str(g.ground.get("view", "")) == "planet" else "平铺地图"]
+			)
 		),
 		14,
 		D.MUTED
@@ -66,25 +104,7 @@ static func panel(g, b: Control) -> void:
 	if not bool(report.land):
 		D.label(b, "海面", 18, D.INK)
 	else:
-		var cover: String = str(COVER_NAMES.get(str(report.biome), str(report.biome)))
-		var terrain: Label = D.label(b, "地表：%s · 地点类型：%s" % [cover, report.terrain], 16, D.INK)
-		D.named(terrain, "GroundTerrain")
-		D.label(
-			b,
-			(
-				"海拔 %.0f m · 地势%s（周围高差 %.0f m）"
-				% [float(report.elevation), report.slope_word, float(report.relief)]
-			),
-			16,
-			D.INK
-		)
-		D.label(b, "淡水：" + _water_words(report), 15, D.INK)
-		D.label(b, "海岸：" + ("靠海，可以建码头、走海运" if bool(report.coast) else "内陆，货物要走陆路"), 15, D.INK)
-		D.label(b, "矿产信号（轨道观测）：" + _signal_words(report.signals), 15, D.INK)
-		_prospecting_lines(g, b, report)
-		D.label(
-			b, "可建设地块约 %d 块 · %.1f°C" % [int(report.slots), float(report.temperature)], 15, D.MUTED
-		)
+		_ground_lines(g, b, report)
 	D.label(b, _distance_words(report), 15, D.MUTED)
 	if not bool(report.first) and str(report.refusal) == "" or not report.route.is_empty():
 		_expedition_lines(g, b, report)
@@ -95,6 +115,285 @@ static func panel(g, b: Control) -> void:
 	else:
 		verdict = D.label(b, "✗ " + refusal, 17, D.RED)
 	D.named(verdict, "GroundVerdict")
+
+
+## The ground's lines on the card, in the order a founder reads them.
+static func _ground_lines(g, b: Control, report: Dictionary) -> void:
+	var cover: String = str(COVER_NAMES.get(str(report.biome), str(report.biome)))
+	var terrain: Label = D.label(b, "地表：%s · 地点类型：%s" % [cover, report.terrain], 16, D.INK)
+	D.named(terrain, "GroundTerrain")
+	var building: Dictionary = report.get("building", {})
+	var cost_words: String = ""
+	if not building.is_empty():
+		cost_words = " · 建设费用 ×%.2f" % float(building.cost_factor)
+	var elevation: Label = D.label(
+		b,
+		(
+			"海拔 %.0f m · 地势%s（周围高差 %.0f m）%s · %.1f°C"
+			% [
+				float(report.elevation),
+				report.slope_word,
+				float(report.relief),
+				cost_words,
+				float(report.temperature)
+			]
+		),
+		15,
+		D.INK
+	)
+	D.named(elevation, "GroundElevation")
+	var water: String = "淡水：" + _water_words(report)
+	if report.has("water_supply"):
+		water += " · 一座净水泵站约供水 %.0f" % float(report.water_supply.pump)
+	D.label(b, water, 15, D.INK)
+	var fishing: Dictionary = report.get("fishing", {})
+	var coast: String = "海岸：内陆，货物要走陆路"
+	if bool(report.coast):
+		coast = "海岸：靠海，可以建小型码头、走海运"
+		if not fishing.is_empty():
+			coast += (
+				" · 渔场%s：一座小型码头每天约 %s 渔获"
+				% [str(fishing.word), Labels.t(float(fishing.catch))]
+			)
+	var coast_line: Label = D.label(b, coast, 15, D.INK)
+	D.named(coast_line, "GroundCoast")
+	if not report.has("has_site"):
+		D.label(b, "矿产信号（轨道观测）：" + _signal_words(report.signals), 15, D.INK)
+		return
+	_plot_lines(g, b, report)
+	_mineral_lines(g, b, report)
+	_plan_lines(g, b, report)
+
+
+## Buildable plots by type and what a farm would grow on the best field.
+static func _plot_lines(_g, b: Control, report: Dictionary) -> void:
+	var plots: Dictionary = report.plots
+	var farming: Dictionary = report.farming
+	var words: String = (
+		"可建设地块：城区 %d 块 · 农田 %d 块" % [int(plots.general), int(plots.farm)]
+	)
+	var line: Label = D.label(b, words, 15, D.INK)
+	D.named(line, "GroundPlots")
+	if int(farming.plots) > 0:
+		var farm: Label = D.label(
+			b,
+			(
+				"农业潜力：%s · 一座温室农场约 %s–%s/天（最好的一块地，气候系数 %.2f），够 %d 人吃"
+				% [
+					str(farming.word),
+					Labels.t(float(farming.per_farm_low)),
+					Labels.t(float(farming.per_farm_high)),
+					float(farming.climate),
+					int(farming.feeds),
+				]
+			),
+			15,
+			D.INK
+		)
+		D.named(farm, "GroundFarming")
+	else:
+		D.label(b, "农业潜力：没有农田地块，只能靠进口、渔获或以后的水培温室", 15, D.MUTED)
+
+
+## Each mineral: its estimate in tonnes and plots with the survey behind it, a scan that found
+## nothing said so, and the next survey of that resource alone.
+static func _mineral_lines(g, b: Control, report: Dictionary) -> void:
+	var sim: RefCounted = g.sim
+	var lat: float = float(report.lat)
+	var lon: float = float(report.lon)
+	var here: Array = sim.Prospecting.anomalies_at(sim, lat, lon)
+	D.label(b, "矿产估计（每种矿产单独勘测，越细的勘测误差越小）", 14, D.TEAL)
+	for resource: String in SIGNAL_NAMES:
+		var mineral: Dictionary = report.minerals[resource]
+		var line: HBoxContainer = D.row(b)
+		var words: String = _mineral_words(mineral, str(SIGNAL_NAMES[resource]))
+		var text: Label = D.label(
+			line, words, 14, D.TEAL if str(mineral.level) != "signal" else D.INK, true
+		)
+		D.named(text, "Mineral_" + resource)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var known: Dictionary = {}
+		for entry: Dictionary in here:
+			if str(entry.resource) == resource and known.is_empty():
+				known = entry
+		var step: String = "orbital"
+		if not known.is_empty():
+			step = {"orbital": "field", "field": "drill"}.get(str(known.stage), "")
+		if step == "":
+			continue
+		var quote: Dictionary = sim.Prospecting.quote(sim, step, lat, lon, int(known.get("id", 0)))
+		var action: String = {"orbital": "轨道观测", "field": "实地勘察", "drill": "钻探"}[step]
+		var id: int = int(known.get("id", 0))
+		var button: Button = D.button(
+			line,
+			"%s · ¥%.0f · %d 天" % [action, float(quote.cost), int(quote.days)],
+			func():
+				if step == "orbital":
+					g.act("prospect_observe", {"resource": resource, "lat": lat, "lon": lon})
+				else:
+					g.act("prospect_send", {"step": step, "id": id}),
+			str(quote.refusal) if str(quote.refusal) != "" else "只勘测%s，不涉及其他矿产" % SIGNAL_NAMES[resource],
+			"Prospect_%s_%s" % [resource, step],
+			"chip"
+		)
+		button.disabled = str(quote.refusal) != ""
+		D.font_size(button, 13)
+	if int(report.plots.get("deep", 0)) > 0:
+		D.label(b, "另有 %d 块深层矿床，要深层采矿技术才能开采" % int(report.plots.deep), 13, D.MUTED)
+
+
+## One mineral in words: 「铁：轨道信号强 · 估计 9,000–25,000 t · 矿床地块 2–4 块（轨道粗测，±60%）」.
+static func _mineral_words(mineral: Dictionary, name: String) -> String:
+	var level: String = str(mineral.level)
+	var source: String = str(LEVELS.get(level, level))
+	if bool(mineral.none_detected):
+		return "%s：本次轨道观测未探测到%s（第 %d 天的%s）" % [name, name, int(mineral.day), source]
+	var reading: String = "轨道信号%s" % str(mineral.signal_word)
+	if float(mineral.high) <= 0.0:
+		return (
+			"%s：%s · 地点范围内估计没有可开采的矿床（%s，±%.0f%%）"
+			% [name, reading, source, float(mineral.band) * 100.0]
+		)
+	var plots: String = (
+		"%d 块" % int(mineral.plots_low)
+		if int(mineral.plots_low) == int(mineral.plots_high)
+		else "%d–%d 块" % [int(mineral.plots_low), int(mineral.plots_high)]
+	)
+	var amount: String = (
+		Labels.t(float(mineral.mid))
+		if float(mineral.band) <= 0.0
+		else "%s–%s" % [Labels.t(float(mineral.low)), Labels.t(float(mineral.high))]
+	)
+	var band: String = "精确" if float(mineral.band) <= 0.0 else "±%.0f%%" % (float(mineral.band) * 100.0)
+	return "%s：%s · 估计 %s · 矿床地块 %s（%s，%s）" % [name, reading, amount, plots, source, band]
+
+
+const LEVELS: Dictionary = {
+	"signal": "轨道粗测",
+	"scan": "轨道观测",
+	"field": "实地勘察",
+	"drilled": "钻探",
+}
+
+
+## What the first town here can sell first: each plan with what it needs, its first shipment and
+## what that does for the charter's export goal; the best first.
+static func _plan_lines(g, b: Control, report: Dictionary) -> void:
+	var plans: Array = report.get("plans", [])
+	D.label(b, "在这里先卖什么", 15, D.GOLD)
+	if plans.is_empty():
+		D.label(b, "这里看不到能马上出口的东西：没有矿床信号、农田太少、也不靠海。", 14, D.RED)
+		return
+	for plan: Dictionary in plans:
+		var card: VBoxContainer = D.card(b)
+		card.add_theme_constant_override("separation", 2)
+		var title: Label = D.label(
+			card,
+			("★ " if bool(plan.best) else "") + str(plan.title),
+			15,
+			D.GOLD if bool(plan.best) else D.INK
+		)
+		D.named(title, "Plan_" + str(plan.key) + "_" + str(plan.good))
+		var needs: PackedStringArray = []
+		for need: Dictionary in plan.needs:
+			var words: String = (
+				"%s ¥%s（第 %d 天建成）" % [str(need.name), g.money(float(need.cost)), int(need.ready_day)]
+			)
+			if int(need.get("road_days", 0)) > 0:
+				words += "，含矿区道路 %d 天" % int(need.road_days)
+			needs.append(words)
+		var landing: String = "；货运站、电站、水站随登陆运到" if bool(report.first) else ""
+		D.label(
+			card,
+			"需要（首支工程队依次建设）：" + "；".join(needs) + landing + "；合计 ¥%s" % g.money(float(plan.cost)),
+			13,
+			D.MUTED
+		)
+		var first: String = (
+			"首批：约第 %d 天，约 %s；全部建成后每天约 ¥%.0f"
+			% [int(plan.first_day), Labels.t(float(plan.first_amount)), float(plan.per_day)]
+		)
+		D.label(card, first, 13, D.TEAL)
+		if plan.has("goal"):
+			var goal: Dictionary = plan.goal
+			var line: Label = D.label(
+				card,
+				(
+					"合同：第 %d 阶段出口目标还差 ¥%s，单靠这一项约第 %d 天达成（期限第 %d 天%s）；每批出口都计入目标"
+					% [
+						int(goal.stage),
+						g.money(float(goal.left)),
+						int(plan.goal_day),
+						int(goal.deadline),
+						"，会超期：要再加一项" if bool(plan.get("late", false)) else ""
+					]
+				),
+				13,
+				D.GOLD if bool(plan.get("late", false)) else D.INK
+			)
+			D.named(line, "PlanGoal_" + str(plan.key) + "_" + str(plan.good))
+		D.label(card, str(plan.note), 12, D.MUTED)
+		if bool(plan.get("uncertain", false)):
+			D.label(card, "储量只是轨道粗测：先做一次轨道观测再决定更稳妥", 12, D.GOLD)
+
+
+## Recommended sites on the maps: a filter that can also hide them all (the overlay is optional).
+static func overlay_toggle(g, b: Control) -> void:
+	var names: Array = []
+	for row: Array in Labels.SITE_FILTERS:
+		names.append(row[1])
+	var picker: OptionButton = D.option(
+		b,
+		"SiteFilter",
+		names,
+		g.site_filter,
+		func(id):
+			g.site_filter = id
+			g.map.set_marker_filter(Labels.SITE_FILTERS[id][0])
+	)
+	D.font_size(picker, 13)
+	picker.tooltip_text = "推荐地点只是地图上的提示：任何一块合适的陆地都能点开、都能建"
+
+
+## Before anything is picked: how picking works, and the recommended sites as a list.
+static func intro(g, b: Control) -> void:
+	var head: HBoxContainer = D.row(b)
+	var title: Label = D.label(head, "选择地点", 22, D.INK, false)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	overlay_toggle(g, head)
+	D.label(
+		b,
+		"在球面或平铺地图上点任意一块陆地，右侧会写出那里的地势、淡水、海岸、可建地块、矿产估计和先卖什么。带编号的圆点是推荐地点，规则和其他地面完全一样，可以在右上角隐藏。",
+		15,
+		D.MUTED
+	)
+	var names: Array = ["推荐地点列表…"]
+	var ids: Array = [-1]
+	for reg: Dictionary in g.sim.state.world.regions:
+		if bool(reg.get("placed", false)) or not g.sim.settlement(int(reg.id)).is_empty():
+			continue
+		names.append(Labels.site_label(reg))
+		ids.append(int(reg.id))
+	var chooser: OptionButton = D.option(
+		b,
+		"RegionChooser",
+		names,
+		0,
+		func(index: int):
+			if index > 0:
+				g.select_region(int(ids[index]))
+	)
+	D.font_size(chooser, 15)
+	var cap: Dictionary = g.sim.Contract.cap_view(g.sim)
+	D.label(
+		b,
+		(
+			"据点上限：本阶段 %s 处（含首府），已建 %d 处"
+			% ["不限" if bool(cap.unlimited) else str(int(cap.cap)), int(cap.used)]
+		),
+		14,
+		D.TEAL
+	)
 
 
 static func _water_words(report: Dictionary) -> String:
@@ -272,69 +571,6 @@ static func found(g, typed: String) -> String:
 		g.map.selected_region = regions
 		g.map.sync_state(g.sim.state)
 	return error
-
-
-## Prospecting one resource at this point (prospecting.gd): the anomaly that covers it and what
-## is known of it, or an orbital observation to order; the next step for what is known.
-static func _prospecting_lines(g, b: Control, report: Dictionary) -> void:
-	var sim: RefCounted = g.sim
-	var lat: float = float(report.lat)
-	var lon: float = float(report.lon)
-	var here: Array = sim.Prospecting.anomalies_at(sim, lat, lon)
-	D.label(b, "勘探（每次选一种矿产）", 14, D.TEAL)
-	for resource: String in SIGNAL_NAMES:
-		var line: HBoxContainer = D.row(b)
-		var known: Dictionary = {}
-		for entry: Dictionary in here:
-			if str(entry.resource) == resource and known.is_empty():
-				known = entry
-		var words: String = "%s：" % SIGNAL_NAMES[resource]
-		var step: String = "orbital"
-		if known.is_empty():
-			words += "未观测"
-		elif str(known.stage) == "orbital":
-			words += "轨道异常区（约 ±%.0f km），位置还很粗" % _km(sim, float(known.zone))
-			step = "field"
-		elif str(known.stage) == "field":
-			words += (
-				"实地勘察：%s，约 ±%.0f km"
-				% [
-					"矿脉" if str(known.get("kind", "")) == "vein" else "矿囊",
-					_km(sim, float(known.zone))
-				]
-			)
-			step = "drill"
-		else:
-			words += (
-				"钻探：品位 %.2f · %s · 剩余约 %s"
-				% [
-					float(known.grade),
-					"浅层" if int(known.depth) == 0 else "深层",
-					Labels.t(float(known.reserve))
-				]
-			)
-			step = ""
-		var text: Label = D.label(line, words, 14, D.INK if known.is_empty() else D.TEAL, true)
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if step == "":
-			continue
-		var quote: Dictionary = sim.Prospecting.quote(sim, step, lat, lon, int(known.get("id", 0)))
-		var action: String = {"orbital": "轨道观测", "field": "实地勘察", "drill": "钻探"}[step]
-		var id: int = int(known.get("id", 0))
-		var button: Button = D.button(
-			line,
-			"%s · ¥%.0f · %d 天" % [action, float(quote.cost), int(quote.days)],
-			func():
-				if step == "orbital":
-					g.act("prospect_observe", {"resource": resource, "lat": lat, "lon": lon})
-				else:
-					g.act("prospect_send", {"step": step, "id": id}),
-			str(quote.refusal),
-			"Prospect_%s_%s" % [resource, step],
-			"chip"
-		)
-		button.disabled = str(quote.refusal) != ""
-		D.font_size(button, 13)
 
 
 static func _km(sim: RefCounted, degrees: float) -> float:

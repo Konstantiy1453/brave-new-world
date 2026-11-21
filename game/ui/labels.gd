@@ -134,7 +134,8 @@ const ROLE_HINTS: Dictionary = {
 	"cold": "矿藏不错，但耕作困难、建设费高。",
 }
 const SITE_FILTERS: Array = [
-	["all", "全部地点"],
+	["all", "全部推荐地点"],
+	["none", "隐藏推荐地点"],
 	["ore", "铁矿丰富"],
 	["copper", "铜矿丰富"],
 	["crystal", "晶体丰富"],

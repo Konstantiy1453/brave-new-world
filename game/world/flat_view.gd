@@ -16,6 +16,8 @@ const LABEL_SPOTS: Array[Vector2] = [
 ]
 const MARKER_RICH_TONNES: Dictionary = {"ore": 6000.0, "copper": 4000.0, "crystal": 2500.0}
 const MARKER_RICH_FERTILITY: float = 0.55
+## geography.json placement `min_separation_degrees`: no town can be founded closer than this.
+const CROWDED_DEGREES: float = 8.0
 const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
 ## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
@@ -111,11 +113,17 @@ func _flat_label(
 	return label
 
 
-## Whether a site passes the player's filter. Settled and selected sites always show.
+## Whether a site passes the player's filter. Settled and selected sites always show; the
+## recommended ones are an optional overlay (filter "none" hides them), and one that a town now
+## stands too close to (1.11: it can no longer be founded) is not shown.
 func _marker_shown(reg: Dictionary) -> bool:
 	if int(reg.id) == selected_region or _is_settled(int(reg.id)):
 		return true
+	if bool(reg.get("placed", false)) or _crowded(reg):
+		return false
 	match marker_filter:
+		"none":
+			return false
 		"all":
 			return true
 		"ore", "copper", "crystal":
@@ -125,6 +133,22 @@ func _marker_shown(reg: Dictionary) -> bool:
 		"coast":
 			return bool(reg.get("coast", false))
 	return str(reg.get("archetype", "")) == marker_filter
+
+
+## A recommended site within a town's separation distance: a town cannot be founded there.
+func _crowded(reg: Dictionary) -> bool:
+	var here: Vector3 = _unit(float(reg.lat), float(reg.lon))
+	for settlement in state.get("settlements", []):
+		var town: Dictionary = world.regions[int(settlement.region)]
+		if rad_to_deg(here.angle_to(_unit(float(town.lat), float(town.lon)))) < CROWDED_DEGREES:
+			return true
+	return false
+
+
+static func _unit(lat: float, lon: float) -> Vector3:
+	var la: float = deg_to_rad(lat)
+	var lo: float = deg_to_rad(lon)
+	return Vector3(cos(la) * sin(lo), sin(la), cos(la) * cos(lo))
 
 
 func _is_settled(id: int) -> bool:
