@@ -29,13 +29,16 @@ handoff with the plain status of every requirement in `docs/v17/HANDOFF_20261121
   re-run of the five suites the fix touched passes. Failing as on 1.10.1: `v17_saves`, `v17_tutorial`,
   `v18_systems`, `world_v16_seed` (Windows fixtures) and the seven `review_*` tools (D: paths, not
   run). `v16_interaction_probe` and `v16_scroll_probe` fail under Xvfb exactly as on 1.10.1;
-  `world_v16_visual` and `world_v17_seam` pass. `v19_payback` misses 10 bands (1.10.1: 3): late-game
-  mines pay back faster than the 1.9 bands, because towns now sit on the planet's own deposits and the
-  bots choose them by what the card shows.
+  `world_v16_visual` and `world_v17_seam` pass. `v19_payback` misses 13 of 43 checks (1.10.1: 3): every
+  mine band in year 6 (light mines 23–42 days against 70–150), the tailings plant and sea copper
+  (faster than 120 days) and the smelter (482 days in year 4). The cause is not isolated: visible
+  deposit grades on the sites towns now get are only about 7% higher than the generator's own sites,
+  too little to explain it; the bots' colonies also differ (sites chosen by the card, supply orders,
+  a slower stage two to three).
 - **Records.** See `docs/v17/decisions/README.md`: the seed-3 coasts played through the first
   delivery and a second town at an unmarked point in stage one; the day-865 reserve, crew queue and
   fourth plant; seed 260129's outlook and advance; event pacing against 1.10.1.
-- **Open.** Mine payback against the 1.9 bands; stage two to three is slower for the bots than in
+- **Open.** Payback against the 1.9 bands (cause not isolated); stage two to three is slower for the bots than in
   1.10.1 (3 of 6 seeds by day 720 against 5 of 6); human playtest NOT_RUN; the EXE on a real Windows
   machine NOT_RUN.
 
