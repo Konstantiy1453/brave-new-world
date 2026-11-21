@@ -11,12 +11,24 @@
     "tech_gift": "a gift technology (techs.json gift: true) handed over when the option is chosen; it cannot be researched",
     "land_road": "condition: a finished road (not a sea link or shuttle line) at the place",
     "sea_link": "condition: a finished pair of cargo docks (sea link) at the place",
-    "lacks_tech": "condition: the colony does not have this technology yet"
+    "lacks_tech": "condition: the colony does not have this technology yet",
+    "not_capital": "condition: the town is not the capital",
+    "capital_crew_busy": "condition: a crew at the capital is building and a road from the capital reaches this town",
+    "divert_crew": "option: a crew at the capital goes to this town, repairs for repair_days and comes back; effects marked until_repaired end when it is done"
   },
   "sampling": {
     "interval_days": 20,
     "fire_chance": 0.55,
-    "first_draw_day": 30,
+    "first_draw_day": 75,
+    "pacing_note": "1.11: draws by contract stage (interval days, chance a draw fires), stage one quietest; forced interruptions (events that stop the clock) are capped colony-wide per window, except a chain's critical deciding node; over the cap an event waits in the panel without stopping the clock, its deadline extended by muted_extra_days.",
+    "by_stage": [
+      {"interval": 45, "fire_chance": 0.4},
+      {"interval": 32, "fire_chance": 0.5},
+      {"interval": 24, "fire_chance": 0.55},
+      {"interval": 20, "fire_chance": 0.6},
+      {"interval": 18, "fire_chance": 0.6}
+    ],
+    "interruptions": {"window_days": 30, "by_stage": [1, 1, 2, 2, 3], "muted_extra_days": 5},
     "negative_cooldown_days": 60,
     "max_waiting": 3,
     "default_cooldown_days": 1200,
@@ -26,6 +38,56 @@
     "availability": 0.65
   },
   "definitions": {
+    "frontier_water_station": {
+      "version": 1,
+      "type": "short",
+      "category": "dilemma",
+      "weight": 3,
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 540,
+      "conditions": {
+        "min_day": 240,
+        "building": "water",
+        "not_capital": true,
+        "capital_crew_busy": true,
+        "contract_stage": 2,
+        "settlements": 2
+      },
+      "nodes": {
+        "start": {
+          "title": "边疆水站的泵组停转",
+          "text": "这处据点的净水泵站主轴卡死，备用泵只能顶住一半的用水。当地没有工程队：最近的一支正在首府施工。\n调它过来，首府那项工程就要停下，等它修完水站再回去；不调，这里就得限水，农场和矿场跟着减产；也可以花钱请外包队，但他们要价不低。\n这一个决定牵着两处据点：一边是首府的工期，一边是这里的产量。",
+          "choices": [
+            {
+              "id": "divert",
+              "label": "调首府的工程队去抢修",
+              "divert_crew": {"repair_days": 6},
+              "effects": [{"kind": "water", "factor": 0.5, "duration_days": 90, "maintenance": 0, "until_repaired": true, "label": "泵组停转"}],
+              "outcome": "首府的工程队赶到边疆，修好了泵组；首府那项工程晚了些天。",
+              "ending": "首府工程队抢修水站"
+            },
+            {
+              "id": "contractors",
+              "label": "请外包抢修队",
+              "pay": 1800,
+              "effects": [{"kind": "water", "factor": 0.5, "duration_days": 10, "maintenance": 0, "label": "等外包队"}],
+              "outcome": "外包队十天内修好了泵组，首府的工期没受影响。",
+              "ending": "外包队修好水站"
+            },
+            {
+              "id": "ration",
+              "label": "限水，等首府的工程完工再修",
+              "effects": [{"kind": "water", "factor": 0.5, "duration_days": 45, "maintenance": 0, "label": "限水"}],
+              "outcome": "这里限水一个半月，产量跟着下降；首府的工程照常进行。",
+              "ending": "限水等待"
+            }
+          ],
+          "default": "ration",
+          "deadline_days": 8
+        }
+      }
+    },
     "seed_crate": {
       "version": 1,
       "type": "short",

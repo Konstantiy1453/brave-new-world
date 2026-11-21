@@ -74,9 +74,20 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 			)
 			if bool(team.get("held", false)):
 				text += "（线路封闭，停在途中等待，与货运相同）"
+		"repair":
+			var site: Dictionary = g.sim.settlement(int(team.target))
+			text = (
+				"工程队 #%d · 在 %s 抢修，%d 天后修好，再 %d 天回来"
+				% [
+					int(team.id),
+					str(site.get("name", "")),
+					maxi(0, int(team.until) - day),
+					int(team.get("travel_back", 0))
+				]
+			)
 	var words: Label = D.label(line, text, D.SMALL, D.INK, false)
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if str(team.task) in ["train", "travel"]:
+	if str(team.task) in ["train", "travel", "repair"]:
 		return
 	for other: Dictionary in g.sim.state.settlements:
 		var to: int = int(other.region)

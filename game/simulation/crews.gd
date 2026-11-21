@@ -18,6 +18,8 @@ const IDLE: String = ""
 const BUILD: String = "build"
 const TRAVEL: String = "travel"
 const TRAIN: String = "train"
+## Away on a repair an event asked for (1.11): counted at no town until it is back home.
+const REPAIR: String = "repair"
 
 
 static func rules(sim: RefCounted) -> Dictionary:
@@ -118,7 +120,7 @@ static func join_expedition(
 static func teams_at(sim: RefCounted, region: int) -> Array:
 	var found_teams: Array = []
 	for team: Dictionary in sim.state.get("crews", {}).get("teams", []):
-		if int(team.region) == region and str(team.task) != TRAVEL:
+		if int(team.region) == region and not str(team.task) in [TRAVEL, REPAIR]:
 			found_teams.append(team)
 	return found_teams
 
@@ -149,6 +151,14 @@ static func daily(sim: RefCounted) -> Dictionary:
 		elif str(team.task) == TRAIN and day >= int(team.until):
 			team.task = IDLE
 			team.target = 0
+		elif str(team.task) == REPAIR and day >= int(team.until):
+			# The repair is done: the town's water is whole again, and the crew heads home.
+			sim.EventsV2.end_repair(sim, str(team.get("repair_source", "")))
+			team.task = TRAVEL
+			team.target = int(team.get("home", team.region))
+			team.until = day + maxi(1, int(team.get("travel_back", 1)))
+			team.erase("repair_source")
+			sim._log("工程队 #%d 修好了水站，正在返回。" % int(team.id))
 	var working: Dictionary = {}
 	sim.state.crews.working = working
 	for team: Dictionary in sim.state.crews.teams:
@@ -304,13 +314,21 @@ static func eta(sim: RefCounted, s: Dictionary, extra: Dictionary = {}) -> Dicti
 	for team: Dictionary in crews.get("teams", []):
 		var here: bool = int(team.region) == int(s.region)
 		var coming: bool = str(team.task) == TRAVEL and int(team.target) == int(s.region)
+		# A crew away on a repair comes back home after it.
+		var returning: bool = (
+			str(team.task) == REPAIR and int(team.get("home", -1)) == int(s.region)
+		)
 		if str(team.task) == TRAVEL and not coming:
 			continue
-		if not here and not coming:
+		if str(team.task) == REPAIR and not returning:
+			continue
+		if not here and not coming and not returning:
 			continue
 		var at: int = day
 		if str(team.task) in [TRAVEL, TRAIN]:
 			at = maxi(day, int(team.until) - 1)
+		elif returning:
+			at = maxi(day, int(team.until) + int(team.get("travel_back", 0)) - 1)
 		elif str(team.task) == BUILD:
 			var index: int = sim.Production.index_of(s, int(team.target))
 			if index >= 0:
@@ -593,7 +611,7 @@ static func audit(state: Dictionary) -> Array:
 		return errors
 	var counted: Dictionary = {}
 	for team: Dictionary in state.crews.teams:
-		if str(team.task) == TRAVEL:
+		if str(team.task) in [TRAVEL, REPAIR]:
 			continue
 		counted[int(team.region)] = int(counted.get(int(team.region), 0)) + 1
 	for s: Dictionary in state.get("settlements", []):

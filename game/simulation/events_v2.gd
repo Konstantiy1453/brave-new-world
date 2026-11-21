@@ -39,6 +39,8 @@ const LANDMARK_KINDS: Array[String] = [
 ]
 ## A place holds this many landmarks at most; the effects list keeps room for them.
 const LANDMARKS_PER_PLACE: int = 6
+## Days a settled communication stays in its place on the events page, with its outcome (1.11).
+const SETTLED_DAYS: int = 10
 const PAUSE_ALL: String = "all"
 const PAUSE_CRITICAL: String = "critical"
 ## How a gift technology's effects read on an event card: the name, and -1 where a bonus makes the
@@ -240,7 +242,28 @@ static func _matches_colony(sim, s: Dictionary, c: Dictionary) -> bool:
 		return false
 	if bool(c.get("hidden_deposit", false)) and not _has_hidden(site):
 		return false
+	if bool(c.get("not_capital", false)) and s == sim.state.settlements[0]:
+		return false
+	if bool(c.get("capital_crew_busy", false)) and _crew_to_divert(sim, int(s.region)).is_empty():
+		return false
 	return true
+
+
+## A crew at the capital building something, with a road from the capital to `region` open today
+## (1.11, the frontier water station's choice): {team, days, road}, or empty.
+static func _crew_to_divert(sim, region: int) -> Dictionary:
+	if sim.state.settlements.is_empty():
+		return {}
+	var capital: int = int(sim.state.settlements[0].region)
+	if capital == region:
+		return {}
+	var link: Dictionary = sim.Crews.travel_link(sim, capital, region)
+	if int(link.days) < 0:
+		return {}
+	for team: Dictionary in sim.state.get("crews", {}).get("teams", []):
+		if int(team.region) == capital and str(team.task) == "build":
+			return {"team": team, "days": int(link.days), "road": int(link.road)}
+	return {}
 
 
 static func _project_running(sim) -> bool:
@@ -330,7 +353,9 @@ static func trigger(sim, id: String, region: int) -> void:
 		return
 	if _open_now(sim, id) or not _cooled(sim, id):
 		return
+	sim.state.events_v2.opening = "triggered"
 	_open(sim, id, region)
+	sim.state.events_v2.opening = "drawn"
 	_sync_legacy(sim)
 
 
@@ -361,6 +386,17 @@ static func _open(sim, definition_id: String, region: int) -> Dictionary:
 	e.last_opened[definition_id] = int(sim.state.day)
 	_prune(e)
 	_enter(sim, inst, "start")
+	# Tallies for the pacing report (1.11): events drawn on their own apart from those something
+	# set off, and how many stopped the clock.
+	if not e.has("tally"):
+		e.tally = {"drawn": 0, "triggered": 0, "forced": 0, "muted": 0}
+	var origin: String = str(e.get("opening", "drawn"))
+	e.tally[origin] = int(e.tally.get(origin, 0)) + 1
+	if bool(inst.pause_required):
+		e.tally.forced = int(e.tally.get("forced", 0)) + 1
+	if bool(inst.variables.get("muted", false)):
+		e.tally.muted = int(e.tally.get("muted", 0)) + 1
+	inst.origin = origin
 	if d.category == "incident":
 		e.last_negative = int(sim.state.day)
 	return inst
@@ -380,16 +416,52 @@ static func _prune(e: Dictionary) -> void:
 static func _enter(sim, inst: Dictionary, node_id: String) -> void:
 	inst.node = node_id
 	inst.status = "pending"
+	var deciding: bool = bool(_node(inst).get("critical", false))
 	# A node marked critical (a chain's deciding step) waits for the player whatever its event's
 	# own setting: a finale is never settled by a default the player did not see.
-	inst.pause_required = (
-		_pauses(sim, definitions().definitions[inst.definition_id])
-		or bool(_node(inst).get("critical", false))
-	)
+	inst.pause_required = _pauses(sim, definitions().definitions[inst.definition_id]) or deciding
 	inst.scheduled = {}
 	inst.deadline = int(sim.state.day) + int(_node(inst).get("deadline_days", 6))
 	inst.variables.erase("deferred_node")
+	inst.variables.erase("muted")
+	# Colony-wide interruption cap (1.11): over it, an event waits in the panel without stopping
+	# the clock, with a few more days to answer. A chain's deciding node is never muted.
+	if bool(inst.pause_required):
+		if not deciding and interruptions_left(sim) <= 0:
+			inst.pause_required = false
+			inst.variables.muted = true
+			inst.deadline = int(inst.deadline) + int(_interruption_rules().get("muted_extra_days", 0))
+		else:
+			_note_interruption(sim)
 	sim._log("事件 · " + str(_node(inst).title))
+
+
+static func _interruption_rules() -> Dictionary:
+	return definitions().sampling.get("interruptions", {})
+
+
+## How many more forced interruptions the colony may have in the current window.
+static func interruptions_left(sim) -> int:
+	var rules: Dictionary = _interruption_rules()
+	if rules.is_empty():
+		return 1 << 20
+	var caps: Array = rules.by_stage
+	var stage: int = clampi(int(sim.state.get("contract", {}).get("stage", 1)), 1, caps.size())
+	var window: int = int(rules.window_days)
+	var used: int = 0
+	for day: Variant in sim.state.events_v2.get("interruptions", []):
+		if int(sim.state.day) - int(day) < window:
+			used += 1
+	return int(caps[stage - 1]) - used
+
+
+static func _note_interruption(sim) -> void:
+	var e: Dictionary = sim.state.events_v2
+	if not e.has("interruptions"):
+		e.interruptions = []
+	e.interruptions.append(int(sim.state.day))
+	while e.interruptions.size() > 24:
+		e.interruptions.pop_front()
 
 
 ## `closing` carries the ending scene when a choice ends the event: its `outcome` text, what
@@ -431,6 +503,12 @@ static func _choice(inst: Dictionary, id: String) -> Dictionary:
 
 
 static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
+	if option.has("divert_crew") and _crew_to_divert(sim, int(inst.target_region)).is_empty():
+		return "首府没有正在施工、又能沿通车道路赶来的工程队"
+	return _base_reason(sim, inst, option)
+
+
+static func _base_reason(sim, inst: Dictionary, option: Dictionary) -> String:
 	var s: Dictionary = sim.settlement(int(inst.target_region))
 	if s.is_empty():
 		return "目标据点已不存在"
@@ -537,6 +615,10 @@ static func act(sim, args: Dictionary) -> String:
 		return ""
 	if not inst.status in ["pending", "deferred"]:
 		return "事件节点已处理或正在等待实际进展"
+	# A choice answers the step it was shown for (1.11): once that step has been settled (by its
+	# deadline, the same day), the same button cannot settle the next one.
+	if args.has("node") and str(args.node) != str(inst.node):
+		return "这条通讯已经到了下一步：请看更新后的选项"
 	if sim.settlement(int(inst.target_region)).is_empty():
 		return "目标据点已不存在，下一日将取消事件"
 	if key == "defer":
@@ -604,9 +686,12 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 				"duration_days": n,
 				"maintenance": float(effect.get("maintenance", 0)),
 				"label": str(effect.get("label", "")),
-				"event": str(inst.definition_id)
+				"event": str(inst.definition_id),
+				"until_repaired": bool(effect.get("until_repaired", false)),
 			}
 		)
+	if option.has("divert_crew"):
+		_divert_crew(sim, inst, option.divert_crew)
 	if option.has("landmark"):
 		_raise_landmark(sim, inst, option.landmark)
 	var step: Dictionary = {
@@ -685,6 +770,44 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 
 
 ## An option may lead to one of two nodes by chance; the roll comes from the events' own RNG.
+## Sends the capital's building crew to the event's town to repair (1.11): it leaves its project
+## (which waits, its progress kept), travels the road, repairs for `repair_days`, and comes back.
+## Effects marked `until_repaired` end the day the repair is done (`end_repair`).
+static func _divert_crew(sim, inst: Dictionary, spec: Dictionary) -> void:
+	var pick: Dictionary = _crew_to_divert(sim, int(inst.target_region))
+	if pick.is_empty():
+		return
+	var team: Dictionary = pick.team
+	var home: Dictionary = sim.settlement(int(team.region))
+	home.crew = int(home.get("crew", 0)) - 1
+	home.population = int(home.population) - 1
+	sim.Stats.count(sim.state, "moves", int(home.region), -1)
+	team.paused_target = int(team.target)
+	team.home = int(team.region)
+	team.task = "repair"
+	team.target = int(inst.target_region)
+	team.road = int(pick.road)
+	team.repair_source = str(inst.instance_id)
+	team.until = int(sim.state.day) + int(pick.days) + int(spec.get("repair_days", 5))
+	team.travel_back = int(pick.days)
+	inst.variables.diverted = {
+		"crew": int(team.id), "until": int(team.until), "back": int(team.until) + int(pick.days)
+	}
+	sim._log(
+		(
+			"%s · 工程队 #%d 离开在建工程，赶往%s抢修，约 %d 天后修好，再 %d 天回到首府。"
+			% [home.name, int(team.id), sim.settlement(int(inst.target_region)).name, int(team.until) - int(sim.state.day), int(pick.days)]
+		)
+	)
+
+
+## A diverted crew finished its repair: the effects it was ending end tomorrow.
+static func end_repair(sim, source: String) -> void:
+	for effect: Dictionary in sim.state.get("events_v2", {}).get("effects", []):
+		if str(effect.get("source", "")) == source and bool(effect.get("until_repaired", false)):
+			effect.until = mini(int(effect.until), int(sim.state.day) + 1)
+
+
 static func _next_node(sim, option: Dictionary) -> String:
 	if not option.has("alt"):
 		return str(option.get("next", ""))
@@ -905,7 +1028,7 @@ static func tick(sim) -> void:
 		var candidates: Array = []
 		var total: float = 0
 		# Plenty of days nothing happens at all.
-		var quiet: bool = _rng(e) >= float(definitions().sampling.fire_chance)
+		var quiet: bool = _rng(e) >= float(_pacing(sim).fire_chance)
 		for id in definitions().definitions:
 			if quiet:
 				break
@@ -1026,10 +1149,20 @@ static func modifier(sim, region: int, kind: String) -> float:
 	return value
 
 
-## Harder levels draw events more often; the pool and their rules stay the same.
+## Harder levels draw events more often; the pool and their rules stay the same. The interval and
+## the chance a draw fires follow the contract stage (1.11): stage one is the quietest.
 static func _draw_interval(sim) -> int:
 	var level: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
-	return roundi(float(definitions().sampling.interval_days) * float(level.event_interval_factor))
+	return roundi(float(_pacing(sim).interval) * float(level.event_interval_factor))
+
+
+static func _pacing(sim) -> Dictionary:
+	var sampling: Dictionary = definitions().sampling
+	var stages: Array = sampling.get("by_stage", [])
+	if stages.is_empty():
+		return {"interval": float(sampling.interval_days), "fire_chance": float(sampling.fire_chance)}
+	var stage: int = clampi(int(sim.state.get("contract", {}).get("stage", 1)), 1, stages.size())
+	return stages[stage - 1]
 
 
 ## Effects that reach the whole colony, whichever settlement they began in.
@@ -1123,6 +1256,24 @@ static func _description(
 		)
 	if option.has("investigate"):
 		parts.append("占用 %d 支研究团队，标准 %d 日" % [int(option.investigate), int(option.work)])
+	if option.has("divert_crew"):
+		var pick: Dictionary = _crew_to_divert(sim, int(inst.target_region))
+		if not pick.is_empty():
+			var team: Dictionary = pick.team
+			var capital: Dictionary = sim.settlement(int(team.region))
+			var index: int = sim.Production.index_of(capital, int(team.target))
+			var project: String = (
+				str(sim.config.buildings.get(str(capital.buildings[index].kind), {}).get("name", ""))
+				if index >= 0
+				else "在建工程"
+			)
+			var away: int = int(pick.days) * 2 + int(option.divert_crew.get("repair_days", 5))
+			parts.append(
+				(
+					"首府工程队 #%d 赶来：路上 %d 天、抢修 %d 天，修好前限水；首府「%s」停工约 %d 天"
+					% [int(team.id), int(pick.days), int(option.divert_crew.get("repair_days", 5)), project, away]
+				)
+			)
 	if option.has("build"):
 		var b: Dictionary = sim.build_preview(int(inst.target_region), str(option.build))
 		parts.append(
@@ -1452,6 +1603,28 @@ static func view(sim) -> Dictionary:
 				}
 			)
 		result.active.append(item)
+	# Settled in the last days (1.11): kept where the player saw them, with what came of them and when
+	# their effects end, instead of the choices.
+	result.settled = []
+	for entry: Dictionary in sim.state.events_v2.history:
+		if int(sim.state.day) - int(entry.day) > SETTLED_DAYS:
+			continue
+		var settled: Dictionary = entry.duplicate(true)
+		settled.title = str(
+			definitions().definitions.get(settled.definition_id, {}).get("nodes", {}).get("start", {}).get("title", "事件")
+		)
+		var ends: int = -1
+		var lasting: bool = false
+		for effect: Dictionary in sim.state.events_v2.effects:
+			if str(effect.get("source", "")) != str(entry.instance_id):
+				continue
+			if int(effect.until) < 0:
+				lasting = true
+			else:
+				ends = maxi(ends, int(effect.until) - 1)
+		settled.effects_end = ends
+		settled.effects_last = lasting
+		result.settled.append(settled)
 	for entry in sim.state.events_v2.history:
 		var row: Dictionary = entry.duplicate(true)
 		row.title = str(
