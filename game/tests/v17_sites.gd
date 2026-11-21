@@ -46,8 +46,8 @@ func make(licence: bool = false) -> RefCounted:
 	sim.state.events_v2.next_draw = 99999
 	check(sim.act("settle", {"site": 0}) == "", "landing on the first site")
 	if licence:
-		sim.state.contract.licences.append("expedition")
-		sim.state.contract.licences.append("third_settlement")
+		# 1.11: caps follow the stage; stage two allows the three towns these tests found.
+		sim.state.contract.stage = 2
 	return sim
 
 
@@ -336,18 +336,19 @@ func _deep_and_hidden() -> void:
 	check(sim.audit().is_empty(), "revealed deposits pass the audit")
 
 
+## 1.11: two towns in stage one (capital included), three in stage two, five in stage three, then
+## no limit.
 func _settlement_cap() -> void:
 	var sim: RefCounted = make()
-	check(Contract.settlement_cap(sim) == 1, "one settlement to begin with")
-	sim.state.contract.licences.append("expedition")
-	check(Contract.settlement_cap(sim) == 2, "the first licence allows a second")
-	sim.state.contract.licences.append("third_settlement")
-	check(Contract.settlement_cap(sim) == 3, "the second licence allows a third")
+	check(Contract.settlement_cap(sim) == 2, "stage one allows two towns, capital included")
+	sim.state.contract.stage = 2
+	check(Contract.settlement_cap(sim) == 3, "stage two allows three")
+	sim.state.contract.stage = 3
+	check(Contract.settlement_cap(sim) == 5, "stage three allows five")
+	sim.state.contract.stage = 4
+	check(Contract.settlement_cap(sim) >= Contract.UNLIMITED, "stage four has no limit")
 	sim.state.status = "success"
-	check(
-		Contract.settlement_cap(sim) == int(sim.contract_rules.settlement_cap.after_award),
-		"the award lifts the limit"
-	)
+	check(Contract.settlement_cap(sim) >= Contract.UNLIMITED, "nor does the award")
 
 
 ## Planets are 0.6, 1.0 and 1.3 Earth radii, and every distance is measured on that sphere.
@@ -660,8 +661,7 @@ func _islands() -> void:
 	var island: int = int(case.b)
 	check(sim.settle_refusal(island) == "", "landing on an island is no restricted start")
 	check(sim.act("settle", {"site": home}) == "", "the first landing")
-	sim.state.contract.licences.append("expedition")
-	sim.state.contract.licences.append("third_settlement")
+	sim.state.contract.stage = 2
 	fund(sim, 60000.0)
 	var s: Dictionary = sim.settlement(home)
 	supply(sim, s, "materials", 400.0)

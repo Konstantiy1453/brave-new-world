@@ -31,6 +31,7 @@ const Stocks = preload("res://simulation/stocks.gd")
 const Supply = preload("res://simulation/supply.gd")
 const Checkout = preload("res://simulation/checkout.gd")
 const Outlook = preload("res://simulation/outlook.gd")
+const Advance = preload("res://simulation/advance.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800

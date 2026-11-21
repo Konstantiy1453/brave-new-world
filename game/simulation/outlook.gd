@@ -165,11 +165,7 @@ static func _exports(sim: RefCounted, row: Dictionary) -> void:
 		row.eta = int(sim.state.day) + ceili((float(row.target) - float(row.value)) / per_day)
 		row.holding = "出口收入每天约 ¥%.0f；本地销售每天约 ¥%.0f 不计入" % [per_day, local]
 	else:
-		row.holding = (
-			"还没有出口收入；本地销售每天约 ¥%.0f 不计入合同" % local
-			if local > 0.0
-			else "还没有出口收入"
-		)
+		row.holding = ("还没有出口收入；本地销售每天约 ¥%.0f 不计入合同" % local if local > 0.0 else "还没有出口收入")
 	row.action = {
 		"page": "build",
 		"category": "extraction",
@@ -243,7 +239,8 @@ static func _population(sim: RefCounted, row: Dictionary) -> void:
 			"kind": "habitat",
 			"text": "建住房",
 			"cost": float(home.get("cost", 0.0)),
-			"effect": "+%d 床" % int(sim.Population.habitat_beds(sim, {"kind": "habitat", "level": 1})),
+			"effect":
+			"+%d 床" % int(sim.Population.habitat_beds(sim, {"kind": "habitat", "level": 1})),
 			"need": "housing",
 		}
 	elif jobs > 0:
@@ -296,11 +293,14 @@ static func _technologies(sim: RefCounted, row: Dictionary) -> void:
 			var remaining: float = maxf(
 				0.0, float(sim.config.techs[key].cost) - float(p.get("work", 0.0))
 			)
-			fast.append(
-				{
-					"first": ceili(remaining / (pace + extra)),
-					"every": ceili(cost / (pace + extra)),
-				}
+			(
+				fast
+				. append(
+					{
+						"first": ceili(remaining / (pace + extra)),
+						"every": ceili(cost / (pace + extra)),
+					}
+				)
 			)
 			commission_cost += float(quote.cost)
 	row.projects = projects
@@ -309,14 +309,12 @@ static func _technologies(sim: RefCounted, row: Dictionary) -> void:
 	if days >= 0:
 		row.eta = today + days
 	else:
-		row.holding = (
-			"没有在研的课题"
-			if projects.is_empty()
-			else "在研课题没有进展：" + str(projects[0].reason)
-		)
+		row.holding = ("没有在研的课题" if projects.is_empty() else "在研课题没有进展：" + str(projects[0].reason))
 	var faster: int = _days_to(fast, needed)
 	if faster >= 0 and days >= 0 and faster < days:
-		row.commission = {"eta": today + faster, "cost_per_day": commission_cost, "saves": days - faster}
+		row.commission = {
+			"eta": today + faster, "cost_per_day": commission_cost, "saves": days - faster
+		}
 	row.action = {
 		"page": "research",
 		"text": "派研究团队做课题；委托研究可以加快",
@@ -406,7 +404,10 @@ static func candidates(sim: RefCounted, need: String) -> Array:
 						why.append(
 							(
 								"%s矿地块 %d 块"
-								% [{"ore": "铁", "copper": "铜", "crystal": "晶体"}[good], int(free[good])]
+								% [
+									{"ore": "铁", "copper": "铜", "crystal": "晶体"}[good],
+									int(free[good])
+								]
 							)
 						)
 						category = "extraction" if category == "" else category

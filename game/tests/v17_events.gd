@@ -652,8 +652,15 @@ func _every_short_event_runs() -> void:
 	check(clean, "every short event option applies cleanly")
 
 
+## Refusals of an option whose own precondition the bare test colony does not meet (opened directly,
+## the event skips its trigger conditions): a closed road, a project, an enterprise, a capital crew.
 func _acceptable(refusal: String) -> bool:
-	return refusal.contains("封闭中的道路") or refusal.contains("项目") or refusal.contains("企业")
+	return (
+		refusal.contains("封闭中的道路")
+		or refusal.contains("项目")
+		or refusal.contains("企业")
+		or refusal.contains("工程队")
+	)
 
 
 func _rich_colony() -> RefCounted:

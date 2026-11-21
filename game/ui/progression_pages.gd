@@ -247,7 +247,9 @@ static func events(g, b):
 		cards.append({"order": _arrival(str(node.instance_id)), "pending": node})
 	for row in v.get("settled", []):
 		cards.append({"order": _arrival(str(row.instance_id)), "settled": row})
-	cards.sort_custom(func(a: Dictionary, x: Dictionary) -> bool: return int(a.order) < int(x.order))
+	cards.sort_custom(
+		func(a: Dictionary, x: Dictionary) -> bool: return int(a.order) < int(x.order)
+	)
 	for entry: Dictionary in cards:
 		if entry.has("pending"):
 			_pending_card(g, b, entry.pending)
@@ -494,20 +496,25 @@ static func manage(g, b):
 		D.label(b, "请选择已建立的据点。", 20)
 		return
 	D.label(b, s.name + " / 库存与生产", 24, D.TEAL)
-	D.label(
-		b,
-		"每种物资两个设定：「本地保留」是至少留在本据点的数量，自动出口、供货合同和外调都停在它上面；「减产线」是库存到多少就停止生产。保留高于减产线时，生产会一直补到保留量。默认（自动）就是 1.10 的规则，只在需要时调整。",
-		16,
-		D.MUTED
+	(
+		D
+		. label(
+			b,
+			"每种物资两个设定：「本地保留」是至少留在本据点的数量，自动出口、供货合同和外调都停在它上面；「减产线」是库存到多少就停止生产。保留高于减产线时，生产会一直补到保留量。默认（自动）就是 1.10 的规则，只在需要时调整。",
+			16,
+			D.MUTED
+		)
 	)
 	var shifts: HBoxContainer = D.row(b)
 	var shift_words: Label = D.label(
 		shifts,
-		"自动减班：%s · 库存达到减产线、当天没有产出的设施，职工保留岗位、按 %.0f%% 工资减班；需求回升自动恢复"
-		% [
-			"开" if bool(s.get("auto_shifts", true)) else "关",
-			float(g.sim.config.get("shifts", {}).get("reduced_wage", 1.0)) * 100.0
-		],
+		(
+			"自动减班：%s · 库存达到减产线、当天没有产出的设施，职工保留岗位、按 %.0f%% 工资减班；需求回升自动恢复"
+			% [
+				"开" if bool(s.get("auto_shifts", true)) else "关",
+				float(g.sim.config.get("shifts", {}).get("reduced_wage", 1.0)) * 100.0
+			]
+		),
 		15,
 		D.INK
 	)
@@ -516,7 +523,8 @@ static func manage(g, b):
 	D.button(
 		shifts,
 		"关闭减班" if bool(s.get("auto_shifts", true)) else "开启减班",
-		func(): g.act("shifts", {"region": region, "enabled": not bool(s.get("auto_shifts", true))}),
+		func():
+			g.act("shifts", {"region": region, "enabled": not bool(s.get("auto_shifts", true))}),
 		"",
 		"ToggleShifts"
 	)
@@ -580,21 +588,24 @@ static func _stock_card(g, b, s: Dictionary, good: String, row: Dictionary) -> v
 		if float(entry.amount) > 0.0:
 			held.append("%s %s" % [str(entry.name), Labels.t(float(entry.amount))])
 	var slowdown: float = g.sim.Production.target(g.sim, s, good)
-	var words: Label = D.label(
-		card,
-		(
-			"%s：库存 %s · 留用 %s（%s）· 可售 %s · 减产线 %s"
-			% [
-				name,
-				Labels.t(float(row.total)),
-				Labels.t(float(row.held_total)),
-				"、".join(held) if not held.is_empty() else "无",
-				Labels.t(float(row.sellable)),
-				Labels.t(slowdown),
-			]
-		),
-		16,
-		D.INK
+	var words: Label = (
+		D
+		. label(
+			card,
+			(
+				"%s：库存 %s · 留用 %s（%s）· 可售 %s · 减产线 %s"
+				% [
+					name,
+					Labels.t(float(row.total)),
+					Labels.t(float(row.held_total)),
+					"、".join(held) if not held.is_empty() else "无",
+					Labels.t(float(row.sellable)),
+					Labels.t(slowdown),
+				]
+			),
+			16,
+			D.INK
+		)
 	)
 	D.named(words, "Stock_" + good)
 	var scale: float = Labels.tonnes_per_unit()
@@ -608,20 +619,29 @@ static func _stock_card(g, b, s: Dictionary, good: String, row: Dictionary) -> v
 			if key == "reserve"
 			else g.sim.Stocks.set_slowdown(s, good)
 		)
-		var shown: float = chosen if chosen >= 0.0 else (
-			float(row.keep) if key == "reserve" else slowdown
+		var shown: float = (
+			chosen if chosen >= 0.0 else (float(row.keep) if key == "reserve" else slowdown)
 		)
 		var caption: Label = D.label(
 			line, "%s（%s）" % [str(control[1]), "已设定" if chosen >= 0.0 else "自动"], 15, D.MUTED, false
 		)
 		caption.custom_minimum_size.x = 140
-		var amount = D.spin(line, "%s_%s" % [key.capitalize(), good], 0, limit, 0.1 * scale, shown * scale)
-		amount.custom_arrow_step = 10.0 * scale
+		# Typed in tonnes to the microton (1.6 review); the arrows move 0.1 unit (10 t).
+		var amount = D.spin(
+			line,
+			"%s_%s" % [key.capitalize(), good],
+			0,
+			maxf(limit, shown * scale),
+			0.000001 * scale,
+			shown * scale
+		)
+		amount.custom_arrow_step = 0.1 * scale
 		amount.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		D.button(
 			line,
 			"设定",
-			func(): g.act("stock_rule", {"region": region, "resource": good, key: amount.value / scale}),
+			func():
+				g.act("stock_rule", {"region": region, "resource": good, key: amount.value / scale}),
 			"按吨输入",
 			"Set_%s_%s" % [key, good]
 		)

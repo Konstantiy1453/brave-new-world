@@ -30,6 +30,9 @@ var selected_region: int = 0
 var ground_point: Dictionary = {}
 var hovered_region: int = -1
 var marker_filter: String = "all"
+## What a recommended site's marker stands for (1.11): the site its card shows (set by the game to
+## `Placement.marker_site`); without it, the site's own record.
+var marker_facts: Callable = Callable()
 var camera: Camera3D
 var planet: Node3D
 var flat_world: Node3D

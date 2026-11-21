@@ -531,7 +531,10 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 static func _validate_settlements(
 	sim: RefCounted, candidate: Dictionary, site_count: int
 ) -> String:
-	if candidate.settlements.size() > int(sim.contract_rules.settlement_cap.get("save_limit", MAX_SITES)):
+	if (
+		candidate.settlements.size()
+		> int(sim.contract_rules.settlement_cap.get("save_limit", MAX_SITES))
+	):
 		return "据点数据不合法"
 	var settlement_shape: Dictionary = _settlement_shape(sim)
 	for s: Variant in candidate.settlements:

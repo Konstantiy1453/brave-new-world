@@ -125,8 +125,7 @@ static func offer(sim: RefCounted, s: Dictionary, kind: String) -> Dictionary:
 			row.refusal = "这里没有农田地块：只能靠温室以外的方式产粮"
 		elif row.per_facility * farms < float(rule.get("min_daily", 0.0)):
 			row.refusal = (
-				"这里的农田太贫瘠：全部种上每天也只产 %.0f t，买方不签"
-				% sim.tonnes(float(row.per_facility) * farms)
+				"这里的农田太贫瘠：全部种上每天也只产 %.0f t，买方不签" % sim.tonnes(float(row.per_facility) * farms)
 			)
 	else:
 		row.per_facility = sim.Production.catch_rate(sim, s, {"kind": "harbor"})
@@ -137,7 +136,25 @@ static func offer(sim: RefCounted, s: Dictionary, kind: String) -> Dictionary:
 			row.refusal = "这片海太贫瘠：一座小型码头每天只能捕到 %.0f t" % sim.tonnes(float(row.per_facility))
 	if row.refusal == "" and not current.is_empty():
 		row.refusal = "已经签了这份合同"
+	# The buyer pays for what the town grows or lands: a town still on its way, or with no farm or
+	# small harbour standing or ordered, would only let the order run out of days empty.
+	if row.refusal == "" and int(s.get("arrival", 0)) > 0:
+		row.refusal = "远征队尚在途中：抵达后才能签约"
+	if row.refusal == "" and not _has_source(sim, s, kind):
+		row.refusal = ("先下令建温室农场：合同只收本地种出的粮食" if kind == "food" else "先下令建小型码头：合同只收本地捕到的渔获")
 	return row
+
+
+## Whether the town has a facility that grows (food) or lands (catch) the order's goods, standing
+## or ordered.
+static func _has_source(sim: RefCounted, s: Dictionary, kind: String) -> bool:
+	for b: Dictionary in s.get("buildings", []):
+		var role: String = str(sim.config.buildings.get(str(b.kind), {}).get("role", ""))
+		if kind == "food" and role in ["farm", "indoor_farm"]:
+			return true
+		if kind == "catch" and role == "harbor":
+			return true
+	return false
 
 
 ## The town's order of a kind that is still being filled, or an empty dictionary.
@@ -182,7 +199,9 @@ static func cancel(sim: RefCounted, region: int, kind: String) -> String:
 	return ""
 
 
-static func _new_order(sim: RefCounted, s: Dictionary, kind: String, size: float, round: int) -> void:
+static func _new_order(
+	sim: RefCounted, s: Dictionary, kind: String, size: float, round: int
+) -> void:
 	var rule: Dictionary = rules(sim)[kind]
 	var order: Dictionary = {
 		"id": int(sim.state.supply.next_id),

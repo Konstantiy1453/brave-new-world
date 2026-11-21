@@ -105,8 +105,14 @@ static func _choice_at_stake(sim: RefCounted, run: Dictionary) -> String:
 	for order: Dictionary in sim.state.get("supply", {}).get("orders", []):
 		if str(order.status) != "open":
 			continue
-		if int(order.due_day) - day <= LAPSE_WARNING_DAYS and float(order.delivered) < float(order.size):
-			return "供货合同 %d 天后到期，还差 %.0f t" % [int(order.due_day) - day, sim.tonnes(float(order.size) - float(order.delivered))]
+		if (
+			int(order.due_day) - day <= LAPSE_WARNING_DAYS
+			and float(order.delivered) < float(order.size)
+		):
+			return (
+				"供货合同 %d 天后到期，还差 %.0f t"
+				% [int(order.due_day) - day, sim.tonnes(float(order.size) - float(order.delivered))]
+			)
 	var stage: int = int(sim.state.contract.stage)
 	if stage <= sim.Contract.STAGE_COUNT and sim.state.status == "active":
 		var deadline: int = sim.Contract.deadline(sim, stage)

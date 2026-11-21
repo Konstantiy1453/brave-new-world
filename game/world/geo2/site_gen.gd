@@ -829,7 +829,10 @@ static func fishery(world: Dictionary, rule: Dictionary, lat: float, lon: float)
 	var river: bool = bool(cell.get("river", false)) or float(cell.get("discharge", 0.0)) > 0.8
 	if sea == 0:
 		return {
-			"factor": 0.0, "sea_share": 0.0, "shelf_share": 0.0, "sea_temperature": 0.0,
+			"factor": 0.0,
+			"sea_share": 0.0,
+			"shelf_share": 0.0,
+			"sea_temperature": 0.0,
 			"river": river
 		}
 	var temperature: float = warmth / sea

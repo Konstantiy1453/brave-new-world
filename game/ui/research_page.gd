@@ -130,8 +130,7 @@ static func _research_column(g, grid, column: Dictionary, v: Dictionary):
 		),
 		func(): g.act("research_reshuffle", {"category": category}),
 		(
-			"会换掉 %d 张没开工的候选%s"
-			% [changes, "；保留：" + "、".join(kept) if not kept.is_empty() else ""]
+			"会换掉 %d 张没开工的候选%s" % [changes, "；保留：" + "、".join(kept) if not kept.is_empty() else ""]
 			if changes > 0
 			else str(preview.reason) + ("：" + "、".join(kept) if not kept.is_empty() else "")
 		),

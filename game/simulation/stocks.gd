@@ -89,7 +89,7 @@ static func planned(s: Dictionary, good: String) -> float:
 
 ## The stock at which production of a good stops in this town: the player's level, else the
 ## automatic target (`Production.default_target`), raised to the reserve and planned projects.
-static func slowdown(sim: RefCounted, s: Dictionary, good: String, automatic: float) -> float:
+static func slowdown(_sim: RefCounted, s: Dictionary, good: String, automatic: float) -> float:
 	var chosen: float = set_slowdown(s, good)
 	var level: float = chosen if chosen >= 0.0 else automatic
 	var held: float = planned(s, good)

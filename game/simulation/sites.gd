@@ -520,16 +520,10 @@ static func plot_choices(sim: RefCounted, site: int, building_kind: String) -> A
 
 ## What starting here looks like from orbit, for the map and for bots choosing a site.
 static func start_score(sim: RefCounted, site: int) -> float:
-	var known: Dictionary = view(sim, site)
-	var value: float = 0.0
-	for good: String in GOODS:
-		value += (
-			float(known.deposits[good].mid)
-			* float(sim.config.prices[good])
-			* float(known.grades[good].mid)
-		)
-	value *= 0.7 + 0.6 * float(known.water.mid)
-	return value / float(known.development)
+	if site < 0 or site >= sim.state.world.regions.size():
+		return 0.0
+	# 1.11: the site founding at its point gives, as its card shows it (Placement.marker_site).
+	return sim.Placement.site_score(sim, sim.state.world.regions[site])
 
 
 ## The capital opening pays less for its first expedition; a frontier camp costs less than a town.
@@ -831,6 +825,13 @@ static func settle(
 static func _can_expand_from(sim: RefCounted, region: int) -> bool:
 	if WorldGen.is_generated(str(sim.geo.version)):
 		var site: Dictionary = sim.state.world.regions[region]
+		# A picked point is judged as its card judged it (1.11): by its coast or its landmass's
+		# room for another town, not by recommended sites that happen to share its land.
+		if bool(site.get("placed", false)):
+			return sim.Placement._can_expand(
+				sim,
+				{"coast": bool(site.get("coast", false)), "landmass": int(site.get("landmass", -1))}
+			)
 		var ships: bool = bool(site.get("sea_links", false)) and bool(site.get("coast", false))
 		return ships or not site.neighbors.is_empty()
 	for other: Variant in sim.state.world.candidates:

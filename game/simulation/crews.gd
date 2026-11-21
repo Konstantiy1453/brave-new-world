@@ -396,16 +396,21 @@ static func projection(sim: RefCounted, s: Dictionary, kind: String, days: int) 
 			if index < 0:
 				continue
 			var b: Dictionary = s.buildings[index]
-			rows.append(
-				{
-					"uid": other,
-					"name": str(sim.config.buildings.get(str(b.kind), {}).get("name", b.kind)),
-					"start": int(plans[other].start),
-					"finish": int(plans[other].finish),
-					"started": int(b.remaining) < int(b.get("total_days", b.remaining)),
-				}
+			(
+				rows
+				. append(
+					{
+						"uid": other,
+						"name": str(sim.config.buildings.get(str(b.kind), {}).get("name", b.kind)),
+						"start": int(plans[other].start),
+						"finish": int(plans[other].finish),
+						"started": int(b.remaining) < int(b.get("total_days", b.remaining)),
+					}
+				)
 			)
-		rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.start) < int(b.start))
+		rows.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool: return int(a.start) < int(b.start)
+		)
 		result.ahead = rows
 		result.place = rows.size() + 1
 	elif int(plan.start) < 0:

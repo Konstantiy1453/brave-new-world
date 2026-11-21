@@ -121,28 +121,52 @@ func _marker_shown(reg: Dictionary) -> bool:
 		return true
 	if bool(reg.get("placed", false)) or _crowded(reg):
 		return false
+	var facts: Dictionary = facts_of(reg)
 	match marker_filter:
 		"none":
 			return false
 		"all":
 			return true
 		"ore", "copper", "crystal":
-			return float(reg.deposits.get(marker_filter, 0.0)) >= MARKER_RICH_TONNES[marker_filter]
+			return (
+				float(facts.get("deposits", {}).get(marker_filter, 0.0))
+				>= MARKER_RICH_TONNES[marker_filter]
+			)
 		"farm":
-			return float(reg.fertility) >= MARKER_RICH_FERTILITY
+			return float(facts.get("fertility", 0.0)) >= MARKER_RICH_FERTILITY
 		"coast":
-			return bool(reg.get("coast", false))
-	return str(reg.get("archetype", "")) == marker_filter
+			return bool(facts.get("coast", false))
+	return str(facts.get("archetype", "")) == marker_filter
+
+
+## The site a marker stands for: what its card shows (`marker_facts`), else its own record.
+func facts_of(reg: Dictionary) -> Dictionary:
+	if marker_facts.is_valid():
+		var facts: Variant = marker_facts.call(reg)
+		if facts is Dictionary and not facts.is_empty():
+			return facts
+	return reg
 
 
 ## A recommended site within a town's separation distance: a town cannot be founded there.
 func _crowded(reg: Dictionary) -> bool:
 	var here: Vector3 = _unit(float(reg.lat), float(reg.lon))
 	for settlement in state.get("settlements", []):
-		var town: Dictionary = world.regions[int(settlement.region)]
+		var town: Dictionary = _region_of(settlement)
+		if town.is_empty():
+			continue
 		if rad_to_deg(here.angle_to(_unit(float(town.lat), float(town.lon)))) < CROWDED_DEGREES:
 			return true
 	return false
+
+
+## A town's site on this map, or {} while the map still shows another world (a game just reset).
+func _region_of(settlement: Dictionary) -> Dictionary:
+	var region: int = int(settlement.get("region", -1))
+	var regions: Array = world.get("regions", [])
+	if region < 0 or region >= regions.size():
+		return {}
+	return regions[region]
 
 
 static func _unit(lat: float, lon: float) -> Vector3:
@@ -192,9 +216,10 @@ func _site_rank(reg: Dictionary) -> float:
 		return INF
 	if _is_settled(id):
 		return 1.0e12
-	var value: float = float(reg.fertility) * 40000.0
+	var facts: Dictionary = facts_of(reg)
+	var value: float = float(facts.get("fertility", 0.0)) * 40000.0
 	for good: String in ["ore", "copper", "crystal"]:
-		value += float(reg.deposits.get(good, 0.0)) * float(GOOD_WEIGHT[good])
+		value += float(facts.get("deposits", {}).get(good, 0.0)) * float(GOOD_WEIGHT[good])
 	return value
 
 
@@ -335,7 +360,9 @@ func _marker_material(color: Color) -> StandardMaterial3D:
 ## Built-up area and farmland on the flat map: colonies visibly spread as they grow.
 func _draw_flat_footprints() -> void:
 	for settlement in state.get("settlements", []):
-		var reg: Dictionary = world.regions[int(settlement.region)]
+		var reg: Dictionary = _region_of(settlement)
+		if reg.is_empty():
+			continue
 		var sizes: Dictionary = _footprint_sizes(settlement)
 		var point := _flat_point(reg.lat, reg.lon) + Vector3(0, 0, -.004)
 		if float(sizes.farmland) > 0.0:
@@ -378,7 +405,9 @@ func _climate_site() -> Dictionary:
 	for settlement in state.get("settlements", []):
 		for building: Dictionary in settlement.get("buildings", []):
 			if str(building.kind) == "climate_regulator" and int(building.get("remaining", 0)) <= 0:
-				var reg: Dictionary = world.regions[int(settlement.region)]
+				var reg: Dictionary = _region_of(settlement)
+				if reg.is_empty():
+					continue
 				return {
 					"lat": float(reg.lat), "lon": float(reg.lon), "radius": CLIMATE_RING_DEGREES
 				}

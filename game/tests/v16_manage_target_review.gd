@@ -65,7 +65,12 @@ func run():
 			var_to_bytes(context.sim.state) == frozen,
 			mode + " opening page preserves simulation bytes"
 		)
-		var amounts = box.find_children("*", "SpinBox", true, false)
+		# 1.11: each good has a reserve and a slowdown input; the slowdown is 1.10's target.
+		var amounts: Array = []
+		for key in ["food", "materials", "parts"]:
+			var found = box.find_child("Slowdown_" + key, true, false)
+			if found is SpinBox:
+				amounts.append(found)
 		check(amounts.size() == 3, mode + " three inputs")
 		# 1.9: the page shows tonnes, the rules keep hundreds of tonnes (economy.json display).
 		var scale: float = Labels.tonnes_per_unit()
@@ -79,8 +84,9 @@ func run():
 				is_equal_approx(amounts[index].custom_arrow_step, 0.1 * scale),
 				mode + " arrow step 0.1 unit " + str(index)
 			)
-		for button in box.find_children("*", "Button", true, false):
-			if button.text == "设置目标":
+		for key in ["food", "materials", "parts"]:
+			var button = box.find_child("Set_slowdown_" + key, true, false)
+			if button is Button:
 				button.pressed.emit()
 		for index in range(3):
 			var key: String = ["food", "materials", "parts"][index]

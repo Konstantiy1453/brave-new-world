@@ -198,7 +198,9 @@ static func reshuffle_preview(sim: RefCounted, category: String) -> Dictionary:
 		if float(project.get("work", 0.0)) > 0.0 or int(project.get("staff", 0)) > 0:
 			kept.append({"tech": key, "name": str(sim.config.techs[key].name), "why": "已有研究进度"})
 		elif rules.get("always_dealt", []).has(key):
-			kept.append({"tech": key, "name": str(sim.config.techs[key].name), "why": "合同必需，固定在候选中"})
+			kept.append(
+				{"tech": key, "name": str(sim.config.techs[key].name), "why": "合同必需，固定在候选中"}
+			)
 		else:
 			loose.append(key)
 	var fresh: Array = _eligible(r, category, hand)

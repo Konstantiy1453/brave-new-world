@@ -144,7 +144,7 @@ func _identity() -> void:
 		JSON.stringify(copy.settlement(0).buildings) == JSON.stringify(home.buildings),
 		"with the same uids"
 	)
-	check(int(copy.state.schema) == SaveIo.SCHEMA and SaveIo.SCHEMA == 6, "as schema 6")
+	check(int(copy.state.schema) == SaveIo.SCHEMA and SaveIo.SCHEMA == 7, "as schema 7 (1.11)")
 
 
 ## The preview's case: a story's pump finishes on time while an older mine is pulled down.
@@ -370,8 +370,8 @@ func _event_towns() -> void:
 	for region: int in range(1, sim.state.world.regions.size()):
 		if places.size() >= 3:
 			break
-		sim.state.contract.licences.append("expedition")
-		sim.state.contract.licences.append("third_settlement")
+		# 1.11: caps follow the stage; stage two allows three towns.
+		sim.state.contract.stage = maxi(2, int(sim.state.contract.stage))
 		if sim.act("settle", {"site": region, "from": 0}) == "":
 			places.append(region)
 	check(places.size() == 3, "three towns stand (%s)" % str(places))

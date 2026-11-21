@@ -17,9 +17,9 @@ const RadiusSlider = preload("res://ui/radius_slider.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
-const Advance = preload("res://simulation/advance.gd")
+const DecisionControl = preload("res://ui/decision_control.gd")
+const TopBar = preload("res://ui/top_bar.gd")
 ## Days "advance to the next decision" runs a frame, so the screen keeps moving.
-const ADVANCE_DAYS_PER_FRAME: int = 8
 const MAX_DAYS_PER_FRAME: int = 3
 ## The difficulty option's entries, in order.
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
@@ -38,28 +38,10 @@ const OLD_SAVE_AUTO: String = "/ColonyCharter/v16/autosave.json"
 const OLDER_SAVE_MANUAL: String = "/Godot/app_userdata/殖民契约 · COLONY CHARTER/manual.json"
 ## Autosaves land on every quarter of the calendar (progression.json time.autosave_days).
 const AUTOSAVE_FALLBACK_DAYS: int = 90
-## Days whose mean is the change shown after each amount in the top bar.
-const DAILY_WINDOW: int = 7
+## Days whose mean is the change shown after each amount in the top bar (ui/top_bar.gd).
+const DAILY_WINDOW: int = TopBar.DAILY_WINDOW
 const MODAL_HEIGHT: int = 690
 const PAGE_HEIGHT: int = 535
-const TOP_CELLS: Array = [
-	["money", "¥", "公共资金"],
-	["labour", "crew", "劳动力"],
-	["places", "据", "据点"],
-	["food", "food", "食品"],
-	["power", "power", "电力"],
-	["water", "water", "水"],
-	["ore", "ore", "铁矿"],
-	["copper", "copper", "铜矿"],
-	["crystal", "crystal", "工业晶体"],
-	["materials", "materials", "建材"],
-	["parts", "parts", "部件"],
-	["components", "components", "电子元件"],
-]
-const TOP_GOODS: Array[String] = [
-	"food", "ore", "copper", "crystal", "materials", "parts", "components"
-]
-const MONTH_DAYS: float = 30.0
 const COLUMN_LEFT: int = 170
 const COLUMN_WIDTH: int = 300
 ## Research notices: width, distance from the top, how many at once, seconds on screen.
@@ -183,6 +165,7 @@ var autosave_task: int = -1
 var advance_run: Dictionary = {}
 var advance_milestone: String = "decision"
 var advance_summary: Dictionary = {}
+var goal_choice: Dictionary = {}
 var autosave_snapshot: Dictionary = {}
 
 
@@ -194,6 +177,8 @@ func _ready():
 	map = Map.new()
 	add_child(map)
 	map.setup(sim.geo)
+	map.marker_facts = func(reg: Dictionary) -> Dictionary:
+		return sim.Placement.marker_site(sim, reg)
 	map.region_selected.connect(select_region)
 	var layer = CanvasLayer.new()
 	add_child(layer)
@@ -277,44 +262,11 @@ func build_shell():
 		action.custom_minimum_size = Vector2(62, 26)
 		action.add_theme_font_size_override("font_size", 14)
 		D.skin(action, "chip")
-	_build_resource_table(h)
+	TopBar.build_table(self, h)
 	var clockbox = D.col(h)
 	date_label = D.label(clockbox, "", 17, D.GOLD, false)
 	var controls = D.row(clockbox)
-	var time_rules: Dictionary = sim.progression.time
-	for item in [
-		["暂停", 0],
-		["1×", 1],
-		["%d×" % int(time_rules.fast_multiplier), int(time_rules.fast_multiplier)],
-		["%d×" % int(time_rules.very_fast_multiplier), int(time_rules.very_fast_multiplier)],
-	]:
-		var val = int(item[1])
-		var b = D.button(
-			controls, item[0], func(): set_speed(val), "空格暂停 / 恢复；每天固定步进", "Speed_" + str(val)
-		)
-		b.custom_minimum_size = Vector2(54, 32)
-		b.add_theme_font_size_override("font_size", 15)
-	var ahead: Button = D.button(
-		controls,
-		"⏩ 下一个决定",
-		func(): start_advance(),
-		"照常运行模拟，到选定的时刻，或在你可能错过一个决定之前停下；途中的日常消息汇总给你看",
-		"AdvanceNext"
-	)
-	ahead.custom_minimum_size = Vector2(118, 32)
-	ahead.add_theme_font_size_override("font_size", 15)
-	var names: Array = []
-	for key: String in Advance.MILESTONES:
-		names.append(str(Advance.NAMES[key]))
-	var pick: OptionButton = D.option(
-		controls,
-		"AdvanceMilestone",
-		names,
-		Advance.MILESTONES.find(advance_milestone),
-		func(index: int): advance_milestone = Advance.MILESTONES[index]
-	)
-	pick.add_theme_font_size_override("font_size", 14)
-	pick.tooltip_text = "停在哪里：无论选哪项，遇到需要你决定的事都会先停"
+	DecisionControl.build_clock_controls(self, controls)
 	var nav = PanelContainer.new()
 	ui.add_child(nav)
 	nav.position = Vector2(20, 115)
@@ -422,33 +374,6 @@ func build_shell():
 	refresh()
 
 
-## Colony totals with their change over a month, one small cell each: icons where there are icons.
-func _build_resource_table(parent: Control) -> void:
-	top_stats = GridContainer.new()
-	top_stats.name = "TopStats"
-	top_stats.columns = 6
-	top_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_stats.add_theme_constant_override("h_separation", 10)
-	top_stats.add_theme_constant_override("v_separation", 6)
-	parent.add_child(top_stats)
-	for row: Array in TOP_CELLS:
-		var cell := HBoxContainer.new()
-		cell.name = "Top_" + str(row[0])
-		cell.add_theme_constant_override("separation", 4)
-		cell.mouse_filter = Control.MOUSE_FILTER_STOP
-		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		top_stats.add_child(cell)
-		if ResourceLoader.exists("res://assets/icons/%s.svg" % str(row[1])):
-			var mark: TextureRect = D.icon(cell, str(row[1]), 20)
-			# Iron, copper and crystal in their map colours, so the three read apart.
-			mark.self_modulate = Labels.GOOD_COLORS.get(str(row[0]), Color.WHITE)
-		else:
-			D.label(cell, str(row[1]), 15, D.GOLD, false)
-		var value: Label = D.label(cell, "", 16, D.INK, false)
-		var delta: Label = D.label(cell, "", 13, D.TEAL, false)
-		top_cells[str(row[0])] = {"cell": cell, "value": value, "delta": delta}
-
-
 func _build_gauge() -> void:
 	gauge = DistrustGauge.new()
 	gauge.setup(self)
@@ -495,7 +420,7 @@ func _process(delta):
 	if sample_frames.size() < 36000:
 		sample_frames.append(delta)
 	if not advance_run.is_empty():
-		_advance_step()
+		DecisionControl.step(self)
 	else:
 		advance_time(delta)
 	_feed_map_clock()
@@ -738,7 +663,7 @@ func advance_time(delta: float):
 		sim.tick()
 		map.sync_state(sim.state)
 		refresh()
-		_refresh_open_page()
+		DecisionControl.refresh_open_page(self)
 		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
 		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
 			_begin_autosave()
@@ -766,68 +691,9 @@ func advance_time(delta: float):
 			break
 
 
-## Starts "advance to the next decision": the normal simulation, day by day, until the chosen
-## milestone or a decision the player could otherwise miss (simulation/advance.gd).
+## Starts "advance to the next decision" (ui/decision_control.gd).
 func start_advance(milestone: String = "") -> void:
-	if sim.state.is_empty() or sim.state.status in ["planning", "failed"]:
-		toast("先建立首府")
-		return
-	if event_pause_required():
-		open_page("events")
-		toast("先答复等待中的通讯")
-		return
-	if is_instance_valid(overlay):
-		close_modal()
-	paused = true
-	resume_on_close = false
-	advance_run = Advance.begin(sim, milestone if milestone != "" else advance_milestone)
-	advance_run.lines = []
-	date_label.text = "%s · 正在推进…" % Labels.date(int(sim.state.day))
-
-
-## A few days of the run each frame; stops with a summary when the run says so.
-func _advance_step() -> void:
-	var reason: String = ""
-	for _i: int in range(ADVANCE_DAYS_PER_FRAME):
-		var before: int = sim.state.log.size()
-		sim.tick()
-		for entry: Dictionary in sim.state.log.slice(maxi(0, before - 1)):
-			if int(entry.day) == int(sim.state.day):
-				advance_run.lines.append("%d · %s" % [int(entry.day), str(entry.text)])
-		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
-		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
-			_begin_autosave()
-			autosave_day = sim.state.day
-		coach.on_day()
-		reason = Advance.stop_reason(sim, advance_run)
-		if reason != "":
-			break
-	map.sync_state(sim.state)
-	refresh()
-	if reason != "":
-		_finish_advance(reason)
-
-
-func _finish_advance(reason: String) -> void:
-	var lines: Array = advance_run.get("lines", [])
-	advance_summary = Advance.summary(sim, advance_run, reason)
-	advance_summary.lines = lines
-	advance_run = {}
-	paused = true
-	last_status = sim.state.status
-	_announce_new_event()
-	open_page("advance")
-
-
-## With panels not pausing the game (a setting), an open page follows the days as they pass (1.11):
-## deadlines, research progress and which actions are open. Not while the player types in it.
-func _refresh_open_page() -> void:
-	if not is_instance_valid(overlay) or current_page.is_empty() or panel_pause:
-		return
-	var focus: Control = get_viewport().gui_get_focus_owner()
-	if focus is LineEdit or focus is TextEdit:
-		return
-	populate_current_page()
+	DecisionControl.start(self, milestone)
 
 
 ## The map's visual clock follows the game clock: faster at higher speeds, slow while paused.
@@ -861,14 +727,6 @@ func _finish_autosave(only_if_done: bool):
 	if str(autosave_snapshot.get("result", "")) != "":
 		toast(str(autosave_snapshot.result))
 	autosave_snapshot = {}
-
-
-## Engineering crews in every town (1.10), apart from the labour force.
-static func _crew_count(state: Dictionary) -> int:
-	var total: int = 0
-	for s: Dictionary in state.get("settlements", []):
-		total += int(s.get("crew", 0))
-	return total
 
 
 ## Notices do not stop the game, so each one gets a line on screen when it arrives.
@@ -1067,53 +925,13 @@ func confirm_site_name(_typed: String = ""):
 		refresh_sidebar()
 
 
-## A contract goal's action (1.11): opens a town that can carry it out, on the page and part that do
-## it. One town that qualifies is opened at once (the capital when it is the only one, even after
-## inspecting empty ground); several give a short choice with why each qualifies.
+## A contract goal's action (1.11): opens a town that can carry it out (ui/decision_control.gd).
 func goal_action(action: Dictionary) -> void:
-	var need: String = str(action.get("need", ""))
-	var page: String = str(action.get("page", ""))
-	if page in ["research", "transport", "economy", "contract", "population", "company"] and need == "":
-		open_page(page)
-		return
-	if need == "settlement":
-		close_modal()
-		toast("在地图上点一块地，看地点卡；推荐地点也可以")
-		return
-	var towns: Array = sim.Outlook.candidates(sim, need if need != "" else "any")
-	if towns.is_empty() and sim.state.settlements.size() == 1:
-		towns = [{"region": int(sim.state.settlements[0].region), "category": ""}]
-	if towns.is_empty():
-		toast("现在没有能做这件事的据点：" + str(action.get("text", "")))
-		return
-	if towns.size() == 1:
-		_open_for(int(towns[0].region), action, str(towns[0].get("category", "")))
-		return
-	goal_choice = {"action": action, "towns": towns}
-	open_page("goal_choice")
+	DecisionControl.goal_action(self, action)
 
 
-var goal_choice: Dictionary = {}
-
-
-## Opens a town for an action: the ground selection gives way to the town, then the page, on the
-## part of it that fits this town's way of doing it.
 func _open_for(region: int, action: Dictionary, category: String = "") -> void:
-	if not ground.is_empty():
-		ground = {}
-		map.set_ground({})
-	selected = region
-	map.selected_region = region
-	map.focus_region(region)
-	refresh_sidebar()
-	if category != "":
-		build_category = category
-	elif action.has("category"):
-		build_category = str(action.category)
-	if action.has("kind"):
-		build_selected = str(action.kind)
-	var page: String = str(action.get("page", "build"))
-	open_page(page if page != "" else "build")
+	DecisionControl.open_for(self, region, action, category)
 
 
 ## The shortcut from a shortage line: the right page, on the right part of it.
@@ -1159,7 +977,7 @@ func settlement() -> Dictionary:
 func refresh():
 	if not is_instance_valid(top_stats):
 		return
-	var window: Dictionary = _refresh_top()
+	var window: Dictionary = TopBar.refresh(self)
 	var state: Dictionary = sim.state
 	date_label.text = (
 		"%s · %s" % [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
@@ -1216,131 +1034,6 @@ func _money_advice(window: Dictionary) -> String:
 	if str(cover.band) == Keys.COVER_IDLE and float(cover.expense) >= 1.0:
 		return "现金可支撑 %.0f 天，%s" % [float(cover.cover), Labels.idle_money(sim)]
 	return ""
-
-
-## Colony totals and what the last month did to them, scaled up while the colony is younger than that.
-## Returns the month's window for the advisor.
-func _refresh_top() -> Dictionary:
-	var state: Dictionary = sim.state
-	var window: Dictionary = sim.stats_window(int(MONTH_DAYS))
-	# The figure after each amount is its change a day: the mean of the last week's days.
-	var week: Dictionary = sim.stats_window(DAILY_WINDOW)
-	var per_day: float = 1.0 / maxi(1, int(week.days))
-	var income: float = 0.0
-	var expense: float = 0.0
-	for key: String in window.income:
-		income += float(window.income[key])
-	for key: String in window.expense:
-		expense += float(window.expense[key])
-	var cover_line: String = Labels.cover_text(sim.cover_view())
-	var net_per_day: float = float(sim.summary().operating_average)
-	_set_cell(
-		"money",
-		float(state.cash),
-		net_per_day,
-		(
-			(
-				"公共资金 ¥ %.0f\n后面的数字是每日经营结余（近 7 日平均）¥ %+.0f/日。\n近 30 日经营收入 ¥ %.0f，支出 ¥ %.0f；建设和融资不计入。"
-				% [float(state.cash), net_per_day, income, expense]
-			)
-			+ ("" if cover_line == "" else "\n" + cover_line)
-		)
-	)
-	var people: int = 0
-	var employed: int = 0
-	var children: int = 0
-	var power: float = 0.0
-	var power_used: float = 0.0
-	var water: float = 0.0
-	var water_used: float = 0.0
-	var stock: Dictionary = {}
-	var places: PackedStringArray = []
-	for s: Dictionary in state.settlements:
-		people += int(s.population)
-		employed += int(s.get("employed", 0))
-		children += int(s.get("children", 0))
-		power += float(s.power_supply)
-		power_used += float(s.power_demand)
-		water += float(s.water_supply)
-		water_used += float(s.water_demand)
-		places.append(
-			(
-				"%s：电 %.0f/%.0f · 水 %.0f/%.0f"
-				% [s.name, s.power_supply, s.power_demand, s.water_supply, s.water_demand]
-			)
-		)
-		for good: String in TOP_GOODS:
-			stock[good] = float(stock.get(good, 0.0)) + float(s.stock.get(good, 0.0))
-	var labour: int = Stats.labour(state)
-	_set_cell(
-		"labour",
-		labour,
-		Stats.labour_change(state, DAILY_WINDOW),
-		(
-			(
-				"劳动力 %d：职工和研究团队；另有工程队 %d 支（施工、维修、外勤）\n"
-				+ "人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
-			)
-			% [labour, _crew_count(state), people, employed, children]
-		)
-	)
-	var cap: Dictionary = Contract.cap_view(sim)
-	_set_cell_text(
-		"places",
-		"%d / %s" % [int(cap.used), "不限" if bool(cap.unlimited) else str(int(cap.cap))],
-		"",
-		0.0,
-		"已建立的据点（含首府）/ 本阶段合同允许的上限：第一阶段 2 处，第二阶段 3 处，第三阶段 5 处，之后不限"
-	)
-	var utility_note: String = "\n电和水不能储存：第一个数是全部据点的供给，后面是供给减需求。\n"
-	_set_cell_flow("power", power, power - power_used, "电力" + utility_note + "\n".join(places))
-	_set_cell_flow("water", water, water - water_used, "水" + utility_note + "\n".join(places))
-	for good: String in TOP_GOODS:
-		var flows: Array = week.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
-		var change: float = (
-			float(flows[Stats.PRODUCED])
-			+ float(flows[Stats.IMPORTED])
-			- float(flows[Stats.CONSUMED])
-			- float(flows[Stats.EXPORTED])
-		)
-		var month: Array = window.goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
-		_set_cell(
-			good,
-			Labels.tonnes(float(stock.get(good, 0.0))),
-			Labels.tonnes(change * per_day),
-			(
-				Labels.flow_text(
-					str(Labels.RESOURCE_NAMES[good]), float(stock.get(good, 0.0)), month
-				)
-				+ "\n后面的数字是每日变化（近 7 日平均，吨）。"
-			)
-		)
-	return window
-
-
-func _set_cell(key: String, value: float, change: float, hint: String) -> void:
-	var sign_text: String = "+" if change >= 0.0 else ""
-	_set_cell_text(
-		key, Labels.amount_text(value), sign_text + Labels.amount_text(change), change, hint
-	)
-
-
-## Power and water: a rate, not a stock, so the sign is the surplus and red means somebody is short.
-func _set_cell_flow(key: String, supply: float, surplus: float, hint: String) -> void:
-	var sign_text: String = "+" if surplus >= 0.0 else ""
-	_set_cell_text(key, Labels.compact(supply), sign_text + Labels.compact(surplus), surplus, hint)
-
-
-func _set_cell_text(
-	key: String, value: String, change: String, amount: float, hint: String
-) -> void:
-	var cell: Dictionary = top_cells[key]
-	if cell.value.text != value:
-		cell.value.text = value
-	if cell.delta.text != change:
-		cell.delta.text = change
-		cell.delta.add_theme_color_override("font_color", D.TEAL if amount >= 0.0 else D.RED)
-	cell.cell.tooltip_text = hint
 
 
 func refresh_sidebar():
@@ -1545,14 +1238,17 @@ func open_page(page: String):
 		"save": "档案与显示设置",
 		"guide": "专员行动指南"
 	}
-	titles.merge(
-		{
-			"company": "公司关系 / 审查与有条件介入",
-			"career": "连续生涯 / 总督与代管",
-			"manage": "库存与生产 / 保留与减产",
-			"advance": "推进到下一个决定 / 汇总",
-			"goal_choice": "选择据点",
-		}
+	(
+		titles
+		. merge(
+			{
+				"company": "公司关系 / 审查与有条件介入",
+				"career": "连续生涯 / 总督与代管",
+				"manage": "库存与生产 / 保留与减产",
+				"advance": "推进到下一个决定 / 汇总",
+				"goal_choice": "选择据点",
+			}
+		)
 	)
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
@@ -1812,8 +1508,10 @@ func load_path(path: String):
 	var lesson: Dictionary = TutorialCoach.saved(sim.state)
 	if bool(lesson.get("active", false)) and coach.resume(sim.state):
 		toast(
-			"完整存档已恢复：新手引导接着第 %d / %d 步；按空格继续经营。"
-			% [int(lesson.step) + 1, int(lesson.get("steps", 14))]
+			(
+				"完整存档已恢复：新手引导接着第 %d / %d 步；按空格继续经营。"
+				% [int(lesson.step) + 1, int(lesson.get("steps", 14))]
+			)
 		)
 		return
 	toast("完整存档已恢复；按空格继续经营。")

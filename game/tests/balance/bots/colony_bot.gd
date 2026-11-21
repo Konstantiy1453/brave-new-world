@@ -3,6 +3,7 @@ extends "res://tests/balance/bots/bot.gd"
 ## order food, water and power, labour, housing; keep a cash cushion; then invest in the best
 ## affordable option. The balanced, rush and research-first bots only change the parameters.
 
+const BotCharter = preload("res://tests/balance/bots/bot_charter.gd")
 const INVEST_ROLES: Array[String] = ["mine", "harvest", "factory", "income", "commerce"]
 const EXTRACTION_ROLES: Array[String] = ["mine", "harvest"]
 const MEGAPROJECTS: Array[String] = ["university", "climate_regulator", "lift_port"]
@@ -80,8 +81,6 @@ const SERVICE_PEOPLE: Dictionary = {
 }
 const COMMERCE_PEOPLE: int = 150
 const HALL_TECH: String = "capital_planning"
-## Stage one's second town waits for this share of the stage's export goal (1.11).
-const EARLY_EXPANSION_GOAL_SHARE: float = 0.25
 const RESHUFFLE_PERIOD: int = 90
 const IDLE_STATUSES: Array[String] = ["no_input", "idle", "target_full"]
 const RECRUIT_JOBLESS_LIMIT: float = 0.15
@@ -189,7 +188,8 @@ func on_day() -> void:
 	_late_great_works()
 	_laboratory(reserve)
 	_staff_research(reserve)
-	_supply_orders()
+	for order: Array in BotCharter.supply_orders(sim):
+		act(str(order[0]), order[1])
 	_second_settlement(reserve)
 	_feed_towns(reserve)
 	_food(reserve)
@@ -214,29 +214,6 @@ func on_day() -> void:
 	_commissions()
 	_seek_late_work_tech()
 	_career_transfer()
-
-
-## Stage one allows a second town (1.11), but a sound player founds it once the first one earns: a
-## quarter of the stage's export goal in, and cash for the expedition twice over besides the reserve.
-func _early_expansion_ok(reserve: float) -> bool:
-	if int(sim.state.contract.stage) != 1:
-		return true
-	var goal: float = sim.Contract.goal_target(sim, 1, "exports_total")
-	if float(sim.state.exports_total) < goal * EARLY_EXPANSION_GOAL_SHARE:
-		return false
-	var fare: float = sim.Sites.expedition_cash(sim, "frontier")
-	return float(sim.state.cash) >= 2.0 * fare + reserve
-
-
-## Supply orders (1.11): every order a town qualifies for is signed; it costs nothing and buys only
-## what the town grows or lands above its residents' reserve.
-func _supply_orders() -> void:
-	for place: Dictionary in sim.state.settlements:
-		if int(place.arrival) > 0:
-			continue
-		for row: Dictionary in sim.Supply.offers(sim, place):
-			if str(row.refusal) == "":
-				act("supply_sign", {"site": int(place.region), "kind": str(row.kind)})
 
 
 ## Crews (1.10): orders wait for an engineering crew. An idle crew goes to a linked town whose
@@ -290,7 +267,12 @@ func _land() -> void:
 		if score > best:
 			best = score
 			home = int(pair[0])
-	act("settle", {"site": home})
+	# 1.11: founded the way a player founds, at the site's coordinate (Placement.settle_at): the
+	# town gets the ground's own plots and deposits, whatever the recommended site was drawn with.
+	var site: Dictionary = sim.state.world.regions[home]
+	if act("settle_at", {"lat": float(site.lat), "lon": float(site.lon)}) != "":
+		act("settle", {"site": home})
+	home = int(sim.state.settlements[0].region) if not sim.state.settlements.is_empty() else home
 	act("build", {"site": home, "kind": "mine_ore"})
 	act("build", {"site": home, "kind": "mine_copper"})
 
@@ -834,7 +816,10 @@ func _next_site(reserve: float) -> Dictionary:
 	var farm_land_in_reach: bool = false
 	for reg: Dictionary in sim.state.world.regions:
 		var id: int = int(reg.id)
-		if not sim.settlement(id).is_empty():
+		if not sim.settlement(id).is_empty() or bool(reg.get("placed", false)):
+			continue
+		# A recommended site a town now stands too close to cannot be founded any more.
+		if BotCharter.crowded(sim, reg):
 			continue
 		var on_land: bool = false
 		for place: Dictionary in sim.state.settlements:
@@ -881,11 +866,18 @@ func _second_settlement(reserve: float) -> void:
 	_connect_settlements(reserve)
 	if _saving_for_road() or sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
 		return
-	if not _early_expansion_ok(reserve):
+	if not BotCharter.early_expansion_ok(sim, reserve):
 		return
 	var next: Dictionary = _next_site(reserve)
 	if not next.is_empty():
-		act("settle", {"site": next.site, "from": next.from, "kind": next.kind})
+		# The player's way (1.11): an expedition to the site's coordinate.
+		var site: Dictionary = sim.state.world.regions[int(next.site)]
+		var placed: String = act(
+			"settle_at",
+			{"lat": float(site.lat), "lon": float(site.lon), "from": next.from, "kind": next.kind}
+		)
+		if placed != "":
+			act("settle", {"site": next.site, "from": next.from, "kind": next.kind})
 
 
 func _farm_output(region: int) -> float:

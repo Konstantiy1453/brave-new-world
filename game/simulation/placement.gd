@@ -18,7 +18,12 @@ const Contract = preload("res://simulation/contract.gd")
 const PRECISION: float = 10000.0
 const SITE_CACHE_LIMIT: int = 64
 const RESOURCES: Array[String] = ["ore", "copper", "crystal"]
-
+const LEVEL_NAMES: Dictionary = {
+	"signal": "轨道粗测",
+	"scan": "轨道观测",
+	"field": "实地勘察",
+	"drilled": "钻探",
+}
 
 ## The world part of `site_for` by point (it depends on the seed and the point alone).
 static var _site_cache: Dictionary = {}
@@ -283,10 +288,38 @@ static func scale_reserves(sim: RefCounted, site: Dictionary, factor: float) -> 
 ## same rules whether the point is a recommended site or not), with the reserve each shared deposit
 ## has left and the deposits a drill has seen made visible. Read-only; the world part is cached.
 ## settle_at founds exactly this site, so what the card showed is what the town finds.
+## A recommended site as founding there would make it (1.11): the site its card shows at its
+## coordinate (`site_for`). Markers, their filters and labels, and a bot's choice of start read this
+## rather than the world generator's own draw for the site, so a marker never promises what founding
+## at its point does not give. A town or a picked point is its own record.
+static func marker_site(sim: RefCounted, reg: Dictionary) -> Dictionary:
+	if bool(reg.get("placed", false)) or not sim.settlement(int(reg.get("id", -1))).is_empty():
+		return reg
+	return site_for(sim, float(reg.lat), float(reg.lon))
+
+
+## What founding on a site is worth from what its card shows: the known deposits at their grades and
+## prices, more with water, per unit of the site's building cost (the bots' choice of start).
+static func site_score(sim: RefCounted, reg: Dictionary) -> float:
+	var site: Dictionary = marker_site(sim, reg)
+	var value: float = 0.0
+	for good: String in RESOURCES:
+		value += (
+			float(site.get("deposits", {}).get(good, 0.0))
+			* float(sim.config.prices[good])
+			* float(site.get("grade", {}).get(good, 1.0))
+		)
+	value *= 0.7 + 0.6 * float(site.get("water", 0.5))
+	return value / maxf(0.1, float(site.get("development_multiplier", 1.0)))
+
+
 static func site_for(sim: RefCounted, lat: float, lon: float) -> Dictionary:
 	lat = snap(clampf(lat, -89.99, 89.99))
 	lon = snap(wrapf(lon, -180.0, 180.0))
-	var key: String = "%s|%s|%.4f|%.4f" % [str(sim.geo.get("seed", 0)), str(sim.geo.get("radius_km", 0)), lat, lon]
+	var key: String = (
+		"%s|%s|%.4f|%.4f"
+		% [str(sim.geo.get("seed", 0)), str(sim.geo.get("radius_km", 0)), lat, lon]
+	)
 	if not _site_cache.has(key):
 		if _site_cache.size() > SITE_CACHE_LIMIT:
 			_site_cache.clear()
@@ -589,7 +622,9 @@ static func _plans(sim: RefCounted, report: Dictionary, _site: Dictionary) -> Ar
 		)
 		var price: float = sim.Market.price(sim, good) * (1.0 - fee)
 		var road: Dictionary = report.building.roads.get(good, {"days": 0, "cost": 0.0})
-		var count: int = clampi(roundi((int(mineral.plots_low) + int(mineral.plots_high)) * 0.5), 1, 2)
+		var count: int = clampi(
+			roundi((int(mineral.plots_low) + int(mineral.plots_high)) * 0.5), 1, 2
+		)
 		var steps: Array = []
 		for index: int in range(count):
 			var days: int = int(spec.days) + (int(road.days) if index == 0 else 0)
@@ -599,7 +634,8 @@ static func _plans(sim: RefCounted, report: Dictionary, _site: Dictionary) -> Ar
 					{
 						"kind": kind,
 						"name": str(spec.name),
-						"cost": float(spec.cost) * cost_factor + (float(road.cost) if index == 0 else 0.0),
+						"cost":
+						float(spec.cost) * cost_factor + (float(road.cost) if index == 0 else 0.0),
 						"days": days,
 						"road_days": int(road.days) if index == 0 else 0,
 						"rate": rate,
@@ -620,19 +656,16 @@ static func _plans(sim: RefCounted, report: Dictionary, _site: Dictionary) -> Ar
 				LEVEL_NAMES.get(str(mineral.level), "")
 			]
 		)
-		(
-			plans
-			. append(
-				_plan(
-					"mine",
-					good,
-					"%s出口" % str(sim.config.resources.get(good, good)),
-					steps,
-					ceili(reserve / maxf(0.1, rate)),
-					goal,
-					note,
-					str(mineral.level) == "signal"
-				)
+		plans.append(
+			_plan(
+				"mine",
+				good,
+				"%s出口" % str(sim.config.resources.get(good, good)),
+				steps,
+				ceili(reserve / maxf(0.1, rate)),
+				goal,
+				note,
+				str(mineral.level) == "signal"
 			)
 		)
 	var farming: Dictionary = report.farming
@@ -722,17 +755,14 @@ static func _t(sim: RefCounted, units: float) -> String:
 	return "%.0f t" % tonnes
 
 
-const LEVEL_NAMES: Dictionary = {
-	"signal": "轨道粗测",
-	"scan": "轨道观测",
-	"field": "实地勘察",
-	"drilled": "钻探",
-}
-
-
 static func _port_need(sim: RefCounted, cost_factor: float) -> Dictionary:
 	var spec: Dictionary = sim.config.buildings.port
-	return {"kind": "port", "name": str(spec.name), "cost": float(spec.cost) * cost_factor, "days": int(spec.days)}
+	return {
+		"kind": "port",
+		"name": str(spec.name),
+		"cost": float(spec.cost) * cost_factor,
+		"days": int(spec.days)
+	}
 
 
 ## The people a town founded here starts with: the landing party, or an expedition.

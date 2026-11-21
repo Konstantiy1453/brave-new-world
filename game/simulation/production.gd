@@ -356,7 +356,9 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	var d: Dictionary = build_preview(sim, region, kind, chosen)
 	var bought: float = _supply_train_cost(sim, s, d)
 	_buy_supply_train(sim, s, d)
-	var paid: float = sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
+	var paid: float = sim._transfer(
+		"public", "external", float(d.cost), "invest.build", false, kind
+	)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
 	var building: Dictionary = new_building(sim, kind, int(d.days))
@@ -404,21 +406,24 @@ static func withdraw(sim: RefCounted, region: int, uid: int) -> String:
 		Stats.goods(sim.state, key, Stats.CONSUMED, -amount)
 	Bay.reroute(sim, s, b)
 	Crews.release_target(sim, int(s.region), uid)
-	sim._log(
-		(
-			"%s · 撤回尚未开工的%s：退回资金 ¥%.0f、建材 %.0f t、部件 %.0f t%s。"
-			% [
-				s.name,
-				str(sim.config.buildings[b.kind].name),
-				float(paid.cash),
-				sim.tonnes(float(paid.get("materials", 0.0))),
-				sim.tonnes(float(paid.get("parts", 0.0))),
-				(
-					"；当时按进口价现买的物资（¥%.0f）留在仓库" % float(paid.bought)
-					if float(paid.get("bought", 0.0)) > 0.0
-					else ""
-				),
-			]
+	(
+		sim
+		. _log(
+			(
+				"%s · 撤回尚未开工的%s：退回资金 ¥%.0f、建材 %.0f t、部件 %.0f t%s。"
+				% [
+					s.name,
+					str(sim.config.buildings[b.kind].name),
+					float(paid.cash),
+					sim.tonnes(float(paid.get("materials", 0.0))),
+					sim.tonnes(float(paid.get("parts", 0.0))),
+					(
+						"；当时按进口价现买的物资（¥%.0f）留在仓库" % float(paid.bought)
+						if float(paid.get("bought", 0.0)) > 0.0
+						else ""
+					),
+				]
+			)
 		)
 	)
 	sim._refresh(s)
@@ -437,8 +442,7 @@ static func withdraw_refusal(_sim: RefCounted, b: Dictionary) -> String:
 		return "1.11 之前下的订单没有付款记录，不能撤单"
 	if int(b.remaining) < int(b.get("total_days", b.remaining)):
 		return (
-			"工程队已经开工（完成 %d / %d 天），不能撤单"
-			% [int(b.total_days) - int(b.remaining), int(b.total_days)]
+			"工程队已经开工（完成 %d / %d 天），不能撤单" % [int(b.total_days) - int(b.remaining), int(b.total_days)]
 		)
 	return ""
 
@@ -745,7 +749,9 @@ static func _operate(
 			for good: String in d.outputs:
 				if _slowed(sim, s, good):
 					continue
-				var made: float = float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
+				var made: float = (
+					float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
+				)
 				produce(sim, s, good, made, "矿产开采")
 				b.output = float(b.output) + made
 				made_any = true
@@ -765,7 +771,10 @@ static func _operate(
 			var climate: float = farm_climate(sim, int(s.region))
 			var field: Dictionary = Sites.plot_of(sim, s, b)
 			var soil: float = (
-				maxf(float(field.get("fertility", reg.fertility)), float(d.get("fertility_floor", 0.0)))
+				maxf(
+					float(field.get("fertility", reg.fertility)),
+					float(d.get("fertility_floor", 0.0))
+				)
 				+ Megaprojects.fertility_bonus(sim)
 			)
 			var amount: float = minf(
@@ -845,7 +854,9 @@ static func facility_view(sim: RefCounted, s: Dictionary, b: Dictionary) -> Dict
 	var reduced: bool = (
 		str(b.get("shift", "")) == SHIFT_REDUCED and bool(s.get("auto_shifts", true))
 	)
-	var pay: float = float(sim.config.get("shifts", {}).get("reduced_wage", 1.0)) if reduced else 1.0
+	var pay: float = (
+		float(sim.config.get("shifts", {}).get("reduced_wage", 1.0)) if reduced else 1.0
+	)
 	var wages: float = (
 		(
 			float(b.get("employed", 0)) * Population.worker_wage(sim)
@@ -1379,7 +1390,9 @@ static func build_forecast(
 	elif role == "harbor":
 		# The catch replaces imported food as a farm's crop does; sea freight makes what the town
 		# still imports cheaper (bay.gd). Its added port capacity is not valued.
-		var catch: float = catch_rate(sim, s, {"kind": kind}) if not s.is_empty() else float(spec.get("fish", 0.0))
+		var catch: float = (
+			catch_rate(sim, s, {"kind": kind}) if not s.is_empty() else float(spec.get("fish", 0.0))
+		)
 		outputs.food = catch
 		usable.food = usable_food(sim, s, catch)
 		# Before the harbour works, food comes in at the full orbital price.

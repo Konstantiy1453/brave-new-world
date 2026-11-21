@@ -39,7 +39,9 @@ static func view(sim: RefCounted, region: int, kind: String, plot: int = -1) -> 
 	for good: String in ["materials", "parts"]:
 		var missing: float = maxf(0.0, float(spec[good]) - float(s.stock[good]))
 		short[good] = missing
-		bought += missing * float(sim.config.prices[good]) * (1.0 + float(sim.config.economy.port_fee))
+		bought += (
+			missing * float(sim.config.prices[good]) * (1.0 + float(sim.config.economy.port_fee))
+		)
 	var day: int = int(sim.state.day)
 	var crew: Dictionary = sim.Crews.projection(sim, s, kind, int(spec.days))
 	var service: int = int(crew.finish)
@@ -131,7 +133,9 @@ static func benefit(
 		else:
 			# A town that already sells this good has none short: more of it is sold, not saved.
 			var already: float = _exported_a_day(sim, s, good)
-			var replace: float = 0.0 if already > 0.01 else minf(amount, float(imports.get(good, 0.0)))
+			var replace: float = (
+				0.0 if already > 0.01 else minf(amount, float(imports.get(good, 0.0)))
+			)
 			var rest: float = amount - replace
 			var port_limited: float = maxf(0.0, rest - room)
 			var sold: float = rest - port_limited
@@ -209,19 +213,26 @@ static func _utility(sim: RefCounted, s: Dictionary, kind: String, role: String)
 		"power":
 			row.supply = float(s.get("power_supply", 0.0))
 			row.demand = float(s.get("power_demand", 0.0))
-			row.adds = float(spec.get("capacity", 0.0)) * (1.0 + Research.bonus(sim, "power_output"))
+			row.adds = (
+				float(spec.get("capacity", 0.0)) * (1.0 + Research.bonus(sim, "power_output"))
+			)
 		"water":
 			var reg: Dictionary = sim.state.world.regions[int(s.region)]
 			row.supply = float(s.get("water_supply", 0.0))
 			row.demand = float(s.get("water_demand", 0.0))
 			row.adds = (
 				float(spec.capacity)
-				* (float(spec.get("site_floor", 1.0)) + float(reg.water) * float(spec.get("site_gain", 0.0)))
+				* (
+					float(spec.get("site_floor", 1.0))
+					+ float(reg.water) * float(spec.get("site_gain", 0.0))
+				)
 			)
 		"port":
 			row.supply = float(s.get("port_capacity", 0.0))
 			row.demand = float(s.get("port_used", 0.0))
-			row.adds = float(spec.get("capacity", 0.0)) * (1.0 + Research.bonus(sim, "port_capacity"))
+			row.adds = (
+				float(spec.get("capacity", 0.0)) * (1.0 + Research.bonus(sim, "port_capacity"))
+			)
 			row.crowded = _crowded_out(sim, s)
 		"housing":
 			row.supply = float(s.get("housing", 0))
@@ -266,7 +277,9 @@ static func _imports_a_day(sim: RefCounted) -> Dictionary:
 static func _exported_a_day(sim: RefCounted, s: Dictionary, good: String) -> float:
 	if not s.get("sales", []).is_empty():
 		var month: Dictionary = Supply.sales(s, int(sim.state.day), HISTORY_FULL_DAYS)
-		var span: float = float(mini(int(sim.state.day) - int(s.sales[0].day) + 1, HISTORY_FULL_DAYS))
+		var span: float = float(
+			mini(int(sim.state.day) - int(s.sales[0].day) + 1, HISTORY_FULL_DAYS)
+		)
 		return float(month.goods.get(good, 0.0)) / maxf(1.0, span)
 	var window: Dictionary = sim.stats_window(HISTORY_FULL_DAYS)
 	var flows: Array = window.get("goods", {}).get(good, [])
@@ -305,8 +318,12 @@ static func _mined(sim: RefCounted, s: Dictionary, good: String) -> float:
 			if b.has("output"):
 				made += float(b.output)
 			else:
-				var plot: Dictionary = sim.Sites.plot_of(sim, s, b) if int(b.get("plot", -1)) >= 0 else {}
-				made += float(d.rate) * float(plot.get("grade", 1.0)) * float(b.get("efficiency", 1.0))
+				var plot: Dictionary = (
+					sim.Sites.plot_of(sim, s, b) if int(b.get("plot", -1)) >= 0 else {}
+				)
+				made += (
+					float(d.rate) * float(plot.get("grade", 1.0)) * float(b.get("efficiency", 1.0))
+				)
 		elif role == "harvest" and d.outputs.has(good):
 			made += float(d.outputs[good]) * float(b.get("efficiency", 1.0))
 	return made

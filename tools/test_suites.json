@@ -26,6 +26,7 @@
     {"name": "v110_bay", "script": "res://tests/v110_bay.gd", "success": "V110_BAY_RESULT checks=\\d+ failures=0"},
     {"name": "v110_placement", "script": "res://tests/v110_placement.gd", "success": "V110_PLACEMENT_RESULT checks=\\d+ failures=0"},
     {"name": "v110_audit", "script": "res://tests/v110_audit.gd", "success": "V110_AUDIT_RESULT checks=\\d+ failures=0"},
+    {"name": "v111_decisions", "script": "res://tests/v111_decisions.gd", "timeout": 1500, "success": "V111_DECISIONS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

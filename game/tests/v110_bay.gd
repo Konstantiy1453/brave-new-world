@@ -170,8 +170,10 @@ func _harbour() -> void:
 	var rule: Dictionary = Bay.rules(sim)
 	check(Bay.sea_discount(sim, s, "food") == 0.0, "no sea discount before a harbour")
 	var forecast: Dictionary = sim.build_forecast(region, "harbor")
+	# 1.11: the catch is the harbour's fish times the fishery off this coast.
+	var catch_rate: float = sim.Production.catch_rate(sim, s, {"kind": "harbor"})
 	check(
-		is_equal_approx(float(forecast.outputs.food), float(sim.config.buildings.harbor.fish)),
+		is_equal_approx(float(forecast.outputs.food), catch_rate),
 		"the order's forecast shows the catch"
 	)
 	check(
@@ -196,7 +198,7 @@ func _harbour() -> void:
 		"food comes in cheaper by sea"
 	)
 	check(Bay.sea_discount(sim, s, "ore") == 0.0, "goods the sea does not carry do not")
-	var fish: float = float(sim.config.buildings.harbor.fish)
+	var fish: float = sim.Production.catch_rate(sim, s, {"kind": "harbor"})
 	sim.tick()
 	# The day's own food goes into the contract's window when the day closes.
 	var local: float = float(sim.state.contract.food_window.back()[0])

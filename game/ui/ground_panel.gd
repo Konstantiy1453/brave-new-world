@@ -10,6 +10,12 @@ const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
 
 const SIGNAL_NAMES: Dictionary = {"ore": "铁", "copper": "铜", "crystal": "工业晶体"}
+const LEVELS: Dictionary = {
+	"signal": "轨道粗测",
+	"scan": "轨道观测",
+	"field": "实地勘察",
+	"drilled": "钻探",
+}
 ## The ground cover the maps draw (plates.gd `biome_at`).
 const COVER_NAMES: Dictionary = {
 	"forest": "森林",
@@ -21,8 +27,10 @@ const COVER_NAMES: Dictionary = {
 	"ocean": "海洋",
 }
 
-
 ## The coordinate in words: 北纬 21.25° · 西经 117.25°.
+static var _cached: Dictionary = {}
+
+
 static func coordinate_text(lat: float, lon: float) -> String:
 	return (
 		"%s %.2f° · %s %.2f°"
@@ -56,9 +64,6 @@ static func view(g) -> Dictionary:
 			),
 		}
 	return _cached.report
-
-
-static var _cached: Dictionary = {}
 
 
 static func kind(g) -> String:
@@ -152,8 +157,7 @@ static func _ground_lines(g, b: Control, report: Dictionary) -> void:
 		coast = "海岸：靠海，可以建小型码头、走海运"
 		if not fishing.is_empty():
 			coast += (
-				" · 渔场%s：一座小型码头每天约 %s 渔获"
-				% [str(fishing.word), Labels.t(float(fishing.catch))]
+				" · 渔场%s：一座小型码头每天约 %s 渔获" % [str(fishing.word), Labels.t(float(fishing.catch))]
 			)
 	var coast_line: Label = D.label(b, coast, 15, D.INK)
 	D.named(coast_line, "GroundCoast")
@@ -169,26 +173,27 @@ static func _ground_lines(g, b: Control, report: Dictionary) -> void:
 static func _plot_lines(_g, b: Control, report: Dictionary) -> void:
 	var plots: Dictionary = report.plots
 	var farming: Dictionary = report.farming
-	var words: String = (
-		"可建设地块：城区 %d 块 · 农田 %d 块" % [int(plots.general), int(plots.farm)]
-	)
+	var words: String = "可建设地块：城区 %d 块 · 农田 %d 块" % [int(plots.general), int(plots.farm)]
 	var line: Label = D.label(b, words, 15, D.INK)
 	D.named(line, "GroundPlots")
 	if int(farming.plots) > 0:
-		var farm: Label = D.label(
-			b,
-			(
-				"农业潜力：%s · 一座温室农场约 %s–%s/天（最好的一块地，气候系数 %.2f），够 %d 人吃"
-				% [
-					str(farming.word),
-					Labels.t(float(farming.per_farm_low)),
-					Labels.t(float(farming.per_farm_high)),
-					float(farming.climate),
-					int(farming.feeds),
-				]
-			),
-			15,
-			D.INK
+		var farm: Label = (
+			D
+			. label(
+				b,
+				(
+					"农业潜力：%s · 一座温室农场约 %s–%s/天（最好的一块地，气候系数 %.2f），够 %d 人吃"
+					% [
+						str(farming.word),
+						Labels.t(float(farming.per_farm_low)),
+						Labels.t(float(farming.per_farm_high)),
+						float(farming.climate),
+						int(farming.feeds),
+					]
+				),
+				15,
+				D.INK
+			)
 		)
 		D.named(farm, "GroundFarming")
 	else:
@@ -232,7 +237,11 @@ static func _mineral_lines(g, b: Control, report: Dictionary) -> void:
 					g.act("prospect_observe", {"resource": resource, "lat": lat, "lon": lon})
 				else:
 					g.act("prospect_send", {"step": step, "id": id}),
-			str(quote.refusal) if str(quote.refusal) != "" else "只勘测%s，不涉及其他矿产" % SIGNAL_NAMES[resource],
+			(
+				str(quote.refusal)
+				if str(quote.refusal) != ""
+				else "只勘测%s，不涉及其他矿产" % SIGNAL_NAMES[resource]
+			),
 			"Prospect_%s_%s" % [resource, step],
 			"chip"
 		)
@@ -264,16 +273,10 @@ static func _mineral_words(mineral: Dictionary, name: String) -> String:
 		if float(mineral.band) <= 0.0
 		else "%s–%s" % [Labels.t(float(mineral.low)), Labels.t(float(mineral.high))]
 	)
-	var band: String = "精确" if float(mineral.band) <= 0.0 else "±%.0f%%" % (float(mineral.band) * 100.0)
+	var band: String = (
+		"精确" if float(mineral.band) <= 0.0 else "±%.0f%%" % (float(mineral.band) * 100.0)
+	)
 	return "%s：%s · 估计 %s · 矿床地块 %s（%s，%s）" % [name, reading, amount, plots, source, band]
-
-
-const LEVELS: Dictionary = {
-	"signal": "轨道粗测",
-	"scan": "轨道观测",
-	"field": "实地勘察",
-	"drilled": "钻探",
-}
 
 
 ## What the first town here can sell first: each plan with what it needs, its first shipment and
@@ -297,7 +300,8 @@ static func _plan_lines(g, b: Control, report: Dictionary) -> void:
 		var needs: PackedStringArray = []
 		for need: Dictionary in plan.needs:
 			var words: String = (
-				"%s ¥%s（第 %d 天建成）" % [str(need.name), g.money(float(need.cost)), int(need.ready_day)]
+				"%s ¥%s（第 %d 天建成）"
+				% [str(need.name), g.money(float(need.cost)), int(need.ready_day)]
 			)
 			if int(need.get("road_days", 0)) > 0:
 				words += "，含矿区道路 %d 天" % int(need.road_days)

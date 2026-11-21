@@ -220,15 +220,21 @@ static func _report_orbit(sim: RefCounted, resource: String, lat: float, lon: fl
 		)
 		sim.state.prospecting.next_id = int(sim.state.prospecting.next_id) + 1
 		found += 1
-	sim.state.prospecting.scans.append(
-		{
-			"resource": resource,
-			"lat": lat,
-			"lon": lon,
-			"reach": reach,
-			"day": int(sim.state.day),
-			"found": found,
-		}
+	(
+		sim
+		. state
+		. prospecting
+		. scans
+		. append(
+			{
+				"resource": resource,
+				"lat": lat,
+				"lon": lon,
+				"reach": reach,
+				"day": int(sim.state.day),
+				"found": found,
+			}
+		)
 	)
 	sim._log(
 		(

@@ -15,10 +15,10 @@ extends SceneTree
 ## - regression: seed 3, six clicks on unmarked land across both views, each selecting the ground
 ##   under the pointer; then founding the capital at the last one.
 ## - refusal: sea, polar and steep ground: the reason is shown, the button is off, nothing is founded.
-## - outpost: a capital on picked ground, the colony played to the expansion licence (the balanced bot
-##   through the simulation's own actions), then the expedition to picked inland (--coast=0) or
-##   coastal (--coast=1) ground through the interface: departure town, route, cost, days, naming,
-##   arrival, a building, a road, a save, a quit and a reload.
+## - outpost: a capital on picked ground, the colony played until an expedition is affordable (1.11: in
+##   stage one; the balanced bot through the simulation's own actions), then the expedition to picked
+##   inland (--coast=0) or coastal (--coast=1) ground through the interface: departure town, route,
+##   cost, days, naming, arrival, a building, a road, a save, a quit and a reload.
 
 const MARKER_CLEARANCE_PX: float = 60.0
 const OLD_PICK_RADIUS_PX: float = 43.0
@@ -656,8 +656,8 @@ func _refusal() -> void:
 		)
 
 
-## A capital on picked ground, the colony played to the expansion licence, then an expedition to
-## picked ground through the interface.
+## A capital on picked ground, the colony played until an expedition is affordable, then an
+## expedition to picked ground through the interface.
 func _outpost() -> void:
 	var pair: Dictionary = _area_pair()
 	var start: Dictionary = pair.points[0]
@@ -672,32 +672,42 @@ func _outpost() -> void:
 		return
 	var capital_region: int = int(capital.region)
 	record.capital = _stored(capital_region)
-	# The colony is played to the expansion licence by the balance harness's balanced bot, through
-	# the simulation's own actions (`Sim.act`), the ones the interface's buttons call.
+	# The colony is played by the balance harness's balanced bot, through the simulation's own
+	# actions (`Sim.act`), the ones the interface's buttons call, until an expedition is affordable:
+	# 1.11 allows the second town in stage one with no licence and no export total.
 	var bot: RefCounted = _bot()
-	_check(bot != null, "the balanced bot is loaded to play the colony to the expansion licence")
+	_check(bot != null, "the balanced bot is loaded to play the colony until it can send one")
 	if bot == null:
 		return
 	bot.begin(sim, int(options.seed))
-	while not sim.state.contract.licences.has("expedition") and int(sim.state.day) < 900:
+	var coastal: bool = str(options.coast) == "1"
+	var target: Dictionary = {}
+	while int(sim.state.day) < 900 and sim.state.settlements.size() == 1:
 		bot.on_day()
 		sim.tick()
+		if int(sim.state.day) % 5 == 0 and _expedition_affordable(sim, capital):
+			target = _expedition_target(capital_region, coastal)
+			if not target.is_empty():
+				break
 	record.unlock_day = int(sim.state.day)
 	record.played_by = (
 		"balanced bot (tests/balance/bots) through Sim.act, days 1-%d" % int(sim.state.day)
 	)
 	record.towns_at_unlock = sim.state.settlements.size()
+	record.stage_at_unlock = int(sim.state.contract.stage)
+	record.exports_at_unlock = float(sim.state.exports_total)
 	_check(
-		sim.state.contract.licences.has("expedition") and sim.state.settlements.size() == 1,
-		"the expansion licence came on day %d, with the capital the only town" % int(sim.state.day)
+		not target.is_empty() and sim.state.settlements.size() == 1,
+		(
+			"an expedition was affordable on day %d in stage %d, exports ¥%.0f, the capital the only town"
+			% [int(sim.state.day), int(sim.state.contract.stage), float(sim.state.exports_total)]
+		)
 	)
-	if not sim.state.contract.licences.has("expedition"):
+	if target.is_empty():
 		return
 	game.map.sync_state(sim.state)
 	game.refresh()
 	await _close_popups()
-	var coastal: bool = str(options.coast) == "1"
-	var target: Dictionary = _expedition_target(capital_region, coastal)
 	record.target = target
 	_check(
 		not target.is_empty(),
@@ -928,6 +938,16 @@ func _scroll_of(control: Control) -> ScrollContainer:
 			return node
 		node = node.get_parent()
 	return null
+
+
+## Whether the capital could send an expedition today: the stage's cap allows another town, the
+## capital has the workers, and the fare is in hand with room for the expedition's kit.
+func _expedition_affordable(sim: RefCounted, capital: Dictionary) -> bool:
+	if sim.Contract.cap_refusal(sim) != "":
+		return false
+	if int(capital.get("workers", 0)) < int(sim.config.outpost.min_source_workers):
+		return false
+	return float(sim.state.cash) >= 1.5 * float(sim.Sites.expedition_cash(sim, "frontier"))
 
 
 ## Eligible ground 9-18 degrees from the capital, inland or coastal, an expedition from it can reach.

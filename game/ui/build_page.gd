@@ -301,7 +301,7 @@ static func _build_ledger(
 	D.font_size(hold, D.SMALL)
 	var place: Button = D.button(
 		actions,
-		"下达建设 · ¥ %s" % g.money(float(order.cash_now)),
+		"建设%s · ¥ %s" % [str(spec.get("name", key)), g.money(float(order.cash_now))],
 		func(): g.act("build", {"site": g.selected, "kind": key, "plot": plot}),
 		refusal,
 		"BuildSelected",
@@ -367,14 +367,20 @@ static func _crew_answer(g, rows: Control, order: Dictionary) -> void:
 		words = "本地没有工程队，也没有在路上的"
 		var send: Dictionary = crew.get("send", {})
 		if not send.is_empty():
-			words += "：可从「%s」派 #%d（路上 %d 天%s）" % [
-				str(send.from),
-				int(send.crew),
-				int(send.days),
-				"，手头工程还要 %d 天" % int(send.busy) if int(send.busy) > 0 else ""
-			]
+			words += (
+				"：可从「%s」派 #%d（路上 %d 天%s）"
+				% [
+					str(send.from),
+					int(send.crew),
+					int(send.days),
+					"，手头工程还要 %d 天" % int(send.busy) if int(send.busy) > 0 else ""
+				]
+			)
 		var rule: Dictionary = g.sim.pop_rules.get("crews", {})
-		words += "；或在本地培训一支（¥ %.0f · %d 天）" % [float(rule.get("train_cost", 0)), int(rule.get("train_days", 0))]
+		words += (
+			"；或在本地培训一支（¥ %.0f · %d 天）"
+			% [float(rule.get("train_cost", 0)), int(rule.get("train_days", 0))]
+		)
 		var none: Label = D.label(rows, words, D.SMALL, D.RED)
 		D.named(none, "CheckoutCrew")
 		return
@@ -408,12 +414,14 @@ static func _crew_answer(g, rows: Control, order: Dictionary) -> void:
 
 
 ## 3. When it enters service, and what may hold it back once built.
-static func _service_answer(g, rows: Control, order: Dictionary, forecast: Dictionary) -> void:
+static func _service_answer(_g, rows: Control, order: Dictionary, forecast: Dictionary) -> void:
 	D.heading(rows, "③ 投入使用")
 	var service: int = int(order.in_service)
 	var words: String = (
-		"约 %s（工期 %d 天，下单后第 %d 天）"
-		% [Labels.short_date(service), int(order.days), service - int(order.today)]
+		(
+			"约 %s（工期 %d 天，下单后第 %d 天）"
+			% [Labels.short_date(service), int(order.days), service - int(order.today)]
+		)
 		if service >= 0
 		else "要等工程队：见上"
 	)
@@ -424,10 +432,7 @@ static func _service_answer(g, rows: Control, order: Dictionary, forecast: Dicti
 		var free: int = int(forecast.free_workers)
 		D.label(
 			rows,
-			(
-				"岗位 %d · 本地找工作的职工 %d%s"
-				% [jobs, free, "" if free >= jobs else "：人手不够时按比例开工"]
-			),
+			"岗位 %d · 本地找工作的职工 %d%s" % [jobs, free, "" if free >= jobs else "：人手不够时按比例开工"],
 			D.CAPTION,
 			D.MUTED if free >= jobs else D.GOLD
 		)
@@ -441,7 +446,7 @@ static func _service_answer(g, rows: Control, order: Dictionary, forecast: Dicti
 
 
 ## 4. What it is likely to add in this town.
-static func _benefit_answer(g, rows: Control, order: Dictionary, forecast: Dictionary) -> void:
+static func _benefit_answer(g, rows: Control, order: Dictionary, _forecast: Dictionary) -> void:
 	var benefit: Dictionary = order.benefit
 	D.heading(rows, "④ 本地增益")
 	if str(benefit.get("kind", "")) != "earning":
@@ -460,48 +465,58 @@ static func _benefit_answer(g, rows: Control, order: Dictionary, forecast: Dicti
 	)
 	D.named(net, "CheckoutNet")
 	if float(benefit.replaces_imports) > 0.0:
-		D.label(rows, "　替代进口：¥ %.0f/日（少买的进口货）" % float(benefit.replaces_imports), D.CAPTION, D.MUTED)
+		D.label(
+			rows, "　替代进口：¥ %.0f/日（少买的进口货）" % float(benefit.replaces_imports), D.CAPTION, D.MUTED
+		)
 	if float(benefit.export_receipts) > 0.0:
-		D.label(rows, "　出口收入：¥ %.0f/日（计入合同出口目标）" % float(benefit.export_receipts), D.CAPTION, D.MUTED)
+		D.label(
+			rows, "　出口收入：¥ %.0f/日（计入合同出口目标）" % float(benefit.export_receipts), D.CAPTION, D.MUTED
+		)
 	for row: Dictionary in benefit.outputs:
 		if str(row.get("basis", "")) == "market" and float(row.get("exported", 0.0)) > 0.0:
-			D.label(
+			(
+				D
+				. label(
+					rows,
+					(
+						"　%s 出口 %s/天：现价 ¥ %.1f/百吨，多卖一个月后约 ¥ %.1f%s"
+						% [
+							str(RES.get(row.good, row.good)),
+							Labels.t(float(row.exported)),
+							float(row.price_now),
+							float(row.price_after),
+							(
+								"；货运站没有余量，%s/天卖不出去" % Labels.t(float(row.port_limited))
+								if float(row.get("port_limited", 0.0)) > 0.01
+								else ""
+							),
+						]
+					),
+					D.CAPTION,
+					D.MUTED
+				)
+			)
+	for row: Dictionary in benefit.inputs:
+		(
+			D
+			. label(
 				rows,
 				(
-					"　%s 出口 %s/天：现价 ¥ %.1f/百吨，多卖一个月后约 ¥ %.1f%s"
+					"　原料 %s %s/天：本地还有余 %s/天%s"
 					% [
 						str(RES.get(row.good, row.good)),
-						Labels.t(float(row.exported)),
-						float(row.price_now),
-						float(row.price_after),
+						Labels.t(float(row.need)),
+						Labels.t(float(row.spare)),
 						(
-							"；货运站没有余量，%s/天卖不出去" % Labels.t(float(row.port_limited))
-							if float(row.get("port_limited", 0.0)) > 0.01
+							"，其中本来出口的部分少卖 ¥ %.1f/百吨" % float(row.forgone_price)
+							if float(row.exported) > 0.0
 							else ""
 						),
 					]
 				),
 				D.CAPTION,
-				D.MUTED
+				D.GOLD if float(row.share) < 1.0 else D.MUTED
 			)
-	for row: Dictionary in benefit.inputs:
-		D.label(
-			rows,
-			(
-				"　原料 %s %s/天：本地还有余 %s/天%s"
-				% [
-					str(RES.get(row.good, row.good)),
-					Labels.t(float(row.need)),
-					Labels.t(float(row.spare)),
-					(
-						"，其中本来出口的部分少卖 ¥ %.1f/百吨" % float(row.forgone_price)
-						if float(row.exported) > 0.0
-						else ""
-					),
-				]
-			),
-			D.CAPTION,
-			D.GOLD if float(row.share) < 1.0 else D.MUTED
 		)
 	D.label(
 		rows,
@@ -569,7 +584,11 @@ static func _utility_lines(_g, rows: Control, benefit: Dictionary) -> void:
 					float(benefit.supply) * 100.0,
 					float(benefit.demand) * 100.0,
 					float(benefit.adds) * 100.0,
-					"：现在满载，多出的运力用来卖仓库里卖不出去的货" if float(benefit.supply) - float(benefit.demand) < 1.0 else "：现在还有余量"
+					(
+						"：现在满载，多出的运力用来卖仓库里卖不出去的货"
+						if float(benefit.supply) - float(benefit.demand) < 1.0
+						else "：现在还有余量"
+					)
 				]
 			)
 		"housing":

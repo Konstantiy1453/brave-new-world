@@ -31,22 +31,25 @@ static func employment(g, b: Control, s: Dictionary) -> void:
 	)
 	D.named(line, "TownEmployment")
 	if int(view.retained_idle) > 0:
-		var kept: Label = D.label(
-			b,
-			(
-				"%d 名职工留在今天没有产出的设施上，日工资 ¥%.0f%s"
-				% [
-					int(view.retained_idle),
-					float(view.retained_cost),
-					(
-						"（%d 座已减班）" % int(view.reduced_facilities)
-						if int(view.reduced_facilities) > 0
-						else ""
-					),
-				]
-			),
-			14,
-			D.GOLD
+		var kept: Label = (
+			D
+			. label(
+				b,
+				(
+					"%d 名职工留在今天没有产出的设施上，日工资 ¥%.0f%s"
+					% [
+						int(view.retained_idle),
+						float(view.retained_cost),
+						(
+							"（%d 座已减班）" % int(view.reduced_facilities)
+							if int(view.reduced_facilities) > 0
+							else ""
+						),
+					]
+				),
+				14,
+				D.GOLD
+			)
 		)
 		D.named(kept, "TownRetained")
 
@@ -54,18 +57,21 @@ static func employment(g, b: Control, s: Dictionary) -> void:
 ## Export receipts (they count towards the charter's export goal) apart from local sales.
 static func sales(g, b: Control, s: Dictionary) -> void:
 	var month: Dictionary = g.sim.Supply.sales(s, int(g.sim.state.day), 30)
-	var line: Label = D.label(
-		b,
-		(
-			"近 30 日 · 出口 ¥%s · 供货合同 ¥%s（都计入合同出口目标）· 本地销售 ¥%s（不计入）"
-			% [
-				g.money(float(month.export)),
-				g.money(float(month.supply)),
-				g.money(float(month.local)),
-			]
-		),
-		14,
-		D.MUTED
+	var line: Label = (
+		D
+		. label(
+			b,
+			(
+				"近 30 日 · 出口 ¥%s · 供货合同 ¥%s（都计入合同出口目标）· 本地销售 ¥%s（不计入）"
+				% [
+					g.money(float(month.export)),
+					g.money(float(month.supply)),
+					g.money(float(month.local)),
+				]
+			),
+			14,
+			D.MUTED
+		)
 	)
 	D.named(line, "TownSales")
 
@@ -114,10 +120,7 @@ static func supply(g, b: Control, s: Dictionary) -> void:
 				line,
 				"签约",
 				func(): g.act("supply_sign", {"site": region, "kind": kind}),
-				(
-					"需要%s；付款按实际交付的本地产出计，计入出口目标"
-					% ("货运站或小型码头" if kind == "food" else "小型码头")
-				),
+				"需要%s；付款按实际交付的本地产出计，计入出口目标" % ("货运站或小型码头" if kind == "food" else "小型码头"),
 				"SupplySign_" + kind,
 				"chip"
 			)

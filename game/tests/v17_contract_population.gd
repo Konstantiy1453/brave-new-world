@@ -85,7 +85,12 @@ func _stages() -> void:
 	check(
 		is_equal_approx(float(sim.state.operating_net), net), "stage reward is not operating income"
 	)
-	check(sim.state.contract.licences.has("expedition"), "stage one grants the expedition licence")
+	# 1.11: settlements are capped by stage (two in stage one, three in stage two).
+	check(
+		sim.state.contract.licences.has("third_settlement"),
+		"stage one grants the third-settlement licence"
+	)
+	check(Contract.settlement_cap(sim) == 3, "stage two allows three settlements")
 	check(int(sim.state.contract.stage_streak) == 0, "the streak restarts with each stage")
 	check(int(sim.state.contract.completed["1"]) == 5, "stage day recorded")
 	check(sim.audit().is_empty(), "reward keeps the audit clean")
@@ -150,14 +155,19 @@ func _late_finish() -> void:
 	check(bool(rows[0].ok), "a small town's passing troubles do not")
 
 
+## 1.11: stage one allows two settlements, capital included, with no licence for the second (the
+## ¥40,000 export goal need not be met first); the third waits for stage two.
 func _licence_gate() -> void:
 	var sim: RefCounted = make()
-	var error: String = sim.act("settle", {"region": 1})
-	check(error.contains("许可"), "second settlement needs the licence: " + error)
-	sim.state.contract.licences.append("expedition")
-	check(sim.act("settle", {"region": 1}) == "", "the licence opens the second settlement")
+	check(sim.act("settle", {"region": 1}) == "", "stage one opens the second settlement")
 	check(int(sim.settlement(1).housing) == 24, "outpost landing housing")
 	check(int(sim.settlement(0).housing) == 60, "capital landing housing")
+	var third: int = -1
+	for reg: Dictionary in sim.state.world.regions:
+		if third < 0 and sim.settlement(int(reg.id)).is_empty():
+			third = int(reg.id)
+	var error: String = sim.act("settle", {"region": third})
+	check(error.contains("上限"), "a third settlement waits for stage two: " + error)
 
 
 func _deadlines_feed_company() -> void:
