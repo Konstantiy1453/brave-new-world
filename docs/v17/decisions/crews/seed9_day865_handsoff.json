@@ -1,0 +1,33 @@
+{
+  "day": 865,
+  "steps": [
+    {
+      "actual_finish": 887,
+      "actual_start": 869,
+      "ahead": [
+        "净水泵站 866->868"
+      ],
+      "cash_now": 3300.0,
+      "crew": 3,
+      "finish": 887,
+      "kind": "power",
+      "place": 2,
+      "start": 869
+    },
+    {
+      "actual_finish": 910,
+      "actual_start": 888,
+      "ahead": [
+        "净水泵站 866->868",
+        "光伏储能站 869->887"
+      ],
+      "cash_now": 6061.41408,
+      "crew": 3,
+      "finish": 910,
+      "kind": "port",
+      "place": 3,
+      "start": 888
+    }
+  ],
+  "town": "地点 12"
+}

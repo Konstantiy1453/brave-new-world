@@ -1,0 +1,591 @@
+{
+  "actions": [
+    "0 build {\"kind\":\"habitat\",\"region\":29}",
+    "0 build {\"kind\":\"mine_ore\",\"region\":29}",
+    "0 build {\"kind\":\"mine_ore\",\"region\":29}",
+    "1 crew_train {\"region\":29}",
+    "1 build {\"kind\":\"mine_ore\",\"region\":29}",
+    "2 crew_train {\"region\":29}",
+    "14 build {\"kind\":\"lab\",\"region\":29}",
+    "54 research_allocate {\"staff\":4,\"tech\":\"education\"}",
+    "59 policy {\"services\":1}",
+    "59 research_commission {\"level\":2,\"tech\":\"education\"}",
+    "64 research_allocate {\"staff\":5,\"tech\":\"education\"}",
+    "64 build {\"kind\":\"farm\",\"region\":29}",
+    "69 research_commission {\"level\":1,\"tech\":\"education\"}",
+    "119 research_commission {\"level\":0,\"tech\":\"education\"}",
+    "134 build {\"kind\":\"farm\",\"region\":29}",
+    "159 research_allocate {\"staff\":5,\"tech\":\"school_system\"}",
+    "189 build {\"kind\":\"habitat\",\"region\":29}",
+    "209 build {\"kind\":\"power\",\"region\":29}",
+    "214 settle {\"from\":29,\"kind\":\"frontier\",\"site\":12}",
+    "219 research_allocate {\"staff\":5,\"tech\":\"survey\"}",
+    "219 connect {\"a\":29,\"b\":12,\"variant\":\"sea\"}",
+    "239 policy {\"services\":0}",
+    "244 policy {\"wage\":1.1}",
+    "364 build {\"kind\":\"farm\",\"region\":12}",
+    "369 research_allocate {\"staff\":5,\"tech\":\"copper_leach\"}",
+    "404 policy {\"wage\":1.0}",
+    "444 build {\"kind\":\"mine_ore\",\"region\":12}",
+    "469 research_allocate {\"staff\":5,\"tech\":\"research_network\"}",
+    "479 build {\"kind\":\"crew_quarters\",\"region\":12}",
+    "484 build {\"kind\":\"mine_ore\",\"region\":12}",
+    "494 policy {\"wage\":1.1}",
+    "539 build {\"kind\":\"mine_ore\",\"region\":12}",
+    "564 research_allocate {\"staff\":5,\"tech\":\"mine_safety\"}",
+    "574 build {\"kind\":\"farm\",\"region\":12}",
+    "594 build {\"kind\":\"mine_ore\",\"region\":12}",
+    "624 build {\"kind\":\"power\",\"region\":12}",
+    "624 build {\"kind\":\"crew_quarters\",\"region\":12}",
+    "654 build {\"kind\":\"mine_ore\",\"region\":12}",
+    "684 build {\"kind\":\"processor\",\"region\":29}",
+    "699 research_allocate {\"staff\":5,\"tech\":\"prospecting\"}",
+    "714 build {\"kind\":\"mine_copper\",\"region\":12}",
+    "729 build {\"kind\":\"mine_copper\",\"region\":12}",
+    "754 build {\"kind\":\"lab\",\"region\":29}",
+    "754 research_allocate {\"staff\":5,\"tech\":\"community_admin\"}",
+    "769 build {\"kind\":\"processor\",\"region\":29}",
+    "774 research_allocate {\"staff\":10,\"tech\":\"community_admin\"}",
+    "774 policy {\"wage\":1.0}",
+    "789 research_contract {\"staff\":3}",
+    "794 build {\"kind\":\"school\",\"region\":29}",
+    "809 recruit {\"count\":13,\"kind\":\"worker\",\"region\":29}",
+    "819 recruit {\"count\":11,\"kind\":\"worker\",\"region\":29}",
+    "829 recruit {\"count\":8,\"kind\":\"worker\",\"region\":29}",
+    "834 recruit {\"count\":1,\"kind\":\"worker\",\"region\":12}",
+    "839 build {\"kind\":\"habitat\",\"region\":29}",
+    "844 research_allocate {\"staff\":10,\"tech\":\"civic_planning\"}",
+    "859 build {\"kind\":\"water\",\"region\":29}",
+    "859 demolish {\"index\":4,\"region\":29}",
+    "874 policy {\"wage\":1.1}"
+  ],
+  "days": [
+    {
+      "cash": 15113.0,
+      "company": "normal",
+      "day": 30,
+      "exports_total": 0.0,
+      "income": {
+        "food.sales": 854.400000000001
+      },
+      "pop": 58,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17802.0,
+      "company": "normal",
+      "day": 60,
+      "exports_total": 6182.0,
+      "income": {
+        "export": 6182.07478403442,
+        "food.sales": 849.12
+      },
+      "pop": 63,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 13996.0,
+      "company": "normal",
+      "day": 90,
+      "exports_total": 13160.0,
+      "income": {
+        "export": 6977.84148635638,
+        "food.sales": 964.32
+      },
+      "pop": 71,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 15079.0,
+      "company": "normal",
+      "day": 120,
+      "exports_total": 19985.0,
+      "income": {
+        "enterprise.rent": 22.0,
+        "enterprise.tax": 22.176,
+        "export": 6825.53158586121,
+        "food.sales": 1094.4
+      },
+      "pop": 82,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17436.0,
+      "company": "normal",
+      "day": 150,
+      "exports_total": 26728.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 6742.4489234544,
+        "food.sales": 1234.56
+      },
+      "pop": 89,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 18946.0,
+      "company": "normal",
+      "day": 180,
+      "exports_total": 33425.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 6697.12863389894,
+        "food.sales": 1331.52
+      },
+      "pop": 96,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 21927.0,
+      "company": "normal",
+      "day": 210,
+      "exports_total": 40097.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 6672.40712659656,
+        "food.sales": 1426.08
+      },
+      "pop": 102,
+      "stage": 2,
+      "towns": 1
+    },
+    {
+      "cash": 3366.0,
+      "company": "normal",
+      "day": 240,
+      "exports_total": 46760.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 6662.97502331588,
+        "food.sales": 1376.16
+      },
+      "pop": 112,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 3458.0,
+      "company": "normal",
+      "day": 270,
+      "exports_total": 53411.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 56.268,
+        "export": 6650.42096847567,
+        "food.sales": 1680.96
+      },
+      "pop": 121,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 2764.0,
+      "company": "normal",
+      "day": 300,
+      "exports_total": 59497.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 6086.26669379191,
+        "food.sales": 1776.96
+      },
+      "pop": 126,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 2880.0,
+      "company": "normal",
+      "day": 330,
+      "exports_total": 66163.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 6666.18146888208,
+        "food.sales": 1831.2
+      },
+      "pop": 128,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 3914.0,
+      "company": "normal",
+      "day": 360,
+      "exports_total": 73170.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 7007.08997487132,
+        "food.sales": 1863.36
+      },
+      "pop": 130,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 2132.0,
+      "company": "normal",
+      "day": 390,
+      "exports_total": 81087.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 7916.16002405717,
+        "food.sales": 1875.36
+      },
+      "pop": 131,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 3128.0,
+      "company": "normal",
+      "day": 420,
+      "exports_total": 88947.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 58.212,
+        "export": 7860.10097086995,
+        "food.sales": 1922.88
+      },
+      "pop": 136,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 2217.0,
+      "company": "normal",
+      "day": 450,
+      "exports_total": 96858.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 7911.84942695106,
+        "food.sales": 1986.72
+      },
+      "pop": 139,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 4560.0,
+      "company": "normal",
+      "day": 480,
+      "exports_total": 106365.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 9506.72057289252,
+        "food.sales": 2022.24
+      },
+      "pop": 143,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 1685.0,
+      "company": "normal",
+      "day": 510,
+      "exports_total": 112118.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 57.888,
+        "export": 5753.06735227893,
+        "food.sales": 2092.8
+      },
+      "pop": 147,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 293.0,
+      "company": "normal",
+      "day": 540,
+      "exports_total": 118935.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 6817.06696779331,
+        "food.sales": 2155.68
+      },
+      "pop": 152,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 3016.0,
+      "company": "normal",
+      "day": 570,
+      "exports_total": 127080.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 8144.99976557094,
+        "food.sales": 2217.6
+      },
+      "pop": 156,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 975.0,
+      "company": "normal",
+      "day": 600,
+      "exports_total": 136901.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 9820.22785508864,
+        "food.sales": 2281.44
+      },
+      "pop": 161,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 429.0,
+      "company": "normal",
+      "day": 630,
+      "exports_total": 147359.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 10458.0955465075,
+        "food.sales": 2344.8
+      },
+      "pop": 164,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 2301.0,
+      "company": "normal",
+      "day": 660,
+      "exports_total": 159326.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 11967.196868397,
+        "food.sales": 2363.52
+      },
+      "pop": 165,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 1642.0,
+      "company": "normal",
+      "day": 690,
+      "exports_total": 172502.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 13175.7178700755,
+        "food.sales": 2406.72
+      },
+      "pop": 169,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 5200.0,
+      "company": "normal",
+      "day": 720,
+      "exports_total": 186661.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 14159.6996683904,
+        "food.sales": 2464.8
+      },
+      "pop": 173,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 7226.0,
+      "company": "normal",
+      "day": 750,
+      "exports_total": 201716.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 15054.5277331611,
+        "food.sales": 2523.36
+      },
+      "pop": 177,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 6734.0,
+      "company": "normal",
+      "day": 780,
+      "exports_total": 221950.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 56.592,
+        "export": 20234.3501032913,
+        "food.sales": 2569.92
+      },
+      "pop": 181,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 8818.0,
+      "company": "normal",
+      "day": 810,
+      "exports_total": 242982.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 21032.3399567935,
+        "food.sales": 2639.04,
+        "research.contract": 864.720290116678
+      },
+      "pop": 187,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 7768.0,
+      "company": "normal",
+      "day": 840,
+      "exports_total": 264702.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 21719.237644496,
+        "food.sales": 2760.0,
+        "research.contract": 1235.31470016668
+      },
+      "pop": 208,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 17866.0,
+      "company": "normal",
+      "day": 870,
+      "exports_total": 287301.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 22598.9673759714,
+        "food.sales": 3146.4,
+        "research.contract": 1235.31470016668
+      },
+      "pop": 226,
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 30912.0,
+      "company": "warning",
+      "day": 900,
+      "exports_total": 310346.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 56.268,
+        "export": 23044.9620597554,
+        "food.sales": 3224.64,
+        "research.contract": 1235.31470016668
+      },
+      "pop": 222,
+      "stage": 2,
+      "towns": 2
+    }
+  ],
+  "deposits": {
+    "copper": 0.0,
+    "crystal": 0.0,
+    "ore": 14864.0
+  },
+  "exports_total": 310345.65443188,
+  "failure_reason": "",
+  "final_day": 900,
+  "first_export_day": 34,
+  "ground": {
+    "biome": "forest",
+    "coast": true,
+    "elevation": 137.624692041109,
+    "fertility": 0.220448582445237,
+    "land": true,
+    "lat": 39.9747,
+    "lon": 122.1984,
+    "refusal": "",
+    "relief": 1358.86832774539,
+    "signals": {
+      "copper": 0.0,
+      "crystal": 0.0,
+      "ore": 0.873104352029145
+    },
+    "slots": 35,
+    "temperature": 5.89807603464186,
+    "terrain": "滨海平原",
+    "water": 0.644354585419864
+  },
+  "options": {
+    "bot": "balanced",
+    "days": "900",
+    "lat": "39.9747",
+    "lon": "122.1984",
+    "out": "/home/user/probe_out/baseline_seed3_north.json"
+  },
+  "plots": {
+    "deposit_ore": 3,
+    "farm": 2,
+    "general": 14
+  },
+  "second_town_day": 215,
+  "settle_error": "",
+  "stage_days": {
+    "1": 210
+  },
+  "status": "active",
+  "towns": [
+    {
+      "kinds": {
+        "farm": 2,
+        "habitat": 3,
+        "lab": 2,
+        "mine_ore": 2,
+        "port": 1,
+        "power": 2,
+        "processor": 2,
+        "school": 1,
+        "service": 1,
+        "water": 2
+      },
+      "name": "Probe",
+      "pop": 132,
+      "region": 29
+    },
+    {
+      "kinds": {
+        "crew_quarters": 2,
+        "farm": 2,
+        "mine_copper": 2,
+        "mine_ore": 5,
+        "port": 1,
+        "power": 2,
+        "water": 1
+      },
+      "name": "地点 13",
+      "pop": 90,
+      "region": 12
+    }
+  ]
+}

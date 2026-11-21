@@ -1,4 +1,45 @@
-# Colony Charter 1.10 — Progress (the bay first, started 2026-11-19)
+# Colony Charter 1.11 and 1.10 — Progress
+
+## 1.11 — early decisions, a colony that runs between them (2026-11-21)
+
+The user's request of 2026-11-21, on the shipped 1.10.1 preview: early decisions that matter, a
+colony that runs between them, and a player who can see what the first town can sell, what an
+investment costs and whether waiting advances the contract; carried through to the exported game and
+checked there. Branch `v17-decisions`, from `v17-bay` at `3e3ab15`. Judgment calls are in
+`DECISIONS.md` under "1.11"; records and their figures in `docs/v17/decisions/README.md`; the
+handoff with the plain status of every requirement in `docs/v17/HANDOFF_20261121.md`.
+
+| Area | What | State |
+|---|---|---|
+| One site card | any land point, capital or later town; recommended sites an optional overlay whose markers read the site founding at their point gives; elevation, terrain and building cost, water, farmland and a farm's output, coast and fishery, plots by type, each mineral's estimate with its range by survey; a scan that finds nothing says so | **done** (`314d941`, `fefd4ca`) |
+| What to sell first | mine export, food supply order, catch order per site: facilities, cost, first shipment, the export goal's day | **done** (`f1f91ce`, `314d941`) |
+| Settlement caps | 2 / 3 / 5 / unlimited by stage, capital included; the second town in stage one with no licence; one refusal everywhere | **done** (`f1f91ce`) |
+| Supply orders | pay for goods grown or landed and delivered; residents' reserve kept; renew larger when filled; export receipts apart from local sales; signed once the town has arrived and has a farm or harbour | **done** (`f1f91ce`, `fefd4ca`) |
+| Stock controls | reserve and slowdown per good per town, one availability figure for pages and trade, reserve for a planned project, employment by kind, reduced shifts | **done** (`f1f91ce`, `d6d0bf7`) |
+| Orders | four answers before payment (cash now, crew start from the real queue, in service, benefit range and payback from order and from start), withdrawal of an unstarted order | **done** (`d6d0bf7`) |
+| Contract panel | status, trend, ETA, holding condition and action per goal; housing or jobs; technologies and commissions; actions open a town that can do them; "advance to the next decision" | **done** (`6146a5c`) |
+| Events | quieter opening, pacing by stage, colony-wide interruption cap (new arrivals only), the two-town water-station decision | **done** (`06a78c5`, `fefd4ca`) |
+| Interface fixes | live pages with panels not pausing, expiry in place, tutorial kept in saves (resume and restart apart), honest reshuffle, one team count | **done** (`91c4a4c`, `0462dd0`) |
+| Verification | interface driver for the 1.11 flows (`tools/verify/decisions_driver.gd`), placement driver updated; both run on the exported PCK and through the Windows EXE under Wine; matched branches and records (`tools/verify/records/`) | **done** (`834ddd1` and the records commit) |
+
+**This round (2026-11-21).**
+- **Build.** `ColonyCharter-1.11.0-preview-20261121-decisions`, commit `834ddd1`, PCK SHA-256
+  `10C9A62D…E08F`. The EXE is the unchanged Godot 4.5.1 runtime.
+- **Suites (headless, on `834ddd1` plus the legacy-world fix).** 48 of 58 pass in the full run; the
+  re-run of the five suites the fix touched passes. Failing as on 1.10.1: `v17_saves`, `v17_tutorial`,
+  `v18_systems`, `world_v16_seed` (Windows fixtures) and the seven `review_*` tools (D: paths, not
+  run). `v16_interaction_probe` and `v16_scroll_probe` fail under Xvfb exactly as on 1.10.1;
+  `world_v16_visual` and `world_v17_seam` pass. `v19_payback` misses 10 bands (1.10.1: 3): late-game
+  mines pay back faster than the 1.9 bands, because towns now sit on the planet's own deposits and the
+  bots choose them by what the card shows.
+- **Records.** See `docs/v17/decisions/README.md`: the seed-3 coasts played through the first
+  delivery and a second town at an unmarked point in stage one; the day-865 reserve, crew queue and
+  fourth plant; seed 260129's outlook and advance; event pacing against 1.10.1.
+- **Open.** Mine payback against the 1.9 bands; stage two to three is slower for the bots than in
+  1.10.1 (3 of 6 seeds by day 720 against 5 of 6); human playtest NOT_RUN; the EXE on a real Windows
+  machine NOT_RUN.
+
+## 1.10 — the bay first (started 2026-11-19)
 
 The user's brief of 2026-11-19 covers free siting, geology per resource and prospecting, mobile engineering crews,
 a nightscape built from the game's own state, people and growth, and stories. The plan, in phases, is

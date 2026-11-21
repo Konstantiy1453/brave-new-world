@@ -1,0 +1,500 @@
+{
+  "audit": [],
+  "capital": "地点 12",
+  "capital_construction_waiting": [
+    "water"
+  ],
+  "day": 865,
+  "days": [
+    {
+      "day": 866,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 889.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 867,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 868,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 869,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 870,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 871,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2000.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 872,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 489.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 873,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 874,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 875,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 876,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 877,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 878,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 879,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 880,
+      "materials": {
+        "exported_t": 889.0,
+        "made_t": 889.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 445.0,
+        "made_t": 445.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 881,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 882,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 883,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 884,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 885,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 886,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 887,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 888,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 889,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 890,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 891,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 892,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 893,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 894,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 895,
+      "materials": {
+        "exported_t": 936.0,
+        "made_t": 936.0,
+        "stock_t": 9000.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 468.0,
+        "made_t": 468.0,
+        "stock_t": 2355.0,
+        "used_t": 0.0
+      }
+    }
+  ],
+  "finish": "done",
+  "load_error": "",
+  "options": {
+    "days": "30",
+    "out": "/home/user/probe_out/reserve/seed9_base.json",
+    "reserve": "500",
+    "save": "/home/user/probe_out/base/scan_9_balanced_normal_capital_day865.save"
+  },
+  "set_refusals": [
+    "",
+    ""
+  ],
+  "stock_start_t": {
+    "materials": 9000.0,
+    "parts": 2444.6
+  },
+  "switched_off": [
+    "地点 16 processor ",
+    "地点 16 processor ",
+    "地点 16 processor "
+  ],
+  "totals": {
+    "materials": {
+      "exported_t": 27378.0,
+      "imported_t": 0.0,
+      "made_t": 27378.0,
+      "stock_end_t": 9000.0,
+      "stock_start_t": 9000.0,
+      "used_t": 0.0
+    },
+    "parts": {
+      "exported_t": 14178.0,
+      "imported_t": 312.0,
+      "made_t": 13689.0,
+      "stock_end_t": 2355.0,
+      "stock_start_t": 2445.0,
+      "used_t": 0.0
+    }
+  },
+  "version": "1.10.1"
+}

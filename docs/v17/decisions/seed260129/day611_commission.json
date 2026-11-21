@@ -1,0 +1,69 @@
+{
+  "final_stage": 4,
+  "finish": "done",
+  "load": "",
+  "options": {
+    "commission": "true",
+    "limit": "1300",
+    "mode": "branch",
+    "out": "/home/user/probe_out/s260129/branch611_commission_true.json",
+    "save": "/home/user/probe_out/baseline_saves/seed260129_day611.save"
+  },
+  "outlook_start": {
+    "bottleneck": "technologies",
+    "completes_by_waiting": true,
+    "day": 611,
+    "deadline": 1860,
+    "eta": 962,
+    "goals": [
+      {
+        "commission": {
+
+        },
+        "eta": 611,
+        "holding": "",
+        "key": "connected",
+        "status": "met",
+        "target": 3.0,
+        "value": 3.0
+      },
+      {
+        "commission": {
+          "cost_per_day": 600.0,
+          "eta": 787,
+          "saves": 175
+        },
+        "eta": 962,
+        "holding": "",
+        "key": "technologies",
+        "status": "on_track",
+        "target": 14.0,
+        "value": 7.0
+      },
+      {
+        "commission": {
+
+        },
+        "eta": 611,
+        "holding": "",
+        "key": "non_mining_share",
+        "status": "met",
+        "target": 0.15,
+        "value": 0.230231620587243
+      },
+      {
+        "commission": {
+
+        },
+        "eta": 611,
+        "holding": "",
+        "key": "operating_route",
+        "status": "met",
+        "target": 1.0,
+        "value": 1.0
+      }
+    ],
+    "stage": 3
+  },
+  "stage_day": 809
+}

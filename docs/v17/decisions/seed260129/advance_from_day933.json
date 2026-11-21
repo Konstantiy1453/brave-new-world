@@ -1,0 +1,84 @@
+{
+  "answers": 0,
+  "final_stage": 4,
+  "finish": "done",
+  "load": "",
+  "options": {
+    "commission": "false",
+    "limit": "1300",
+    "mode": "advance",
+    "out": "/home/user/probe_out/s260129/advance933.json",
+    "save": "/home/user/probe_out/baseline_saves/seed260129_day933.save"
+  },
+  "outlook_start": {
+    "bottleneck": "technologies",
+    "completes_by_waiting": true,
+    "day": 933,
+    "deadline": 1860,
+    "eta": 1018,
+    "goals": [
+      {
+        "commission": {
+
+        },
+        "eta": 933,
+        "holding": "",
+        "key": "connected",
+        "status": "met",
+        "target": 3.0,
+        "value": 3.0
+      },
+      {
+        "commission": {
+          "cost_per_day": 815.0,
+          "eta": 976,
+          "saves": 42
+        },
+        "eta": 1018,
+        "holding": "",
+        "key": "technologies",
+        "status": "on_track",
+        "target": 14.0,
+        "value": 11.0
+      },
+      {
+        "commission": {
+
+        },
+        "eta": 933,
+        "holding": "",
+        "key": "non_mining_share",
+        "status": "met",
+        "target": 0.15,
+        "value": 0.370079186576945
+      },
+      {
+        "commission": {
+
+        },
+        "eta": 933,
+        "holding": "",
+        "key": "operating_route",
+        "status": "met",
+        "target": 1.0,
+        "value": 1.0
+      }
+    ],
+    "stage": 3
+  },
+  "stage_day": 1018,
+  "stops": [
+    {
+      "day": 961,
+      "reason": "有 10 支研究团队空出来，可以挑下一个课题"
+    },
+    {
+      "day": 963,
+      "reason": "有 15 支研究团队空出来，可以挑下一个课题"
+    },
+    {
+      "day": 1018,
+      "reason": "合同第 3 阶段完成"
+    }
+  ]
+}

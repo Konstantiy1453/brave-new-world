@@ -1,0 +1,889 @@
+{
+  "finish": "done",
+  "options": {
+    "days": "720",
+    "out": "/home/user/probe_out/pacing/new_final.json",
+    "seeds": "1,2,3,4,5,6"
+  },
+  "runs": [
+    {
+      "arrivals": [
+        {
+          "day": 210,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 242,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 274,
+          "id": "water",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 306,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 338,
+          "id": "equipment_failure",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 466,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 562,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 594,
+          "id": "borrowed_engineer",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 698,
+          "id": "frontier_water_station",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "2": {
+          "forced": 4,
+          "independent": 8,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 0,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 1,
+      "stage_days": {
+        "1": 0,
+        "2": 165,
+        "3": 598
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 210,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 234,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        },
+        {
+          "day": 274,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 306,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+        "drawn": 9,
+        "forced": 3,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 4,
+          "independent": 5,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 4,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 75,
+          "id": "dust",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 120,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 229,
+          "id": "crack",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 325,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 357,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 389,
+          "id": "first_birth",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 421,
+          "id": "frontier_water_station",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 453,
+          "id": "borrowed_engineer",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 485,
+          "id": "bunk_fight",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 557,
+          "id": "nw_a_midnight_power",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 605,
+          "id": "night_shift_song",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 629,
+          "id": "nw_b_seed_exchange",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 677,
+          "id": "tool_theft",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 0,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 5,
+          "independent": 6,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 1,
+          "independent": 5,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 2,
+      "stage_days": {
+        "1": 0,
+        "2": 157,
+        "3": 473
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 229,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 259,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "risk_failed",
+          "stage": 2
+        },
+        {
+          "day": 325,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 357,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 381,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        },
+        {
+          "day": 557,
+          "forced": true,
+          "id": "nw_a_midnight_power",
+          "muted": false,
+          "node": "start",
+          "stage": 3
+        }
+      ],
+      "tally": {
+        "drawn": 13,
+        "forced": 4,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 4,
+          "independent": 5,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 6,
+          "independent": 13,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 197,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 261,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 293,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 389,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 421,
+          "id": "supply_delay",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 453,
+          "id": "frontier_water_station",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 485,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 517,
+          "id": "dust",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 549,
+          "id": "market_day",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 613,
+          "id": "water",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 645,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 677,
+          "id": "price_window",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 709,
+          "id": "crack",
+          "kind": "independent",
+          "stage": 2
+        }
+      ],
+      "by_stage": {
+        "2": {
+          "forced": 6,
+          "independent": 13,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 3,
+      "stage_days": {
+        "1": 0,
+        "2": 161
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 261,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 285,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        },
+        {
+          "day": 389,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 485,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 613,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 709,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+        "drawn": 13,
+        "forced": 5,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 2,
+          "independent": 3,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 6,
+          "independent": 13,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 165,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 197,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 261,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 293,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 445,
+          "id": "nw_b_seed_exchange",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 469,
+          "id": "night_shift_song",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "2": {
+          "forced": 2,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 0,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 4,
+      "stage_days": {
+        "1": 0,
+        "2": 127,
+        "3": 398
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 293,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 317,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        }
+      ],
+      "tally": {
+        "drawn": 6,
+        "forced": 1,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 2,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 2,
+          "independent": 6,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 210,
+          "id": "water",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 242,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 338,
+          "id": "freight_labels",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 370,
+          "id": "nw_d_spare_room",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 402,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 434,
+          "id": "meteor_shower",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 498,
+          "id": "supply_delay",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 530,
+          "id": "night_shift_song",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 594,
+          "id": "first_birth",
+          "kind": "independent",
+          "stage": 2
+        }
+      ],
+      "by_stage": {
+        "2": {
+          "forced": 2,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 5,
+      "stage_days": {
+        "1": 0,
+        "2": 169
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 210,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 242,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+        "drawn": 9,
+        "forced": 2,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 2,
+          "independent": 3,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 2,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 75,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 120,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 210,
+          "id": "freight_labels",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 274,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 402,
+          "id": "migrant_group",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 466,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 562,
+          "id": "borrowed_engineer",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 594,
+          "id": "tool_theft",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 658,
+          "id": "dust",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 690,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 0,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 1,
+          "independent": 8,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 6,
+      "stage_days": {
+        "1": 0,
+        "2": 185
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 274,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+        "drawn": 10,
+        "forced": 1,
+        "muted": 0,
+        "triggered": 0
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 1,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 1,
+          "independent": 10,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    }
+  ]
+}

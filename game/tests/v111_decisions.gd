@@ -41,6 +41,7 @@ func run() -> void:
 	_shifts_and_status()
 	_checkout_and_withdraw()
 	_outlook_and_advance()
+	_goal_choice()
 	_events()
 	_reshuffle_and_teams()
 	print(
@@ -603,6 +604,49 @@ func _outlook_and_advance() -> void:
 	)
 	var summary: Dictionary = sim.Advance.summary(sim, run, reason)
 	check(int(summary.to) > int(summary.from), "the run has a summary of what happened")
+
+
+## With several towns able to carry out a goal's action, the choice lists each with why it
+## qualifies; a town still on its way is not offered.
+func _goal_choice() -> void:
+	var sim: RefCounted = _game()
+	sim.act("settle_at", {"lat": SOUTH.x, "lon": SOUTH.y, "name": "S"})
+	var capital: Dictionary = sim.state.settlements[0]
+	sim.act("build", {"site": int(capital.region), "kind": "port"})
+	sim.act("build", {"site": int(capital.region), "kind": "farm"})
+	_run(sim, 30)
+	var point: Dictionary = _land_point(sim, capital, 9.0, 16.0)
+	sim.act(
+		"settle_at",
+		{"lat": point.get("lat", 0.0), "lon": point.get("lon", 0.0), "kind": Keys.SITE_FRONTIER}
+	)
+	check(sim.state.settlements.size() == 2, "a second town is founded for the choice")
+	if sim.state.settlements.size() < 2:
+		return
+	var second: Dictionary = sim.state.settlements[1]
+	var offered: Array = sim.Outlook.candidates(sim, "exports")
+	var regions: Array = []
+	for row: Dictionary in offered:
+		regions.append(int(row.region))
+	check(
+		not regions.has(int(second.region)),
+		"a town still on its way is not offered (%s)" % str(regions)
+	)
+	for _day: int in range(120):
+		if int(second.get("arrival", 0)) <= 0:
+			break
+		sim.tick()
+	sim.act("build", {"site": int(second.region), "kind": "farm"})
+	sim.act("build", {"site": int(second.region), "kind": "port"})
+	offered = sim.Outlook.candidates(sim, "exports")
+	var reasons: bool = not offered.is_empty()
+	for row: Dictionary in offered:
+		reasons = reasons and str(row.get("why", "")) != ""
+	check(
+		offered.size() == 2,
+		"both towns can carry out the export goal (%d offered)" % offered.size()
+	)
+	check(reasons, "each offered town says why: %s" % str(offered))
 
 
 func _events() -> void:

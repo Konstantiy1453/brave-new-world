@@ -1,0 +1,1303 @@
+{
+  "finish": "done",
+  "options": {
+    "days": "720",
+    "out": "/home/user/probe_out/pacing/base.json",
+    "seeds": "1,2,3,4,5,6"
+  },
+  "runs": [
+    {
+      "arrivals": [
+        {
+          "day": 30,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 90,
+          "id": "dust",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 110,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 130,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 170,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 190,
+          "id": "visiting_scholars",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 230,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 250,
+          "id": "local_species",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "id": "blank_ridge",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "id": "canteen",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 450,
+          "id": "bunk_fight",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 490,
+          "id": "migrant_group",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 530,
+          "id": "nw_d_spare_room",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 610,
+          "id": "nw_d_radio",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 630,
+          "id": "red_ball_loop",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 690,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 3,
+          "independent": 6,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 3,
+          "independent": 10,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 0,
+          "independent": 3,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 1,
+      "stage_days": {
+        "1": 0,
+        "2": 190,
+        "3": 603
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 30,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 170,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 194,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "forced": true,
+          "id": "blank_ridge",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 1,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 6,
+          "independent": 12,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 6,
+          "independent": 19,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 1,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 50,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 70,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "id": "first_birth",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 170,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 230,
+          "id": "migrant_group",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 250,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "id": "dust",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 350,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 370,
+          "id": "bunk_fight",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 390,
+          "id": "nw_b_seed_exchange",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "id": "crack",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 450,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 530,
+          "id": "blank_ridge",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 590,
+          "id": "road_opening",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 650,
+          "id": "bumper_harvest",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 690,
+          "id": "sea_fog",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 710,
+          "id": "nw_b_projection_night",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 1,
+          "independent": 3,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 4,
+          "independent": 11,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 0,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 2,
+      "stage_days": {
+        "1": 0,
+        "2": 169,
+        "3": 553
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 50,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 270,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 460,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "risk_failed",
+          "stage": 2
+        },
+        {
+          "day": 530,
+          "forced": true,
+          "id": "blank_ridge",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 2,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 5,
+          "independent": 18,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 1,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 30,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 90,
+          "id": "investor_offer",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 130,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "id": "visiting_scholars",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 230,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 250,
+          "id": "nw_a_last_return",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 290,
+          "id": "price_window",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "id": "workshop",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 390,
+          "id": "market_day",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 410,
+          "id": "night_shift_song",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 450,
+          "id": "breakthrough",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 470,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 490,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 530,
+          "id": "nw_d_spare_room",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 590,
+          "id": "local_species",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 610,
+          "id": "nw_d_empty_seat",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 630,
+          "id": "leaf_rust",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 650,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 690,
+          "id": "tool_theft",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 710,
+          "id": "road_opening",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 3,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 3,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 0,
+          "independent": 10,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 3,
+      "stage_days": {
+        "1": 0,
+        "2": 158,
+        "3": 443
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 30,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 130,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 154,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 1
+        },
+        {
+          "day": 250,
+          "forced": true,
+          "id": "nw_a_last_return",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 1,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 5,
+          "independent": 10,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 6,
+          "independent": 23,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 1,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 70,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 90,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 110,
+          "id": "investor_offer",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "id": "supply_delay",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 170,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 190,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 290,
+          "id": "first_birth",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "id": "visiting_scholars",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 350,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 530,
+          "id": "borrowed_engineer",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 570,
+          "id": "canteen",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 610,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 690,
+          "id": "nw_b_seed_exchange",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 710,
+          "id": "breakthrough",
+          "kind": "independent",
+          "stage": 2
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 1,
+          "independent": 6,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 0,
+          "independent": 8,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 4,
+      "stage_days": {
+        "1": 0,
+        "2": 268
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 190,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 1,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 1,
+          "independent": 14,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 0,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 30,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 90,
+          "id": "canteen",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 110,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 170,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 190,
+          "id": "nw_d_spare_room",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 210,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 230,
+          "id": "breakthrough",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 250,
+          "id": "stray_drone",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "id": "price_window",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 290,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "id": "flu_season",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 370,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 390,
+          "id": "migrant_group",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "id": "workshop",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 470,
+          "id": "crack",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 490,
+          "id": "market_day",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 510,
+          "id": "road_opening",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 550,
+          "id": "sea_fog",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 570,
+          "id": "water_thief",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 610,
+          "id": "supply_delay",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 710,
+          "id": "industry",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 1,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 3,
+          "independent": 12,
+          "muted": 0,
+          "set_off": 0
+        },
+        "3": {
+          "forced": 1,
+          "independent": 5,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 5,
+      "stage_days": {
+        "1": 0,
+        "2": 189,
+        "3": 503
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 30,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 290,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 470,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 500,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "risk_held",
+          "stage": 2
+        },
+        {
+          "day": 710,
+          "forced": true,
+          "id": "industry",
+          "muted": false,
+          "node": "start",
+          "stage": 3
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 1,
+          "independent": 1,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 2,
+          "independent": 11,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 5,
+          "independent": 21,
+          "muted": 0,
+          "set_off": 0
+        },
+        "90": {
+          "forced": 1,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    },
+    {
+      "arrivals": [
+        {
+          "day": 50,
+          "id": "water",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 70,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 110,
+          "id": "pump_seal",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 150,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 1
+        },
+        {
+          "day": 230,
+          "id": "archaeology",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 270,
+          "id": "company_audit",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "id": "blank_ridge",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "id": "liner",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 370,
+          "id": "canteen",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 390,
+          "id": "visiting_scholars",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 430,
+          "id": "supply_delay",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 460,
+          "id": "rockfall",
+          "kind": "set_off",
+          "stage": 2
+        },
+        {
+          "day": 470,
+          "id": "workshop",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 490,
+          "id": "borrowed_engineer",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 510,
+          "id": "meteor_shower",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 550,
+          "id": "night_shift_song",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 610,
+          "id": "blackout_night",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 650,
+          "id": "nw_a_last_return",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 670,
+          "id": "spring_tide",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 690,
+          "id": "bumper_harvest",
+          "kind": "independent",
+          "stage": 3
+        }
+      ],
+      "by_stage": {
+        "1": {
+          "forced": 1,
+          "independent": 4,
+          "muted": 0,
+          "set_off": 0
+        },
+        "2": {
+          "forced": 4,
+          "independent": 9,
+          "muted": 0,
+          "set_off": 1
+        },
+        "3": {
+          "forced": 1,
+          "independent": 6,
+          "muted": 0,
+          "set_off": 0
+        }
+      },
+      "final_day": 720,
+      "seed": 6,
+      "stage_days": {
+        "1": 0,
+        "2": 161,
+        "3": 491
+      },
+      "status": "active",
+      "stops": [
+        {
+          "day": 50,
+          "forced": true,
+          "id": "water",
+          "muted": false,
+          "node": "start",
+          "stage": 1
+        },
+        {
+          "day": 230,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 254,
+          "forced": true,
+          "id": "archaeology",
+          "muted": false,
+          "node": "sale_report",
+          "stage": 2
+        },
+        {
+          "day": 310,
+          "forced": true,
+          "id": "blank_ridge",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 330,
+          "forced": true,
+          "id": "liner",
+          "muted": false,
+          "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 650,
+          "forced": true,
+          "id": "nw_a_last_return",
+          "muted": false,
+          "node": "start",
+          "stage": 3
+        }
+      ],
+      "tally": {
+
+      },
+      "windows": {
+        "30": {
+          "forced": 0,
+          "independent": 0,
+          "muted": 0,
+          "set_off": 0
+        },
+        "360": {
+          "forced": 5,
+          "independent": 8,
+          "muted": 0,
+          "set_off": 0
+        },
+        "720": {
+          "forced": 6,
+          "independent": 19,
+          "muted": 0,
+          "set_off": 1
+        },
+        "90": {
+          "forced": 1,
+          "independent": 2,
+          "muted": 0,
+          "set_off": 0
+        }
+      }
+    }
+  ]
+}

@@ -3,7 +3,14 @@
 Single-player colony management game. Godot 4.5.1, GDScript, GL Compatibility, Windows x64.
 Deterministic fixed-step simulation, audited ledgers, Chinese UI, offline and free.
 
-The current job is version 1.10, the bay first (branch `v17-bay`): the user's brief of 2026-11-19 (free siting,
+The current job is version 1.11 (branch `v17-decisions`, from `v17-bay`): the user's request of 2026-11-21 (one
+site card for every point, what the first town can sell, settlement caps by stage, supply orders, stock reserves,
+four answers before an order, the contract outlook and "advance to the next decision", quieter events), checked on
+the exported build. Its record is the 1.11 section of `docs/v17/PROGRESS.md`, `docs/v17/decisions/README.md` and
+`docs/v17/HANDOFF_20261121.md`; the interface drivers are `tools/verify/decisions_driver.gd` and
+`placement_driver.gd`, the record scripts `tools/verify/records/`.
+
+Before it, version 1.10, the bay first (branch `v17-bay`): the user's brief of 2026-11-19 (free siting,
 geology and prospecting, mobile crews, a nightscape made from the game's state, people and growth, stories),
 built from one playable bay outwards. Its plan is
 `docs/superpowers/plans/2026-11-19-v110-bay-first-instructions.md`. 1.9 (the moving map, the 3ds Max models,
@@ -35,9 +42,9 @@ Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` 
 
 `%APPDATA%\ColonyCharter\v16` (player saves), `build\v16`, `delivery\` (except `delivery\v17`), `versions\`,
 `docs\v16\`, existing files under `evidence\` (write only to `evidence\v17`), `tools\godot-4.5.1\`,
-and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.10 keeps its own saves (schema 6) in `%APPDATA%\ColonyCharter\v110`
-and only reads the user's 1.9, 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v19`, `\v18` and `\v17`; never write
-there either.
+and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.11 keeps its own saves (schema 7) in `%APPDATA%\ColonyCharter\v111`
+and only reads the user's 1.10, 1.9, 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v110`, `\v19`, `\v18` and `\v17`;
+never write there either.
 
 `art_reserve/` belongs to a separate 3ds Max modelling task. Do not touch it and do not stage it. The models reach
 the game only through `game/tests/art/convert_models.gd` (recipes in `game/tests/art/model_recipes.json`), which

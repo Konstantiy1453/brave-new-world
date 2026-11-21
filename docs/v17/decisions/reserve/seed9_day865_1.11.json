@@ -1,0 +1,512 @@
+{
+  "audit": [],
+  "availability_at_start": {
+    "materials": {
+      "held_t": 9000.0,
+      "sellable_t": 0.0,
+      "total_t": 9000.0
+    },
+    "parts": {
+      "held_t": 2444.6,
+      "sellable_t": 0.0,
+      "total_t": 2444.6
+    }
+  },
+  "capital": "地点 12",
+  "capital_construction_waiting": [
+    "water"
+  ],
+  "day": 865,
+  "days": [
+    {
+      "day": 866,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 9889.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 2889.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 867,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 10778.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 3334.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 868,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 11668.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 3778.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 869,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 12557.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 4223.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 870,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 13446.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 4668.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 871,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 14335.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 5112.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 872,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 15224.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 5957.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 873,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 16114.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 6401.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 874,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 17003.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 6846.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 875,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 17892.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 7291.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 876,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 18781.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 7735.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 877,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 19670.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 8180.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 878,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 20560.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 8624.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 879,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 21449.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 9069.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 880,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 889.0,
+        "stock_t": 22338.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 445.0,
+        "stock_t": 9514.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 881,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 23274.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 9982.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 882,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 24210.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 10450.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 883,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 25146.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 10918.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 884,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 26082.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 11386.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 885,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 27018.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 11854.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 886,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 27954.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 12322.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 887,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 28890.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 12790.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 888,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 29826.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 13258.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 889,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 30762.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 13726.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 890,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 31698.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 14194.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 891,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 32634.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 14662.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 892,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 33570.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 15130.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 893,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 34506.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 15598.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 894,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 35442.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 16066.0,
+        "used_t": 0.0
+      }
+    },
+    {
+      "day": 895,
+      "materials": {
+        "exported_t": 0.0,
+        "made_t": 936.0,
+        "stock_t": 36378.0,
+        "used_t": 0.0
+      },
+      "parts": {
+        "exported_t": 0.0,
+        "made_t": 468.0,
+        "stock_t": 16534.0,
+        "used_t": 0.0
+      }
+    }
+  ],
+  "finish": "done",
+  "load_error": "",
+  "options": {
+    "days": "30",
+    "out": "/home/user/probe_out/reserve/seed9_new.json",
+    "reserve": "500",
+    "save": "/home/user/probe_out/base/scan_9_balanced_normal_capital_day865.save"
+  },
+  "set_refusals": [
+    "",
+    ""
+  ],
+  "stock_start_t": {
+    "materials": 9000.0,
+    "parts": 2444.6
+  },
+  "switched_off": [
+    "地点 16 processor ",
+    "地点 16 processor ",
+    "地点 16 processor "
+  ],
+  "totals": {
+    "materials": {
+      "exported_t": 0.0,
+      "imported_t": 0.0,
+      "made_t": 27378.0,
+      "stock_end_t": 36378.0,
+      "stock_start_t": 9000.0,
+      "used_t": 0.0
+    },
+    "parts": {
+      "exported_t": 0.0,
+      "imported_t": 312.0,
+      "made_t": 13689.0,
+      "stock_end_t": 16534.0,
+      "stock_start_t": 2445.0,
+      "used_t": 0.0
+    }
+  },
+  "version": "1.11"
+}

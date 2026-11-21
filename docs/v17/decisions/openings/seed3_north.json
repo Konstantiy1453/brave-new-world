@@ -1,0 +1,797 @@
+{
+  "actions": [
+    "0 · player · settle_at {\"lat\":39.9747,\"lon\":122.1984,\"name\":\"首府\"} ",
+    "0 · player · build {\"kind\":\"mine_ore\",\"site\":29} ",
+    "0 · player · build {\"kind\":\"mine_ore\",\"site\":29} ",
+    "0 · bot · crew_train {\"region\":29}",
+    "0 · bot · build {\"kind\":\"habitat\",\"region\":29}",
+    "0 · bot · build {\"kind\":\"mine_ore\",\"region\":29}",
+    "1 · bot · crew_train {\"region\":29}",
+    "14 · bot · build {\"kind\":\"lab\",\"region\":29}",
+    "19 · player · settle_at {\"from\":29,\"kind\":\"frontier\",\"lat\":48.3617,\"lon\":117.1894,\"name\":\"二号\"} ",
+    "22 · player · build {\"kind\":\"mine_crystal\",\"site\":30} ",
+    "43 · player · build {\"kind\":\"mine_crystal\",\"site\":30} ",
+    "59 · bot · research_allocate {\"staff\":4,\"tech\":\"education\"}",
+    "64 · bot · research_allocate {\"staff\":5,\"tech\":\"education\"}",
+    "99 · bot · connect {\"a\":29,\"b\":30,\"variant\":\"sea\"}",
+    "104 · bot · research_allocate {\"staff\":3,\"tech\":\"survey\"}",
+    "114 · bot · build {\"kind\":\"farm\",\"region\":29}",
+    "119 · bot · supply_sign {\"kind\":\"food\",\"site\":29}",
+    "124 · bot · research_allocate {\"staff\":4,\"tech\":\"survey\"}",
+    "139 · bot · research_allocate {\"staff\":5,\"tech\":\"survey\"}",
+    "139 · bot · build {\"kind\":\"crew_quarters\",\"region\":30}",
+    "139 · bot · enterprise {\"region\":29}",
+    "139 · bot · recruit {\"count\":8,\"kind\":\"worker\",\"region\":29}",
+    "139 · bot · recruit {\"count\":3,\"kind\":\"worker\",\"region\":30}",
+    "144 · bot · recruit {\"count\":8,\"kind\":\"worker\",\"region\":29}",
+    "154 · bot · recruit {\"count\":1,\"kind\":\"worker\",\"region\":29}",
+    "159 · bot · build {\"kind\":\"habitat\",\"region\":29}",
+    "169 · bot · build {\"kind\":\"farm\",\"region\":29}",
+    "174 · bot · policy {\"wage\":1.1}",
+    "194 · bot · build {\"kind\":\"power\",\"region\":29}",
+    "194 · bot · research_allocate {\"staff\":5,\"tech\":\"school_system\"}",
+    "197 · bot · event_v2 {\"choice\":\"return\",\"instance_id\":\"3:e1\"}",
+    "199 · bot · build {\"kind\":\"processor\",\"region\":29}"
+  ],
+  "card": {
+    "biome": "forest",
+    "building": {
+      "cost_factor": 1.25
+    },
+    "coast": true,
+    "elevation": 137.624692041109,
+    "farming": {
+      "all_farms": 7.86766478783317,
+      "climate": 0.664239905586711,
+      "feeds": 24,
+      "fertility": 0.21166025143491,
+      "per_farm": 3.93660919202835,
+      "per_farm_high": 4.13508691963727,
+      "per_farm_low": 2.95410416202877,
+      "plots": 2,
+      "temperature": 5.89807603464186,
+      "word": "贫瘠"
+    },
+    "fishing": {
+      "catch": 9.0,
+      "coast": true,
+      "factor": 1.5,
+      "river": true,
+      "sea_temperature": 6.04655158283437,
+      "shelf_share": 0.4,
+      "word": "丰富"
+    },
+    "lat": 39.9747,
+    "lon": 122.1984,
+    "minerals": {
+      "copper": {
+        "high_t": 0.0,
+        "level": "signal",
+        "low_t": 0.0,
+        "none_detected": false,
+        "plots": [
+          0,
+          0
+        ]
+      },
+      "crystal": {
+        "high_t": 0.0,
+        "level": "signal",
+        "low_t": 0.0,
+        "none_detected": false,
+        "plots": [
+          0,
+          0
+        ]
+      },
+      "ore": {
+        "high_t": 2416825.65692902,
+        "level": "signal",
+        "low_t": 633145.656929016,
+        "none_detected": false,
+        "plots": [
+          1,
+          5
+        ]
+      }
+    },
+    "plans": [
+      {
+        "best": true,
+        "cost": 5250.0,
+        "first_amount_t": 1025.70549963945,
+        "first_day": 21,
+        "goal_day": 284,
+        "key": "mine",
+        "late": false,
+        "needs": [
+          "mine_ore",
+          "mine_ore"
+        ],
+        "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 63.3 万 t–241.7 万 t（轨道粗测）",
+        "per_day": 157.5,
+        "title": "铁矿出口"
+      },
+      {
+        "best": false,
+        "cost": 3750.0,
+        "first_amount_t": 900.0,
+        "first_day": 21,
+        "goal_day": 442,
+        "key": "catch",
+        "late": true,
+        "needs": [
+          "harbor"
+        ],
+        "note": "渔场丰富：一座小型码头每天约 900 t；合同价 ¥11.0/百吨，首期 3.0 万 t、90 天；码头还能走海运，进口便宜 25%",
+        "per_day": 95.0,
+        "title": "渔获交付合同"
+      },
+      {
+        "best": false,
+        "cost": 6500.0,
+        "first_amount_t": 393.660919202835,
+        "first_day": 26,
+        "goal_day": 568,
+        "key": "food",
+        "late": true,
+        "needs": [
+          "farm",
+          "farm"
+        ],
+        "note": "每座温室农场约 394 t/天（贫瘠，295 t–414 t）；60 人每天吃 960 t，13 天口粮储备留在仓库、由货运站补足；合同价 ¥10.0/百吨，首期 4.0 万 t、90 天，交齐后续签加量",
+        "per_day": 75.6,
+        "title": "粮食供应合同"
+      }
+    ],
+    "plots": {
+      "deep": 0,
+      "deposits": {
+        "copper": 0,
+        "crystal": 0,
+        "ore": 3
+      },
+      "farm": 2,
+      "general": 14
+    },
+    "refusal": "",
+    "terrain": "滨海平原",
+    "water": {
+      "pump": 32.5866873427867,
+      "water": 0.644354585419864
+    }
+  },
+  "exports_total": 210257.0,
+  "failure_reason": "",
+  "final_day": 420,
+  "finish": "done",
+  "first_delivery": {
+    "day": 19,
+    "exports_total": 73.0,
+    "log": [
+      "首府 · 第一车矿石：轻型铁矿场的 913 吨铁矿，在货运站卖出 ¥ 73。",
+      "第一笔出口到账：73。所有进出口共用本地港口吞吐。"
+    ]
+  },
+  "months": [
+    {
+      "cash": 4729.0,
+      "company": "normal",
+      "day": 30,
+      "exports_month": 999.0,
+      "exports_total": 999.0,
+      "income_30d": {
+        "export": 999.396826202937,
+        "food.sales": 842.880000000001
+      },
+      "pop": 59,
+      "sales_30d": {
+        "export": 999.0,
+        "local": 843.0,
+        "supply": 0.0
+      },
+      "stage": 1,
+      "towns": 2
+    },
+    {
+      "cash": 1030.0,
+      "company": "normal",
+      "day": 60,
+      "exports_month": 6624.0,
+      "exports_total": 7623.0,
+      "income_30d": {
+        "export": 6624.09729156789,
+        "food.sales": 889.44
+      },
+      "pop": 69,
+      "sales_30d": {
+        "export": 6624.0,
+        "local": 889.0,
+        "supply": 0.0
+      },
+      "stage": 1,
+      "towns": 2
+    },
+    {
+      "cash": 6033.0,
+      "company": "normal",
+      "day": 90,
+      "exports_month": 11015.0,
+      "exports_total": 18638.0,
+      "income_30d": {
+        "export": 11014.5315750475,
+        "food.sales": 1104.48
+      },
+      "pop": 84,
+      "sales_30d": {
+        "export": 11015.0,
+        "local": 1105.0,
+        "supply": 0.0
+      },
+      "stage": 1,
+      "towns": 2
+    },
+    {
+      "cash": 1380.0,
+      "company": "normal",
+      "day": 120,
+      "exports_month": 12731.0,
+      "exports_total": 31369.0,
+      "income_30d": {
+        "export": 12731.2173055372,
+        "food.sales": 1296.96
+      },
+      "pop": 96,
+      "sales_30d": {
+        "export": 12732.0,
+        "local": 1297.0,
+        "supply": 0.0
+      },
+      "stage": 1,
+      "towns": 2
+    },
+    {
+      "cash": 6289.0,
+      "company": "normal",
+      "day": 150,
+      "exports_month": 14740.0,
+      "exports_total": 46109.0,
+      "income_30d": {
+        "export": 14267.1379548214,
+        "food.sales": 1454.4,
+        "supply.income": 472.393103043403
+      },
+      "pop": 107,
+      "sales_30d": {
+        "export": 14267.0,
+        "local": 1454.0,
+        "supply": 472.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 4135.0,
+      "company": "normal",
+      "day": 180,
+      "exports_month": 13731.0,
+      "exports_total": 59840.0,
+      "income_30d": {
+        "enterprise.rent": 44.0,
+        "enterprise.tax": 43.38,
+        "export": 12549.8898885931,
+        "food.sales": 1712.16,
+        "supply.income": 1180.98275760851
+      },
+      "pop": 137,
+      "sales_30d": {
+        "export": 12550.0,
+        "local": 1712.0,
+        "supply": 1181.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 3719.0,
+      "company": "normal",
+      "day": 210,
+      "exports_month": 16448.0,
+      "exports_total": 76287.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 14598.2547578048,
+        "food.sales": 2018.88,
+        "supply.income": 1849.26220889533
+      },
+      "pop": 144,
+      "sales_30d": {
+        "export": 14598.0,
+        "local": 2019.0,
+        "supply": 1849.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 4835.0,
+      "company": "normal",
+      "day": 240,
+      "exports_month": 16933.0,
+      "exports_total": 93221.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 14493.1832537992,
+        "food.sales": 2134.08,
+        "supply.income": 2440.25531366828
+      },
+      "pop": 153,
+      "sales_30d": {
+        "export": 14493.0,
+        "local": 2134.0,
+        "supply": 2440.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 7351.0,
+      "company": "normal",
+      "day": 270,
+      "exports_month": 20620.0,
+      "exports_total": 113840.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 17059.9253277299,
+        "food.sales": 2289.6,
+        "supply.income": 3559.63759612493
+      },
+      "pop": 165,
+      "sales_30d": {
+        "export": 17060.0,
+        "local": 2290.0,
+        "supply": 3559.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 12586.0,
+      "company": "normal",
+      "day": 300,
+      "exports_month": 24645.0,
+      "exports_total": 138485.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 20703.3520438589,
+        "food.sales": 2483.04,
+        "supply.income": 3941.48906058814
+      },
+      "pop": 180,
+      "sales_30d": {
+        "export": 20704.0,
+        "local": 2483.0,
+        "supply": 3941.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 11504.0,
+      "company": "normal",
+      "day": 330,
+      "exports_month": 24505.0,
+      "exports_total": 162990.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 55.62,
+        "export": 19813.7396145852,
+        "food.sales": 2692.8,
+        "supply.income": 4691.04934268259
+      },
+      "pop": 193,
+      "sales_30d": {
+        "export": 19813.0,
+        "local": 2693.0,
+        "supply": 4691.0
+      },
+      "stage": 2,
+      "towns": 2
+    },
+    {
+      "cash": 5202.0,
+      "company": "normal",
+      "day": 360,
+      "exports_month": 21517.0,
+      "exports_total": 184507.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 59.832,
+        "export": 16905.8083709293,
+        "food.sales": 2866.08,
+        "supply.income": 4610.90767730142
+      },
+      "pop": 210,
+      "sales_30d": {
+        "export": 16906.0,
+        "local": 2866.0,
+        "supply": 4611.0
+      },
+      "stage": 2,
+      "towns": 3
+    },
+    {
+      "cash": 5422.0,
+      "company": "normal",
+      "day": 390,
+      "exports_month": 12556.0,
+      "exports_total": 197063.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "export": 7865.26900274209,
+        "food.sales": 3029.76,
+        "supply.income": 4691.04934268259
+      },
+      "pop": 214,
+      "sales_30d": {
+        "export": 7865.0,
+        "local": 3030.0,
+        "supply": 4691.0
+      },
+      "stage": 2,
+      "towns": 3
+    },
+    {
+      "cash": 6302.0,
+      "company": "normal",
+      "day": 420,
+      "exports_month": 13194.0,
+      "exports_total": 210257.0,
+      "income_30d": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 56.268,
+        "export": 8503.24599158305,
+        "food.sales": 3093.12,
+        "supply.income": 4691.04934268259
+      },
+      "pop": 216,
+      "sales_30d": {
+        "export": 8503.0,
+        "local": 3093.0,
+        "supply": 4691.0
+      },
+      "stage": 2,
+      "towns": 3
+    }
+  ],
+  "options": {
+    "days": "420",
+    "lat": "39.9747",
+    "lon": "122.1984",
+    "out": "/home/user/probe_out/open/north_final.json",
+    "second": "true"
+  },
+  "orders": [
+    {
+      "closed_day": 209,
+      "delivered": 342.39614216689,
+      "due_day": 209,
+      "first_day": 139,
+      "id": 1,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 3423.9614216689,
+      "price": 10.0,
+      "region": 29,
+      "round": 1,
+      "signed_day": 119,
+      "size": 400.0,
+      "status": "lapsed"
+    },
+    {
+      "closed_day": 260,
+      "delivered": 400.0,
+      "due_day": 299,
+      "first_day": 210,
+      "id": 2,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 4000.0,
+      "price": 10.0,
+      "region": 29,
+      "round": 2,
+      "signed_day": 209,
+      "size": 400.0,
+      "status": "filled"
+    },
+    {
+      "closed_day": 309,
+      "delivered": 355.970863323129,
+      "due_day": 309,
+      "first_day": 239,
+      "id": 3,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 3559.7086332313,
+      "price": 10.0,
+      "region": 30,
+      "round": 1,
+      "signed_day": 219,
+      "size": 400.0,
+      "status": "lapsed"
+    },
+    {
+      "closed_day": 337,
+      "delivered": 600.0,
+      "due_day": 350,
+      "first_day": 261,
+      "id": 4,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 6000.0,
+      "price": 10.0,
+      "region": 29,
+      "round": 3,
+      "signed_day": 260,
+      "size": 600.0,
+      "status": "filled"
+    },
+    {
+      "closed_day": 362,
+      "delivered": 400.0,
+      "due_day": 399,
+      "first_day": 310,
+      "id": 5,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 4000.0,
+      "price": 10.0,
+      "region": 30,
+      "round": 2,
+      "signed_day": 309,
+      "size": 400.0,
+      "status": "filled"
+    },
+    {
+      "delivered": 660.0772702328,
+      "due_day": 427,
+      "first_day": 338,
+      "id": 6,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 6600.772702328,
+      "price": 10.0,
+      "region": 29,
+      "round": 4,
+      "signed_day": 337,
+      "size": 900.0,
+      "status": "open"
+    },
+    {
+      "delivered": 454.363298804959,
+      "due_day": 452,
+      "first_day": 363,
+      "id": 7,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 4543.63298804959,
+      "price": 10.0,
+      "region": 30,
+      "round": 3,
+      "signed_day": 362,
+      "size": 600.0,
+      "status": "open"
+    }
+  ],
+  "plan": {
+    "best": true,
+    "cost": 5250.0,
+    "first_amount_t": 1025.70549963945,
+    "first_day": 21,
+    "goal_day": 284,
+    "key": "mine",
+    "late": false,
+    "needs": [
+      "mine_ore",
+      "mine_ore"
+    ],
+    "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 63.3 万 t–241.7 万 t（轨道粗测）",
+    "per_day": 157.5,
+    "title": "铁矿出口"
+  },
+  "second_plan_day": 43,
+  "second_town": {
+    "card": {
+      "biome": "forest",
+      "building": {
+        "cost_factor": 1.18052554790468
+      },
+      "coast": true,
+      "elevation": 71.4368814604831,
+      "farming": {
+        "all_farms": 7.76916635444212,
+        "climate": 0.550528449890907,
+        "feeds": 24,
+        "fertility": 0.225519841941364,
+        "per_farm": 3.99779386591661,
+        "per_farm_high": 4.64382713079845,
+        "per_farm_low": 3.44448897102347,
+        "plots": 2,
+        "temperature": 1.12219489541808,
+        "word": "贫瘠"
+      },
+      "fishing": {
+        "catch": 9.76363636363637,
+        "coast": true,
+        "factor": 1.62727272727273,
+        "river": false,
+        "sea_temperature": 2.78738986349314,
+        "shelf_share": 0.727272727272727,
+        "word": "丰富"
+      },
+      "lat": 48.3617,
+      "lon": 117.1894,
+      "minerals": {
+        "copper": {
+          "high_t": 0.0,
+          "level": "signal",
+          "low_t": 0.0,
+          "none_detected": false,
+          "plots": [
+            0,
+            0
+          ]
+        },
+        "crystal": {
+          "high_t": 580654.764890671,
+          "level": "signal",
+          "low_t": 184654.764890671,
+          "none_detected": false,
+          "plots": [
+            1,
+            5
+          ]
+        },
+        "ore": {
+          "high_t": 0.0,
+          "level": "signal",
+          "low_t": 0.0,
+          "none_detected": false,
+          "plots": [
+            0,
+            0
+          ]
+        }
+      },
+      "plans": [
+        {
+          "best": true,
+          "cost": 10191.0,
+          "first_amount_t": 486.36651860555,
+          "first_day": 28,
+          "goal_day": 175,
+          "key": "mine",
+          "late": false,
+          "needs": [
+            "mine_crystal",
+            "mine_crystal"
+          ],
+          "note": "每座约 486 t/天，按卖出价 ¥32.0/百吨（市场越卖越便宜）；储量估计 18.5 万 t–58.1 万 t（轨道粗测）",
+          "per_day": 298.8,
+          "title": "工业晶体出口"
+        },
+        {
+          "best": false,
+          "cost": 3542.0,
+          "first_amount_t": 976.363636363636,
+          "first_day": 21,
+          "goal_day": 409,
+          "key": "catch",
+          "late": true,
+          "needs": [
+            "harbor"
+          ],
+          "note": "渔场丰富：一座小型码头每天约 976 t；合同价 ¥11.0/百吨，首期 3.0 万 t、90 天；码头还能走海运，进口便宜 25%",
+          "per_day": 103.1,
+          "title": "渔获交付合同"
+        },
+        {
+          "best": false,
+          "cost": 6139.0,
+          "first_amount_t": 399.779386591661,
+          "first_day": 26,
+          "goal_day": 559,
+          "key": "food",
+          "late": true,
+          "needs": [
+            "farm",
+            "farm"
+          ],
+          "note": "每座温室农场约 400 t/天（贫瘠，344 t–464 t）；12 人每天吃 192 t，13 天口粮储备留在仓库、由货运站补足；合同价 ¥10.0/百吨，首期 4.0 万 t、90 天，交齐后续签加量",
+          "per_day": 76.8,
+          "title": "粮食供应合同"
+        }
+      ],
+      "plots": {
+        "deep": 0,
+        "deposits": {
+          "copper": 0,
+          "crystal": 3,
+          "ore": 0
+        },
+        "farm": 2,
+        "general": 13
+      },
+      "refusal": "",
+      "terrain": "海岛",
+      "water": {
+        "pump": 31.150359162644,
+        "water": 0.585728945414041
+      }
+    },
+    "cash_after": 11992.0,
+    "day": 19,
+    "exports_total": 73.0,
+    "stage": 1,
+    "tried": 87
+  },
+  "stage_days": {
+    "1": 139
+  },
+  "status": "active",
+  "towns": [
+    {
+      "kinds": {
+        "farm": 2,
+        "habitat": 3,
+        "lab": 2,
+        "mine_ore": 3,
+        "port": 2,
+        "power": 2,
+        "processor": 1,
+        "service": 1,
+        "water": 2
+      },
+      "lat": 39.9747,
+      "lon": 122.1984,
+      "name": "首府",
+      "placed": true,
+      "pop": 146,
+      "region": 29
+    },
+    {
+      "kinds": {
+        "crew_quarters": 2,
+        "farm": 2,
+        "mine_crystal": 3,
+        "port": 1,
+        "power": 2,
+        "water": 2
+      },
+      "lat": 48.3617,
+      "lon": 117.1894,
+      "name": "二号",
+      "placed": true,
+      "pop": 58,
+      "region": 30
+    },
+    {
+      "kinds": {
+        "port": 1,
+        "power": 1,
+        "water": 1
+      },
+      "lat": 16.25,
+      "lon": 8.75,
+      "name": "地点 32",
+      "placed": true,
+      "pop": 12,
+      "region": 31
+    }
+  ]
+}

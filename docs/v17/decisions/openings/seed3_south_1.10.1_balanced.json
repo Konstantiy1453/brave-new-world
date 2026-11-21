@@ -1,0 +1,305 @@
+{
+  "actions": [
+    "0 build {\"kind\":\"habitat\",\"region\":29}",
+    "0 build {\"kind\":\"farm\",\"region\":29}",
+    "1 build {\"kind\":\"farm\",\"region\":29}",
+    "2 crew_train {\"region\":29}",
+    "2 build {\"kind\":\"farm\",\"region\":29}",
+    "3 crew_train {\"region\":29}",
+    "14 build {\"kind\":\"lab\",\"region\":29}",
+    "59 policy {\"services\":1}",
+    "64 research_allocate {\"staff\":4,\"tech\":\"education\"}",
+    "69 research_commission {\"level\":1,\"tech\":\"education\"}",
+    "89 research_commission {\"level\":0,\"tech\":\"education\"}",
+    "94 research_allocate {\"staff\":5,\"tech\":\"education\"}",
+    "119 policy {\"services\":0}"
+  ],
+  "days": [
+    {
+      "cash": 12721.0,
+      "company": "normal",
+      "day": 30,
+      "exports_total": 0.0,
+      "income": {
+        "food.sales": 854.400000000001
+      },
+      "pop": 58,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 10867.0,
+      "company": "normal",
+      "day": 60,
+      "exports_total": 0.0,
+      "income": {
+        "food.sales": 811.68
+      },
+      "pop": 57,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 6634.0,
+      "company": "normal",
+      "day": 90,
+      "exports_total": 0.0,
+      "income": {
+        "food.sales": 882.72
+      },
+      "pop": 65,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 4414.0,
+      "company": "normal",
+      "day": 120,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 22.0,
+        "enterprise.tax": 20.727,
+        "food.sales": 977.28
+      },
+      "pop": 72,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 1894.0,
+      "company": "normal",
+      "day": 150,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1075.2
+      },
+      "pop": 77,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "normal",
+      "day": 180,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1128.0
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "normal",
+      "day": 210,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "warning",
+      "day": 240,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "review",
+      "day": 270,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "review",
+      "day": 300,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "review",
+      "day": 330,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 17.0,
+      "company": "review",
+      "day": 360,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 60.48,
+        "food.sales": 1137.6
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 0.0,
+      "company": "review",
+      "day": 390,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 60.0,
+        "enterprise.tax": 30.5191387398502,
+        "food.sales": 555.970000000018
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 0.0,
+      "company": "intervention",
+      "day": 420,
+      "exports_total": 0.0,
+      "income": {
+        "enterprise.rent": 2.0
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 0.0,
+      "company": "intervention",
+      "day": 450,
+      "exports_total": 0.0,
+      "income": {
+
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 0.0,
+      "company": "intervention",
+      "day": 480,
+      "exports_total": 0.0,
+      "income": {
+        "food.sales": 282.949229223055
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    },
+    {
+      "cash": 0.0,
+      "company": "intervention",
+      "day": 510,
+      "exports_total": 0.0,
+      "income": {
+
+      },
+      "pop": 79,
+      "stage": 1,
+      "towns": 1
+    }
+  ],
+  "deposits": {
+    "copper": 0.0,
+    "crystal": 0.0,
+    "ore": 0.0
+  },
+  "exports_total": 0.0,
+  "failure_reason": "公司接管：审查和有条件介入窗口结束，持续违约仍未解决。主要合同超过期限；完成未达目标后停止此项风险",
+  "final_day": 518,
+  "first_export_day": -1,
+  "ground": {
+    "biome": "forest",
+    "coast": true,
+    "elevation": 586.630864691177,
+    "fertility": 0.293898806410189,
+    "land": true,
+    "lat": -4.978,
+    "lon": 163.5193,
+    "refusal": "",
+    "relief": 977.212450102722,
+    "signals": {
+      "copper": 0.0,
+      "crystal": 0.0,
+      "ore": 0.0
+    },
+    "slots": 26,
+    "temperature": 17.9112970030402,
+    "terrain": "肥沃河谷",
+    "water": 0.707045216337951
+  },
+  "options": {
+    "bot": "balanced",
+    "days": "900",
+    "lat": "-4.9780",
+    "lon": "163.5193",
+    "out": "/home/user/probe_out/baseline_seed3_south.json"
+  },
+  "plots": {
+    "farm": 3,
+    "general": 14
+  },
+  "second_town_day": -1,
+  "settle_error": "",
+  "stage_days": {
+
+  },
+  "status": "failed",
+  "towns": [
+    {
+      "kinds": {
+        "farm": 3,
+        "habitat": 1,
+        "lab": 1,
+        "port": 1,
+        "power": 1,
+        "service": 1,
+        "water": 1
+      },
+      "name": "Probe",
+      "pop": 79,
+      "region": 29
+    }
+  ]
+}

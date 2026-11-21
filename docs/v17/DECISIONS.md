@@ -1080,3 +1080,89 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Newcomers ride a bus in the district from the landing pads to the newest home people live in,
   while the town has had arrivals in the last 7 days (the daily stats), so the vehicle and the lit
   windows it goes to are the same arrival · a shuttle landing per arrival (no model yet).
+
+## 1.11: early decisions, a colony that runs between them (2026-11-21)
+
+- Settlements are capped by contract stage, the capital included: 2 in stage one, 3 in stage two, 5
+  in stage three, no cap in stages four and five or after the award (contract.json
+  `settlement_cap.by_stage`). The second town needs no licence and no export total, only the
+  expedition's cost. One sentence (`Contract.cap_refusal`) refuses a town over the cap on the map,
+  the site card, the expedition dialog, the contract panel and in `settle`/`settle_at` · licences
+  that opened each further town.
+- A recommended site is a shortcut to a point, not a second flow: clicking its marker opens the same
+  ground card at its coordinate and founding goes through `settle_at` with the same plots, deposits,
+  costs and refusals as any other point; markers can be hidden (`隐藏推荐地点`), and those within a
+  town's separation distance are not drawn · keeping the site-only founding path for markers.
+- Before founding, each mineral is an estimate with a band by the best survey of that resource at
+  the point: orbital signal ±60 %, orbital scan ±35 %, field survey ±15 %, drilled exact
+  (geography.json `estimate_bands`); the band's centre is offset by a fixed per-site draw so the
+  truth lies inside the stated range without sitting at its middle. Soil gets ±15 %. The founded
+  town gets exactly the site the card showed (`Placement.site_for`) · exact reserves on the card.
+- An orbital scan that finds none of a resource near the point is recorded and says so in the log
+  and on the card ("本次观测未探测到铁"); only a later survey of that resource changes the reading ·
+  silence, which read as "not looked yet".
+- What a first town can sell first is worked out per plan on the card: mine exports for each
+  mineral with plots, the food supply order where farm plots can grow its minimum, the catch order
+  on a fishery that can land its minimum. Each plan is simulated as one crew building its steps one
+  after another from day 1, giving the first shipment's day and size, the earnings a day once built,
+  and the day the stage's export goal would be met; the soonest goal day is marked best · ranking by
+  income a day, which favoured mines whose road took most of the stage.
+- Supply orders (economy.json `supply`) are an off-world buyer's standing order for food a town grows
+  (through its cargo station) or catch it lands (through its small harbour): paid on delivery at
+  ¥10 / ¥11 per 100 t less the port fee, 40,000 t / 30,000 t in 90 days, renewed ×1.5 up to
+  360,000 t / 240,000 t when filled and ×0.75 (not below the first size) when the days run out.
+  Payments are export receipts and count towards the charter's export goal; sales to residents are
+  shown apart and do not. The residents' reserve is never sold · a local market only, which left the
+  fertile coast of seed 3 at zero exports.
+- Signing waits for the town's expedition to arrive and for a farm (food) or small harbour (catch) to
+  stand or be ordered there, so an order is not left to lapse empty · signing on founding.
+- Each town has two controls per good (`stock_rules`): a local reserve that ordinary exports, supply
+  deliveries and dispatch stop at, and a slowdown level where production stops (a reserve above it
+  lifts it). Automatic is 1.10's rule. One function (`Stocks.availability`) gives total, held (by
+  whom) and sellable, and every page and the trade use it. "Reserve for this project" holds a planned
+  facility's materials and parts in one action until it is ordered or released · the 1.10 target,
+  which only slowed production and let the port sell the stock.
+- A facility idle because its town's stock reached the slowdown level keeps its staff on reduced
+  shifts at half pay (economy.json `shifts.reduced_wage`) and returns to full shifts the day its
+  output is wanted; the building row says "N 名职工保留岗位，今日产出 0，库存已达减产线 · 每日开支 ¥…".
+  A town can switch this off · laying staff off, which emptied towns that would need them a week later.
+- An order's screen answers four questions before payment: cash that leaves now (price, mine road,
+  missing materials and parts bought at import price), when a crew can begin (from the queue with
+  committed and travelling crews, `Crews.projection`), when it enters service, and what it adds here.
+  The last is a range: ±15 % once the colony has 30 days of history, ±35 % before, from staffing,
+  spare inputs, freight room, recent selling prices, wages, upkeep, imports replaced and exports;
+  payback is quoted from the order date and from the start of production · one payback figure.
+- A newly placed order a crew has not started can be withdrawn: the cash paid (price and mine road)
+  comes back as `refund.build`, the materials and parts it took return to the warehouse, and what was
+  bought in for it at import price stays there as stock; each is counted once, and the audit holds.
+  A mine chained on its road is rerouted · cancelling with a penalty.
+- The contract panel sorts each goal into met, on track, late and needs action, from a trend recorded
+  every 5 days (30 points); an ETA only when the trend supports one. Population says whether homes or
+  jobs hold it; technologies list the projects that count, their finish days and what a commission
+  would change; each goal's action opens a town that can carry it out (one: at once; several: a short
+  choice saying why each qualifies) · a list of goals with a page link.
+- "Advance to the next decision" runs the normal simulation 8 days a frame until the chosen milestone
+  (a decision, the stage, a project, a delivery, 30 or 90 days) or earlier when a choice would be lost
+  tomorrow: a communication waiting or due, a supply order about to lapse short, a stage deadline 20
+  days off with the stage not on track, cash for under 14 days, the company's stage turning, a town
+  starving, three or more idle research teams. At most 360 days a run; the news is summarised.
+- Events start on day 75 (1.10.1: day 30) and are drawn every 45/32/24/20/18 days by stage with a
+  40–60 % chance (1.10.1: every 20 days at 55 %). New arrivals that would stop the clock are capped
+  colony-wide at 1/1/2/2/3 per 30 days by stage; over the cap an event waits in the panel with 5 more
+  days to answer. A chain's deciding step and the later steps of a story the player is answering keep
+  their own setting and still count · capping every step, which muted the water investigation's
+  planning step.
+- The frontier water station (from stage two, two towns, the capital's crew busy) is the first
+  decision that spans towns: divert the capital's crew to repair it (the capital's project waits),
+  pay contractors, or ration · more single-town incidents.
+- The tutorial's step, its target town and its conditions are saved with the game; "继续教程" resumes
+  that step and "重新开始教程" starts again · the tutorial only in the settings file.
+- A paid reshuffle shows how many cards can change and replaces exactly that many; when every card is
+  protected it says why and charges nothing.
+- One count of assignable research teams (`Research.assignable`) in alerts, the research page and the
+  project controls.
+- Saves are schema 7 in `ColonyCharter/v111`; 1.10, 1.9, 1.8 and 1.7 saves are read, never written.
+- The 1.6 review's precision rules hold on the new stock page: inputs typed to the microton, arrows
+  move 10 t; the v16 test reads the slowdown inputs (1.10's targets) by name.
+- Five files went past gdlint's 1,800 lines; parts moved out unchanged (`events_v2_saves.gd`,
+  `top_bar.gd`, `decision_control.gd`, `contract_lines.gd`, `bot_charter.gd`) · raising the limit.
