@@ -1,0 +1,219 @@
+{
+  "arrival_days": 5,
+  "build": "packaged PCK",
+  "built": "farm",
+  "candidates": 29,
+  "capital": {
+    "lat": 23.7374,
+    "lon": -112.3067,
+    "name": "远征首都",
+    "region": 29
+  },
+  "capital_after": {
+    "lat": 23.7374,
+    "lon": -112.3067,
+    "name": "远征首都",
+    "region": 29
+  },
+  "cash_spent": 2496.96,
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "the capital is founded on picked ground",
+      "ok": true
+    },
+    {
+      "label": "the balanced bot is loaded to play the colony until it can send one",
+      "ok": true
+    },
+    {
+      "label": "an expedition was affordable on day 5 in stage 1, exports ¥0, the capital the only town",
+      "ok": true
+    },
+    {
+      "label": "eligible coastal ground an expedition can reach",
+      "ok": true
+    },
+    {
+      "label": "the click on the flat selected the ground (北纬 23.74° · 西经 103.31° · 地表：草地 · 地点类型：滨海平原)",
+      "ok": true
+    },
+    {
+      "label": "the target is 96 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "the departure town can be chosen",
+      "ok": true
+    },
+    {
+      "label": "the route, its days and the cost are shown: 从「远征首都」出发：工程公路（跨山） · 1558 km · 单程 5 天 · 远征费用 ¥ 2497（边疆据点）",
+      "ok": true
+    },
+    {
+      "label": "the expedition left for a site of its own",
+      "ok": true
+    },
+    {
+      "label": "stored where clicked: 23.7374, -103.3067",
+      "ok": true
+    },
+    {
+      "label": "the naming dialog showed the stored place: 自选地点 · 北纬 23.74° · 西经 103.31°",
+      "ok": true
+    },
+    {
+      "label": "it takes the quoted 5 days (arrival in 5) and costs the quoted ¥ 2497 (spent ¥ 2497)",
+      "ok": true
+    },
+    {
+      "label": "the panel's own figures (5 days, ¥ 2497) are what the expedition took",
+      "ok": true
+    },
+    {
+      "label": "the quoted route and the convoy's route end at the town",
+      "ok": true
+    },
+    {
+      "label": "the expedition arrived as 「自选远征镇」",
+      "ok": true
+    },
+    {
+      "label": "a building is ordered there through the build page: farm",
+      "ok": true
+    },
+    {
+      "label": "both maps select the town and the district opens on the same place",
+      "ok": true
+    },
+    {
+      "label": "both towns continue from the menu",
+      "ok": true
+    },
+    {
+      "label": "after save, quit and reload: 「自选远征镇」 at 23.7374, -103.3067 with its farm",
+      "ok": true
+    },
+    {
+      "label": "the route still ends at the town after the reload",
+      "ok": true
+    },
+    {
+      "label": "the original capital is still the capital, where it was",
+      "ok": true
+    }
+  ],
+  "convoy_route_end": [
+    23.7374,
+    -103.3067
+  ],
+  "engine": "4.5.1-stable (official)",
+  "exports_at_unlock": 0.0,
+  "found": {
+    "confirmation": "(23.74, -103.31)",
+    "confirmation_text": "自选地点 · 北纬 23.74° · 西经 103.31°"
+  },
+  "game_version": "1.11.0",
+  "ok": true,
+  "options": {
+    "bots": "Z:\\home\\user\\bots_win",
+    "case": "outpost",
+    "coast": "1",
+    "out": "Z:\\home\\user\\brave-new-world\\docs\\v17\\decisions\\exe\\out_coast_flat.json",
+    "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck",
+    "seed": "3",
+    "target": "0",
+    "view": "flat"
+  },
+  "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck",
+  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pick": {
+    "map_selected_marker": -1,
+    "nearest_marker_px": 96.4285278320313,
+    "panel_text": "北纬 23.74° · 西经 103.31°",
+    "picked": {
+      "lat": 23.7374000549316,
+      "lon": -103.306701660156,
+      "precision": 0.0933322906494141,
+      "view": "flat"
+    },
+    "screen": [
+      712.5,
+      450.0
+    ],
+    "selected_site_after_click": 29,
+    "target": [
+      23.7374,
+      -103.3067
+    ],
+    "terrain_text": "地表：草地 · 地点类型：滨海平原",
+    "verdict": "✓ 可以在这里建立据点"
+  },
+  "played_by": "balanced bot (tests/balance/bots) through Sim.act, days 1-5",
+  "quote": {
+    "cost": 2496.96,
+    "days": 5,
+    "from": 29,
+    "km": 1558.0,
+    "route_end": [
+      23.7374,
+      -103.3067
+    ],
+    "variant": "engineered"
+  },
+  "reloaded": {
+    "lat": 23.7374,
+    "lon": -103.3067,
+    "name": "自选远征镇",
+    "region": 30
+  },
+  "res_has_tests": false,
+  "route_text": "从「远征首都」出发：工程公路（跨山） · 1558 km · 单程 5 天 · 远征费用 ¥ 2497（边疆据点）",
+  "seed": 3,
+  "shown_cost": 2497.0,
+  "shown_days": 5.0,
+  "stage_at_unlock": 1,
+  "stored": {
+    "lat": 23.7374,
+    "lon": -103.3067,
+    "name": "自选远征镇",
+    "region": 30
+  },
+  "target": {
+    "coast": true,
+    "lat": 23.7374,
+    "lon": -103.3067,
+    "terrain": "滨海平原"
+  },
+  "towns_at_unlock": 1,
+  "unlock_day": 5,
+  "verdict": "✓ 可以在这里建立据点",
+  "viewport": [
+    1600.0,
+    900.0
+  ],
+  "views": {
+    "district": {
+      "lat": 23.7374,
+      "lon": -103.3067,
+      "region": 30
+    },
+    "flat": {
+      "marker_screen": [
+        712.5,
+        450.0
+      ],
+      "selected_marker": 30
+    },
+    "planet": {
+      "marker_screen": [
+        605.793334960938,
+        449.999969482422
+      ],
+      "selected_marker": 30
+    }
+  }
+}

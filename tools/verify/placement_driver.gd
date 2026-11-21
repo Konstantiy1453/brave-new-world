@@ -53,6 +53,9 @@ func _initialize() -> void:
 	root.size = Vector2i(1920, 1080)
 	record.options = options.duplicate()
 	record.engine = Engine.get_version_info().string
+	# Which runtime ran it: "Windows" for the shipped EXE (also under Wine), "Linux" for the PCK runs.
+	record.os = OS.get_name()
+	record.executable = OS.get_executable_path()
 	record.game_version = str(ProjectSettings.get_setting("application/config/version"))
 	record.viewport = [root.get_visible_rect().size.x, root.get_visible_rect().size.y]
 	# Which build answered: the export leaves out `tests/`, so a packaged PCK has none of it. The

@@ -42,6 +42,9 @@ func _initialize() -> void:
 	root.size = Vector2i(1920, 1080)
 	record.options = options.duplicate()
 	record.engine = Engine.get_version_info().string
+	# Which runtime ran it: "Windows" for the shipped EXE (also under Wine), "Linux" for the PCK runs.
+	record.os = OS.get_name()
+	record.executable = OS.get_executable_path()
 	record.game_version = str(ProjectSettings.get_setting("application/config/version"))
 	record.res_has_tests = ResourceLoader.exists("res://tests/v111_decisions.gd")
 	record.build = "source project" if record.res_has_tests else "packaged PCK"

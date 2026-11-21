@@ -1,0 +1,73 @@
+{
+  "advance_decision": {
+    "from": 168,
+    "page": "advance",
+    "reason": "第 1 年 6 月 19 日 → 第 1 年 8 月 24 日 · 停在：通讯明天到期，到期按默认处理",
+    "to": 233
+  },
+  "build": "packaged PCK",
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "the capital is founded",
+      "ok": true
+    },
+    {
+      "label": "panels no longer pause the game (the setting)",
+      "ok": true
+    },
+    {
+      "label": "the top bar's advance control is pressed (AdvanceNext)",
+      "ok": true
+    },
+    {
+      "label": "the top bar's advance control is pressed (AdvanceNext)",
+      "ok": true
+    },
+    {
+      "label": "the top bar's advance control is pressed (AdvanceNext)",
+      "ok": true
+    },
+    {
+      "label": "a communication arrived by day 233",
+      "ok": true
+    },
+    {
+      "label": "the card shows its deadline",
+      "ok": true
+    },
+    {
+      "label": "the expired card turned into its outcome in place (day 235)",
+      "ok": true
+    },
+    {
+      "label": "the event was settled once (1 history rows)",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "event": {
+    "arrived": 233,
+    "deadline": 234,
+    "definition": "stray_drone",
+    "ends_text": "影响持续到 1年9月25日",
+    "history_rows": 1,
+    "id": "3:e1",
+    "settled_text": "1年8月25日 到期，按默认处理：拆成备件"
+  },
+  "game_version": "1.11.0",
+  "ok": true,
+  "options": {
+    "case": "events",
+    "coast": "south",
+    "out": "/home/user/brave-new-world/docs/v17/decisions/pck/events.json",
+    "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck"
+  },
+  "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "res_has_tests": false,
+  "seed": 3
+}

@@ -24,14 +24,21 @@ hash.
 
 | Case | What it does | PCK | EXE |
 |---|---|---|---|
-| opening, south (decisions driver) | the site card at both seed-3 coasts clicked on the globe; the capital at 4.9780 S 163.5193 E through the card; the farm's four answers, the order, its withdrawal (cash and materials back once, audit clean), the order again; the food supply order from the town panel; the export goal's action with empty ground selected opens the capital's build page; a 2,000 t materials reserve; advance to the first delivery; save, quit, continue | 51 / 51 | see the handoff |
-| opening, north | the same at 39.9747 N 122.1984 E with an iron mine | 49 / 49 | |
-| tutorial | the tutorial from the menu, played to step 4 by input (wheel, two cards, the capital), saved, quit, continued; 「继续教程」 resumes step 4 in the same colony and town | 8 / 8 | |
-| events | panels set not to pause; a communication arrives (day 233); its deadline passes with the events page open: the card turns into "到期，按默认处理：拆成备件" with "影响持续到 1年9月25日", one history row | 10 / 10 | |
-| research | the page's 「可派」 count equals `Research.assignable`; the paid reshuffle says 「换 3 张 · ¥ 600」 and changes 3 cards | 7 / 7 | |
-| capital, globe (placement driver) | capital on unmarked ground picked on the globe, save, quit, continue, both maps and the district agree | 14 / 14 | |
-| capital, flat map | the same on the flat map | 14 / 14 | |
-| regression, refusal, expeditions | see the handoff for the final counts | | |
+| opening, south (decisions driver) | the site card at both seed-3 coasts clicked on the globe; the capital at 4.9780 S 163.5193 E through the card; the farm's four answers, the order, its withdrawal (cash and materials back once, audit clean), the order again; the food supply order from the town panel; the export goal's action with empty ground selected opens the capital's build page; a 2,000 t materials reserve; advance to the first delivery (day 25); save, quit, continue | 51 / 51 | 51 / 51 |
+| opening, north | the same at 39.9747 N 122.1984 E with an iron mine | 49 / 49 | 49 / 49 |
+| tutorial | the tutorial from the menu, played to step 4 by input (wheel, two cards, the capital), saved, quit, continued; 「继续教程」 resumes step 4 in the same colony and town | 8 / 8 | 8 / 8 |
+| events | panels set not to pause; a communication arrives (day 233); its deadline passes with the events page open: the card turns into "到期，按默认处理：拆成备件" with "影响持续到 1年9月25日", one history row | 10 / 10 | 10 / 10 |
+| research | the page's 「可派」 count equals `Research.assignable`; the paid reshuffle says 「换 3 张 · ¥ 600」 and changes 3 cards | 7 / 7 | 7 / 7 |
+| capital, globe (placement driver) | capital on unmarked ground picked on the globe; save, quit, continue; both maps and the district agree | 14 / 14 | 14 / 14 |
+| capital, flat map | the same on the flat map | 14 / 14 | 14 / 14 |
+| regression | seed 3: six clicks on unmarked land across both maps, each selecting the ground under the pointer, then the capital | 16 / 16 | not run |
+| refusal | sea, polar and steep ground: the reason shown, the button off, nothing founded | 7 / 7 | not run |
+| expedition, inland, globe | the colony played by the balanced bot until an expedition is affordable (day 5, stage one, ¥0 exported); the expedition to unmarked inland ground through the map: departure, route, cost and days as quoted, arrival, a building, save, quit, continue | 22 / 22 | not run |
+| expedition, coastal, flat map | the same to unmarked coastal ground (day 5, stage one, ¥0 exported) | 22 / 22 | 22 / 22 |
+| **All** | | **220 / 220** | **175 / 175** |
+
+The EXE column ran the shipped `ColonyCharter.exe` with its `ColonyCharter.pck` beside it; the engine
+reports `OS.get_name() == "Windows"` there (checked separately; the drivers now record it).
 
 ## Seed 3: the two coasts
 

@@ -1,0 +1,58 @@
+{
+  "build": "packaged PCK",
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is on",
+      "ok": true
+    },
+    {
+      "label": "the tutorial starts at step 1",
+      "ok": true
+    },
+    {
+      "label": "the tutorial reached step 4 by play (step 4)",
+      "ok": true
+    },
+    {
+      "label": "the save carries step 4 (3)",
+      "ok": true
+    },
+    {
+      "label": "the settings page's resume button (ResumeTutorial)",
+      "ok": true
+    },
+    {
+      "label": "continuing resumes step 4 in the same colony (step 4)",
+      "ok": true
+    },
+    {
+      "label": "the lessons follow the same town (29)",
+      "ok": true
+    },
+    {
+      "label": "no new game was started",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "game_version": "1.11.0",
+  "ok": true,
+  "options": {
+    "case": "tutorial",
+    "coast": "south",
+    "out": "Z:\\home\\user\\brave-new-world\\docs\\v17\\decisions\\exe\\tutorial.json",
+    "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck"
+  },
+  "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck",
+  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "res_has_tests": false,
+  "seed": 260129,
+  "tutorial_after": {
+    "step": 3,
+    "title": "第一个决定：矿场还是码头"
+  },
+  "tutorial_before": {
+    "home": 29,
+    "step": 3
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "advance_days30": {
+    "from": 0,
+    "page": "advance",
+    "reason": "第 1 年 1 月 1 日 → 第 1 年 2 月 1 日 · 停在：推进了 30 天",
+    "to": 30
+  },
+  "build": "packaged PCK",
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "the top bar's advance control is pressed (AdvanceNext)",
+      "ok": true
+    },
+    {
+      "label": "the research page shows teams to assign",
+      "ok": true
+    },
+    {
+      "label": "the page's count is the assignable count (0; next to 可派: [\"0\", \"0\"])",
+      "ok": true
+    },
+    {
+      "label": "the research page has a paid reshuffle",
+      "ok": true
+    },
+    {
+      "label": "the reshuffle says how many cards it can change: 重新调研 · 换 3 张 · ¥ 600",
+      "ok": true
+    },
+    {
+      "label": "the reshuffle changed 3 cards, as it said (3)",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "game_version": "1.11.0",
+  "mission_line": "立足 → 分工 → 网络 → 自立 → 首府：一步步把据点变成能自立的殖民地，赢得总督资格\n契约考核中  |  矿山负责出口，肥沃的土地负责粮食。",
+  "ok": true,
+  "options": {
+    "case": "research",
+    "coast": "south",
+    "out": "/home/user/brave-new-world/docs/v17/decisions/pck/research.json",
+    "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck"
+  },
+  "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "res_has_tests": false,
+  "research_lines": [
+    "已完成 0 / 127 项课题",
+    "科研 / 四个方向的课题",
+    "研究团队",
+    "4",
+    "调查",
+    "0",
+    "可派",
+    "0",
+    "科研席位",
+    "0",
+    "实验台",
+    "0",
+    "每个方向同时做一个课题，候选是随机出现的。挑一张，再派研究团队：5 支的速度是 10 支的 60%。换课题不丢进度；课题完成后，这个方向会出现新的候选。",
+    "工业",
+    "矿山、工厂和冶炼",
+    "○ 待选",
+    "研究团队",
+    "○ 可选",
+    "第 1 级 · 160 点",
+    "精细勘探",
+    "矿山日产 +20%；揭示已勘察地点的真实矿量与品位。",
+    "5 支 134 天",
+    "10 支 80 天",
+    "20 支 48 天",
+    "[选这个课题]",
+    "○ 可选",
+    "第 1 级 · 160 点",
+    "碳化钨钻头",
+    "矿山日产 +10%。钻头寿命翻倍，换班不再等配件。",
+    "5 支 134 天"
+  ],
+  "reshuffle": {
+    "button": "重新调研 · 换 3 张 · ¥ 600",
+    "category": "industry",
+    "changed": 3,
+    "paid": 600.0,
+    "preview": {
+      "category": "industry",
+      "changes": 3,
+      "cost": 600.0,
+      "fresh": 3,
+      "kept": [],
+      "loose": [
+        "survey",
+        "drill_bits",
+        "mine_safety"
+      ],
+      "reason": ""
+    }
+  },
+  "seed": 3
+}

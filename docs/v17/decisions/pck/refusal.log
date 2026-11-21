@@ -1,0 +1,29 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) error evaluating name
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5731:(snd_config_expand) Evaluate error: No such file or directory
+ALSA lib pcm.c:2721:(snd_pcm_open_noupdate) Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:90)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio_server.cpp:244)
+
+MAP_SETUP ms=86 atlas_ms=14 cached=false
+PASS the menu's tutorial switch is off
+MAP_SETUP ms=462 atlas_ms=31 cached=false
+MAP_ATLAS_REFINED ms=34982 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=38562 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+PASS ground for the 海面 case
+PASS 海面: the panel says ✗ 这里是海面，不能建立据点, the button is off, nothing is founded
+PASS ground for the 极地 case
+PASS 极地: the panel says ✗ 太靠近极地：纬度 78.8°，据点最远建在纬度 74° 以内, the button is off, nothing is founded
+PASS ground for the 地势太陡 case
+PASS 地势太陡: the panel says ✗ 地势太陡：周围高差 4343 m，超过 3000 m 就平整不出城区和工地, the button is off, nothing is founded
+PLACEMENT_DRIVER_RESULT ok=true checks=7

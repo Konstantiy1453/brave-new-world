@@ -1,0 +1,351 @@
+{
+  "advance_delivery": {
+    "from": 0,
+    "page": "advance",
+    "reason": "第 1 年 1 月 1 日 → 第 1 年 1 月 26 日 · 停在：一批出口或交付到账",
+    "to": 25
+  },
+  "build": "packaged PCK",
+  "capital": {
+    "lat": -4.978,
+    "lon": 163.5193,
+    "picked": {
+      "lat": -4.9780011177063,
+      "lon": 163.519302368164,
+      "precision": 0.0668702274560928,
+      "view": "planet"
+    }
+  },
+  "cards": {
+    "north": {
+      "lines": [
+        "GROUND  /  自选地点",
+        "[全部推荐地点]",
+        "北纬 39.97° · 东经 122.20°",
+        "点选精度 ±0.07°（约 7 km）· 在球面上选定",
+        "地表：森林 · 地点类型：滨海平原",
+        "海拔 138 m · 地势陡峭（周围高差 1359 m） · 建设费用 ×1.25 · 5.9°C",
+        "淡水：有河流，水源充足（0.64） · 一座净水泵站约供水 33",
+        "海岸：靠海，可以建小型码头、走海运 · 渔场丰富：一座小型码头每天约 900 t 渔获",
+        "可建设地块：城区 14 块 · 农田 2 块",
+        "农业潜力：贫瘠 · 一座温室农场约 295 t–414 t/天（最好的一块地，气候系数 0.66），够 24 人吃",
+        "矿产估计（每种矿产单独勘测，越细的勘测误差越小）",
+        "铁：轨道信号强 · 估计 63.3万 t–241.7万 t · 矿床地块 1–5 块（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "铜：轨道信号无 · 地点范围内估计没有可开采的矿床（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "工业晶体：轨道信号无 · 地点范围内估计没有可开采的矿床（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "在这里先卖什么",
+        "★ 铁矿出口",
+        "需要（首支工程队依次建设）：轻型铁矿场 ¥2625（第 18 天建成）；轻型铁矿场 ¥2625（第 36 天建成）；货运站、电站、水站随登陆运到；合计 ¥5250",
+        "首批：约第 21 天，约 1,026 t；全部建成后每天约 ¥158",
+        "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 284 天达成（期限第 360 天）；每批出口都计入目标",
+        "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 63.3 万 t–241.7 万 t（轨道粗测）",
+        "储量只是轨道粗测：先做一次轨道观测再决定更稳妥",
+        "渔获交付合同",
+        "需要（首支工程队依次建设）：小型码头 ¥3750（第 20 天建成）；货运站、电站、水站随登陆运到；合计 ¥3750",
+        "首批：约第 21 天，约 900 t；全部建成后每天约 ¥95",
+        "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 442 天达成（期限第 360 天，会超期：要再加一项）；每批出口都计入目标",
+        "渔场丰富：一座小型码头每天约 900 t；合同价 ¥11.0/百吨，首期 3.0 万 t、90 天；码头还能走海运，进口便宜 25%",
+        "粮食供应合同",
+        "需要（首支工程队依次建设）：温室农场 ¥3250（第 25 天建成）；温室农场 ¥3250（第 50 天建成）；货运站、电站、水站随登陆运到；合计 ¥6500",
+        "首批：约第 26 天，约 394 t；全部建成后每天约 ¥76",
+        "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 568 天达成（期限第 360 天，会超期：要再加一项）；每批出口都计入目标",
+        "每座温室农场约 394 t/天（贫瘠，295 t–414 t）；60 人每天吃 960 t，13 天口粮储备留在仓库、由货运站补足；合同价 ¥10.0/百吨，首期 4.0 万 t、90 天，交齐后续签加量",
+        "周边：还没有据点和公路",
+        "✓ 可以在这里建立首府",
+        "[在这里建立首府]",
+        "[取消选择]"
+      ],
+      "picked": {
+        "lat": 39.9746971130371,
+        "lon": 122.198402404785,
+        "precision": 0.0668716430664062,
+        "view": "planet"
+      }
+    },
+    "south": {
+      "lines": [
+        "GROUND  /  自选地点",
+        "[全部推荐地点]",
+        "南纬 4.98° · 东经 163.52°",
+        "点选精度 ±0.07°（约 7 km）· 在球面上选定",
+        "地表：森林 · 地点类型：肥沃河谷",
+        "海拔 587 m · 地势起伏（周围高差 977 m） · 建设费用 ×1.25 · 17.9°C",
+        "淡水：有河流，水源充足（0.71） · 一座净水泵站约供水 34",
+        "海岸：靠海，可以建小型码头、走海运 · 渔场一般：一座小型码头每天约 536 t 渔获",
+        "可建设地块：城区 14 块 · 农田 3 块",
+        "农业潜力：中等 · 一座温室农场约 681 t–938 t/天（最好的一块地，气候系数 0.95），够 53 人吃",
+        "矿产估计（每种矿产单独勘测，越细的勘测误差越小）",
+        "铁：轨道信号无 · 地点范围内估计没有可开采的矿床（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "铜：轨道信号无 · 地点范围内估计没有可开采的矿床（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "工业晶体：轨道信号无 · 地点范围内估计没有可开采的矿床（轨道粗测，±60%）",
+        "[轨道观测 · ¥400 · 3 天 ·off]",
+        "在这里先卖什么",
+        "★ 粮食供应合同",
+        "需要（首支工程队依次建设）：温室农场 ¥3250（第 25 天建成）；温室农场 ¥3250（第 50 天建成）；货运站、电站、水站随登陆运到；合计 ¥6500",
+        "首批：约第 26 天，约 856 t；全部建成后每天约 ¥164",
+        "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 282 天达成（期限第 360 天）；每批出口都计入目标",
+        "每座温室农场约 856 t/天（中等，681 t–938 t）；60 人每天吃 960 t，13 天口粮储备留在仓库、由货运站补足；合同价 ¥10.0/百吨，首期 4.0 万 t、90 天，交齐后续签加量",
+        "渔获交付合同",
+        "需要（首支工程队依次建设）：小型码头 ¥3750（第 20 天建成）；货运站、电站、水站随登陆运到；合计 ¥3750",
+        "首批：约第 21 天，约 536 t；全部建成后每天约 ¥57",
+        "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 729 天达成（期限第 360 天，会超期：要再加一项）；每批出口都计入目标",
+        "渔场一般：一座小型码头每天约 536 t；合同价 ¥11.0/百吨，首期 3.0 万 t、90 天；码头还能走海运，进口便宜 25%",
+        "周边：还没有据点和公路",
+        "✓ 可以在这里建立首府",
+        "[在这里建立首府]",
+        "[取消选择]"
+      ],
+      "picked": {
+        "lat": -4.9780011177063,
+        "lon": 163.519302368164,
+        "precision": 0.0668702274560928,
+        "view": "planet"
+      }
+    }
+  },
+  "checkout_farm": {
+    "CheckoutCash": "合计 ¥ 3250 持有 ¥ 32000",
+    "CheckoutCrew": "工程队 #1（现在空闲）· 排第 1 位 · 约 1年1月2日 开工",
+    "CheckoutNet": "现金流 ¥ +2 – +12/日 近 0 天数据 · 误差 ±35%",
+    "CheckoutPayback": "回本：从下单日算约 361–1688 天（含等工和工期 25 天）；从投产日算约 336–1663 天。投入 ¥ 3930（含用掉的库存按售价计）",
+    "CheckoutService": "约 1年1月26日（工期 25 天，下单后第 25 天）"
+  },
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "north coast: the click on the globe selected the ground",
+      "ok": true
+    },
+    {
+      "label": "north card shows elevation",
+      "ok": true
+    },
+    {
+      "label": "north card shows construction modifiers",
+      "ok": true
+    },
+    {
+      "label": "north card shows water",
+      "ok": true
+    },
+    {
+      "label": "north card shows farmland and a farm's output",
+      "ok": true
+    },
+    {
+      "label": "north card shows coast and fishery",
+      "ok": true
+    },
+    {
+      "label": "north card shows buildable plots",
+      "ok": true
+    },
+    {
+      "label": "north card shows mineral estimates with their range",
+      "ok": true
+    },
+    {
+      "label": "north card shows what the first town could sell first",
+      "ok": true
+    },
+    {
+      "label": "south coast: the click on the globe selected the ground",
+      "ok": true
+    },
+    {
+      "label": "south card shows elevation",
+      "ok": true
+    },
+    {
+      "label": "south card shows construction modifiers",
+      "ok": true
+    },
+    {
+      "label": "south card shows water",
+      "ok": true
+    },
+    {
+      "label": "south card shows farmland and a farm's output",
+      "ok": true
+    },
+    {
+      "label": "south card shows coast and fishery",
+      "ok": true
+    },
+    {
+      "label": "south card shows buildable plots",
+      "ok": true
+    },
+    {
+      "label": "south card shows mineral estimates with their range",
+      "ok": true
+    },
+    {
+      "label": "south card shows what the first town could sell first",
+      "ok": true
+    },
+    {
+      "label": "the capital's ground is selected again",
+      "ok": true
+    },
+    {
+      "label": "the card's founding button (SettleGroundButton)",
+      "ok": true
+    },
+    {
+      "label": "the capital is founded through the card",
+      "ok": true
+    },
+    {
+      "label": "the town's build button (OpenBuild)",
+      "ok": true
+    },
+    {
+      "label": "the order screen answers CheckoutCash before payment",
+      "ok": true
+    },
+    {
+      "label": "the order screen answers CheckoutCrew before payment",
+      "ok": true
+    },
+    {
+      "label": "the order screen answers CheckoutService before payment",
+      "ok": true
+    },
+    {
+      "label": "the order screen answers CheckoutNet before payment",
+      "ok": true
+    },
+    {
+      "label": "the main order button (BuildSelected)",
+      "ok": true
+    },
+    {
+      "label": "the cash that left (¥3250) is what the screen said (¥3250)",
+      "ok": true
+    },
+    {
+      "label": "the order's withdraw button is on screen (Withdraw_4)",
+      "ok": true
+    },
+    {
+      "label": "withdrawn before a crew started: cash and materials are back exactly once",
+      "ok": true
+    },
+    {
+      "label": "the audit holds after the withdrawal",
+      "ok": true
+    },
+    {
+      "label": "the build page again (OpenBuild)",
+      "ok": true
+    },
+    {
+      "label": "the order placed again (BuildSelected)",
+      "ok": true
+    },
+    {
+      "label": "the town panel offers the food supply order once a farm is ordered",
+      "ok": true
+    },
+    {
+      "label": "the food supply order is signed from the town panel",
+      "ok": true
+    },
+    {
+      "label": "empty ground is selected before the contract action",
+      "ok": true
+    },
+    {
+      "label": "the export goal's action button is on the contract page",
+      "ok": true
+    },
+    {
+      "label": "the action opened the capital's build page (page build, town 29, category food)",
+      "ok": true
+    },
+    {
+      "label": "the town's stock page button (OpenManage)",
+      "ok": true
+    },
+    {
+      "label": "the stock page has a materials reserve input",
+      "ok": true
+    },
+    {
+      "label": "the reserve's set button (Set_reserve_materials)",
+      "ok": true
+    },
+    {
+      "label": "the town keeps 2,000 t of materials (2000 t)",
+      "ok": true
+    },
+    {
+      "label": "the stock line shows total, kept and sellable: 建材：库存 18,000 t · 留用 18,000 t（本地保留 2,000 t、进口物资不转卖 16,000 t）· 可售 0 t · 减产线 32,000 t",
+      "ok": true
+    },
+    {
+      "label": "sellable stops at the reserve",
+      "ok": true
+    },
+    {
+      "label": "the top bar's advance control is pressed (AdvanceNext)",
+      "ok": true
+    },
+    {
+      "label": "advance to the next delivery stopped on day 25 (第 1 年 1 月 1 日 → 第 1 年 1 月 26 日 · 停在：一批出口或交付到账) with ¥86 of exports",
+      "ok": true
+    },
+    {
+      "label": "the save comes back on day 25",
+      "ok": true
+    },
+    {
+      "label": "the capital's coordinate survives the save (-4.9780, 163.5193)",
+      "ok": true
+    },
+    {
+      "label": "the supply orders survive the save",
+      "ok": true
+    },
+    {
+      "label": "the materials reserve survives the save",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "game_version": "1.11.0",
+  "goal_action": {
+    "category": "food",
+    "page": "build",
+    "town": 29
+  },
+  "ok": true,
+  "options": {
+    "case": "opening",
+    "coast": "south",
+    "out": "/home/user/brave-new-world/docs/v17/decisions/pck/opening_south.json",
+    "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck"
+  },
+  "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "plan_line": {
+    "lines": [
+      "★ 粮食供应合同",
+      "需要（首支工程队依次建设）：温室农场 ¥3250（第 25 天建成）；温室农场 ¥3250（第 50 天建成）；货运站、电站、水站随登陆运到；合计 ¥6500",
+      "首批：约第 26 天，约 856 t；全部建成后每天约 ¥164",
+      "合同：第 1 阶段出口目标还差 ¥40000，单靠这一项约第 282 天达成（期限第 360 天）；每批出口都计入目标"
+    ]
+  },
+  "res_has_tests": false,
+  "seed": 3,
+  "stock_line": "建材：库存 18,000 t · 留用 18,000 t（本地保留 2,000 t、进口物资不转卖 16,000 t）· 可售 0 t · 减产线 32,000 t"
+}
