@@ -17,6 +17,9 @@ const RadiusSlider = preload("res://ui/radius_slider.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
+const Advance = preload("res://simulation/advance.gd")
+## Days "advance to the next decision" runs a frame, so the screen keeps moving.
+const ADVANCE_DAYS_PER_FRAME: int = 8
 const MAX_DAYS_PER_FRAME: int = 3
 ## The difficulty option's entries, in order.
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
@@ -176,6 +179,10 @@ var nav_buttons: Dictionary = {}
 ## The map view the left navigation marks while no page is open: "planet" or "flat".
 var map_mode: String = "planet"
 var autosave_task: int = -1
+## "Advance to the next decision" (1.11): the run under way, the milestone chosen, the last summary.
+var advance_run: Dictionary = {}
+var advance_milestone: String = "decision"
+var advance_summary: Dictionary = {}
 var autosave_snapshot: Dictionary = {}
 
 
@@ -287,6 +294,27 @@ func build_shell():
 		)
 		b.custom_minimum_size = Vector2(54, 32)
 		b.add_theme_font_size_override("font_size", 15)
+	var ahead: Button = D.button(
+		controls,
+		"⏩ 下一个决定",
+		func(): start_advance(),
+		"照常运行模拟，到选定的时刻，或在你可能错过一个决定之前停下；途中的日常消息汇总给你看",
+		"AdvanceNext"
+	)
+	ahead.custom_minimum_size = Vector2(118, 32)
+	ahead.add_theme_font_size_override("font_size", 15)
+	var names: Array = []
+	for key: String in Advance.MILESTONES:
+		names.append(str(Advance.NAMES[key]))
+	var pick: OptionButton = D.option(
+		controls,
+		"AdvanceMilestone",
+		names,
+		Advance.MILESTONES.find(advance_milestone),
+		func(index: int): advance_milestone = Advance.MILESTONES[index]
+	)
+	pick.add_theme_font_size_override("font_size", 14)
+	pick.tooltip_text = "停在哪里：无论选哪项，遇到需要你决定的事都会先停"
 	var nav = PanelContainer.new()
 	ui.add_child(nav)
 	nav.position = Vector2(20, 115)
@@ -466,7 +494,10 @@ func _process(delta):
 	_finish_autosave(true)
 	if sample_frames.size() < 36000:
 		sample_frames.append(delta)
-	advance_time(delta)
+	if not advance_run.is_empty():
+		_advance_step()
+	else:
+		advance_time(delta)
 	_feed_map_clock()
 	if toast_time > 0:
 		toast_time -= delta
@@ -734,6 +765,59 @@ func advance_time(delta: float):
 			break
 
 
+## Starts "advance to the next decision": the normal simulation, day by day, until the chosen
+## milestone or a decision the player could otherwise miss (simulation/advance.gd).
+func start_advance(milestone: String = "") -> void:
+	if sim.state.is_empty() or sim.state.status in ["planning", "failed"]:
+		toast("先建立首府")
+		return
+	if event_pause_required():
+		open_page("events")
+		toast("先答复等待中的通讯")
+		return
+	if is_instance_valid(overlay):
+		close_modal()
+	paused = true
+	resume_on_close = false
+	advance_run = Advance.begin(sim, milestone if milestone != "" else advance_milestone)
+	advance_run.lines = []
+	date_label.text = "%s · 正在推进…" % Labels.date(int(sim.state.day))
+
+
+## A few days of the run each frame; stops with a summary when the run says so.
+func _advance_step() -> void:
+	var reason: String = ""
+	for _i: int in range(ADVANCE_DAYS_PER_FRAME):
+		var before: int = sim.state.log.size()
+		sim.tick()
+		for entry: Dictionary in sim.state.log.slice(maxi(0, before - 1)):
+			if int(entry.day) == int(sim.state.day):
+				advance_run.lines.append("%d · %s" % [int(entry.day), str(entry.text)])
+		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
+		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
+			_begin_autosave()
+			autosave_day = sim.state.day
+		coach.on_day()
+		reason = Advance.stop_reason(sim, advance_run)
+		if reason != "":
+			break
+	map.sync_state(sim.state)
+	refresh()
+	if reason != "":
+		_finish_advance(reason)
+
+
+func _finish_advance(reason: String) -> void:
+	var lines: Array = advance_run.get("lines", [])
+	advance_summary = Advance.summary(sim, advance_run, reason)
+	advance_summary.lines = lines
+	advance_run = {}
+	paused = true
+	last_status = sim.state.status
+	_announce_new_event()
+	open_page("advance")
+
+
 ## The map's visual clock follows the game clock: faster at higher speeds, slow while paused.
 func _feed_map_clock() -> void:
 	var running: bool = not (
@@ -968,6 +1052,55 @@ func confirm_site_name(_typed: String = ""):
 	if error == "":
 		close_modal()
 		refresh_sidebar()
+
+
+## A contract goal's action (1.11): opens a town that can carry it out, on the page and part that do
+## it. One town that qualifies is opened at once (the capital when it is the only one, even after
+## inspecting empty ground); several give a short choice with why each qualifies.
+func goal_action(action: Dictionary) -> void:
+	var need: String = str(action.get("need", ""))
+	var page: String = str(action.get("page", ""))
+	if page in ["research", "transport", "economy", "contract", "population", "company"] and need == "":
+		open_page(page)
+		return
+	if need == "settlement":
+		close_modal()
+		toast("在地图上点一块地，看地点卡；推荐地点也可以")
+		return
+	var towns: Array = sim.Outlook.candidates(sim, need if need != "" else "any")
+	if towns.is_empty() and sim.state.settlements.size() == 1:
+		towns = [{"region": int(sim.state.settlements[0].region), "category": ""}]
+	if towns.is_empty():
+		toast("现在没有能做这件事的据点：" + str(action.get("text", "")))
+		return
+	if towns.size() == 1:
+		_open_for(int(towns[0].region), action, str(towns[0].get("category", "")))
+		return
+	goal_choice = {"action": action, "towns": towns}
+	open_page("goal_choice")
+
+
+var goal_choice: Dictionary = {}
+
+
+## Opens a town for an action: the ground selection gives way to the town, then the page, on the
+## part of it that fits this town's way of doing it.
+func _open_for(region: int, action: Dictionary, category: String = "") -> void:
+	if not ground.is_empty():
+		ground = {}
+		map.set_ground({})
+	selected = region
+	map.selected_region = region
+	map.focus_region(region)
+	refresh_sidebar()
+	if category != "":
+		build_category = category
+	elif action.has("category"):
+		build_category = str(action.category)
+	if action.has("kind"):
+		build_selected = str(action.kind)
+	var page: String = str(action.get("page", "build"))
+	open_page(page if page != "" else "build")
 
 
 ## The shortcut from a shortage line: the right page, on the right part of it.
@@ -1396,7 +1529,15 @@ func open_page(page: String):
 		"save": "档案与显示设置",
 		"guide": "专员行动指南"
 	}
-	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
+	titles.merge(
+		{
+			"company": "公司关系 / 审查与有条件介入",
+			"career": "连续生涯 / 总督与代管",
+			"manage": "库存与生产 / 保留与减产",
+			"advance": "推进到下一个决定 / 汇总",
+			"goal_choice": "选择据点",
+		}
+	)
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
 	_mark_nav()

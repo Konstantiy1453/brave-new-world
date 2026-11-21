@@ -9,6 +9,7 @@ const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
 const Research = preload("res://simulation/research.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
+const Outlook = preload("res://simulation/outlook.gd")
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
 ## No limit on settlements (stages four and five, and after the award).
@@ -416,6 +417,7 @@ static func daily(sim: RefCounted) -> void:
 	contract.stage_streak = int(contract.stage_streak) + 1 if _solvent_week(sim) else 0
 	sim.state.grace_days = int(sim.state.grace_days) + 1 if sim.state.debt > 0.001 else 0
 	_record_windows(sim)
+	Outlook.record(sim)
 	OperatingRoutes.check_achievements(sim)
 	if sim.state.status == "success":
 		_check_milestones(sim)

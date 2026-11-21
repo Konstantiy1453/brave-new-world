@@ -30,6 +30,7 @@ const Prospecting = preload("res://simulation/prospecting.gd")
 const Stocks = preload("res://simulation/stocks.gd")
 const Supply = preload("res://simulation/supply.gd")
 const Checkout = preload("res://simulation/checkout.gd")
+const Outlook = preload("res://simulation/outlook.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -939,6 +940,11 @@ func pollution_view() -> Dictionary:
 
 func contract_view() -> Dictionary:
 	return Contract.view(self)
+
+
+## Each goal of the current stage: on its way or needing the player, trend, date, blocker, action.
+func outlook_view() -> Dictionary:
+	return Outlook.view(self)
 
 
 func market_view() -> Array:
