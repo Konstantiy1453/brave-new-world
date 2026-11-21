@@ -738,6 +738,7 @@ func advance_time(delta: float):
 		sim.tick()
 		map.sync_state(sim.state)
 		refresh()
+		_refresh_open_page()
 		var every: int = int(sim.progression.time.get("autosave_days", AUTOSAVE_FALLBACK_DAYS))
 		if int(sim.state.day) % maxi(1, every) == 0 and int(sim.state.day) != autosave_day:
 			_begin_autosave()
@@ -818,6 +819,17 @@ func _finish_advance(reason: String) -> void:
 	open_page("advance")
 
 
+## With panels not pausing the game (a setting), an open page follows the days as they pass (1.11):
+## deadlines, research progress and which actions are open. Not while the player types in it.
+func _refresh_open_page() -> void:
+	if not is_instance_valid(overlay) or current_page.is_empty() or panel_pause:
+		return
+	var focus: Control = get_viewport().gui_get_focus_owner()
+	if focus is LineEdit or focus is TextEdit:
+		return
+	populate_current_page()
+
+
 ## The map's visual clock follows the game clock: faster at higher speeds, slow while paused.
 func _feed_map_clock() -> void:
 	var running: bool = not (
@@ -830,6 +842,7 @@ func _feed_map_clock() -> void:
 ## Serialization happens here on the main thread; compression and disk work run on a worker.
 func _begin_autosave():
 	_finish_autosave(false)
+	coach.store(sim.state)
 	autosave_snapshot = SaveIo.snapshot(sim, SAVE_AUTO)
 	autosave_task = WorkerThreadPool.add_task(_write_autosave.bind(autosave_snapshot))
 
@@ -1174,8 +1187,11 @@ func refresh():
 		var advice: String = _money_advice(window)
 		if advice != "":
 			hint = advice
-		if not sim.Research.idle_categories(sim).is_empty():
-			hint = "! 有研究团队闲着：打开科研教育，给他们挑一个课题"
+		# The same count the research page shows and its team controls start from (1.11).
+		var teams: Dictionary = sim.Research.assignable(sim)
+		var minimum: int = int(sim.progression.research.minimum_staff)
+		if int(teams.teams) >= minimum and not sim.Research.idle_categories(sim).is_empty():
+			hint = "! 有 %d 支研究团队可派：打开科研教育，给他们挑一个课题" % int(teams.teams)
 	if not state.get("event", {}).is_empty():
 		hint = "! 待处理通讯：" + str(state.event.get("title", "事件")) + "  ·  打开左侧通讯事件"
 	mission.text = steps[0] + "\n" + hint
@@ -1728,6 +1744,16 @@ func start_game():
 		toast("星球类型：" + kind_of_planet)
 
 
+## The tutorial of the game being played, from where it was left (1.11): the saved step in this
+## colony, not a new game. Distinct from `start_tutorial`, which begins a new tutorial game.
+func resume_tutorial() -> void:
+	if coach.resume(sim.state):
+		close_modal()
+		toast("新手引导：接着第 %d 步" % (coach.index + 1))
+	else:
+		toast("这局游戏没有可以接着的新手引导；可以重新开始一局引导")
+
+
 ## A new game on the tutorial's own planet, with the coach panel running.
 func start_tutorial():
 	var rules: Dictionary = Tutorial.data()
@@ -1782,6 +1808,14 @@ func load_path(path: String):
 	resume_on_close = false
 	close_modal()
 	refresh()
+	# A tutorial game takes its lesson up again where it was saved, in this colony (1.11).
+	var lesson: Dictionary = TutorialCoach.saved(sim.state)
+	if bool(lesson.get("active", false)) and coach.resume(sim.state):
+		toast(
+			"完整存档已恢复：新手引导接着第 %d / %d 步；按空格继续经营。"
+			% [int(lesson.step) + 1, int(lesson.get("steps", 14))]
+		)
+		return
 	toast("完整存档已恢复；按空格继续经营。")
 
 
@@ -1792,6 +1826,7 @@ func export_state_json():
 
 
 func save_slot(path: String):
+	coach.store(sim.state)
 	var err: String = sim.save_game(path)
 	toast("已存档 · 第 %d 日。可通过左上角“读档”继续。" % sim.state.day if err.is_empty() else err)
 

@@ -152,6 +152,77 @@ static func company(g, b):
 		D.label(b, "第%d日 · %s" % [line.day, line.reason], 15, D.MUTED)
 
 
+## The order a communication arrived in, from its instance id ("seed:e12" is the twelfth).
+static func _arrival(instance_id: String) -> int:
+	var at: int = instance_id.rfind(":e")
+	return int(instance_id.substr(at + 2)) if at >= 0 else 0
+
+
+static func _pending_card(g, b, node: Dictionary) -> void:
+	var c = D.card(b)
+	var notice: bool = str(node.get("kind", "decision")) == "notice"
+	var title: Label = D.label(
+		c, ("通知 · " if notice else "决定 · ") + str(node.get("title", "通讯")), 22, D.GOLD
+	)
+	D.named(title, "Event_" + str(node.instance_id))
+	D.label(c, str(node.get("text", "")), 18)
+	var due: Label = D.label(
+		c,
+		(
+			"%s 截止 · 还有 %s 天%s"
+			% [
+				Labels.short_date(int(node.get("deadline", 0))),
+				str(node.get("remaining_days", "—")),
+				"（本月打断已达上限，不暂停）" if bool(node.get("variables", {}).get("muted", false)) else ""
+			]
+		),
+		16,
+		D.TEAL
+	)
+	D.named(due, "EventDue_" + str(node.instance_id))
+	for choice in node.get("choices", []):
+		var instance = str(node.instance_id)
+		var id = str(choice.id)
+		var step = str(node.get("node", ""))
+		D.label(c, str(choice.label), 17)
+		var bt = D.button(
+			c,
+			"选择此方案",
+			func(): g.act("event_v2", {"instance_id": instance, "choice": id, "node": step}),
+			"",
+			"Choice_%s_%s" % [instance, id]
+		)
+		bt.disabled = not bool(choice.get("enabled", true))
+		bt.tooltip_text = str(choice.get("reason", ""))
+
+
+## A communication settled lately, where it stood: how it was settled, what came of it, and the
+## day its effects end.
+static func _settled_card(g, b, row: Dictionary) -> void:
+	var c = D.card(b, "card_quiet")
+	D.label(c, "已结案 · " + str(row.get("title", "通讯")), 20, D.MUTED)
+	var how: String = (
+		"%s 到期，按默认处理：%s" % [Labels.short_date(int(row.day)), str(row.ending)]
+		if bool(row.get("automatic", false))
+		else "%s 你的选择：%s" % [Labels.short_date(int(row.day)), str(row.ending)]
+	)
+	var line: Label = D.label(c, how, 17, D.INK)
+	D.named(line, "Settled_" + str(row.instance_id))
+	if str(row.get("outcome", "")) != "":
+		D.label(c, str(row.outcome), 16, D.INK)
+	if str(row.get("changes", "")) != "":
+		D.label(c, "改变：" + str(row.changes), 15, D.MUTED)
+	var ends: String = "没有持续的影响"
+	if bool(row.get("effects_last", false)):
+		ends = "影响长期有效"
+	elif int(row.get("effects_end", -1)) >= int(g.sim.state.day):
+		ends = "影响持续到 %s" % Labels.short_date(int(row.effects_end))
+	elif int(row.get("effects_end", -1)) >= 0:
+		ends = "影响已于 %s 结束" % Labels.short_date(int(row.effects_end))
+	var end_line: Label = D.label(c, ends, 15, D.TEAL)
+	D.named(end_line, "SettledEnds_" + str(row.instance_id))
+
+
 static func events(g, b):
 	var v: Dictionary = load("res://simulation/events_v2.gd").view(g.sim)
 	D.label(b, "殖民通讯 / 选择与后续", 25, D.TEAL)
@@ -169,32 +240,19 @@ static func events(g, b):
 		func(id): g.act("policy", {"event_pause": "all" if id == 1 else "critical"})
 	)
 	D.label(b, "决定节点暂停世界；选择“稍后处理”才会继续计时。调查占用科研人员，订单按真实交付结算。", 17, D.MUTED)
+	# Waiting communications and those settled in the last days, in the order they arrived: one that
+	# runs out stays in its place, its choices replaced by what came of it (1.11).
+	var cards: Array = []
 	for node in v.get("pending", []):
-		var c = D.card(b)
-		var notice: bool = str(node.get("kind", "decision")) == "notice"
-		D.label(c, ("通知 · " if notice else "决定 · ") + str(node.get("title", "通讯")), 22, D.GOLD)
-		D.label(c, str(node.get("text", "")), 18)
-		D.label(
-			c,
-			(
-				"%s 截止 · 还有 %s 天"
-				% [
-					Labels.short_date(int(node.get("deadline", 0))),
-					str(node.get("remaining_days", "—"))
-				]
-			),
-			16,
-			D.TEAL
-		)
-		for choice in node.get("choices", []):
-			var instance = str(node.instance_id)
-			var id = str(choice.id)
-			D.label(c, str(choice.label), 17)
-			var bt = D.button(
-				c, "选择此方案", func(): g.act("event_v2", {"instance_id": instance, "choice": id})
-			)
-			bt.disabled = not bool(choice.get("enabled", true))
-			bt.tooltip_text = str(choice.get("reason", ""))
+		cards.append({"order": _arrival(str(node.instance_id)), "pending": node})
+	for row in v.get("settled", []):
+		cards.append({"order": _arrival(str(row.instance_id)), "settled": row})
+	cards.sort_custom(func(a: Dictionary, x: Dictionary) -> bool: return int(a.order) < int(x.order))
+	for entry: Dictionary in cards:
+		if entry.has("pending"):
+			_pending_card(g, b, entry.pending)
+		else:
+			_settled_card(g, b, entry.settled)
 	if v.get("pending", []).is_empty():
 		D.label(b, "目前没有需要答复的节点。", 20)
 	for node in v.get("active", []):

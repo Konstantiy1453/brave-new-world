@@ -182,16 +182,80 @@ static func _highest_tier(sim: RefCounted) -> int:
 
 
 ## Pays to throw back the cards nobody has started and deal again.
+## What a paid reshuffle of a category would do now (1.11): the cards it may replace (those with no
+## work on them and not dealt for the charter), how many new ones the category still has to offer,
+## and so how many will actually change; the protected cards with why. Nothing is charged when
+## nothing would change.
+static func reshuffle_preview(sim: RefCounted, category: String) -> Dictionary:
+	ensure(sim)
+	var r: Dictionary = sim.state.research
+	var rules: Dictionary = Rules.read("techs")
+	var hand: Array = r.offers.get(category, [])
+	var loose: Array = []
+	var kept: Array = []
+	for key: String in hand:
+		var project: Dictionary = r.projects.get(key, {})
+		if float(project.get("work", 0.0)) > 0.0 or int(project.get("staff", 0)) > 0:
+			kept.append({"tech": key, "name": str(sim.config.techs[key].name), "why": "已有研究进度"})
+		elif rules.get("always_dealt", []).has(key):
+			kept.append({"tech": key, "name": str(sim.config.techs[key].name), "why": "合同必需，固定在候选中"})
+		else:
+			loose.append(key)
+	var fresh: Array = _eligible(r, category, hand)
+	var changes: int = mini(loose.size(), fresh.size())
+	var reason: String = ""
+	if changes <= 0:
+		if loose.is_empty():
+			reason = "候选课题都受保护（已有研究进度或合同必需），这次换不了任何一张，不收费"
+		else:
+			reason = "这个方向暂时没有别的课题可换，不收费"
+	return {
+		"category": category,
+		"cost": reshuffle_cost(sim),
+		"changes": changes,
+		"loose": loose,
+		"kept": kept,
+		"fresh": fresh.size(),
+		"reason": reason,
+	}
+
+
+## Replaces exactly the cards the preview says can change, with new ones from the category's
+## eligible topics; protected cards stay. Refused without charge when none can change.
 static func reshuffle(sim: RefCounted, category: String) -> String:
 	var r: Dictionary = sim.state.research
 	if not Rules.read("techs").categories.has(category):
 		return "没有这个科研类别"
-	var cost: float = reshuffle_cost(sim)
+	var preview: Dictionary = reshuffle_preview(sim, category)
+	if int(preview.changes) <= 0:
+		return str(preview.reason)
+	var cost: float = float(preview.cost)
 	if float(sim.state.cash) < cost:
 		return "重新调研需要 %.0f 资金" % cost
-	var old: Array = r.offers.get(category, [])
 	sim._transfer("public", "external", cost, "research.reshuffle", false, category)
-	_draw(r, category, old)
+	var hand: Array = r.offers.get(category, []).duplicate()
+	var rules: Dictionary = Rules.read("techs")
+	var out: Array = preview.loose.slice(0, int(preview.changes))
+	for key: String in out:
+		hand.erase(key)
+	var pool: Array = _eligible(r, category, hand + out)
+	for _i: int in range(int(preview.changes)):
+		if pool.is_empty():
+			break
+		var total: float = 0.0
+		for key: String in pool:
+			total += float(rules.techs[key].weight)
+		var pick: float = _roll(r) * total
+		var chosen: String = str(pool[pool.size() - 1])
+		for key: String in pool:
+			pick -= float(rules.techs[key].weight)
+			if pick <= 0.0:
+				chosen = key
+				break
+		hand.append(chosen)
+		pool.erase(chosen)
+	r.offers[category] = hand
+	sim._log("重新调研：%s换了 %d 张候选课题。" % [str(rules.categories[category].name), int(preview.changes)])
 	return ""
 
 

@@ -40,7 +40,17 @@ static func _header(b, v: Dictionary, columns: Array) -> void:
 	D.label(title, "科研 / 四个方向的课题", 22, D.INK, false)
 	D.stat(strip, "研究团队", str(int(v.total)), D.GOLD, "研究所培养的研究团队总数")
 	D.stat(strip, "调查", str(int(v.investigating)), D.INK, "正在做地点调查的团队")
-	D.stat(strip, "可用", str(int(v.available)), D.TEAL, "还没有分配的团队")
+	var assignable: Dictionary = g.sim.Research.assignable(g.sim)
+	D.stat(
+		strip,
+		"可派",
+		str(int(assignable.teams)),
+		D.TEAL,
+		(
+			"现在能派去做课题的团队（研究所有座位的）"
+			+ ("：" + str(assignable.reason) if str(assignable.reason) != "" else "")
+		)
+	)
 	D.stat(strip, "科研席位", str(int(v.capacity)), D.INK)
 	D.stat(strip, "实验台", str(int(v.benches)), D.INK, "每个在研项目占用一个实验台")
 	D.label(
@@ -76,7 +86,8 @@ static func _research_column(g, grid, column: Dictionary, v: Dictionary):
 		D.tag(title, "● 在研", D.TEAL)
 	else:
 		D.tag(title, "◐ 受阻", D.GOLD)
-	var wanted: int = int(g.research_team.get(id, clampi(int(v.available), 3, 10)))
+	var free_teams: int = int(g.sim.Research.assignable(g.sim).teams)
+	var wanted: int = int(g.research_team.get(id, clampi(free_teams, 3, 10)))
 	var line = D.row(head)
 	line.add_theme_constant_override("separation", 8)
 	var caption: Label = D.label(line, "研究团队", D.SMALL, D.MUTED, false)
@@ -105,16 +116,34 @@ static func _research_column(g, grid, column: Dictionary, v: Dictionary):
 	if column.offers.is_empty():
 		D.label(box, "这个方向暂时没有新课题。", D.SMALL, D.MUTED)
 	var category: String = id
+	var preview: Dictionary = g.sim.Research.reshuffle_preview(g.sim, category)
+	var kept: PackedStringArray = []
+	for row: Dictionary in preview.kept:
+		kept.append("「%s」%s" % [str(row.name), str(row.why)])
+	var changes: int = int(preview.changes)
 	var again = D.button(
 		box,
-		"重新调研 · ¥ %.0f" % float(g.sim.Research.reshuffle_cost(g.sim)),
+		(
+			"重新调研 · 换 %d 张 · ¥ %.0f" % [changes, float(preview.cost)]
+			if changes > 0
+			else "重新调研 · 没有可换的"
+		),
 		func(): g.act("research_reshuffle", {"category": category}),
-		"付钱换掉还没开工的候选课题",
+		(
+			"会换掉 %d 张没开工的候选%s"
+			% [changes, "；保留：" + "、".join(kept) if not kept.is_empty() else ""]
+			if changes > 0
+			else str(preview.reason) + ("：" + "、".join(kept) if not kept.is_empty() else "")
+		),
 		"Reshuffle_" + id,
 		"chip"
 	)
+	again.disabled = changes <= 0
 	D.font_size(again, D.SMALL)
 	again.custom_minimum_size.y = 34
+	if changes <= 0:
+		var why: Label = D.label(box, str(preview.reason), D.CAPTION, D.MUTED)
+		D.named(why, "ReshuffleWhy_" + id)
 
 
 ## One dealt topic. Active (its team is on it), available (it can be picked), or waiting for a

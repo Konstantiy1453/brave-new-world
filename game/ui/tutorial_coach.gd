@@ -1,7 +1,8 @@
 extends PanelContainer
 ## The tutorial's coach panel and the outline around its target control. Never modal: the player
 ## can do anything else while it is showing. Also shows the one-time tips afterwards.
-## Progress lives in user://settings.cfg, not in the save.
+## Whether the tutorial was finished lives in user://settings.cfg; the progress of a tutorial game (its
+## step, the town it follows, what its lessons have seen) lives in the save (1.11, `store`/`resume`).
 
 const D = preload("res://ui/design.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
@@ -125,7 +126,52 @@ func start() -> void:
 	_enter()
 
 
+## Writes the tutorial's progress into the game state, so a save carries it (1.11): the step, the
+## town the lessons follow, and what the steps' completion checks have seen so far.
+func store(state: Dictionary) -> void:
+	if state.is_empty() or index < 0:
+		return
+	state.tutorial = {
+		"active": true,
+		"step": index,
+		"steps": steps().size(),
+		"home": int(context.get("home", 0)),
+		"context": context.duplicate(true),
+	}
+
+
+## The progress a game carries, or an empty dictionary.
+static func saved(state: Dictionary) -> Dictionary:
+	var row: Variant = state.get("tutorial", {})
+	return row if row is Dictionary else {}
+
+
+## Takes the tutorial up again where the save left it, in this colony: the same step, the same
+## town, the same progress towards its checks. Does not start a new game.
+func resume(state: Dictionary) -> bool:
+	var row: Dictionary = saved(state)
+	if row.is_empty():
+		return false
+	var step: int = int(row.get("step", 0))
+	if step < 0 or step >= steps().size():
+		return false
+	context = Tutorial.new_context()
+	context.merge(row.get("context", {}), true)
+	context.home = int(row.get("home", context.get("home", 0)))
+	index = step
+	reviewing = false
+	tip = {}
+	game.tutorial_on = true
+	_show_step()
+	return true
+
+
 func stop(finished: bool) -> void:
+	# A tutorial ended or finished on purpose is no longer one to resume from this game.
+	if finished and game != null and not game.sim.state.is_empty():
+		var row: Dictionary = saved(game.sim.state)
+		if not row.is_empty():
+			row.active = false
 	index = -1
 	reviewing = false
 	visible = false

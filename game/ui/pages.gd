@@ -1828,6 +1828,17 @@ static func settings(g, b):
 	_quality(g, b)
 	D.label(b, "新手引导", 20)
 	var teaching = D.row(b)
+	var lesson: Dictionary = g.TutorialCoach.saved(g.sim.state)
+	var resumable: bool = not lesson.is_empty() and int(lesson.get("step", -1)) >= 0
+	var resume_text: String = (
+		"继续新手引导（这一局的第 %d / %d 步）" % [int(lesson.step) + 1, int(lesson.get("steps", 14))]
+		if resumable
+		else "继续新手引导（这一局没有引导进度）"
+	)
+	var resume: Button = D.button(
+		teaching, resume_text, g.resume_tutorial, "在当前这局里，从保存的那一步接着学", "ResumeTutorial"
+	)
+	resume.disabled = not resumable or g.coach.active()
 	D.button(teaching, "重新开始新手引导（开始一局引导专用的新游戏）", g.start_tutorial, "当前未保存的进度会丢失", "ReplayTutorial")
 	var tips_on: bool = bool(g.coach.tips_enabled)
 	D.button(
