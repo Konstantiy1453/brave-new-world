@@ -209,12 +209,17 @@ static func next_project(sim: RefCounted, region: int, working: Dictionary) -> i
 
 ## A town's buildings still waiting for a crew, in the order crews take them: those that fix a
 ## shortage the town has today first, then the one chosen to go next, then the oldest order.
-static func queue(sim: RefCounted, s: Dictionary, working: Dictionary) -> Array:
+static func queue(
+	sim: RefCounted, s: Dictionary, working: Dictionary, extra: Dictionary = {}
+) -> Array:
 	var urgent: Array = []
 	var chosen: Array = []
 	var rest: Array = []
 	var next_uid: int = chosen_next(sim, int(s.get("region", -1)))
-	for b: Dictionary in s.get("buildings", []):
+	var all: Array = s.get("buildings", []).duplicate()
+	if not extra.is_empty():
+		all.append(extra)
+	for b: Dictionary in all:
 		if int(b.remaining) <= 0 or bool(b.get("prefab", false)):
 			continue
 		if working.has(int(b.get("uid", 0))):
@@ -289,7 +294,7 @@ static func release_target(sim: RefCounted, region: int, uid: int) -> void:
 ## both -1 for a project no crew here can reach (none at the town, none coming). A crew's last busy
 ## day is tracked: one that ends its training or arrives works that same day. A shortage tomorrow
 ## can change it.
-static func eta(sim: RefCounted, s: Dictionary) -> Dictionary:
+static func eta(sim: RefCounted, s: Dictionary, extra: Dictionary = {}) -> Dictionary:
 	var result: Dictionary = {}
 	var day: int = int(sim.state.day)
 	var crews: Dictionary = sim.state.get("crews", {})
@@ -319,7 +324,7 @@ static func eta(sim: RefCounted, s: Dictionary) -> Dictionary:
 			result[uid] = {"start": day + 1, "finish": day + int(b.remaining), "crew": 0}
 	if everywhere:
 		return result
-	for b: Dictionary in queue(sim, s, crews.get("working", {})):
+	for b: Dictionary in queue(sim, s, crews.get("working", {}), extra):
 		var uid: int = int(b.get("uid", 0))
 		if result.has(uid):
 			continue
@@ -334,6 +339,84 @@ static func eta(sim: RefCounted, s: Dictionary) -> Dictionary:
 		free_at[first] = int(free_at[first]) + int(b.remaining)
 		result[uid] = {"start": start, "finish": int(free_at[first]), "crew": int(ids[first])}
 	return result
+
+
+## What one more order of `kind` taking `days` would get at this town if placed now (1.11), by the
+## same queue rules the crews follow (`queue`, `eta`): the crew expected to build it (here, or on its
+## way here), its place in the line of that crew's work with what comes before it and when each is
+## done, and the days it would start and finish. start -1 when no crew is here or coming, with the
+## nearest crew elsewhere that could be sent.
+static func projection(sim: RefCounted, s: Dictionary, kind: String, days: int) -> Dictionary:
+	ensure_state(sim.state)
+	var uid: int = int(sim.state.get("next_building_uid", 1)) + 1000000
+	var phantom: Dictionary = {"kind": kind, "remaining": days, "uid": uid, "total_days": days}
+	var plans: Dictionary = eta(sim, s, phantom)
+	var plan: Dictionary = plans.get(uid, {"start": -1, "finish": -1, "crew": 0})
+	var result: Dictionary = {
+		"start": int(plan.start),
+		"finish": int(plan.finish),
+		"crew": int(plan.crew),
+		"ahead": [],
+		"place": 1,
+		"crew_state": "",
+		"urgent": fixes_shortage(sim, s, phantom),
+		"send": {},
+	}
+	if int(plan.crew) > 0:
+		var team: Dictionary = _team(sim, int(plan.crew))
+		result.crew_state = str(team.get("task", ""))
+		if str(team.task) in [TRAVEL, TRAIN]:
+			result.crew_until = int(team.until)
+		# The work this crew does before the new order, in order.
+		var rows: Array = []
+		for other: int in plans:
+			if other == uid or int(plans[other].crew) != int(plan.crew):
+				continue
+			if int(plans[other].start) > int(plan.start):
+				continue
+			var index: int = sim.Production.index_of(s, other)
+			if index < 0:
+				continue
+			var b: Dictionary = s.buildings[index]
+			rows.append(
+				{
+					"uid": other,
+					"name": str(sim.config.buildings.get(str(b.kind), {}).get("name", b.kind)),
+					"start": int(plans[other].start),
+					"finish": int(plans[other].finish),
+					"started": int(b.remaining) < int(b.get("total_days", b.remaining)),
+				}
+			)
+		rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.start) < int(b.start))
+		result.ahead = rows
+		result.place = rows.size() + 1
+	elif int(plan.start) < 0:
+		result.send = _nearest_free_crew(sim, int(s.region))
+	return result
+
+
+## The crew elsewhere that could reach a town soonest: {crew, from, days}, or empty.
+static func _nearest_free_crew(sim: RefCounted, region: int) -> Dictionary:
+	var best: Dictionary = {}
+	for team: Dictionary in sim.state.crews.teams:
+		if int(team.region) == region or str(team.task) in [TRAVEL, TRAIN]:
+			continue
+		var days: int = travel_days(sim, int(team.region), region)
+		if days < 0:
+			continue
+		var busy: int = 0
+		if str(team.task) == BUILD:
+			var there: Dictionary = sim.settlement(int(team.region))
+			var index: int = sim.Production.index_of(there, int(team.target))
+			busy = int(there.buildings[index].remaining) if index >= 0 else 0
+		if best.is_empty() or days + busy < int(best.days) + int(best.busy):
+			best = {
+				"crew": int(team.id),
+				"from": str(sim.settlement(int(team.region)).get("name", "")),
+				"days": days,
+				"busy": busy,
+			}
+	return best
 
 
 static func _older(a: Dictionary, b: Dictionary) -> bool:

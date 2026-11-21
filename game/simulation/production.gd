@@ -787,9 +787,10 @@ static func _operate(
 				b.status = Keys.B_TARGET_FULL
 		"commerce":
 			var served: float = minf(float(d.customers), float(s.population)) * eff
-			sim._transfer(
+			var spent: float = sim._transfer(
 				"residents", "public", served * float(d.spend), "commerce.income", true, b.kind
 			)
+			Supply.record_sale(sim, s, "", 0.0, spent, "local")
 		"income":
 			var limited: float = Copies.factor_for(
 				sim, b, float(sim.config.economy.get("income_copy_factor", 1.0)), 1
@@ -832,6 +833,64 @@ static func _operate(
 			if scale <= 0:
 				b.active = false
 				b.status = Keys.B_NO_INPUT if wanted_any else Keys.B_TARGET_FULL
+
+
+## One standing facility as its status line shows it (1.11): the staff it keeps, what it made today,
+## why it made nothing (the town's stock at its slowdown level, no input, no power or water, no
+## staff, worked out), whether it is on reduced shifts, and what it costs a day (wages at the shift's
+## pay and upkeep).
+static func facility_view(sim: RefCounted, s: Dictionary, b: Dictionary) -> Dictionary:
+	var d: Dictionary = sim.config.buildings.get(str(b.kind), {})
+	var role: String = str(d.get("role", ""))
+	var reduced: bool = (
+		str(b.get("shift", "")) == SHIFT_REDUCED and bool(s.get("auto_shifts", true))
+	)
+	var pay: float = float(sim.config.get("shifts", {}).get("reduced_wage", 1.0)) if reduced else 1.0
+	var wages: float = (
+		(
+			float(b.get("employed", 0)) * Population.worker_wage(sim)
+			+ float(b.get("specialists", 0)) * Population.scientist_wage(sim)
+		)
+		* pay
+	)
+	var upkeep: float = float(level_rule(sim, b).get("maintenance", d.get("maintenance", 0.0)))
+	var cost_factor: float = maxf(0.2, 1.0 + Research.bonus(sim, "upkeep"))
+	if role == "mine":
+		cost_factor = maxf(0.2, cost_factor + Research.bonus(sim, "mine_upkeep"))
+	var output: Dictionary = {}
+	for good: String in _output_goods(d):
+		output[good] = 0.0
+	var made: float = float(b.get("output", 0.0))
+	if output.size() == 1:
+		output[output.keys()[0]] = made
+	var producing: bool = not output.is_empty()
+	return {
+		"kind": str(b.kind),
+		"name": str(d.get("name", b.kind)),
+		"producing_role": producing,
+		"retained": int(b.get("employed", 0)) + int(b.get("specialists", 0)),
+		"output": made,
+		"outputs": output,
+		"status": str(b.get("status", "")),
+		"idle": producing and made <= 0.0001 and int(b.get("remaining", 0)) <= 0,
+		"reduced": reduced,
+		"wages": wages,
+		"full_wages": wages / maxf(pay, 0.0001),
+		"upkeep": upkeep * cost_factor,
+		"daily_cost": wages + upkeep * cost_factor,
+	}
+
+
+## The goods a kind of facility makes, for its status line.
+static func _output_goods(d: Dictionary) -> Array:
+	match str(d.get("role", "")):
+		"mine":
+			return [str(d.output)]
+		"harvest", "factory":
+			return d.get("outputs", {}).keys()
+		"farm", "indoor_farm", "harbor":
+			return ["food"]
+	return []
 
 
 ## A raw good whose slowdown level the player set (stocks.gd): mines and harvesters stop at it.

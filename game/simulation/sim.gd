@@ -29,6 +29,7 @@ const Consignments = preload("res://simulation/consignments.gd")
 const Prospecting = preload("res://simulation/prospecting.gd")
 const Stocks = preload("res://simulation/stocks.gd")
 const Supply = preload("res://simulation/supply.gd")
+const Checkout = preload("res://simulation/checkout.gd")
 const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
@@ -881,6 +882,11 @@ func company_view() -> Dictionary:
 
 func build_forecast(region: int, kind: String, plot: int = -1) -> Dictionary:
 	return Production.build_forecast(self, region, kind, plot)
+
+
+## The order screen's four answers before payment (checkout.gd).
+func checkout(region: int, kind: String, plot: int = -1) -> Dictionary:
+	return Checkout.view(self, region, kind, plot)
 
 
 func site_view(site: int) -> Dictionary:

@@ -302,22 +302,26 @@ static func record_sale(
 		s.sales = []
 	var day: int = int(sim.state.day)
 	if s.sales.is_empty() or int(s.sales.back().day) != day:
-		s.sales.append({"day": day, "export": 0.0, "supply": 0.0, "goods": {}})
+		s.sales.append({"day": day, "export": 0.0, "supply": 0.0, "local": 0.0, "goods": {}})
 	var row: Dictionary = s.sales.back()
 	row[kind] = float(row.get(kind, 0.0)) + value
-	row.goods[good] = float(row.goods.get(good, 0.0)) + amount
+	if good != "" and amount > 0.0:
+		row.goods[good] = float(row.goods.get(good, 0.0)) + amount
 	while not s.sales.is_empty() and int(s.sales[0].day) <= day - 30:
 		s.sales.pop_front()
 
 
-## A town's sales over the last `days` days: {export, supply, goods: {good: units}}.
+## A town's sales over the last `days` days: {export, supply, local, goods: {good: units}}. Export
+## and supply receipts count towards the charter's export goal; local sales (food and shops sold to
+## the residents) do not.
 static func sales(s: Dictionary, today: int, days: int = 30) -> Dictionary:
-	var total: Dictionary = {"export": 0.0, "supply": 0.0, "goods": {}}
+	var total: Dictionary = {"export": 0.0, "supply": 0.0, "local": 0.0, "goods": {}}
 	for row: Dictionary in s.get("sales", []):
 		if int(row.day) <= today - days:
 			continue
 		total.export = float(total.export) + float(row.get("export", 0.0))
 		total.supply = float(total.supply) + float(row.get("supply", 0.0))
+		total.local = float(total.local) + float(row.get("local", 0.0))
 		for good: String in row.get("goods", {}):
 			total.goods[good] = float(total.goods.get(good, 0.0)) + float(row.goods[good])
 	return total

@@ -773,6 +773,49 @@ static func cards(sim: RefCounted) -> Array:
 	return columns
 
 
+## Research teams that can be put to work on a project now (1.11): those on no project, contract or
+## investigation, limited to the free laboratory seats they can sit in. The one count the advisor's
+## alert, the research page's figure and its team controls all use. {teams, free, seats_free,
+## benches_free, reason (why fewer than free can work)}.
+static func assignable(sim: RefCounted) -> Dictionary:
+	ensure(sim)
+	var r: Dictionary = sim.state.research
+	var seats: int = 0
+	var benches: int = 0
+	for s: Dictionary in sim.state.settlements:
+		var local: int = 0
+		for b: Dictionary in s.buildings:
+			if is_lab(sim, b) and b.enabled and b.remaining <= 0:
+				local += lab_seats(sim, b)
+				benches += lab_projects(sim, b)
+		seats += mini(local, int(s.scientists))
+	var allocated: int = int(r.contract.staff)
+	var working: int = int(r.contract.get("effective", 0))
+	var running: int = 0
+	for key: String in r.projects:
+		if r.completed.has(key):
+			continue
+		allocated += int(r.projects[key].staff)
+		working += int(r.projects[key].effective)
+		if int(r.projects[key].staff) > 0:
+			running += 1
+	var free: int = maxi(0, total(sim) - allocated - investigating(sim))
+	var seats_free: int = maxi(0, seats - working)
+	var teams: int = mini(free, seats_free)
+	var reason: String = ""
+	if free > 0 and seats_free < free:
+		reason = "研究所只剩 %d 个空座位：再建或升级研究所，其余 %d 支才能开工" % [seats_free, free - seats_free]
+	if teams > 0 and running >= benches:
+		reason = "实验台已满（%d 个课题）：只能加到在研课题上" % benches
+	return {
+		"teams": teams,
+		"free": free,
+		"seats_free": seats_free,
+		"benches_free": maxi(0, benches - running),
+		"reason": reason,
+	}
+
+
 ## Categories whose team has nothing to do while the colony could run a project.
 static func idle_categories(sim: RefCounted) -> Array:
 	ensure(sim)

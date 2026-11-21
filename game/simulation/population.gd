@@ -82,11 +82,45 @@ static func feed(sim: RefCounted, s: Dictionary) -> void:
 	s.food_consumed = amount
 	var paid: float = minf(float(sim.state.resident_cash), amount * float(sim.config.prices.food))
 	sim._transfer("residents", "public", paid, "food.sales", true)
+	sim.Supply.record_sale(sim, s, "food", 0.0, paid, "local")
 	if amount + 0.00001 < need:
 		s.starvation += 1
 		sim._short(s, Keys.SH_STARVING, str(s.starvation))
 	else:
 		s.starvation = 0
+
+
+## A town's people at work and not (1.11), each kind apart: workers looking for a job, research
+## teams that can be put on a project now (the colony's one count, Research.assignable), crews free
+## to be sent, and staff kept on at facilities that made nothing today, with what they cost.
+static func employment_view(sim: RefCounted, s: Dictionary) -> Dictionary:
+	var retained: int = 0
+	var retained_cost: float = 0.0
+	var reduced: int = 0
+	for b: Dictionary in s.get("buildings", []):
+		if int(b.get("remaining", 0)) > 0 or not bool(b.get("enabled", true)):
+			continue
+		var line: Dictionary = sim.Production.facility_view(sim, s, b)
+		if bool(line.idle):
+			retained += int(line.retained)
+			retained_cost += float(line.wages)
+			if bool(line.reduced):
+				reduced += 1
+	var idle_crews: int = 0
+	for team: Dictionary in sim.state.get("crews", {}).get("teams", []):
+		if int(team.region) == int(s.region) and str(team.task) == "":
+			idle_crews += 1
+	return {
+		"seeking": maxi(0, int(s.workers) - int(s.get("employed_workers", 0))),
+		"workers": int(s.workers),
+		"employed": int(s.get("employed_workers", 0)),
+		"research_free": int(Research.assignable(sim).teams),
+		"crews_free": idle_crews,
+		"crews": int(s.get("crew", 0)),
+		"retained_idle": retained,
+		"retained_cost": retained_cost,
+		"reduced_facilities": reduced,
+	}
 
 
 static func wage_multiplier(sim: RefCounted) -> float:

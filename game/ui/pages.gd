@@ -10,6 +10,7 @@ const PeopleLines = preload("res://ui/people_lines.gd")
 const BayLines = preload("res://ui/bay_lines.gd")
 const CrewPanel = preload("res://ui/crew_panel.gd")
 const GroundPanel = preload("res://ui/ground_panel.gd")
+const TownLines = preload("res://ui/town_lines.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -323,10 +324,14 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 		),
 		16
 	)
+	TownLines.employment(g, b, s)
 	var main: Dictionary = PeopleLines.limit(g.sim, s, g.sim.population_view(int(s.region)))
 	if str(main.key) != "none":
 		D.label(b, "增长受限：" + str(main.text), 15, D.GOLD)
 	D.label(b, "食品可吃 %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
+	TownLines.sales(g, b, s)
+	TownLines.warehouse(g, b, s)
+	TownLines.supply(g, b, s)
 	BayLines.offshore(g, b, s)
 	D.label(
 		b,
@@ -436,6 +441,7 @@ static func _building_row(g, b, s: Dictionary, index: int):
 		15,
 		D.INK if active else D.MUTED
 	)
+	TownLines.facility(g, b, s, item)
 	if item.get("owner", "public") != "public":
 		return
 	var bt = D.button(

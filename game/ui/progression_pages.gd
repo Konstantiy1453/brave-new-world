@@ -435,49 +435,142 @@ static func manage(g, b):
 	if s.is_empty():
 		D.label(b, "请选择已建立的据点。", 20)
 		return
-	D.label(b, s.name + " / 批量生产与库存目标", 24, D.TEAL)
-	D.label(b, "停用住区会撤销该设施住房；保留建材和部件供本地建设与跨区调拨，只有真正余量自动出口。", 17, D.MUTED)
+	D.label(b, s.name + " / 库存与生产", 24, D.TEAL)
+	D.label(
+		b,
+		"每种物资两个设定：「本地保留」是至少留在本据点的数量，自动出口、供货合同和外调都停在它上面；「减产线」是库存到多少就停止生产。保留高于减产线时，生产会一直补到保留量。默认（自动）就是 1.10 的规则，只在需要时调整。",
+		16,
+		D.MUTED
+	)
+	var shifts: HBoxContainer = D.row(b)
+	var shift_words: Label = D.label(
+		shifts,
+		"自动减班：%s · 库存达到减产线、当天没有产出的设施，职工保留岗位、按 %.0f%% 工资减班；需求回升自动恢复"
+		% [
+			"开" if bool(s.get("auto_shifts", true)) else "关",
+			float(g.sim.config.get("shifts", {}).get("reduced_wage", 1.0)) * 100.0
+		],
+		15,
+		D.INK
+	)
+	shift_words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var region: int = int(s.region)
+	D.button(
+		shifts,
+		"关闭减班" if bool(s.get("auto_shifts", true)) else "开启减班",
+		func(): g.act("shifts", {"region": region, "enabled": not bool(s.get("auto_shifts", true))}),
+		"",
+		"ToggleShifts"
+	)
+	for reservation: Dictionary in s.get("reservations", []):
+		var held: HBoxContainer = D.row(b)
+		var kind: String = str(reservation.kind)
+		var note: Label = D.label(
+			held,
+			(
+				"为计划工程「%s」预留：建材 %s · 部件 %s"
+				% [
+					Labels.building_name(g.sim.config, kind),
+					Labels.t(float(reservation.materials)),
+					Labels.t(float(reservation.parts))
+				]
+			),
+			15,
+			D.GOLD
+		)
+		note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		D.button(
+			held,
+			"取消预留",
+			func(): g.act("reserve_release", {"region": region, "kind": kind}),
+			"",
+			"Release_" + kind
+		)
+	for good: String in g.sim.KEYS:
+		var row: Dictionary = g.sim.Stocks.availability(g.sim, s, good)
+		var produced: bool = float(row.total) > 0.0 or bool(row.keep_set) or bool(row.slowdown_set)
+		if not produced and not good in ["food", "materials", "parts"]:
+			continue
+		_stock_card(g, b, s, good, row)
+	D.label(b, "批量启用 / 停用", 18, D.TEAL)
 	for category in ["all", "production"]:
-		var row = D.row(b)
+		var line = D.row(b)
 		var cat = category
-		var caption = D.label(row, "全部公共设施" if cat == "all" else "生产设施", 18)
+		var caption = D.label(line, "全部公共设施" if cat == "all" else "生产设施", 18)
 		caption.custom_minimum_size.x = 150
 		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		D.button(
-			row,
+			line,
 			"批量启用",
 			func(): g.act("batch_toggle", {"region": g.selected, "category": cat, "enabled": true})
 		)
 		D.button(
-			row,
+			line,
 			"批量停用",
 			func(): g.act("batch_toggle", {"region": g.selected, "category": cat, "enabled": false})
 		)
-	for key in ["food", "materials", "parts"]:
-		var row = D.row(b)
-		var caption = D.label(
-			row, {"food": "食品目标（吨）", "materials": "建材目标（吨）", "parts": "部件目标（吨）"}[key], 18
+
+
+## One good: what the warehouse holds, what is held back and for whom, what can be sold (the same
+## figure the trade sells), and the two controls.
+static func _stock_card(g, b, s: Dictionary, good: String, row: Dictionary) -> void:
+	var card: VBoxContainer = D.card(b)
+	card.add_theme_constant_override("separation", 4)
+	var name: String = str(Labels.RESOURCE_NAMES.get(good, good))
+	var held: PackedStringArray = []
+	for entry: Dictionary in row.held:
+		if float(entry.amount) > 0.0:
+			held.append("%s %s" % [str(entry.name), Labels.t(float(entry.amount))])
+	var slowdown: float = g.sim.Production.target(g.sim, s, good)
+	var words: Label = D.label(
+		card,
+		(
+			"%s：库存 %s · 留用 %s（%s）· 可售 %s · 减产线 %s"
+			% [
+				name,
+				Labels.t(float(row.total)),
+				Labels.t(float(row.held_total)),
+				"、".join(held) if not held.is_empty() else "无",
+				Labels.t(float(row.sellable)),
+				Labels.t(slowdown),
+			]
+		),
+		16,
+		D.INK
+	)
+	D.named(words, "Stock_" + good)
+	var scale: float = Labels.tonnes_per_unit()
+	var region: int = int(s.region)
+	var limit: float = float(g.sim.config.get("stock_rules", {}).get("max_units", 10000.0)) * scale
+	for control: Array in [["reserve", "本地保留"], ["slowdown", "减产线"]]:
+		var key: String = str(control[0])
+		var line: HBoxContainer = D.row(card)
+		var chosen: float = (
+			g.sim.Stocks.set_reserve(s, good)
+			if key == "reserve"
+			else g.sim.Stocks.set_slowdown(s, good)
 		)
-		caption.custom_minimum_size.x = 180
-		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		# Shown and typed in tonnes; the rules keep hundreds of tonnes (economy.json `display`).
-		var scale: float = Labels.tonnes_per_unit()
-		var amount = D.spin(
-			row,
-			"Target_" + key,
-			0,
-			maxf(10000, g.sim._target(s, key)) * scale,
-			0.000001 * scale,
-			g.sim._target(s, key) * scale
+		var shown: float = chosen if chosen >= 0.0 else (
+			float(row.keep) if key == "reserve" else slowdown
 		)
-		amount.custom_arrow_step = 0.1 * scale
-		var resource = key
+		var caption: Label = D.label(
+			line, "%s（%s）" % [str(control[1]), "已设定" if chosen >= 0.0 else "自动"], 15, D.MUTED, false
+		)
+		caption.custom_minimum_size.x = 140
+		var amount = D.spin(line, "%s_%s" % [key.capitalize(), good], 0, limit, 0.1 * scale, shown * scale)
+		amount.custom_arrow_step = 10.0 * scale
+		amount.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		D.button(
-			row,
-			"设置目标",
-			func():
-				g.act(
-					"stock_target",
-					{"region": g.selected, "resource": resource, "target": amount.value / scale}
-				)
+			line,
+			"设定",
+			func(): g.act("stock_rule", {"region": region, "resource": good, key: amount.value / scale}),
+			"按吨输入",
+			"Set_%s_%s" % [key, good]
+		)
+		D.button(
+			line,
+			"自动",
+			func(): g.act("stock_rule", {"region": region, "resource": good, key: -1.0}),
+			"回到默认规则",
+			"Auto_%s_%s" % [key, good]
 		)

@@ -186,6 +186,8 @@ static func _underway_row(g, b: Control, s: Dictionary, item: Dictionary, plan: 
 	if not building:
 		total = maxi(left, _upgrade_total(g, item))
 	D.progress(card, 1.0 - float(left) / maxi(1, total), D.GOLD)
+	if building and g.sim.Production.withdraw_refusal(g.sim, item) == "":
+		_withdraw_button(g, card, s, item)
 	if not building or plan.is_empty():
 		D.label(card, "%s 完工 · 还要 %d 天" % [Labels.short_date(day + left), left], 13, D.MUTED)
 		return
@@ -222,6 +224,29 @@ static func _underway_row(g, b: Control, s: Dictionary, item: Dictionary, plan: 
 		"chip"
 	)
 	D.font_size(next, D.CAPTION)
+
+
+## An order no crew has started can be taken back: its cash and the stock it used come back once.
+static func _withdraw_button(g, card: Control, s: Dictionary, item: Dictionary) -> void:
+	var paid: Dictionary = item.get("paid", {})
+	var region: int = int(s.region)
+	var uid: int = int(item.get("uid", 0))
+	var back: Button = D.button(
+		card,
+		"撤单 · 退回 ¥ %s" % g.money(float(paid.get("cash", 0.0))),
+		func(): g.act("withdraw", {"site": region, "uid": uid}),
+		(
+			"还没开工：退回建设款 ¥ %s、建材 %s、部件 %s；当时按进口价现买的物资留在仓库"
+			% [
+				g.money(float(paid.get("cash", 0.0))),
+				Labels.t(float(paid.get("materials", 0.0))),
+				Labels.t(float(paid.get("parts", 0.0)))
+			]
+		),
+		"Withdraw_%d" % uid,
+		"chip"
+	)
+	D.font_size(back, D.CAPTION)
 
 
 static func _upgrade_total(g, item: Dictionary) -> int:
