@@ -40,7 +40,7 @@ static func _header(b, v: Dictionary, columns: Array) -> void:
 	D.label(title, "科研 / 四个方向的课题", 22, D.INK, false)
 	D.stat(strip, "研究团队", str(int(v.total)), D.GOLD, "研究所培养的研究团队总数")
 	D.stat(strip, "调查", str(int(v.investigating)), D.INK, "正在做地点调查的团队")
-	var assignable: Dictionary = g.sim.Research.assignable(g.sim)
+	var assignable: Dictionary = v.assignable
 	D.stat(
 		strip,
 		"可派",

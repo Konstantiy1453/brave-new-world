@@ -696,6 +696,8 @@ static func view(sim: RefCounted) -> Dictionary:
 		"benches": benches,
 		"projects": rows,
 		"contract": r.contract,
+		# The one count of teams that can be put to work now (alerts and controls use it too).
+		"assignable": assignable(sim),
 	}
 
 
