@@ -10,7 +10,7 @@ The build: `ColonyCharter-1.11.0-preview-20261121-decisions`, exported from comm
 (23,042,348 bytes); `ColonyCharter.exe` SHA-256 `78CCC576E8F8BFFD7EF6AD6F36EBD72A41E609A1052225A55B3407C96EA84065`
 (the Godot 4.5.1 Windows runtime, the same file as in 1.10.0 and 1.10.1).
 
-Matched branches start from the same 1.10.1 save (`saves/`, written by the 1.10.1 code at commit
+Matched branches start from the same 1.10.1 save (`save_files/`, written by the 1.10.1 code at commit
 `3e3ab15`) and run the 1.10.1 code (a worktree at `3e3ab15`) and the 1.11 code side by side with the
 same actions.
 
