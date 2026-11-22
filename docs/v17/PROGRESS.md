@@ -19,6 +19,24 @@ changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. 
 | Radius, stage three, tutorial, prospecting | radius slider 0.70–1.30 with km and gravity; stage three by one operating route of three, 600 people an achievement (measured on six seeds, `STAGE_THREE_ROUTES.md`); the tutorial opens on a bay with the mine-or-harbour decision; prospecting one resource at a time (orbit, field survey, drilling) | **done** (`0d8ed9d`, `4604991`, `3a35730`, `c5dda12`); suite `v110_audit` (102 checks) |
 | Not done from the Nov 20 brief | offshore surveying tech, seabed extraction and its cargo; nickel and cobalt; larger districts, natural slopes, landform clues and close-range surfaces; the farmer occupation and one population unit everywhere; crews for roads, repairs and surveys with standing orders and costlier crews; local consequences by kind of town; the immigrant transport tied to the homes it fills | open |
 
+**This round (2026-11-22).** Metals, crews beyond buildings, people, the endless flat map and the
+space background (`741e881`, `93f8a30`, `591f011`), then the release gate (`a635393`-`09457a5`).
+- **Suites.** On `591f011` 48 of 55 headless suites passed. On `a635393` 54 of 55, and on `9c45be7`
+  the payback suite passes too (42 checks), so every headless suite now passes on Linux. The four
+  "Linux-only" suites: `v17_saves` and `v18_systems` check the Windows-made fixtures on Windows only
+  (SKIP with the reason elsewhere); `world_v16_seed` had a stale atlas assertion (failed on every
+  platform since `319dc44`); `v17_tutorial`'s script errors were a real bug (a 1.6 save's globe
+  preview), fixed.
+- **Payback.** The suite judged medians of one or two colonies as "5 seeds"; it now needs 3 of 5.
+  Bands unchanged; evidence over three commits in DECISIONS.md.
+- **Harness `crews-d24c660`** (chunked, 51 runs): 0 audit errors, determinism 3/3, balanced award
+  median 2,674. 16 met, 6 missed: research balanced (40 techs, 10%, at the floor), services budget
+  (5 of 9 runs), absorption year 3 (80%), and the standing openings, sloppy-on-hard and labour lever.
+- **Windows.** Run kit `tools/windows_run_kit.ps1`, `docs/v17/WINDOWS_RUN_KIT.md`; 5 of its 8 cases
+  pre-checked on Linux with the shipped PCK (64 checks). Waiting for the user's Windows run.
+- **Open.** The star glare (renders nowhere on Linux); the three new harness misses; the brief's
+  crew-built roads balance, local event consequences, larger region and natural terrain.
+
 **This round (2026-11-20).** The November 20 brief: free placement first, then the audit.
 - **Build.** `ColonyCharter-1.10.1-preview-20261120-placement`, commit `1853590`, PCK SHA-256
   `78181ECC…786F`. Handoff with the plain status of every requirement: `docs/v17/HANDOFF_20261120.md`.
