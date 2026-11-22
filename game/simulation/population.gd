@@ -499,6 +499,24 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 		"jobless_stop": float(sim.pop_rules.immigration.jobless_stop_share),
 		# Who would come in the next 30 days, within the beds free after reservations.
 		"expected_30": mini(roundi(rate), maxi(0, free_beds(sim, s))),
+		"occupations": occupations(s),
+	}
+
+
+## A town's people by occupation, every one counted as one person (one bed, one wage): workers in
+## the facilities (职工, with the jobless among them), farmers on the farms (农民), research teams
+## (研究团队, each counted as one person), crews (工程队, each counted as its resident foreman)
+## and the young (未成年). They add up to the town's population.
+static func occupations(s: Dictionary) -> Dictionary:
+	var farmers: int = clampi(int(s.get("farmers", 0)), 0, int(s.get("workers", 0)))
+	return {
+		"workers": int(s.get("workers", 0)) - farmers,
+		"farmers": farmers,
+		"researchers": int(s.get("scientists", 0)),
+		"crews": int(s.get("crew", 0)),
+		"children": int(s.get("children", 0)),
+		"jobless":
+		maxi(0, int(s.get("workers", 0)) + int(s.get("scientists", 0)) - int(s.get("employed", 0))),
 	}
 
 
@@ -546,6 +564,7 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 	var specialists: int = int(s.scientists) - research_employed
 	s.employed_workers = 0
 	s.employed_scientists = research_employed
+	s.farmers = 0
 	for b: Dictionary in s.buildings:
 		b.employed = mini(int(b.get("employed", 0)), available)
 		b.specialists = mini(int(b.get("specialists", 0)), specialists)
@@ -553,6 +572,9 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 		specialists -= int(b.specialists)
 		s.employed_workers += int(b.employed)
 		s.employed_scientists += int(b.specialists)
+		var role: String = str(sim.config.buildings.get(str(b.kind), {}).get("role", ""))
+		if role in sim.Production.FARMING_ROLES:
+			s.farmers = int(s.farmers) + int(b.employed)
 		if b.kind == "service" and not sim.state.enterprise.is_empty():
 			sim.state.enterprise.employees = b.employed
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)

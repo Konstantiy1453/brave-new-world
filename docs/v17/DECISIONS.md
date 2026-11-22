@@ -1128,3 +1128,14 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Each crew beyond the colony's first two costs a quarter of the base price more to train (¥ 900)
   or to hire (¥ 1,500 before the campaign step): the third ¥ 1,125, the fourth ¥ 1,350 · a rising
   wage, which would also punish crews already working.
+- Farmers (农民) are the workers employed on farms and indoor farms, counted each day (s.farmers,
+  part of the workers); every count of people is in persons, and a research team (研究团队, the
+  1.8 request's name, V18_BRIEF row 4) and a crew each count one person, one bed, one wage; the
+  readouts list workers, farmers, research teams, crews and the young · renaming research teams
+  back to researchers, which the 1.8 request replaced.
+- The flat map has no east or west edge: the camera wraps at 180° and copies of the map's content
+  stand one map width to each side (moving cargo excepted); it zooms out no further than the map's
+  height, where the poles sit on the window's top and bottom edges · a clamped pan.
+- The globe stands in deep space: a dome with the galaxy's band, dust, faint nebulae and dense faint
+  stars behind the existing star field, and the planet's star as a large glare in the real sun's
+  direction, globe only · a skybox image.

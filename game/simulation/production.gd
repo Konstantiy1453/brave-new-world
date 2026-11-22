@@ -23,6 +23,8 @@ const POLLUTED_ROLES: Array[String] = [
 	"mine", "harvest", "farm", "indoor_farm", "factory", "foodworks"
 ]
 const RATIONED_ROLES: Array[String] = ["mine", "farm", "indoor_farm", "factory"]
+## Facilities whose workers are farmers (农民): fields and indoor farms.
+const FARMING_ROLES: Array[String] = ["farm", "indoor_farm"]
 const EVENT_KINDS: Dictionary = {
 	"mine": "mine",
 	"harvest": "mine",
@@ -445,6 +447,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 	s.jobs = 0
 	s.employed_workers = 0
 	s.employed_scientists = 0
+	# Farmers (农民, 1.10.1): the town's workers employed on its farms today, an occupation of their
+	# own on every page; they are part of `workers`.
+	s.farmers = 0
 	s.port_capacity = 0.0
 	s.port_used = 0.0
 	s.power_supply = 0.0
@@ -511,6 +516,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.specialists = mini(special, maxi(0, int(s.scientists) - int(s.employed_scientists)))
 		s.employed_workers += b.employed
 		s.employed_scientists += b.specialists
+		if role in FARMING_ROLES:
+			s.farmers = int(s.farmers) + int(b.employed)
 		b.efficiency = 1.0
 		if required > 0:
 			b.efficiency = float(b.employed) / required

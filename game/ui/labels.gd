@@ -322,6 +322,21 @@ static func icon_key(config: Dictionary, kind: String) -> String:
 	return str(spec.get("model", kind)).trim_prefix("mine_")
 
 
+## The people of a town or the colony by occupation (population.gd `occupations`), each counted as
+## one person: one bed, one wage. A crew counts as its resident foreman.
+static func occupations_text(jobs: Dictionary) -> String:
+	return (
+		"职工 %d · 农民 %d · 研究团队 %d · 工程队 %d · 未成年 %d（每人一张床、一份工资；研究团队和工程队每支计 1 人）"
+		% [
+			int(jobs.get("workers", 0)),
+			int(jobs.get("farmers", 0)),
+			int(jobs.get("researchers", 0)),
+			int(jobs.get("crews", 0)),
+			int(jobs.get("children", 0)),
+		]
+	)
+
+
 static func building_name(config: Dictionary, kind: String) -> String:
 	if kind == "service":
 		return "民营生活服务社"

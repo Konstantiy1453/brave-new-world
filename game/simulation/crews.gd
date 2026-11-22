@@ -76,6 +76,7 @@ static func _release_jobs(s: Dictionary) -> void:
 		return
 	s.employed_workers = int(s.employed_workers) - over
 	s.employed = maxi(0, int(s.get("employed", 0)) - over)
+	s.farmers = mini(int(s.get("farmers", 0)), int(s.get("workers", 0)))
 	var buildings: Array = s.get("buildings", [])
 	for index: int in range(buildings.size() - 1, -1, -1):
 		if over <= 0:

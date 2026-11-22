@@ -725,6 +725,8 @@ func audit() -> Array:
 			!= int(s.children) + int(s.workers) + int(s.scientists) + int(s.get("crew", 0))
 		):
 			errors.append("population partition")
+		if int(s.get("farmers", 0)) > int(s.workers) or int(s.get("farmers", 0)) < 0:
+			errors.append("farmers outside the workers")
 		if s.employed_workers > s.workers or s.employed_scientists > s.scientists:
 			errors.append("duplicate job allocation")
 		if int(s.workers) < 0 or int(s.scientists) < 0 or int(s.children) < 0:

@@ -409,6 +409,8 @@ func _rockfall_trigger() -> void:
 	sim.act("settle", {"site": 1})
 	step(sim, 12)
 	check(sim.act("connect", {"a": 0, "b": 1, "variant": "engineered"}) == "", "an engineered road")
+	# This suite steps the roads alone: its road is built without waiting for a crew (crews.gd).
+	sim.Crews.unlimited(sim)
 	sim.state.day = 100
 	var road: Dictionary = sim.state.roads[0]
 	var opened: bool = false

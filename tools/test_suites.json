@@ -28,6 +28,7 @@
     {"name": "v110_audit", "script": "res://tests/v110_audit.gd", "success": "V110_AUDIT_RESULT checks=\\d+ failures=0"},
     {"name": "v110_metals", "script": "res://tests/v110_metals.gd", "success": "V110_METALS_RESULT checks=\\d+ failures=0"},
     {"name": "v110_dispatch", "script": "res://tests/v110_dispatch.gd", "success": "V110_DISPATCH_RESULT checks=\\d+ failures=0"},
+    {"name": "v110_people", "script": "res://tests/v110_people.gd", "success": "V110_PEOPLE_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

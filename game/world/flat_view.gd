@@ -20,6 +20,9 @@ const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
 ## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
 const FLAT_WRAP_JUMP: float = 9.0
+## The flat map's width and height in scene units (360° and 180° at 20° a unit).
+const FLAT_WIDTH: float = 18.0
+const FLAT_HEIGHT: float = 9.0
 ## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
 const SHIP_DAYS: float = 3.0
 ## Where in its call a ship is on the day of its town's latest sea cargo: alongside the quay.
@@ -69,24 +72,12 @@ func _build_flat() -> void:
 	var sheet := QuadMesh.new()
 	sheet.size = Vector2(18, 9)
 	_mesh(flat_world, sheet, Vector3.ZERO, material)
-	# A restrained cartographic frame, not the regional construction grid.
-	var frame: Array[Vector3] = [
-		Vector3(-9, -4.5, .02),
-		Vector3(9, -4.5, .02),
-		Vector3(9, 4.5, .02),
-		Vector3(-9, 4.5, .02),
-		Vector3(-9, -4.5, .02)
-	]
-	_line(flat_world, frame, Color("5a8491"), .15)
-	for lon in range(-180, 181, 60):
+	# No frame and no east or west edge: the map repeats round the planet (`_refresh_flat_ghosts`).
+	# Longitude ticks along the top edge; 180° once, where the copies meet.
+	for lon in range(-120, 181, 60):
 		var p := _flat_point(90, lon)
 		_line(flat_world, [p, p + Vector3(0, .12, 0)], Color("718e9c"), .1)
 		_flat_label(flat_world, Vector3(p.x, 4.78, .03), "%d°" % lon, Color("8da6b4"), .0065, 26)
-	for lat in [-60, -30, 0, 30, 60]:
-		_flat_label(
-			flat_world, Vector3(-9.38, lat / 20.0, .03), "%d°" % lat, Color("8da6b4"), .0065, 26
-		)
-	_flat_label(flat_world, Vector3(0, -4.9, .03), "全球勘察图  /  等距经纬投影", Color("90aeb9"), .0068, 30)
 	flat_marker_root = Node3D.new()
 	flat_world.add_child(flat_marker_root)
 	flat_transport_root = Node3D.new()
@@ -98,6 +89,33 @@ func _build_flat() -> void:
 	_build_global_water(flat_world, true)
 	_update_flat_markers()
 	_update_flat_transport()
+	flat_ghosts_dirty = true
+
+
+## Copies of the flat map's content one map width west and east (its moving cargo excepted), so a
+## view across the 180° meridian shows the planet going on. Rebuilt only when the map has changed.
+func _refresh_flat_ghosts() -> void:
+	for ghost: Node3D in flat_ghosts:
+		if is_instance_valid(ghost):
+			ghost.get_parent().remove_child(ghost)
+			ghost.queue_free()
+	flat_ghosts.clear()
+	flat_ghosts_dirty = false
+	if flat_world == null or not is_instance_valid(flat_world):
+		return
+	var originals: Array = []
+	for child: Node in flat_world.get_children():
+		if child == flat_mover_root or child.has_meta("flat_ghost"):
+			continue
+		originals.append(child)
+	for side: float in [-FLAT_WIDTH, FLAT_WIDTH]:
+		var ghost := Node3D.new()
+		ghost.set_meta("flat_ghost", true)
+		ghost.position = Vector3(side, 0, 0)
+		flat_world.add_child(ghost)
+		for child: Node in originals:
+			ghost.add_child(child.duplicate())
+		flat_ghosts.append(ghost)
 
 
 func _flat_label(
@@ -207,6 +225,7 @@ func _place_flat_label(point: Vector3, text: String, placed: Array) -> Vector3:
 func _update_flat_markers() -> void:
 	if flat_marker_root == null or not is_instance_valid(flat_marker_root):
 		return
+	flat_ghosts_dirty = true
 	for child in flat_marker_root.get_children():
 		flat_marker_root.remove_child(child)
 		child.queue_free()
@@ -420,6 +439,7 @@ func _disc(
 func _update_flat_transport() -> void:
 	if flat_transport_root == null or not is_instance_valid(flat_transport_root):
 		return
+	flat_ghosts_dirty = true
 	for root: Node3D in [flat_transport_root, flat_mover_root]:
 		if root == null or not is_instance_valid(root):
 			continue

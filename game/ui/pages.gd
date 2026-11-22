@@ -309,20 +309,23 @@ static func _settlement_buildings(g, b, s: Dictionary):
 
 
 static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
-	D.label(
-		b,
-		(
-			"人口 %d  ·  床位 %d\n就业 %d / 劳动力 %d  ·  研究团队 %d  ·  未成年 %d"
-			% [
-				s.population,
-				s.get("housing", 0),
-				s.get("employed", 0),
-				int(s.workers) + int(s.scientists),
-				s.scientists,
-				s.children
-			]
-		),
-		16
+	var jobs: Dictionary = g.sim.Population.occupations(s)
+	(
+		D
+		. label(
+			b,
+			(
+				"人口 %d 人  ·  床位 %d 张\n%s\n就业 %d / 劳动力 %d"
+				% [
+					s.population,
+					s.get("housing", 0),
+					Labels.occupations_text(jobs),
+					s.get("employed", 0),
+					int(s.workers) + int(s.scientists),
+				]
+			),
+			16
+		)
 	)
 	var main: Dictionary = PeopleLines.limit(g.sim, s, g.sim.population_view(int(s.region)))
 	if str(main.key) != "none":
@@ -793,7 +796,7 @@ static func contract(g, b):
 	D.label(
 		v,
 		(
-			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。职工 %d、工程队 %d 支、研究团队 %d、未成年 %d。"
+			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。职工 %d 人、工程队 %d 支（每支计 1 人）、研究团队 %d 支（每支计 1 人）、未成年 %d 人。"
 			% [
 				float(op.cash) * capital,
 				Labels.t(float(op.food)),
@@ -1787,7 +1790,7 @@ static func population(g, b):
 	)
 	D.button(
 		recruit_row,
-		"招募研究团队 · ¥ %.0f/支" % float(v.scientist_price),
+		"招募研究团队 · ¥ %.0f/支（计 1 人）" % float(v.scientist_price),
 		func():
 			g.act("recruit", {"region": region, "kind": "scientist", "count": int(count.value)}),
 		"",

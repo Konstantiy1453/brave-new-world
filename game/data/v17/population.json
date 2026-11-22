@@ -3,7 +3,7 @@
   "units": {
     "time": "game day",
     "money": "account units",
-    "people": "persons",
+    "people": "persons: every count of people is in persons, and a worker (职工), a farmer (农民, a worker on a farm), a research team (研究团队, named so by the 1.8 request, counted as one person), a crew (工程队, counted as its resident foreman) and a child (未成年) each count one, take one bed and draw one wage",
     "share": "fraction 0-1",
     "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews"
   },

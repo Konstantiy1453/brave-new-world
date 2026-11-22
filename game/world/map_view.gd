@@ -6,6 +6,64 @@ const DAY_AMBIENT: Color = Color("8aacbe")
 const NIGHT_AMBIENT: Color = Color("4a6a96")
 const DAY_SKY: Color = Color("080f1c")
 const NIGHT_SKY: Color = Color("03070f")
+## Deep space on the globe: the dome's radius, and the star's distance and size (scene units).
+const SPACE_RADIUS: float = 320.0
+const STAR_DISTANCE: float = 200.0
+const STAR_SIZE: float = 170.0
+const SPACE_SHADER: String = """
+shader_type spatial;
+render_mode unshaded, cull_front, depth_draw_never, fog_disabled, shadows_disabled;
+uniform vec3 band_normal = vec3(0.32, 0.86, 0.40);
+varying vec3 dir;
+void vertex() {
+	dir = normalize(VERTEX);
+}
+float hash(vec3 p) {
+	p = fract(p * 0.3183099 + 0.1);
+	p *= 17.0;
+	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(
+		mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x),
+			mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
+		mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x),
+			mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p) {
+	float v = 0.0;
+	float a = 0.5;
+	for (int i = 0; i < 5; i++) {
+		v += a * noise(p);
+		p = p * 2.03 + vec3(1.7, 9.2, 3.1);
+		a *= 0.5;
+	}
+	return v;
+}
+void fragment() {
+	vec3 d = normalize(dir);
+	float h = dot(d, normalize(band_normal));
+	float band = exp(-h * h / 0.03);
+	float n = fbm(d * 3.0);
+	float fine = fbm(d * 9.0 + 4.0);
+	float dust = smoothstep(0.47, 0.75, fbm(d * 6.0 + 11.0)) * band;
+	vec3 col = vec3(0.010, 0.018, 0.040);
+	col += vec3(0.09, 0.13, 0.23) * band * (0.5 + 0.9 * n);
+	col += vec3(0.20, 0.22, 0.29) * pow(band, 3.0) * fine;
+	col *= 1.0 - dust * 0.7;
+	col += vec3(0.03, 0.09, 0.15) * smoothstep(0.52, 0.86, fbm(d * 2.2 + 7.0));
+	col += vec3(0.09, 0.03, 0.13) * smoothstep(0.56, 0.9, fbm(d * 2.6 - 3.0));
+	vec3 cell = floor(d * 720.0);
+	float s = hash(cell);
+	float star = step(0.9972, s) * (0.3 + 0.7 * hash(cell + 3.1));
+	star += step(0.990, s) * band * 0.35;
+	col += vec3(0.72, 0.80, 1.0) * star * 0.55;
+	ALBEDO = col;
+}
+"""
 ## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
 ## that hides the landscape's far edge: it begins and is complete this far from the eye.
 const REGION_DAY_AIR: Color = Color("6b8291")
@@ -33,6 +91,11 @@ const HQ_SHADOW_BLUR: float = 1.3
 var environment: Environment
 var fill_light: DirectionalLight3D
 var star_field: MultiMeshInstance3D
+## Deep space behind the globe (1.10.1): a dome far beyond the stars with the galaxy's band, dust
+## lanes and faint nebulae, and the planet's own star, a large glare in the sun's real direction.
+## The planet hides the star when it stands in front, so it shows as the globe is turned towards it.
+var space_dome: MeshInstance3D
+var star_glare: MeshInstance3D
 ## A site the camera keeps in view while the spin eases out after a click.
 var focus_site: int = -1
 ## 0 by full day, 1 by full night, at the selected site: lamps and windows read this.
@@ -333,7 +396,8 @@ func orbit(dx: float, dy: float) -> void:
 func zoom(amount: float) -> void:
 	if mode == "flat":
 		flat_user_zoomed = true
-		flat_size = clampf(flat_size + amount * .85, 4.2, 23.0)
+		# Zoomed out as far as it goes, the poles sit on the window's top and bottom edges.
+		flat_size = clampf(flat_size + amount * .85, 4.2, FLAT_HEIGHT)
 	elif mode == "planet":
 		sky.hold_spin()
 		planet_distance = clampf(planet_distance + amount * .65, 7.0, 15.8)
@@ -344,8 +408,11 @@ func zoom(amount: float) -> void:
 func pan(dx: float, dy: float) -> void:
 	if mode == "flat":
 		flat_center += Vector2(-dx, dy) * flat_size * .0012
-		flat_center.x = clampf(flat_center.x, -9.0, 9.0)
-		flat_center.y = clampf(flat_center.y, -4.5, 4.5)
+		# East and west without end: past 180° the view comes round to -180°, where the copies of
+		# the map stand (`_refresh_flat_ghosts`).
+		flat_center.x = wrapf(flat_center.x, -FLAT_WIDTH * 0.5, FLAT_WIDTH * 0.5)
+		var room: float = maxf(0.0, (FLAT_HEIGHT - flat_size) * 0.5)
+		flat_center.y = clampf(flat_center.y, -room, room)
 		return
 	if mode != "region" or camera == null:
 		return
@@ -377,6 +444,10 @@ func _region_at(screen_pos: Vector2, radius: float = HOVER_RADIUS) -> int:
 		if camera.is_position_behind(point):
 			continue
 		var distance: float = camera.unproject_position(point).distance_to(screen_pos)
+		if mode == "flat":
+			for side: float in [-FLAT_WIDTH, FLAT_WIDTH]:
+				var copy: Vector3 = point + Vector3(side, 0, 0)
+				distance = minf(distance, camera.unproject_position(copy).distance_to(screen_pos))
 		if distance < best:
 			best = distance
 			nearest = int(reg.id)
@@ -575,6 +646,7 @@ func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
 ## lights a route: where it leaves town, junctions and the cargo moving on it.
 func set_route_overlay(on: bool) -> void:
 	routes_shown = on
+	flat_ghosts_dirty = true
 	for root: Variant in [transport_root, flat_transport_root]:
 		if root is Node3D and is_instance_valid(root):
 			(root as Node3D).visible = on
@@ -649,11 +721,19 @@ func _shoulder_sun() -> Vector3:
 
 
 func _update_camera(weight: float) -> void:
+	_place_space()
 	if mode == "flat":
 		var ui_scale: float = get_window().content_scale_factor
 		if not flat_user_zoomed:
-			flat_size = 16.6 * maxf(1.0, ui_scale)
-		camera.size = lerpf(camera.size, flat_size, weight)
+			flat_size = FLAT_HEIGHT
+		flat_size = minf(flat_size, FLAT_HEIGHT)
+		camera.size = minf(lerpf(camera.size, flat_size, weight), FLAT_HEIGHT)
+		# The view never goes past a pole: at the widest it shows them on its top and bottom edges.
+		var room: float = maxf(0.0, (FLAT_HEIGHT - camera.size) * 0.5)
+		flat_center.y = clampf(flat_center.y, -room, room)
+		var half_width: float = camera.size * 0.5 * get_viewport().get_visible_rect().size.aspect()
+		if flat_ghosts_dirty and absf(flat_center.x) + half_width + 1.0 > FLAT_WIDTH * 0.5:
+			_refresh_flat_ghosts()
 		camera.position = Vector3(flat_center.x, flat_center.y, 16)
 		camera.look_at(Vector3(flat_center.x, flat_center.y, 0), Vector3.UP)
 		camera.h_offset = flat_size * 87.5 * ui_scale / 900.0
@@ -676,6 +756,7 @@ func _update_camera(weight: float) -> void:
 ## On the globe the light comes from the real sun (or over the viewer's shoulder without day and
 ## night). In a region the sun stands where it stands over that site on the turning planet.
 func _aim_sun() -> void:
+	_place_space()
 	if sun_light == null:
 		return
 	if mode == "region" and day_night_enabled and not world.is_empty():
@@ -863,6 +944,75 @@ func _build_stars() -> void:
 	stars.multimesh = mm
 	add_child(stars)
 	star_field = stars
+	_build_space()
+
+
+## The space dome and the star's glare (see `space_dome`).
+func _build_space() -> void:
+	var dome := SphereMesh.new()
+	dome.radius = SPACE_RADIUS
+	dome.height = SPACE_RADIUS * 2.0
+	dome.radial_segments = 64
+	dome.rings = 32
+	var sky_shader := Shader.new()
+	sky_shader.code = SPACE_SHADER
+	var sky_material := ShaderMaterial.new()
+	sky_material.shader = sky_shader
+	space_dome = MeshInstance3D.new()
+	space_dome.name = "SpaceDome"
+	space_dome.mesh = dome
+	space_dome.material_override = sky_material
+	space_dome.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(space_dome)
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * STAR_SIZE
+	# The star's glare: a white core in a warm halo, always facing the camera, added to the sky.
+	var glow := Gradient.new()
+	glow.offsets = PackedFloat32Array([0.0, 0.05, 0.14, 0.34, 0.62, 1.0])
+	glow.colors = PackedColorArray(
+		[
+			Color(1.0, 1.0, 1.0, 1.0),
+			Color(1.0, 0.98, 0.9, 1.0),
+			Color(1.0, 0.9, 0.68, 0.75),
+			Color(1.0, 0.78, 0.48, 0.3),
+			Color(1.0, 0.66, 0.36, 0.08),
+			Color(1.0, 0.6, 0.3, 0.0)
+		]
+	)
+	var texture := GradientTexture2D.new()
+	texture.gradient = glow
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	texture.width = 256
+	texture.height = 256
+	var glare_material := StandardMaterial3D.new()
+	glare_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glare_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glare_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	glare_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	glare_material.albedo_texture = texture
+	glare_material.albedo_color = Color(1.6, 1.5, 1.35, 1.0)
+	glare_material.disable_fog = true
+	star_glare = MeshInstance3D.new()
+	star_glare.name = "StarGlare"
+	star_glare.mesh = quad
+	star_glare.material_override = glare_material
+	star_glare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(star_glare)
+	_place_space()
+
+
+## Space shows on the globe only; the star stands in the real sun's direction (also when day and
+## night are off and the globe is lit over the viewer's shoulder).
+func _place_space() -> void:
+	var on_globe: bool = mode == "planet"
+	if space_dome != null and is_instance_valid(space_dome):
+		space_dome.visible = on_globe
+	if star_glare != null and is_instance_valid(star_glare):
+		star_glare.visible = on_globe
+		if on_globe:
+			star_glare.position = sky.sun_world().normalized() * STAR_DISTANCE
 
 
 func _exit_tree() -> void:

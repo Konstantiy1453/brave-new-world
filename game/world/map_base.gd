@@ -45,6 +45,10 @@ var transport_root: Node3D
 ## Cargo moving on the routes: lights at night, shown with or without the route diagram.
 var mover_root: Node3D
 var flat_mover_root: Node3D
+## The flat map repeats east and west without end (1.10.1): copies of its content one map width to
+## each side, refreshed when the map changes (`flat_ghosts_dirty`) and the view nears a seam.
+var flat_ghosts: Array = []
+var flat_ghosts_dirty: bool = true
 ## The complete transport diagram, an overlay the player switches on and off (1.10).
 var routes_shown: bool = true
 var buildings_root: Node3D

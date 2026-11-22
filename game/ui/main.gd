@@ -1053,10 +1053,14 @@ func _refresh_top() -> Dictionary:
 	var water_used: float = 0.0
 	var stock: Dictionary = {}
 	var places: PackedStringArray = []
+	var jobs: Dictionary = {}
 	for s: Dictionary in state.settlements:
 		people += int(s.population)
 		employed += int(s.get("employed", 0))
 		children += int(s.get("children", 0))
+		var here: Dictionary = sim.Population.occupations(s)
+		for key: String in here:
+			jobs[key] = int(jobs.get(key, 0)) + int(here[key])
 		power += float(s.power_supply)
 		power_used += float(s.power_demand)
 		water += float(s.water_supply)
@@ -1076,10 +1080,17 @@ func _refresh_top() -> Dictionary:
 		Stats.labour_change(state, DAILY_WINDOW),
 		(
 			(
-				"劳动力 %d：职工和研究团队；另有工程队 %d 支（施工、维修、外勤）\n"
-				+ "人口 %d · 就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
+				"劳动力 %d 人：职工、农民和研究团队；另有工程队 %d 支（施工、维修、外勤）\n"
+				+ "人口 %d 人：%s\n就业 %d · 未成年 %d\n后面的数字是每日变化（近 7 日平均）。"
 			)
-			% [labour, _crew_count(state), people, employed, children]
+			% [
+				labour,
+				_crew_count(state),
+				people,
+				Labels.occupations_text(jobs),
+				employed,
+				children
+			]
 		)
 	)
 	_set_cell_text(
