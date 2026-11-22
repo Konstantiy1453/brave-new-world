@@ -20,18 +20,24 @@ handoff with the plain status of every requirement in `docs/v17/HANDOFF_20261121
 | Contract panel | status, trend, ETA, holding condition and action per goal; housing or jobs; technologies and commissions; actions open a town that can do them; "advance to the next decision" | **done** (`6146a5c`) |
 | Events | quieter opening, pacing by stage, colony-wide interruption cap (new arrivals only), the two-town water-station decision | **done** (`06a78c5`, `fefd4ca`) |
 | Interface fixes | live pages with panels not pausing, expiry in place, tutorial kept in saves (resume and restart apart), honest reshuffle, one team count | **done** (`91c4a4c`, `0462dd0`) |
-| Verification | interface driver for the 1.11 flows (`tools/verify/decisions_driver.gd`), placement driver updated; both run on the exported PCK and through the Windows EXE under Wine; matched branches and records (`tools/verify/records/`) | **done** (`834ddd1` and the records commit) |
+| Verification | interface driver for the 1.11 flows (`tools/verify/decisions_driver.gd`), placement driver updated; both run on the exported PCK and through the Windows EXE under Wine; matched branches and records (`tools/verify/records/`) | **done** (`834ddd1`, `a3ee4db` and the records commits) |
 
 **This round (2026-11-21).**
-- **Build.** `ColonyCharter-1.11.0-preview-20261121-decisions`, commit `834ddd1`, PCK SHA-256
-  `10C9A62D…E08F`. The EXE is the unchanged Godot 4.5.1 runtime.
-- **Suites (headless, on `834ddd1` plus the legacy-world fix).** 48 of 58 pass in the full run; the
-  re-run of the five suites the fix touched passes. Failing as on 1.10.1: `v17_saves`, `v17_tutorial`,
+- **Build.** `ColonyCharter-1.11.0-preview-20261121-decisions`, commit `a3ee4db`, PCK SHA-256
+  `E1AEE445…3089`. The EXE is the unchanged Godot 4.5.1 runtime. Interface checks on it: PCK 220 of
+  220, EXE (Wine) 175 of 175.
+- **A regression found and fixed late.** The first harness run (`decisions-834ddd1`) awarded only 4
+  of 9 balanced runs: every town now stands on the planet's own deposits, and with 1.10's reserves the
+  mines ran dry by about day 600. `a3ee4db` doubles the reserves (see DECISIONS); the harness on it is
+  in `BALANCE.md`.
+- **Suites (headless, on `a3ee4db`).** 48 of 54 pass; `v17_world_stats` timed out under load and
+  passes alone (309 s). Failing as on 1.10.1: `v17_saves`, `v17_tutorial`,
   `v18_systems`, `world_v16_seed` (Windows fixtures) and the seven `review_*` tools (D: paths, not
   run). `v16_interaction_probe` and `v16_scroll_probe` fail under Xvfb exactly as on 1.10.1;
-  `world_v16_visual` and `world_v17_seam` pass. `v19_payback` misses 13 of 43 checks (1.10.1: 3): every
-  mine band in year 6 (light mines 23–42 days against 70–150), the tailings plant and sea copper
-  (faster than 120 days) and the smelter (482 days in year 4). The cause is not isolated: visible
+  `world_v16_visual` and `world_v17_seam` pass (on `834ddd1`). `v19_payback` misses 11 of 42 checks
+  (1.10.1: 3; 13 of 43 before the reserve fix): every mine band in year 6 (light mines from 29 days
+  against 70–150), the tailings plant and sea copper (faster than 120 days) and the smelter (slower
+  than 300). The cause is not isolated: visible
   deposit grades on the sites towns now get are only about 7% higher than the generator's own sites,
   too little to explain it; the bots' colonies also differ (sites chosen by the card, supply orders,
   a slower stage two to three).

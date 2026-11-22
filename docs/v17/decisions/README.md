@@ -5,9 +5,9 @@ Every figure here comes from a record file in this folder, made by the scripts i
 `tools/verify/placement_driver.gd` (interface records). Labels as in `CLAUDE.md`. Human playtest:
 NOT_RUN.
 
-The build: `ColonyCharter-1.11.0-preview-20261121-decisions`, exported from commit `834ddd1`.
-`ColonyCharter.pck` SHA-256 `10C9A62D8292DE32ACBF43334A39E8F9DA9DFD759A8101A260F009BA9841E08F`
-(23,042,348 bytes); `ColonyCharter.exe` SHA-256 `78CCC576E8F8BFFD7EF6AD6F36EBD72A41E609A1052225A55B3407C96EA84065`
+The build: `ColonyCharter-1.11.0-preview-20261121-decisions`, exported from commit `a3ee4db` (twice
+1.10's deposit reserves). `ColonyCharter.pck` SHA-256
+`E1AEE4458E09C35F9EC9017921CBB07AC724F029BA538B305654BB565ECB3089` (23,042,572 bytes); `ColonyCharter.exe` SHA-256 `78CCC576E8F8BFFD7EF6AD6F36EBD72A41E609A1052225A55B3407C96EA84065`
 (the Godot 4.5.1 Windows runtime, the same file as in 1.10.0 and 1.10.1).
 
 Matched branches start from the same 1.10.1 save (`save_files/`, written by the 1.10.1 code at commit
@@ -37,8 +37,9 @@ hash.
 | expedition, coastal, flat map | the same to unmarked coastal ground (day 5, stage one, ¥0 exported) | 22 / 22 | 22 / 22 |
 | **All** | | **220 / 220** | **175 / 175** |
 
-The EXE column ran the shipped `ColonyCharter.exe` with its `ColonyCharter.pck` beside it; the engine
-reports `OS.get_name() == "Windows"` there (checked separately; the drivers now record it).
+Both columns ran on the PCK exported from `a3ee4db`. The EXE column ran the shipped `ColonyCharter.exe`
+with that PCK beside it; every EXE record says `os: Windows`. (The same 19 cases passed on the PCK
+exported from `834ddd1` before the reserve fix; those records are in this folder's history.)
 
 ## Seed 3: the two coasts
 
