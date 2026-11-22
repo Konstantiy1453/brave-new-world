@@ -111,6 +111,7 @@
     -105.9427
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "/home/user/brave-new-world/tools/godot-4.5.1/Godot_v4.5.1-stable_linux.x86_64",
   "exports_at_unlock": 0.0,
   "found": {
     "confirmation": "(30.1, -105.94)",
@@ -128,21 +129,22 @@
     "target": "0",
     "view": "planet"
   },
+  "os": "Linux",
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "pick": {
     "map_selected_marker": -1,
     "nearest_marker_px": 130.707733154297,
     "panel_text": "北纬 30.10° · 西经 105.94°",
     "picked": {
-      "lat": 30.1014099121094,
-      "lon": -105.94270324707,
-      "precision": 0.0668792724609375,
+      "lat": 30.1013927459717,
+      "lon": -105.942695617676,
+      "precision": 0.0668773651123047,
       "view": "planet"
     },
     "screen": [
       605.79345703125,
-      449.999908447266
+      449.999969482422
     ],
     "selected_site_after_click": 29,
     "target": [
@@ -211,7 +213,7 @@
     "planet": {
       "marker_screen": [
         605.79345703125,
-        449.999908447266
+        449.999969482422
       ],
       "selected_marker": 30
     }

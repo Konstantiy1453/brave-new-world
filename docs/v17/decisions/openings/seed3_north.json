@@ -85,9 +85,9 @@
         ]
       },
       "ore": {
-        "high_t": 2416825.65692902,
+        "high_t": 4833651.31385803,
         "level": "signal",
-        "low_t": 633145.656929016,
+        "low_t": 1266291.31385803,
         "none_detected": false,
         "plots": [
           1,
@@ -108,7 +108,7 @@
           "mine_ore",
           "mine_ore"
         ],
-        "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 63.3 万 t–241.7 万 t（轨道粗测）",
+        "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 126.6 万 t–483.4 万 t（轨道粗测）",
         "per_day": 157.5,
         "title": "铁矿出口"
       },
@@ -161,7 +161,7 @@
       "water": 0.644354585419864
     }
   },
-  "exports_total": 210257.0,
+  "exports_total": 235392.0,
   "failure_reason": "",
   "final_day": 420,
   "finish": "done",
@@ -403,66 +403,66 @@
       "towns": 2
     },
     {
-      "cash": 5202.0,
+      "cash": 6998.0,
       "company": "normal",
       "day": 360,
-      "exports_month": 21517.0,
-      "exports_total": 184507.0,
+      "exports_month": 23997.0,
+      "exports_total": 186987.0,
       "income_30d": {
         "enterprise.rent": 60.0,
         "enterprise.tax": 59.832,
-        "export": 16905.8083709293,
-        "food.sales": 2866.08,
+        "export": 19385.8546174232,
+        "food.sales": 2869.44,
         "supply.income": 4610.90767730142
       },
-      "pop": 210,
+      "pop": 211,
       "sales_30d": {
-        "export": 16906.0,
-        "local": 2866.0,
+        "export": 19386.0,
+        "local": 2869.0,
         "supply": 4611.0
       },
       "stage": 2,
       "towns": 3
     },
     {
-      "cash": 5422.0,
+      "cash": 4544.0,
       "company": "normal",
       "day": 390,
-      "exports_month": 12556.0,
-      "exports_total": 197063.0,
+      "exports_month": 23868.0,
+      "exports_total": 210854.0,
       "income_30d": {
         "enterprise.rent": 60.0,
         "enterprise.tax": 60.48,
-        "export": 7865.26900274209,
-        "food.sales": 3029.76,
+        "export": 19176.6263556874,
+        "food.sales": 3074.88,
         "supply.income": 4691.04934268259
       },
-      "pop": 214,
+      "pop": 219,
       "sales_30d": {
-        "export": 7865.0,
-        "local": 3030.0,
+        "export": 19176.0,
+        "local": 3075.0,
         "supply": 4691.0
       },
       "stage": 2,
       "towns": 3
     },
     {
-      "cash": 6302.0,
+      "cash": 1966.0,
       "company": "normal",
       "day": 420,
-      "exports_month": 13194.0,
-      "exports_total": 210257.0,
+      "exports_month": 24537.0,
+      "exports_total": 235392.0,
       "income_30d": {
         "enterprise.rent": 60.0,
         "enterprise.tax": 56.268,
-        "export": 8503.24599158305,
-        "food.sales": 3093.12,
+        "export": 19846.3918502646,
+        "food.sales": 3204.48,
         "supply.income": 4691.04934268259
       },
-      "pop": 216,
+      "pop": 227,
       "sales_30d": {
-        "export": 8503.0,
-        "local": 3093.0,
+        "export": 19846.0,
+        "local": 3205.0,
         "supply": 4691.0
       },
       "stage": 2,
@@ -473,7 +473,7 @@
     "days": "420",
     "lat": "39.9747",
     "lon": "122.1984",
-    "out": "/home/user/probe_out/open/north_final.json",
+    "out": "/home/user/probe_out/open/north_x2.json",
     "second": "true"
   },
   "orders": [
@@ -586,6 +586,21 @@
       "signed_day": 362,
       "size": 600.0,
       "status": "open"
+    },
+    {
+      "delivered": 0.0,
+      "due_day": 489,
+      "first_day": -1,
+      "id": 8,
+      "kind": "food",
+      "name": "粮食供应合同",
+      "paid": 0.0,
+      "price": 10.0,
+      "region": 31,
+      "round": 1,
+      "signed_day": 399,
+      "size": 400.0,
+      "status": "open"
     }
   ],
   "plan": {
@@ -600,7 +615,7 @@
       "mine_ore",
       "mine_ore"
     ],
-    "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 63.3 万 t–241.7 万 t（轨道粗测）",
+    "note": "每座约 1026 t/天，按卖出价 ¥8.0/百吨（市场越卖越便宜）；储量估计 126.6 万 t–483.4 万 t（轨道粗测）",
     "per_day": 157.5,
     "title": "铁矿出口"
   },
@@ -648,9 +663,9 @@
           ]
         },
         "crystal": {
-          "high_t": 580654.764890671,
+          "high_t": 1161133.57379198,
           "level": "signal",
-          "low_t": 184654.764890671,
+          "low_t": 369253.573791981,
           "none_detected": false,
           "plots": [
             1,
@@ -681,7 +696,7 @@
             "mine_crystal",
             "mine_crystal"
           ],
-          "note": "每座约 486 t/天，按卖出价 ¥32.0/百吨（市场越卖越便宜）；储量估计 18.5 万 t–58.1 万 t（轨道粗测）",
+          "note": "每座约 486 t/天，按卖出价 ¥32.0/百吨（市场越卖越便宜）；储量估计 36.9 万 t–116.1 万 t（轨道粗测）",
           "per_day": 298.8,
           "title": "工业晶体出口"
         },
@@ -761,7 +776,7 @@
       "lon": 122.1984,
       "name": "首府",
       "placed": true,
-      "pop": 146,
+      "pop": 148,
       "region": 29
     },
     {
@@ -777,11 +792,12 @@
       "lon": 117.1894,
       "name": "二号",
       "placed": true,
-      "pop": 58,
+      "pop": 67,
       "region": 30
     },
     {
       "kinds": {
+        "farm": 3,
         "port": 1,
         "power": 1,
         "water": 1

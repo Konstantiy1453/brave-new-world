@@ -15,11 +15,11 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=86 atlas_ms=14 cached=false
+MAP_SETUP ms=87 atlas_ms=14 cached=false
 PASS the menu's tutorial switch is off
-MAP_SETUP ms=249 atlas_ms=15 cached=false
-MAP_ATLAS_REFINED ms=17836 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
-MAP_ATLAS_REFINED ms=20573 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+MAP_SETUP ms=769 atlas_ms=46 cached=false
+MAP_ATLAS_REFINED ms=65539 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=78307 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
 PASS north coast: the click on the globe selected the ground
 PASS north card shows elevation
 PASS north card shows construction modifiers
@@ -64,8 +64,8 @@ PASS the stock line shows total, kept and sellable: 建材：库存 19,600 t · 
 PASS sellable stops at the reserve
 PASS the top bar's advance control is pressed (AdvanceNext)
 PASS advance to the next delivery stopped on day 19 (第 1 年 1 月 1 日 → 第 1 年 1 月 20 日 · 停在：一批出口或交付到账) with ¥73 of exports
-MAP_SETUP ms=73 atlas_ms=0 cached=true
-MAP_SETUP ms=115 atlas_ms=0 cached=true
+MAP_SETUP ms=64 atlas_ms=0 cached=true
+MAP_SETUP ms=110 atlas_ms=0 cached=true
 PASS the save comes back on day 19
 PASS the capital's coordinate survives the save (39.9747, 122.1984)
 PASS the supply orders survive the save

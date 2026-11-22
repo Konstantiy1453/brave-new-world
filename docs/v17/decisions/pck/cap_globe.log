@@ -15,11 +15,11 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=89 atlas_ms=15 cached=false
+MAP_SETUP ms=81 atlas_ms=13 cached=false
 PASS the menu's tutorial switch is off
-MAP_SETUP ms=248 atlas_ms=17 cached=false
-MAP_ATLAS_REFINED ms=19177 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
-MAP_ATLAS_REFINED ms=18818 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+MAP_SETUP ms=732 atlas_ms=63 cached=false
+MAP_ATLAS_REFINED ms=66581 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=74471 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
 PASS two eligible points in one generated site's old area
 PASS the target is 101 px from the nearest marker (old pick radius 43 px)
 PASS the click selected the ground under the pointer
@@ -31,8 +31,8 @@ PASS the naming dialog showed the stored place: 自选地点 · 北纬 23.74° �
 PASS stored where clicked: 23.7374, -112.3067
 PASS not snapped to the old site's centre (6.5° away)
 PASS the district opens on the same place
-MAP_SETUP ms=88 atlas_ms=0 cached=true
-MAP_SETUP ms=109 atlas_ms=1 cached=true
+MAP_SETUP ms=66 atlas_ms=0 cached=true
+MAP_SETUP ms=161 atlas_ms=0 cached=true
 PASS the save continues from the menu
 PASS after save, quit and reload the capital is where it was: 23.7374, -112.3067
 PLACEMENT_DRIVER_RESULT ok=true checks=14

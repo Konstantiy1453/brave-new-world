@@ -15,11 +15,11 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=115 atlas_ms=18 cached=false
+MAP_SETUP ms=94 atlas_ms=19 cached=false
 PASS the menu's tutorial switch is off
-MAP_SETUP ms=905 atlas_ms=50 cached=false
-MAP_ATLAS_REFINED ms=80064 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
-MAP_ATLAS_REFINED ms=66434 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+MAP_SETUP ms=437 atlas_ms=30 cached=false
+MAP_ATLAS_REFINED ms=35927 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=44384 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
 PASS six unmarked targets: forest, forest, grassland, grassland, tundra, tundra
 PASS click 1 is 353 px from the nearest marker
 PASS click 1 on the planet (forest) selects that ground: 北纬 59.00° · 东经 106.50° · 地表：森林 · 地点类型：海岛

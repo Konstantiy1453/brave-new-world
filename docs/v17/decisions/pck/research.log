@@ -15,11 +15,11 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=90 atlas_ms=15 cached=false
+MAP_SETUP ms=93 atlas_ms=18 cached=false
 PASS the menu's tutorial switch is off
-MAP_SETUP ms=249 atlas_ms=17 cached=false
-MAP_ATLAS_REFINED ms=17795 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
-MAP_ATLAS_REFINED ms=29515 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+MAP_SETUP ms=610 atlas_ms=42 cached=false
+MAP_ATLAS_REFINED ms=63375 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=80122 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
 PASS the top bar's advance control is pressed (AdvanceNext)
 PASS the research page shows teams to assign
 PASS the page's count is the assignable count (0; next to 可派: ["0", "0"])

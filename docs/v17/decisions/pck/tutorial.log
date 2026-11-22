@@ -15,14 +15,14 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=88 atlas_ms=14 cached=false
+MAP_SETUP ms=97 atlas_ms=15 cached=false
 PASS the menu's tutorial switch is on
-MAP_SETUP ms=281 atlas_ms=18 cached=false
-MAP_ATLAS_REFINED ms=19147 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_SETUP ms=1004 atlas_ms=50 cached=false
+MAP_ATLAS_REFINED ms=72270 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
 PASS the tutorial starts at step 1
 PASS the tutorial reached step 4 by play (step 4)
-MAP_SETUP ms=65 atlas_ms=0 cached=true
-MAP_SETUP ms=142 atlas_ms=0 cached=true
+MAP_SETUP ms=63 atlas_ms=0 cached=true
+MAP_SETUP ms=180 atlas_ms=0 cached=true
 PASS the save carries step 4 (3)
 PASS the settings page's resume button (ResumeTutorial)
 PASS continuing resumes step 4 in the same colony (step 4)

@@ -15,11 +15,11 @@ ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
 WARNING: All audio drivers failed, falling back to the dummy driver.
      at: initialize (servers/audio_server.cpp:244)
 
-MAP_SETUP ms=92 atlas_ms=17 cached=false
+MAP_SETUP ms=96 atlas_ms=18 cached=false
 PASS the menu's tutorial switch is off
-MAP_SETUP ms=245 atlas_ms=18 cached=false
-MAP_ATLAS_REFINED ms=34053 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
-MAP_ATLAS_REFINED ms=38335 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
+MAP_SETUP ms=242 atlas_ms=16 cached=false
+MAP_ATLAS_REFINED ms=21853 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_ATLAS_REFINED ms=23835 key=df6cc5eef0e04c814cd39bd5b0bddf6237f4b229c4da677c980a2fcc00b8541e
 PASS the capital is founded on picked ground
 PASS the balanced bot is loaded to play the colony until it can send one
 PASS an expedition was affordable on day 5 in stage 1, exports ¥0, the capital the only town
@@ -37,8 +37,8 @@ PASS the quoted route and the convoy's route end at the town
 PASS the expedition arrived as 「自选远征镇」
 PASS a building is ordered there through the build page: water
 PASS both maps select the town and the district opens on the same place
-MAP_SETUP ms=60 atlas_ms=0 cached=true
-MAP_SETUP ms=123 atlas_ms=0 cached=true
+MAP_SETUP ms=65 atlas_ms=0 cached=true
+MAP_SETUP ms=111 atlas_ms=0 cached=true
 PASS both towns continue from the menu
 PASS after save, quit and reload: 「自选远征镇」 at 30.1014, -105.9427 with its water
 PASS the route still ends at the town after the reload

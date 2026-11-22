@@ -68,6 +68,7 @@
     }
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "/home/user/brave-new-world/tools/godot-4.5.1/Godot_v4.5.1-stable_linux.x86_64",
   "found": {
     "confirmation": "(56.5, -103.5)",
     "confirmation_text": "自选地点 · 北纬 56.50° · 西经 103.50°"
@@ -84,22 +85,23 @@
     "target": "0",
     "view": "planet"
   },
+  "os": "Linux",
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "picks": [
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 352.865386962891,
+      "nearest_marker_px": 352.865295410156,
       "panel_text": "北纬 59.00° · 东经 106.50°",
       "picked": {
         "lat": 59.0,
-        "lon": 106.5,
-        "precision": 0.0668716430664062,
+        "lon": 106.500007629395,
+        "precision": 0.0668631866574287,
         "view": "planet"
       },
       "screen": [
         605.793395996094,
-        449.999969482422
+        450.000061035156
       ],
       "selected_site_after_click": 0,
       "target": [
@@ -135,17 +137,17 @@
     },
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 251.084594726562,
+      "nearest_marker_px": 251.084548950195,
       "panel_text": "北纬 44.00° · 东经 91.50°",
       "picked": {
-        "lat": 44.0000076293945,
-        "lon": 91.5,
+        "lat": 44.0000038146973,
+        "lon": 91.5000152587891,
         "precision": 0.0668754577636719,
         "view": "planet"
       },
       "screen": [
-        605.793395996094,
-        449.999908447266
+        605.79345703125,
+        450.000030517578
       ],
       "selected_site_after_click": 0,
       "target": [
@@ -181,17 +183,17 @@
     },
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 352.242553710938,
+      "nearest_marker_px": 352.242523193359,
       "panel_text": "北纬 59.00° · 东经 114.00°",
       "picked": {
-        "lat": 59.0000076293945,
-        "lon": 114.0,
+        "lat": 59.0,
+        "lon": 113.999984741211,
         "precision": 0.0668716430664062,
         "view": "planet"
       },
       "screen": [
         605.793395996094,
-        449.999938964844
+        449.999969482422
       ],
       "selected_site_after_click": 0,
       "target": [

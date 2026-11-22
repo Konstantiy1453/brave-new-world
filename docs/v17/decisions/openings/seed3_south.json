@@ -449,7 +449,7 @@
     "days": "420",
     "lat": "-4.9780",
     "lon": "163.5193",
-    "out": "/home/user/probe_out/open/south_final.json",
+    "out": "/home/user/probe_out/open/south_x2.json",
     "second": "true"
   },
   "orders": [

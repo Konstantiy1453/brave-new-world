@@ -32,6 +32,7 @@
     }
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "/home/user/brave-new-world/tools/godot-4.5.1/Godot_v4.5.1-stable_linux.x86_64",
   "game_version": "1.11.0",
   "ok": true,
   "options": {
@@ -44,8 +45,9 @@
     "target": "0",
     "view": "planet"
   },
+  "os": "Linux",
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "refusals": [
     {
       "button_disabled": true,
@@ -53,12 +55,12 @@
       "founded": false,
       "pick": {
         "map_selected_marker": -1,
-        "nearest_marker_px": 394.104370117188,
+        "nearest_marker_px": 394.104339599609,
         "panel_text": "北纬 78.75° · 西经 178.75°",
         "picked": {
           "lat": 78.7500076293945,
-          "lon": -178.750030517578,
-          "precision": 0.0702884197235107,
+          "lon": -178.75,
+          "precision": 0.0702883303165436,
           "view": "planet"
         },
         "screen": [
@@ -85,12 +87,12 @@
         "picked": {
           "lat": 78.7499771118164,
           "lon": -156.249984741211,
-          "precision": 0.0702578276395798,
+          "precision": 0.0702579170465469,
           "view": "planet"
         },
         "screen": [
-          607.979125976562,
-          302.965454101562
+          607.979248046875,
+          302.965850830078
         ],
         "selected_site_after_click": 0,
         "target": [
@@ -112,12 +114,12 @@
         "picked": {
           "lat": 61.25,
           "lon": -153.75,
-          "precision": 0.0668754577636719,
+          "precision": 0.0668716430664062,
           "view": "planet"
         },
         "screen": [
           605.793334960938,
-          449.999938964844
+          449.999969482422
         ],
         "selected_site_after_click": 0,
         "target": [

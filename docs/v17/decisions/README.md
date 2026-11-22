@@ -46,21 +46,22 @@ reports `OS.get_name() == "Windows"` there (checked separately; the drivers now 
 the northern coast exported first on day 34; the fertile southern coast earned only local income and
 failed on day 518 with no exports.
 
-1.11 (`openings/seed3_*.json`, `records/opening_play.gd`): the player founds at the coordinate,
+1.11 at commit `a3ee4db` (twice 1.10's deposit reserves; `openings/seed3_*.json`,
+`records/opening_play.gd`): the player founds at the coordinate,
 carries out the card's best plan, signs its supply order where it is one, and founds the second
 town at the best unmarked point within 9° (no recommended site within 0.5°) as soon as the first
 delivery is paid; the balanced bot keeps the colony running; each step waits for its cash.
 
 | | North, 39.9747 N 122.1984 E | South, 4.9780 S 163.5193 E |
 |---|---|---|
-| Card | coastal plain, 138 m; 3 iron deposit plots, 2 farm plots (poor soil), rich fishery; iron estimate 633,146–2,416,826 t (orbital signal) | fertile valley, 587 m; 3 farm plots (medium soil, 681–938 t a farm a day), average fishery; no deposits |
+| Card | coastal plain, 138 m; 3 iron deposit plots, 2 farm plots (poor soil), rich fishery; iron estimate 1,266,291–4,833,651 t (orbital signal) | fertile valley, 587 m; 3 farm plots (medium soil, 681–938 t a farm a day), average fishery; no deposits |
 | Plans offered, best first | iron export (2 mines, ¥5,250, first shipment day 21, 1,026 t, export goal day 284); catch order; food order | food supply order (2 farms, ¥6,500, first delivery day 26, 856 t, goal day 282); catch order |
 | First genuine delivery | day 19: "第一车矿石：轻型铁矿场的 913 吨铁矿，在货运站卖出 ¥ 73" | day 25: "粮食供应合同首批交付：856 t，入账 ¥86，计入合同出口目标" |
 | Second town | day 19, stage one, ¥73 exported, at 48.3617 N 117.1894 E (unmarked); its plan built by day 43 | day 25, stage one, ¥86 exported, at 12.341 S 155.5103 E (unmarked); its plan built on day 146, when the cash allowed |
 | Stage one complete | day 139 | day 173 |
 | Stage two complete | not by day 420 | day 411 |
-| Exports by day 420 | ¥210,257 | ¥460,770 |
-| Last 30 days to day 390 | export ¥7,865 · supply ¥4,691 · local ¥3,030 | export ¥12,215 · supply ¥58,748 · local ¥3,694 |
+| Exports by day 420 | ¥235,392 | ¥460,770 |
+| Last 30 days to day 390 | export ¥19,176 · supply ¥4,691 · local ¥3,075 | export ¥12,215 · supply ¥58,748 · local ¥3,694 |
 
 The southern food order renewed larger each time it was filled (40,000 t → 60,000 → 90,000 →
 135,000 → 202,500 t, the second town's up to 360,000 t), lapsed once at 213,700 of 303,750 t and came

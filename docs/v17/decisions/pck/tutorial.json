@@ -35,6 +35,7 @@
     }
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "/home/user/brave-new-world/tools/godot-4.5.1/Godot_v4.5.1-stable_linux.x86_64",
   "game_version": "1.11.0",
   "ok": true,
   "options": {
@@ -43,8 +44,9 @@
     "out": "/home/user/brave-new-world/docs/v17/decisions/pck/tutorial.json",
     "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck"
   },
+  "os": "Linux",
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "res_has_tests": false,
   "seed": 260129,
   "tutorial_after": {
