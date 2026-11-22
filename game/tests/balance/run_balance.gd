@@ -2,6 +2,10 @@ extends SceneTree
 ## Balance harness. --quick: 3 seeds, standard, 3 openings. --full: 10 seeds, 3 openings,
 ## 3 difficulties, 9 years. Writes evidence/v17/balance/<timestamp>.json and refreshes the
 ## results table in docs/v17/BALANCE.md (skip with --no-doc).
+## In chunks (1.10.1), so no single process runs for the whole hour: `--chunk=k/K --runs_out=<file>`
+## runs every K-th case from the k-th and saves its runs (the checkpoint; `--progress=<file>` gets
+## a line per finished case), then `--merge=<file>,<file>,...` runs the extras (determinism, labour
+## lever, no pollution control) and publishes from the saved runs.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -77,11 +81,29 @@ func run() -> void:
 		return
 	var started: int = Time.get_ticks_msec()
 	var runs: Array = []
-	if int(options.get("jobs", 1)) > 1:
+	if options.has("merge"):
+		for path: String in str(options.merge).split(","):
+			var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+			if saved is Array:
+				runs.append_array(saved)
+			else:
+				print("BALANCE_ERROR chunk file unreadable: " + path)
+				shards_lost += 1
+		print("BALANCE_MERGE runs=%d from %s" % [runs.size(), str(options.merge)])
+	elif int(options.get("jobs", 1)) > 1:
 		runs = await _run_parallel()
 	else:
 		for index: int in range(cases.size()):
 			runs.append(_run_case(cases[index], false))
+	if options.has("runs_out"):
+		var saved_file: FileAccess = FileAccess.open(str(options.runs_out), FileAccess.WRITE)
+		saved_file.store_string(JSON.stringify(runs))
+		saved_file.close()
+		print(
+			"BALANCE_CHUNK runs=%d saved %s lost=%d" % [runs.size(), options.runs_out, shards_lost]
+		)
+		quit(0 if shards_lost == 0 else 1)
+		return
 	var extras: Dictionary = {
 		"determinism": _determinism_check(),
 		"labour_lever": _labour_lever(),
@@ -172,6 +194,13 @@ func _build_cases() -> Array:
 					}
 				)
 			)
+	if options.has("chunk"):
+		var parts: PackedStringArray = str(options.chunk).split("/")
+		var chosen: Array = []
+		for index: int in range(cases.size()):
+			if index % int(parts[1]) == int(parts[0]):
+				chosen.append(cases[index])
+		return chosen
 	return cases
 
 
@@ -203,6 +232,25 @@ func _run_shard(cases: Array) -> void:
 	for index: int in range(cases.size()):
 		if index % count == shard:
 			runs.append(_run_case(cases[index], false))
+			if options.has("progress"):
+				# One file per shard, so the shards never write over each other's lines.
+				var mine: String = "%s.%d" % [str(options.progress), shard]
+				var line: FileAccess = FileAccess.open(mine, FileAccess.READ_WRITE)
+				if line == null:
+					line = FileAccess.open(mine, FileAccess.WRITE)
+				line.seek_end()
+				line.store_line(
+					(
+						"%s %s %s seed %d"
+						% [
+							Time.get_time_string_from_system(),
+							str(cases[index].bot),
+							str(cases[index].opening),
+							int(cases[index].seed)
+						]
+					)
+				)
+				line.close()
 	var file: FileAccess = FileAccess.open(str(options.out), FileAccess.WRITE)
 	file.store_string(JSON.stringify(runs))
 	file.close()
