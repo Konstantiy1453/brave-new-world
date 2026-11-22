@@ -28,8 +28,11 @@ handoff with the plain status of every requirement in `docs/v17/HANDOFF_20261121
   220, EXE (Wine) 175 of 175.
 - **A regression found and fixed late.** The first harness run (`decisions-834ddd1`) awarded only 4
   of 9 balanced runs: every town now stands on the planet's own deposits, and with 1.10's reserves the
-  mines ran dry by about day 600. `a3ee4db` doubles the reserves (see DECISIONS); the harness on it is
-  in `BALANCE.md`.
+  mines ran dry by about day 600. `a3ee4db` doubles the reserves (see DECISIONS). The harness on it
+  (`deposits-a3ee4db`): 14 targets met, 8 missed, still 4 of 9 balanced runs awarded (1.10.1: 8 of
+  9). Seed 42 awards all nine well-played runs; on seed 260129 the capital stops at about 410 people
+  against stage five's 600, because a capital on the planet's own ground has 16 general plots
+  against the generator site's 39 (seed 20261029: 14 against 30). Details in the handoff.
 - **Suites (headless, on `a3ee4db`).** 48 of 54 pass; `v17_world_stats` timed out under load and
   passes alone (309 s). Failing as on 1.10.1: `v17_saves`, `v17_tutorial`,
   `v18_systems`, `world_v16_seed` (Windows fixtures) and the seven `review_*` tools (D: paths, not
@@ -44,7 +47,9 @@ handoff with the plain status of every requirement in `docs/v17/HANDOFF_20261121
 - **Records.** See `docs/v17/decisions/README.md`: the seed-3 coasts played through the first
   delivery and a second town at an unmarked point in stage one; the day-865 reserve, crew queue and
   fourth plant; seed 260129's outlook and advance; event pacing against 1.10.1.
-- **Open.** Payback against the 1.9 bands (cause not isolated); stage two to three is slower for the bots than in
+- **Open.** Stage five's capital target against the smaller placed sites (plots, the target or
+  denser housing: the user's call); richer colonies (cash cover, absorption); payback against the
+  1.9 bands (cause not isolated); stage two to three is slower for the bots than in
   1.10.1 (3 of 6 seeds by day 720 against 5 of 6); human playtest NOT_RUN; the EXE on a real Windows
   machine NOT_RUN.
 
