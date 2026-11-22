@@ -6,6 +6,8 @@ const STATUS_MISS: String = "MISS"
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
+## A measurement with no target: shown in the table, counted neither as met nor as missed.
+const STATUS_INFO: String = "INFO"
 const AWARD_BANDS: Dictionary = {
 	"easy": [1800, 2520],
 	"normal": [2160, 2880],
@@ -32,6 +34,18 @@ const MIN_OFF_SHARE: float = 0.25
 const LARGEST_DISTRUST_RISE: float = 0.8
 const POLLUTION_EARLY_LIMIT: float = 0.02
 const ROAD_DAYS: Array[int] = [90, 300]
+## 1.9 money rows: cash cover in days of operating expense, and the share of surplus spent.
+const COVER_BEFORE_MEDIAN: float = 60.0
+const COVER_BEFORE_P90: float = 120.0
+const COVER_AFTER_MEDIAN: float = 180.0
+const COVER_AFTER_P90: float = 365.0
+const ABSORPTION_LEAST: float = 0.8
+const ABSORPTION_YEARS: Array[int] = [2, 3, 4, 5, 6]
+const WINDFALL_COVER_DAY: int = 1440
+const LATE_WORKS: Array[String] = [
+	"terraforming", "capital_district", "exchange", "shipyard", "emergency_net"
+]
+const WINDFALL_YEARS: Array[int] = [3, 4, 5]
 
 
 static func median(values: Array) -> float:
@@ -122,6 +136,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_population_rows(rows, runs)
 	_research_rows(rows, runs)
 	_money_rows(rows, runs)
+	_cash_rows(rows, runs)
 	_event_rows(rows, runs)
 	_no_control_row(rows, extras)
 	_audit_row(rows, runs, extras)
@@ -340,6 +355,265 @@ static func _money_rows(rows: Array, runs: Array) -> void:
 		"no good > 60% after year 2",
 		"median %.0f%%, worst %.0f%%" % [median(shares) * 100.0, worst * 100.0],
 		_verdict(worst <= EXPORT_CONCENTRATION, not shares.is_empty())
+	)
+
+
+static func percentile(values: Array, share: float) -> float:
+	if values.is_empty():
+		return -1.0
+	var sorted_values: Array = values.duplicate()
+	sorted_values.sort()
+	return float(sorted_values[mini(sorted_values.size() - 1, int(share * sorted_values.size()))])
+
+
+## Cover samples of one run between `first` and `last` day, inclusive.
+static func cover_between(run: Dictionary, first: int, last: int) -> Array:
+	var values: Array = []
+	for sample: Array in run.get("cover_samples", []):
+		if int(sample[0]) >= first and int(sample[0]) <= last:
+			values.append(float(sample[1]))
+	return values
+
+
+static func _cash_rows(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var medians: Array = []
+	var highs: Array = []
+	var after: Array = []
+	for run: Dictionary in group:
+		var award: int = int(run.award_day)
+		var last: int = award if award > 0 else int(run.final_day)
+		var before: Array = cover_between(run, 720, last)
+		if not before.is_empty():
+			medians.append(median(before))
+			highs.append(percentile(before, 0.9))
+		var samples: Array = run.get("cover_samples", [])
+		if award > 0 and award <= 2880 and not samples.is_empty():
+			after.append(float(samples.back()[1]))
+	var before_median: float = median(medians)
+	var before_high: float = median(highs)
+	_row(
+		rows,
+		"Cash cover before the award",
+		(
+			"day 720 to award: median <= %.0f days, p90 <= %.0f"
+			% [COVER_BEFORE_MEDIAN, COVER_BEFORE_P90]
+		),
+		"median %.0f days, p90 %.0f days" % [before_median, before_high],
+		_verdict(
+			before_median <= COVER_BEFORE_MEDIAN and before_high <= COVER_BEFORE_P90,
+			not medians.is_empty()
+		)
+	)
+	var after_median: float = median(after)
+	var after_high: float = percentile(after, 0.9)
+	_row(
+		rows,
+		"Cash cover after the award",
+		(
+			"last day, runs awarded by 2880: median <= %.0f days, p90 <= %.0f"
+			% [COVER_AFTER_MEDIAN, COVER_AFTER_P90]
+		),
+		"median %.0f days, p90 %.0f days" % [after_median, after_high],
+		_verdict(
+			after_median <= COVER_AFTER_MEDIAN and after_high <= COVER_AFTER_P90,
+			not after.is_empty()
+		)
+	)
+	var yearly: Array = []
+	for year: int in ABSORPTION_YEARS:
+		var shares: Array = []
+		for run: Dictionary in group:
+			var surplus: Array = run.get("year_surplus", [])
+			var invested: Array = run.get("year_invested", [])
+			if year < surplus.size() and float(surplus[year]) > 0.0:
+				shares.append(float(invested[year]) / float(surplus[year]))
+		yearly.append(median(shares))
+	var lowest: float = INF
+	var parts: PackedStringArray = []
+	for index: int in range(yearly.size()):
+		parts.append("y%d %.0f%%" % [ABSORPTION_YEARS[index] + 1, float(yearly[index]) * 100.0])
+		if float(yearly[index]) >= 0.0:
+			lowest = minf(lowest, float(yearly[index]))
+	var users: int = 0
+	var used_days: Array = []
+	for run: Dictionary in group:
+		if int(run.get("services_days", 0)) > 0:
+			users += 1
+			used_days.append(int(run.services_days))
+	_row(
+		rows,
+		"Services budget",
+		"used by the balanced bot (1.9 optional spending)",
+		(
+			"%d of %d runs, median %.0f days paid"
+			% [users, group.size(), median(used_days) if not used_days.is_empty() else 0.0]
+		),
+		_verdict(users * 10 >= group.size() * 8, not group.is_empty())
+	)
+	_row(
+		rows,
+		"Absorption",
+		"spending >= 80% of operating surplus in years 3-7",
+		", ".join(parts),
+		_verdict(lowest >= ABSORPTION_LEAST, lowest < INF)
+	)
+	_sinks_row(rows, group)
+	_windfall_row(rows, runs)
+	_great_works_row(rows, runs)
+	_shuttle_row(rows, runs)
+
+
+## Short-range shuttle (1.9): how many rush runs opened a line, how many lines in all, and how many
+## stood down when a road or sea route between the same settlements opened.
+static func _shuttle_row(rows: Array, runs: Array) -> void:
+	var flyers: Array = runs.filter(func(run: Dictionary) -> bool: return str(run.bot) == "rush")
+	var used: int = 0
+	var opened: int = 0
+	var retired: int = 0
+	for run: Dictionary in flyers:
+		var lines: Dictionary = run.get("shuttle_lines", {})
+		opened += int(lines.get("opened", 0))
+		retired += int(lines.get("retired", 0))
+		if int(lines.get("opened", 0)) > 0:
+			used += 1
+	_row(
+		rows,
+		"Shuttle lines",
+		"rush runs that opened a short-range shuttle line (no target)",
+		(
+			"%d/%d runs, %d lines, %d stood down for a road or sea route"
+			% [used, flyers.size(), opened, retired]
+		),
+		STATUS_INFO if not flyers.is_empty() else STATUS_NONE
+	)
+
+
+## Late great works (1.9): in how many runs of the bots that build them each one stands at the end,
+## and its highest level. A work nobody builds is a candidate to drop (plan A2.7).
+static func _great_works_row(rows: Array, runs: Array) -> void:
+	var builders: Array = runs.filter(
+		func(run: Dictionary) -> bool: return str(run.bot) in ["balanced", "rush", "windfall"]
+	)
+	var parts: PackedStringArray = []
+	for kind: String in LATE_WORKS:
+		var count: int = 0
+		var highest: int = 0
+		for run: Dictionary in builders:
+			var level: int = int(run.get("great_works", {}).get(kind, 0))
+			if level > 0:
+				count += 1
+				highest = maxi(highest, level)
+		parts.append("%s %d/%d (level %d)" % [kind, count, builders.size(), highest])
+	_row(
+		rows,
+		"Late great works",
+		"standing at the end, balanced, rush and windfall runs (no target)",
+		", ".join(parts),
+		STATUS_INFO if not builders.is_empty() else STATUS_NONE
+	)
+
+
+## The windfall case (1.9): the balanced bot with and without ¥1,000,000 on day 1,080, on the same
+## seeds (normal, capital): award day, cover a year after the windfall, takeovers and where the extra
+## money went in years 4-6.
+static func _windfall_row(rows: Array, runs: Array) -> void:
+	var lucky: Array = select(runs, "windfall", "normal")
+	var seeds: Dictionary = {}
+	for run: Dictionary in lucky:
+		seeds[int(run.seed)] = true
+	var plain: Array = select(runs, "balanced", "normal").filter(
+		func(run: Dictionary) -> bool:
+			return str(run.opening) == "capital" and seeds.has(int(run.seed))
+	)
+	if lucky.is_empty() or plain.is_empty():
+		_row(rows, "Windfall", "no target", "not run", STATUS_NONE)
+		return
+	var parts: PackedStringArray = []
+	for pair: Array in [["without", plain], ["with", lucky]]:
+		var awards: Array = []
+		var covers: Array = []
+		var lost: int = 0
+		for run: Dictionary in pair[1]:
+			if int(run.award_day) > 0:
+				awards.append(float(run.award_day))
+			if int(run.failure_day) > 0:
+				lost += 1
+			for sample: Variant in run.get("cover_samples", []):
+				if int(sample[0]) == WINDFALL_COVER_DAY:
+					covers.append(float(sample[1]))
+		parts.append(
+			(
+				"%s: award %.0f, cover on day %d %.0f days, %d of %d taken over"
+				% [
+					pair[0],
+					median(awards),
+					WINDFALL_COVER_DAY,
+					median(covers),
+					lost,
+					pair[1].size()
+				]
+			)
+		)
+	var extra: Dictionary = {}
+	for run: Dictionary in lucky:
+		for year: int in WINDFALL_YEARS:
+			if year < run.get("sinks", []).size():
+				for sink: String in run.sinks[year]:
+					extra[sink] = float(extra.get(sink, 0.0)) + float(run.sinks[year][sink])
+	for run: Dictionary in plain:
+		for year: int in WINDFALL_YEARS:
+			if year < run.get("sinks", []).size():
+				for sink: String in run.sinks[year]:
+					extra[sink] = float(extra.get(sink, 0.0)) - float(run.sinks[year][sink])
+	var order: Array = extra.keys()
+	order.sort_custom(func(a: String, b: String) -> bool: return extra[a] > extra[b])
+	var spent: PackedStringArray = []
+	for sink: String in order.slice(0, 4):
+		spent.append("%s %+.0fk" % [sink, float(extra[sink]) / 1000.0 / maxf(1.0, lucky.size())])
+	parts.append("extra spending a run in years 4-6: " + ", ".join(spent))
+	_row(
+		rows,
+		"Windfall",
+		"¥1,000,000 on day 1,080, balanced, normal, capital (no target)",
+		"; ".join(parts),
+		STATUS_INFO
+	)
+
+
+## Where the money went (1.9): per sink, the median over runs of the mean yearly spending in years
+## 3-7, largest first.
+static func _sinks_row(rows: Array, group: Array) -> void:
+	var names: Dictionary = {}
+	for run: Dictionary in group:
+		for year: Variant in run.get("sinks", []):
+			for sink: String in year:
+				names[sink] = true
+	var medians: Dictionary = {}
+	for sink: String in names:
+		var per_run: Array = []
+		for run: Dictionary in group:
+			var years: Array = run.get("sinks", [])
+			var total: float = 0.0
+			var counted: int = 0
+			for year: int in ABSORPTION_YEARS:
+				if year < years.size():
+					total += float(years[year].get(sink, 0.0))
+					counted += 1
+			if counted > 0:
+				per_run.append(total / counted)
+		medians[sink] = median(per_run)
+	var order: Array = medians.keys()
+	order.sort_custom(func(a: String, b: String) -> bool: return medians[a] > medians[b])
+	var parts: PackedStringArray = []
+	for sink: String in order:
+		parts.append("%s %.0fk" % [sink, float(medians[sink]) / 1000.0])
+	_row(
+		rows,
+		"Spending by sink",
+		"balanced, normal: median a year in years 3-7 (no target)",
+		", ".join(parts) if not parts.is_empty() else "nothing recorded",
+		STATUS_INFO if not group.is_empty() else STATUS_NONE
 	)
 
 

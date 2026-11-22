@@ -1,6 +1,10 @@
 extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
+const Bay = preload("res://simulation/bay.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
+const Placement = preload("res://simulation/placement.gd")
+const Crews = preload("res://simulation/crews.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
 const Market = preload("res://simulation/market.gd")
@@ -11,6 +15,7 @@ const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Sites = preload("res://simulation/sites.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Pollution = preload("res://simulation/pollution.gd")
+const Copies = preload("res://simulation/copies.gd")
 const UTILITY_ROLES: Array[String] = ["power", "water", "port"]
 const LOWEST_JOB_FACTOR: float = 0.2
 const LOWEST_USE_FACTOR: float = 0.3
@@ -18,8 +23,15 @@ const POLLUTED_ROLES: Array[String] = [
 	"mine", "harvest", "farm", "indoor_farm", "factory", "foodworks"
 ]
 const RATIONED_ROLES: Array[String] = ["mine", "farm", "indoor_farm", "factory"]
+## Facilities whose workers are farmers (农民): fields and indoor farms.
+const FARMING_ROLES: Array[String] = ["farm", "indoor_farm"]
 const EVENT_KINDS: Dictionary = {
-	"mine": "mine", "harvest": "mine", "farm": "farm", "indoor_farm": "farm", "factory": "processor"
+	"mine": "mine",
+	"harvest": "mine",
+	"seabed": "mine",
+	"farm": "farm",
+	"indoor_farm": "farm",
+	"factory": "processor"
 }
 
 
@@ -40,6 +52,34 @@ static func ensure_state(state: Dictionary) -> void:
 				b.upgrade_days = 0
 			if not b.has("total_days"):
 				b.total_days = int(b.remaining)
+	_ensure_uids(state)
+
+
+## Every building has a uid that never changes, so stories, crews and lights can follow it when
+## earlier buildings are pulled down. Older saves get theirs in list order, settlement by
+## settlement; the counter continues after the largest.
+static func _ensure_uids(state: Dictionary) -> void:
+	var largest: int = 0
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			largest = maxi(largest, int(b.get("uid", 0)))
+	var next: int = maxi(int(state.get("next_building_uid", 1)), largest + 1)
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			if int(b.get("uid", 0)) <= 0:
+				b.uid = next
+				next += 1
+	state.next_building_uid = next
+
+
+## The index of the building with this uid in a settlement's list, or -1.
+static func index_of(s: Dictionary, uid: int) -> int:
+	if uid <= 0:
+		return -1
+	for index: int in range(s.get("buildings", []).size()):
+		if int(s.buildings[index].get("uid", 0)) == uid:
+			return index
+	return -1
 
 
 static func role_of(sim: RefCounted, kind: String) -> String:
@@ -84,18 +124,34 @@ static func upgrade_preview(sim: RefCounted, region: int, index: int) -> Diction
 		return {}
 	var rule: Dictionary = rules[step].duplicate(true)
 	rule.disabled_reason = ""
+	# A great work's next stage or level buys what the warehouse lacks at import price, as its
+	# first stage did (1.9); every other upgrade is built from local stock.
+	var great: bool = bool(sim.config.buildings[b.kind].get("megaproject", false))
+	rule.supply_cost = _supply_train_cost(sim, s, rule) if great else 0.0
+	var total: float = float(rule.cost) + float(rule.supply_cost)
 	if not sim._has(rule.tech):
 		rule.disabled_reason = "需要技术：" + str(sim.config.techs[rule.tech].name)
 	elif int(b.remaining) > 0:
 		rule.disabled_reason = "设施尚在施工"
 	elif int(b.upgrade_days) > 0:
 		rule.disabled_reason = "升级施工中"
-	elif float(sim.state.cash) < float(rule.cost):
-		rule.disabled_reason = "公共资金不足：需要 %.0f" % float(rule.cost)
+	elif float(sim.state.cash) < total:
+		rule.disabled_reason = (
+			"公共资金不足：需要 %.0f（含工程物资采购）" % total
+			if float(rule.supply_cost) > 0.0
+			else "公共资金不足：需要 %.0f" % float(rule.cost)
+		)
 	elif (
-		float(s.stock.materials) < float(rule.materials) or float(s.stock.parts) < float(rule.parts)
+		not great
+		and (
+			float(s.stock.materials) < float(rule.materials)
+			or float(s.stock.parts) < float(rule.parts)
+		)
 	):
-		rule.disabled_reason = "本地仓库不足：需要 %.0f 建材 / %.0f 部件" % [rule.materials, rule.parts]
+		rule.disabled_reason = (
+			"本地仓库不足：需要 %.0f t 建材 / %.0f t 部件"
+			% [sim.tonnes(float(rule.materials)), sim.tonnes(float(rule.parts))]
+		)
 	return rule
 
 
@@ -107,6 +163,8 @@ static func upgrade(sim: RefCounted, region: int, index: int) -> String:
 		return rule.disabled_reason
 	var s: Dictionary = sim.settlement(region)
 	var b: Dictionary = s.buildings[index]
+	if float(rule.supply_cost) > 0.0:
+		_buy_supply_train(sim, s, rule)
 	sim._transfer("public", "external", float(rule.cost), "invest.upgrade", false, b.kind)
 	consume(sim, s, "materials", float(rule.materials))
 	consume(sim, s, "parts", float(rule.parts))
@@ -130,7 +188,16 @@ static func _advance_upgrade(sim: RefCounted, s: Dictionary, b: Dictionary) -> v
 		sim._log("%s · %s升级完成。" % [s.name, sim.config.buildings[b.kind].name])
 
 
-static func new_building(_sim: RefCounted, kind: String, remaining: int) -> Dictionary:
+static func new_building(sim: RefCounted, kind: String, remaining: int) -> Dictionary:
+	var building: Dictionary = building_record(kind, remaining)
+	var next: int = maxi(1, int(sim.state.get("next_building_uid", 1)))
+	building.uid = next
+	sim.state.next_building_uid = next + 1
+	return building
+
+
+## A building's fields without its uid: the save check's pattern uses it too.
+static func building_record(kind: String, remaining: int) -> Dictionary:
 	return {
 		"kind": kind,
 		"remaining": remaining,
@@ -148,11 +215,16 @@ static func new_building(_sim: RefCounted, kind: String, remaining: int) -> Dict
 	}
 
 
-static func build_preview(sim: RefCounted, region: int, kind: String) -> Dictionary:
+static func build_preview(sim: RefCounted, region: int, kind: String, plot: int = -1) -> Dictionary:
 	if not sim.config.buildings.has(kind) or region < 0 or region >= sim.state.world.regions.size():
 		return {}
 	var d: Dictionary = sim.config.buildings[kind].duplicate(true)
 	d.kind_id = kind
+	# A mine on a far deposit builds its mine road with it (bay.gd).
+	d.haul = {"days": 0, "cost": 0.0, "units": 0.0}
+	if str(d.get("role", "")) == "mine":
+		var spot: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+		d.haul = Bay.haul(sim, region, spot)
 	var great: bool = bool(d.get("megaproject", false))
 	var cheaper: float = Research.bonus(sim, "build_cost")
 	var faster: float = Research.bonus(sim, "build_speed")
@@ -163,7 +235,21 @@ static func build_preview(sim: RefCounted, region: int, kind: String) -> Diction
 		float(sim.state.world.regions[region].get("development_multiplier", 1.0))
 		* maxf(0.3, 1.0 + cheaper)
 	)
-	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster)))
+	# Every further copy of a kind costs a little more cash. Great works are one of a kind, and homes
+	# are what the charter's population needs, so neither pays it.
+	var exempt: Array = sim.config.economy.get("copy_surcharge_exempt_roles", [])
+	var copies: int = (
+		0 if great or str(d.get("role", "")) in exempt else Copies.count_kind(sim, kind)
+	)
+	var surcharge: float = minf(
+		float(sim.config.economy.get("copy_surcharge", 0.0)) * copies,
+		float(sim.config.economy.get("copy_surcharge_cap", 1.0)) - 1.0
+	)
+	d.cost *= 1.0 + surcharge
+	d.copy_number = copies + 1
+	d.copy_surcharge = surcharge
+	d.days = ceili(float(d.days) / (1.0 + maxf(0.0, faster))) + int(d.haul.days)
+	d.cost += float(d.haul.cost)
 	return d
 
 
@@ -175,26 +261,36 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "远征队尚在途中，请等待抵达"
 	if not sim.config.buildings.has(kind):
 		return "无此设施"
-	var d: Dictionary = build_preview(sim, region, kind)
 	var reg: Dictionary = sim.state.world.regions[region]
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var d: Dictionary = build_preview(sim, region, kind, chosen)
 	var place_refusal: String = _place_refusal(s, reg, d)
 	if place_refusal != "":
 		return place_refusal
-	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
-	if chosen < 0:
-		return _no_plot_reason(kind)
-	if chosen >= reg.plots.size() or not Sites.plot_fits(sim, reg.plots[chosen], kind):
-		return "这块地不适合此设施"
-	for existing: Dictionary in s.buildings:
-		if int(existing.plot) == chosen:
-			return "这块地已被占用"
+	if not plotless:
+		if chosen < 0:
+			return _no_plot_reason(kind)
+		if chosen >= reg.plots.size() or not Sites.plot_fits(sim, reg.plots[chosen], kind):
+			return "这块地不适合此设施"
+		for existing: Dictionary in s.buildings:
+			if int(existing.plot) == chosen:
+				return "这块地已被占用"
 	if d.has("requires_tech") and not sim._has(str(d.requires_tech)):
 		return "需要技术：" + str(sim.config.techs[d.requires_tech].name)
+	if str(d.get("role", "")) == "seabed":
+		var offshore: String = Bay.seabed_refusal(sim, region)
+		if offshore != "":
+			return offshore
 	if bool(d.get("megaproject", false)):
 		for place: Dictionary in sim.state.settlements:
 			for existing: Dictionary in place.buildings:
 				if existing.kind == kind:
 					return "每颗星球只能建设一座"
+	if d.has("requires_local") and not _has_finished(s, str(d.requires_local)):
+		return "需要先在本据点建成" + str(sim.config.buildings[d.requires_local].name)
 	if (
 		str(d.role) == "farm"
 		and not d.has("fertility_floor")
@@ -204,7 +300,10 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "土地或气温不适合当前温室技术"
 	var short: bool = s.stock.materials < float(d.materials) or s.stock.parts < float(d.parts)
 	if short and not bool(d.get("megaproject", false)) and not _port_ready(s):
-		return "本地仓库不足：需要 %.0f 建材 / %.0f 部件；没有货运站时要靠道路运来" % [d.materials, d.parts]
+		return (
+			"本地仓库不足：需要 %.0f t 建材 / %.0f t 部件；没有货运站时要靠道路运来"
+			% [sim.tonnes(float(d.materials)), sim.tonnes(float(d.parts))]
+		)
 	var total: float = float(d.cost) + _supply_train_cost(sim, s, d)
 	if sim.state.cash < total:
 		if total > float(d.cost):
@@ -214,6 +313,13 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 
 
 ## A working port can buy what a building site lacks, at import price.
+static func _has_finished(s: Dictionary, kind: String) -> bool:
+	for b: Dictionary in s.buildings:
+		if b.kind == kind and int(b.remaining) <= 0:
+			return true
+	return false
+
+
 static func _port_ready(s: Dictionary) -> bool:
 	for b: Dictionary in s.buildings:
 		if str(b.kind) == "port" and int(b.remaining) <= 0 and bool(b.get("active", false)):
@@ -251,13 +357,22 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	if refusal != "":
 		return refusal
 	var s: Dictionary = sim.settlement(region)
-	var d: Dictionary = build_preview(sim, region, kind)
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var d: Dictionary = build_preview(sim, region, kind, chosen)
 	_buy_supply_train(sim, s, d)
 	sim._transfer("public", "external", float(d.cost), "invest.build", false, kind)
 	consume(sim, s, "materials", float(d.materials))
 	consume(sim, s, "parts", float(d.parts))
 	var building: Dictionary = new_building(sim, kind, int(d.days))
-	building.plot = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
+	building.plot = chosen
+	# When it was ordered: crews take buildings and roads in that order (crews.gd).
+	building.ordered = int(sim.state.day)
+	# The mine road built with it, and the mine whose road it branches from (bay.gd).
+	if int(d.haul.days) > 0:
+		building.haul = d.haul.duplicate()
 	s.buildings.append(building)
 	sim._log(s.name + "开始建设" + d.name + "，工期 %d 天。" % int(d.days))
 	return ""
@@ -276,6 +391,7 @@ static func demolish(sim: RefCounted, region: int, index: int) -> String:
 	if str(b.kind) in ["port", "power", "water"] and _last_of(s, str(b.kind)):
 		return "这是本据点最后一座，不能拆除"
 	s.buildings.remove_at(index)
+	Bay.reroute(sim, s, b)
 	_reclaim_plot(sim, s, b)
 	sim._log("%s · 拆除了%s。" % [s.name, sim.config.buildings[b.kind].name])
 	sim._refresh(s)
@@ -331,6 +447,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 	s.jobs = 0
 	s.employed_workers = 0
 	s.employed_scientists = 0
+	# Farmers (农民, 1.10.1): the town's workers employed on its farms today, an occupation of their
+	# own on every page; they are part of `workers`.
+	s.farmers = 0
 	s.port_capacity = 0.0
 	s.port_used = 0.0
 	s.power_supply = 0.0
@@ -353,7 +472,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.specialists = 0
 		b.efficiency = 0.0
 		_advance_upgrade(sim, s, b)
-		if b.remaining > 0:
+		# A site moves on only on a day a crew works on it (crews.gd); kits assemble themselves.
+		if b.remaining > 0 and Crews.works_on(sim, b):
 			b.remaining -= 1
 			if b.remaining == 0:
 				sim._log(
@@ -396,6 +516,8 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.specialists = mini(special, maxi(0, int(s.scientists) - int(s.employed_scientists)))
 		s.employed_workers += b.employed
 		s.employed_scientists += b.specialists
+		if role in FARMING_ROLES:
+			s.farmers = int(s.farmers) + int(b.employed)
 		b.efficiency = 1.0
 		if required > 0:
 			b.efficiency = float(b.employed) / required
@@ -475,11 +597,19 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		if role == "mine":
 			cost_factor = maxf(0.2, cost_factor + Research.bonus(sim, "mine_upkeep"))
 		sim._public_expense(
-			float(d.maintenance) * cost_factor, "upkeep.facility", "external", b.kind
+			float(level_rule(sim, b).get("maintenance", d.maintenance)) * cost_factor,
+			"upkeep.facility",
+			"external",
+			b.kind
 		)
 		if eff <= 0.001:
 			continue
 		match role:
+			"harbor":
+				s.port_capacity += float(d.capacity) * eff
+				var catch: float = float(d.get("fish", 0.0)) * eff
+				produce(sim, s, "food", catch, "近海捕捞")
+				sim.state.contract.today_food = float(sim.state.contract.today_food) + catch
 			"port":
 				s.port_capacity += (
 					float(d.capacity)
@@ -503,9 +633,16 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					)
 				)
 				seam.reserves = float(seam.reserves) - amount
-				if int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
-					reg.deposits[resource] = maxf(0.0, float(reg.deposits[resource]) - amount)
+				if str(seam.get("deposit", "")) != "":
+					# A planetary deposit: every town on it sees the same reserve left.
+					Placement.share(sim, seam)
+				elif int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
+					reg.deposits[resource] = maxf(
+						0.0, float(reg.deposits.get(resource, 0.0)) - amount
+					)
 				produce(sim, s, resource, amount, "矿产开采")
+				if not sim.state.settlements.is_empty() and s != sim.state.settlements[0]:
+					OperatingRoutes.add(sim, "remote_mined", amount)
 				if amount <= 0.001:
 					b.active = false
 					b.status = Keys.B_DEPLETED
@@ -516,6 +653,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 						float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
 					)
 					produce(sim, s, good, made, "矿产开采")
+			"seabed":
+				# The surveyed offshore deposit, landed at the town's harbour (bay.gd).
+				Bay.seabed_day(sim, s, b, eff * field_bonus)
 			"indoor_farm":
 				var grown: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
@@ -528,9 +668,12 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			"farm":
 				var climate: float = farm_climate(sim, int(s.region))
 				var field: Dictionary = Sites.plot_of(sim, s, b)
-				var soil: float = maxf(
-					float(field.get("fertility", reg.fertility)),
-					float(d.get("fertility_floor", 0.0))
+				var soil: float = (
+					maxf(
+						float(field.get("fertility", reg.fertility)),
+						float(d.get("fertility_floor", 0.0))
+					)
+					+ Megaprojects.fertility_bonus(sim)
 				)
 				var amount: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
@@ -554,10 +697,13 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					"residents", "public", served * float(d.spend), "commerce.income", true, b.kind
 				)
 			"income":
+				var limited: float = Copies.factor_for(
+					sim, b, float(sim.config.economy.get("income_copy_factor", 1.0)), 1
+				)
 				sim._transfer(
 					"external",
 					"public",
-					float(d.daily_income) * eff,
+					float(d.daily_income) * eff * limited,
 					"service.income",
 					true,
 					b.kind
@@ -622,6 +768,78 @@ static func _factory_boost(sim: RefCounted, b: Dictionary) -> float:
 	if sim.config.buildings[b.kind].outputs.has("alloy"):
 		boost += Research.bonus(sim, "alloy_output")
 	return boost
+
+
+## Export income at risk (1.9 advisor): the share of a window's export value that depends on mines
+## with under `mine_warning_days` of reserves left at their full rate. A raw good is at risk by the
+## share of its supply (mines and renewable harvest) from such mines; a factory needs every input,
+## so what it makes carries the highest risk among them. Read-only: mines without a plot yet are
+## skipped rather than given one.
+static func mine_outlook(sim: RefCounted, window: Dictionary) -> Dictionary:
+	var limit: float = float(sim.config.economy.get("mine_warning_days", 360.0))
+	var supply: Dictionary = {}
+	var ending: Dictionary = {}
+	var factories: Array = []
+	for s: Dictionary in sim.state.settlements:
+		var plots: Array = sim.state.world.regions[int(s.region)].plots
+		var field_bonus: float = _field_bonus(sim, s)
+		for b: Dictionary in s.buildings:
+			if int(b.get("remaining", 0)) > 0 or not b.get("enabled", true):
+				continue
+			var d: Dictionary = sim.config.buildings.get(str(b.kind), {})
+			var role: String = str(d.get("role", ""))
+			if role == "harvest":
+				for good: String in d.outputs:
+					var made: float = float(d.outputs[good]) * field_bonus * _good_bonus(sim, good)
+					supply[good] = float(supply.get(good, 0.0)) + made
+			elif role == "factory":
+				factories.append(d)
+			elif role == "mine" and int(b.get("plot", -1)) >= 0:
+				var seam: Dictionary = plots[int(b.plot)]
+				var reserves: float = float(seam.get("reserves", 0.0))
+				if reserves <= 0.0:
+					continue
+				var good: String = str(d.output)
+				var rate: float = (
+					float(d.rate)
+					* float(seam.get("grade", 1.0))
+					* field_bonus
+					* _good_bonus(sim, good)
+					* output_factor(sim, b)
+				)
+				supply[good] = float(supply.get(good, 0.0)) + rate
+				if reserves / maxf(rate, 0.001) < limit:
+					ending[good] = float(ending.get(good, 0.0)) + rate
+	var risk: Dictionary = {}
+	for good: String in supply:
+		risk[good] = float(ending.get(good, 0.0)) / maxf(float(supply[good]), 0.001)
+	# Processing chains are short (ore -> parts -> components -> machinery): a few passes settle.
+	for _pass: int in range(4):
+		var weighted: Dictionary = {}
+		var made: Dictionary = {}
+		for d: Dictionary in factories:
+			var inputs_risk: float = 0.0
+			for good: String in d.inputs:
+				inputs_risk = maxf(inputs_risk, float(risk.get(good, 0.0)))
+			for good: String in d.outputs:
+				weighted[good] = (
+					float(weighted.get(good, 0.0)) + inputs_risk * float(d.outputs[good])
+				)
+				made[good] = float(made.get(good, 0.0)) + float(d.outputs[good])
+		for good: String in made:
+			risk[good] = float(weighted[good]) / float(made[good])
+	var total: float = 0.0
+	var at_risk: float = 0.0
+	for good: String in window.get("goods", {}):
+		var value: float = float(window.goods[good][Stats.EXPORTED]) * Market.price(sim, good)
+		total += value
+		at_risk += value * float(risk.get(good, 0.0))
+	return {
+		"share": at_risk / total if total > 0.0 else 0.0,
+		"export_value": total,
+		"at_risk": at_risk,
+		"days": limit,
+	}
 
 
 ## A mine with nothing left to dig lets its crew go and stops costing money.
@@ -794,19 +1012,119 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 	return ""
 
 
+## How much more food a farm here would put to use each day: what the town eats and sends to its
+## food works, less what its own farms already grow, never more than the new farm can grow. Farms
+## stop at the stock target, so the rest of a surplus farm stands idle and earns nothing.
+static func usable_food(sim: RefCounted, s: Dictionary, nominal: float) -> float:
+	if s.is_empty():
+		return nominal
+	return clampf(float(food_balance(sim, s).shortfall), 0.0, nominal)
+
+
+## A town's food a day, for a forecast: what it eats (and its foodworks take), what it already
+## grows or lands (farms, indoor farms, the harbour's catch), what food buildings already queued will
+## add, and the stock still to fill to its reserve, spread over economy `forecast_food_refill_days`.
+## `shortfall` is what a new food building could still put to use; the rest of its crop stands idle.
+static func food_balance(sim: RefCounted, s: Dictionary) -> Dictionary:
+	var eaten: float = float(s.population) * float(sim.config.economy.food_per_person)
+	var works: float = 0.0
+	var grown: float = 0.0
+	var caught: float = 0.0
+	var queued: float = 0.0
+	for b: Dictionary in s.buildings:
+		if b.kind == "service" or not bool(b.get("enabled", true)):
+			continue
+		var d: Dictionary = sim.config.buildings.get(b.kind, {})
+		var done: bool = int(b.remaining) <= 0
+		var share: float = float(b.get("efficiency", 1.0)) if done else 1.0
+		match str(d.get("role", "")):
+			"foodworks":
+				if done:
+					works += float(d.get("food_input", 0.0)) * share
+			"farm", "indoor_farm":
+				var crop: float = float(farm_rate(sim, s, b)) * share
+				if done:
+					grown += crop
+				else:
+					queued += crop
+			"harbor":
+				var catch: float = float(d.get("fish", 0.0)) * share
+				if done:
+					caught += catch
+				else:
+					queued += catch
+	var target: float = eaten * (float(sim.state.policy.food_reserve) + 1.0)
+	var arriving: float = sim.Logistics.incoming(sim, int(s.region), "food")
+	var spread: float = float(sim.config.economy.get("forecast_food_refill_days", 30))
+	var refill: float = maxf(0.0, target - float(s.stock.food) - arriving) / maxf(1.0, spread)
+	var need: float = eaten + works + refill
+	return {
+		"eaten": eaten,
+		"foodworks": works,
+		"refill": refill,
+		"need": need,
+		"grown": grown,
+		"caught": caught,
+		"queued": queued,
+		"shortfall": maxf(0.0, need - grown - caught - queued),
+		"import_price": delivered_price(sim, s, "food"),
+	}
+
+
+## What a good costs the town delivered at its cargo station: the import price with the port fee,
+## less what a working harbour saves on sea freight (as `Logistics._import` pays).
+static func delivered_price(sim: RefCounted, s: Dictionary, good: String) -> float:
+	var discount: float = Bay.sea_discount(sim, s, good) if not s.is_empty() else 0.0
+	return _import_price(sim, good) * (1.0 - discount)
+
+
+## A standing farm's daily food at full staffing, as run_settlement grows it.
+static func farm_rate(sim: RefCounted, s: Dictionary, b: Dictionary) -> float:
+	var d: Dictionary = sim.config.buildings[b.kind]
+	var field_bonus: float = _field_bonus(sim, s)
+	if str(d.role) == "indoor_farm":
+		return float(d.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
+	var reg: Dictionary = sim.state.world.regions[int(s.region)]
+	var field: Dictionary = Sites.plot_of(sim, s, b)
+	var soil: float = (
+		maxf(float(field.get("fertility", reg.fertility)), float(d.get("fertility_floor", 0.0)))
+		+ Megaprojects.fertility_bonus(sim)
+	)
+	return (
+		float(d.rate)
+		* soil
+		* farm_climate(sim, int(s.region))
+		* field_bonus
+		* (1.0 + Research.bonus(sim, "farm_output"))
+		* output_factor(sim, b)
+	)
+
+
 ## Everything a player or bot needs before committing: cost, output, money per day, payback.
+## For farms, `outputs` is the nominal capacity and `usable` what the town can use; money and
+## payback count only the usable part, valued as the imports it replaces.
 static func build_forecast(
 	sim: RefCounted, region: int, kind: String, plot: int = -1
 ) -> Dictionary:
-	var spec: Dictionary = build_preview(sim, region, kind)
+	if not sim.config.buildings.has(kind) or region < 0 or region >= sim.state.world.regions.size():
+		return {}
+	var plotless: bool = bool(sim.config.buildings[kind].get("plotless", false))
+	var chosen: int = (
+		-1 if plotless else (plot if plot >= 0 else Sites.find_plot(sim, region, kind))
+	)
+	var spec: Dictionary = build_preview(sim, region, kind, chosen)
 	if spec.is_empty():
 		return {}
 	var s: Dictionary = sim.settlement(region)
 	var reg: Dictionary = sim.state.world.regions[region]
-	var chosen: int = plot if plot >= 0 else Sites.find_plot(sim, region, kind)
 	var ground: Dictionary = reg.plots[chosen] if chosen >= 0 else {}
 	var fee: float = float(sim.config.economy.port_fee)
 	var outputs: Dictionary = {}
+	# What the town can use of `outputs` (farms only; any other output sells or feeds a factory).
+	var usable: Dictionary = {}
+	var savings: float = 0.0
+	# A harbour's: what sea freight saves on the town's imports.
+	var sea: float = 0.0
 	var revenue: float = 0.0
 	var role: String = str(spec.role)
 	var reserve_days: float = -1.0
@@ -829,8 +1147,12 @@ static func build_forecast(
 			revenue += made * Market.price(sim, good) * (1.0 - fee)
 	elif role == "farm":
 		var climate: float = farm_climate(sim, region)
-		var soil: float = maxf(
-			float(ground.get("fertility", reg.fertility)), float(spec.get("fertility_floor", 0.0))
+		var soil: float = (
+			maxf(
+				float(ground.get("fertility", reg.fertility)),
+				float(spec.get("fertility_floor", 0.0))
+			)
+			+ Megaprojects.fertility_bonus(sim)
 		)
 		var rate: float = (
 			float(spec.rate)
@@ -840,30 +1162,67 @@ static func build_forecast(
 			* (1.0 + Research.bonus(sim, "farm_output"))
 		)
 		outputs.food = rate
-		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+		usable.food = usable_food(sim, s, rate)
+		revenue = float(usable.food) * delivered_price(sim, s, "food")
+		savings = revenue
+	elif role == "harbor":
+		# The catch replaces imported food as a farm's crop does; sea freight makes what the town
+		# still imports cheaper (bay.gd). Its added port capacity is not valued.
+		var catch: float = float(spec.get("fish", 0.0))
+		outputs.food = catch
+		usable.food = usable_food(sim, s, catch)
+		# Before the harbour works, food comes in at the full orbital price.
+		savings = float(usable.food) * _import_price(sim, "food")
+		sea = Bay.sea_savings(sim, s)
+		revenue = savings + sea
 	elif role == "indoor_farm":
 		var rate: float = (
 			float(spec.rate) * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
 		)
 		outputs.food = rate
-		revenue = rate * float(sim.config.prices.food) * (1.0 + fee)
+		usable.food = usable_food(sim, s, rate)
+		revenue = float(usable.food) * delivered_price(sim, s, "food")
+		savings = revenue
 	elif role == "factory":
 		var boost: float = _factory_boost(sim, {"kind": kind})
+		# What the colony builds with replaces imports: worth the import price, not the export one.
+		var local: Array = sim.config.economy.get("forecast_import_valued", [])
 		for good: String in spec.outputs:
 			var made: float = float(spec.outputs[good]) * boost
 			outputs[good] = made
-			revenue += made * Market.price(sim, good) * (1.0 - fee)
+			if good in local:
+				revenue += (
+					made * maxf(_import_price(sim, good), Market.price(sim, good) * (1.0 - fee))
+				)
+			else:
+				revenue += made * Market.price(sim, good) * (1.0 - fee)
 		for good: String in spec.inputs:
 			revenue -= float(spec.inputs[good]) * Market.price(sim, good) * (1.0 - fee)
 	elif role == "foodworks":
+		var order: float = Copies.next_factor(
+			sim,
+			kind,
+			float(sim.config.economy.get("foodworks_copy_factor", 1.0)),
+			int(sim.config.economy.get("foodworks_free_copies", 0))
+		)
 		revenue = (
-			float(spec.daily_payment) * (1.0 + Research.bonus(sim, "foodworks")) * (1.0 - fee)
+			(
+				float(spec.daily_payment)
+				* order
+				* (1.0 + Research.bonus(sim, "foodworks"))
+				* (1.0 - fee)
+			)
 			- float(spec.food_input) * float(sim.config.prices.food) * (1.0 + fee)
 		)
 	elif role == "commerce":
 		revenue = float(spec.customers) * float(spec.spend)
 	elif role == "income":
-		revenue = float(spec.daily_income)
+		revenue = (
+			float(spec.daily_income)
+			* Copies.next_factor(
+				sim, kind, float(sim.config.economy.get("income_copy_factor", 1.0)), 1
+			)
+		)
 	var jobs: int = jobs_for(sim, {"kind": kind, "level": 1})
 	var wages: float = (
 		jobs * Population.worker_wage(sim)
@@ -875,6 +1234,9 @@ static func build_forecast(
 		+ float(spec.materials) * float(sim.config.prices.materials)
 		+ float(spec.parts) * float(sim.config.prices.parts)
 	)
+	for good: String in outputs:
+		if not usable.has(good):
+			usable[good] = outputs[good]
 	return {
 		"kind": kind,
 		"name": spec.name,
@@ -888,6 +1250,11 @@ static func build_forecast(
 		"water": float(spec.water),
 		"maintenance": float(spec.maintenance),
 		"outputs": outputs,
+		"usable": usable,
+		"import_savings_per_day": savings,
+		"sea_savings_per_day": sea,
+		"food": food_balance(sim, s) if not s.is_empty() and outputs.has("food") else {},
+		"haul": spec.get("haul", {"days": 0, "cost": 0.0, "units": 0.0}),
 		"revenue_per_day": revenue,
 		"wages_per_day": wages,
 		"net_per_day": net,

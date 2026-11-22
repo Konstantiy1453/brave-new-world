@@ -12,7 +12,10 @@ const RESOURCES: Array[String] = [
 	"components",
 	"alloy",
 	"machinery",
-	"pharma"
+	"pharma",
+	"nickel",
+	"cobalt",
+	"superalloy"
 ]
 const SITE_RESIDENTIAL: String = "residential"
 const SITE_FRONTIER: String = "frontier"
@@ -49,9 +52,24 @@ const SH_DEPLETED: String = "depleted"
 const SH_PROCESSOR_INPUT: String = "processor_input"
 const SH_NO_PORT: String = "no_port"
 const SH_PORT_FULL: String = "port_full"
+const SH_NO_HARBOUR: String = "no_harbour"
 const SH_STARVING: String = "starving"
 const SH_HOUSING: String = "housing"
 const SH_POLLUTION: String = "pollution"
 
 const SOURCE_PROCESSING: String = "processing"
 const SOURCE_IMPORT: String = "import"
+
+## Cash cover bands (`Sim.cover_view`): money running short, ordinary, or sitting idle.
+const COVER_SHORT: String = "short"
+const COVER_NORMAL: String = "normal"
+const COVER_IDLE: String = "idle"
+
+## Money sinks (1.9 spending by sink). The rest come from `money_sinks` in economy.json.
+const SINK_BUILDINGS: String = "buildings"
+const SINK_UPGRADES: String = "upgrades"
+const SINK_GREAT_WORKS: String = "great_works"
+
+## Route variants that are not roads (economy.json `roads`).
+const ROUTE_SEA: String = "sea"
+const ROUTE_SHUTTLE: String = "shuttle"

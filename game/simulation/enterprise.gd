@@ -24,7 +24,7 @@ static func found(sim: RefCounted, region: int) -> String:
 	var materials: float = float(rules.materials)
 	var parts: float = float(rules.parts)
 	if s.stock.materials < materials or s.stock.parts < parts:
-		return "企业要向本地仓库购买 %.0f 建材和 %.0f 部件" % [materials, parts]
+		return "企业要向本地仓库购买 %.0f t 建材和 %.0f t 部件" % [sim.tonnes(materials), sim.tonnes(parts)]
 	sim._transfer("external", "enterprise", float(rules.capital), "enterprise.capital", false)
 	var inputs: float = materials * sim.config.prices.materials + parts * sim.config.prices.parts
 	sim._transfer("enterprise", "public", inputs, "enterprise.inputs", false)
@@ -96,7 +96,7 @@ static func run(sim: RefCounted) -> void:
 		b.status = Keys.B_RESTRICTED
 		if e.loss_days >= lasts:
 			e.status = Keys.E_CLOSED
-			sim._log("服务社已停业：可雇用工程队或现金不足持续 %d 天。" % lasts)
+			sim._log("服务社已停业：可雇用职工或现金不足持续 %d 天。" % lasts)
 		return
 	e.employees = employees
 	s.employed_workers += employees

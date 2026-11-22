@@ -147,7 +147,12 @@ static func load_legacy(sim: RefCounted, bytes: PackedByteArray) -> String:
 	var converted: Dictionary = convert_v2(candidate)
 	if converted.has("error"):
 		return str(converted.error)
-	return load("res://simulation/save_io.gd").adopt(sim, converted.state, converted.blobs)
+	return _save_io().adopt(sim, converted.state, converted.blobs)
+
+
+## SaveIo preloads this file, so it is loaded here at run time instead of preloaded.
+static func _save_io() -> GDScript:
+	return load("res://simulation/save_io.gd")
 
 
 ## Converts one schema 2 state in place. Returns {state, blobs} or {error}.
@@ -198,7 +203,7 @@ static func convert_v2(old: Dictionary) -> Dictionary:
 		else:
 			archive.hash = ""
 		archive.erase("snapshot")
-	old.schema = 4
+	old.schema = _save_io().SCHEMA
 	load("res://simulation/sim.gd").ensure_systems(old)
 	_settle_research(old)
 	old.rng_state = (absi(int(old.get("rng_state", 1))) % 2147483646) + 1

@@ -36,6 +36,23 @@ const OTHER_INCOME_MARGIN: float = 1.15
 const DIVERSIFY_CUSHION: float = 0.4
 const DOMINANT_SHARE: float = 0.5
 const EXPORT_WINDOW_DAYS: int = 30
+## Event effects in the bot's valuation (`_option_value`): the days a lasting effect counts for,
+## and the share of the colony's daily income each kind of effect touches.
+const EFFECT_YEAR: float = 360.0
+const EFFECT_SHARE: Dictionary = {
+	"all": 1.0,
+	"export_price": 0.6,
+	"mine": 0.45,
+	"processor": 0.3,
+	"port": 0.2,
+	"road_capacity": 0.2,
+	"power": 0.15,
+	"farm": 0.1,
+	"water": 0.1,
+	"research": 0.05,
+	"appeal": 0.05,
+}
+const EFFECT_SHARE_OTHER: float = 0.1
 const POLLUTION_CLEANUP_AT: float = 0.03
 const SCRUBBER_AT: float = 0.005
 const PORT_BUSY_SHARE: float = 0.9
@@ -74,6 +91,33 @@ const LOW_FOOD_DAYS: float = 12.0
 const PORT_PEOPLE: int = 100
 const SWAP_KINDS: Array[String] = ["apartment", "arcology"]
 const SWAP_FREE_BEDS: int = 35
+## Public services budget (1.9): raise a level with this much cash cover, lower it below the other.
+const SERVICES_UP_COVER: float = 120.0
+const SERVICES_DOWN_COVER: float = 45.0
+const SERVICES_REVIEW_PERIOD: int = 60
+## Career transfer (1.9): after the award, cash above this much cover goes to the career balance.
+const TRANSFER_COVER: float = 240.0
+const TRANSFER_REVIEW_PERIOD: int = 60
+## Commissioned research (1.9): level 1 from this much cover, level 2 from twice it, all stopped
+## below the floor.
+const COMMISSION_FLOOR_COVER: float = 45.0
+const COMMISSION_REVIEW_PERIOD: int = 10
+## Late great works (1.9): built, staged and levelled from this much cash cover once unlocked.
+const LATE_WORKS: Array[String] = [
+	"capital_district", "exchange", "terraforming", "shipyard", "emergency_net"
+]
+## After the award the next late great work is saved for, and built when cash pays for it and
+## still keeps this many days of expenses.
+const LATE_WORKS_RESERVE_DAYS: float = 10.0
+## Before the award the charter comes first: a late great work only out of this much spare cash.
+const LATE_WORKS_EARLY_RESERVE_DAYS: float = 60.0
+## Blocked upgrade steps are kept apart from blocked builds of the same kind.
+const UPGRADE_KEY: String = "upgrade:"
+const LATE_WORK_TECH_VALUE: float = 6.0
+## A great work whose build was refused for anything but money is left alone this long.
+const LATE_WORK_RETRY_DAYS: int = 360
+## After the award the charter is won: the techs behind the late great works come first.
+const LATE_WORK_TECH_VALUE_AFTER_AWARD: float = 40.0
 
 var home: int = 0
 var reserve_days: float = 8.0
@@ -87,6 +131,18 @@ var last_reshuffle: int = -1000
 var research_full_income: float = 1000.0
 var last_wage_change: int = -1000
 var fixed_wage: float = 0.0
+## Whether this bot uses the public services budget (passive and sloppy players do not).
+var uses_services: bool = false
+var uses_transfer: bool = false
+var uses_commissions: bool = false
+## Commission every running project, not only the one the charter needs next.
+var commission_all: bool = false
+var commission_cover: float = 90.0
+var uses_great_works: bool = false
+## Day a late great work's build was last refused, by kind.
+var late_work_blocked: Dictionary = {}
+## Short-range shuttle lines to new outposts while their roads are saved for and built (1.9).
+var uses_shuttle: bool = false
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -124,8 +180,11 @@ func on_day() -> void:
 		return
 	home = int(sim.state.settlements[0].region)
 	var reserve: float = daily_expense() * reserve_days
+	_crews(reserve)
 	_utilities()
 	_environment(reserve)
+	# Before the day's other building, so neither the plot nor the money it saved goes elsewhere.
+	_late_great_works()
 	_laboratory(reserve)
 	_staff_research(reserve)
 	_second_settlement(reserve)
@@ -133,7 +192,7 @@ func on_day() -> void:
 	_food(reserve)
 	_housing(reserve)
 	_enterprise()
-	_pave_busy_roads(reserve)
+	_upgrade_busy_links(reserve)
 	_megaprojects(reserve)
 	_ports(reserve)
 	_goal_projects(reserve)
@@ -141,13 +200,60 @@ func on_day() -> void:
 	# Saving is for the poor: with this much in the bank nothing has to wait for anything else.
 	if float(sim.state.cash) >= RICH_CASH:
 		saving = false
-	if not saving and not _saving_for_hall():
+	if not saving and not _saving_for_hall() and not _saving_for_great_work():
 		_create_jobs(reserve)
 		_invest(reserve)
 		_services(reserve)
 		_upgrades(reserve)
 	_research_contract()
 	_wages()
+	_public_services()
+	_commissions()
+	_seek_late_work_tech()
+	_career_transfer()
+
+
+## Crews (1.10): orders wait for an engineering crew. An idle crew goes to a linked town whose
+## orders wait with no crew of its own; otherwise a town whose orders outnumber its crews trains
+## one, while the colony can afford it.
+func _crews(reserve: float) -> void:
+	var rule: Dictionary = sim.pop_rules.get("crews", {})
+	if rule.is_empty():
+		return
+	var view: Dictionary = sim.Crews.view(sim)
+	for place: Dictionary in sim.state.settlements:
+		var region: int = int(place.region)
+		var waiting: int = view.waiting.get(region, []).size()
+		if waiting == 0:
+			continue
+		var here: int = 0
+		for team: Dictionary in view.teams:
+			if int(team.region) == region and str(team.task) != "travel":
+				here += 1
+			elif str(team.task) == "travel" and int(team.target) == region:
+				here += 1
+		if here == 0 and _send_idle_crew(view, region):
+			continue
+		var spare: int = int(place.workers) - int(place.employed_workers)
+		if (
+			waiting > here
+			and spare > 1
+			and float(sim.state.cash) >= sim.Crews.train_price(sim) + reserve
+		):
+			act("crew_train", {"region": region})
+
+
+func _send_idle_crew(view: Dictionary, region: int) -> bool:
+	for team: Dictionary in view.teams:
+		if str(team.task) != "":
+			continue
+		var from: int = int(team.region)
+		if not view.waiting.get(from, []).is_empty():
+			continue
+		if sim.Crews.travel_days(sim, from, region) < 0:
+			continue
+		return act("crew_send", {"crew": int(team.id), "to": region}) == ""
+	return false
 
 
 ## Lands on the start that looks richest from orbit, among those with a farming partner in reach.
@@ -180,21 +286,35 @@ func answer_events() -> void:
 			act("event_v2", {"instance_id": node.instance_id, "choice": best})
 
 
+## What an event option is worth in money: payments and rewards as the game scales them with the
+## colony's income, goods at their prices, and each effect over its days (EFFECT_YEAR when it
+## lasts) on the share of daily income its production touches, less its daily upkeep. A flat value
+## per effect, whatever its length, made the bot take every long production cut over paying to
+## avoid it.
 func _option_value(options: Array, id: String) -> float:
+	var scale: float = EventsV2.money_scale(sim)
+	var daily: float = scale * float(EventsV2.definitions().sampling.reference_income)
 	for option: Dictionary in options:
 		if option.id != id:
 			continue
-		var value: float = float(option.get("reward", 0.0)) - float(option.get("pay", 0.0))
+		var value: float = (
+			(float(option.get("reward", 0.0)) - float(option.get("pay", 0.0))) * scale
+		)
 		for good: String in option.get("goods_reward", {}):
 			value += float(option.goods_reward[good]) * float(sim.config.prices[good])
 		for good: String in option.get("goods_cost", {}):
 			value -= float(option.goods_cost[good]) * float(sim.config.prices[good])
 		for effect: Dictionary in option.get("effects", []):
-			value += (float(effect.factor) - 1.0) * 500.0
+			var days: float = float(effect.get("duration_days", 0.0))
+			if days <= 0.0:
+				days = EFFECT_YEAR
+			var share: float = float(EFFECT_SHARE.get(str(effect.kind), EFFECT_SHARE_OTHER))
+			value += (float(effect.factor) - 1.0) * days * daily * share
+			value -= float(effect.get("maintenance", 0.0)) * days
 		if option.has("build"):
-			value -= 400.0
+			value -= 400.0 * scale
 		if option.has("investigate"):
-			value += 50.0
+			value += 50.0 * scale
 		return value
 	return 0.0
 
@@ -378,7 +498,60 @@ func _card_value(row: Dictionary) -> float:
 		value += 30.0
 	if id in HOUSING_TECHS and _short_of_ground():
 		value += 30.0
+	if uses_great_works and str(sim.state.status) == "success":
+		if _late_chain().has(id):
+			value += LATE_WORK_TECH_VALUE_AFTER_AWARD
+	elif uses_great_works and _unlocks_late_work(id):
+		value += LATE_WORK_TECH_VALUE
 	return value
+
+
+## Before the award only the technology that unlocks a late great work counts, a little.
+func _unlocks_late_work(tech: String) -> bool:
+	for kind: String in LATE_WORKS:
+		if str(sim.config.buildings[kind].requires_tech) == tech:
+			return true
+	return false
+
+
+## Every technology still missing on the way to a late great work, prerequisites included.
+func _late_chain() -> Dictionary:
+	var chain: Dictionary = {}
+	var open: Array = []
+	for kind: String in LATE_WORKS:
+		open.append(str(sim.config.buildings[kind].requires_tech))
+	while not open.is_empty():
+		var tech: String = str(open.pop_back())
+		if chain.has(tech) or sim._has(tech):
+			continue
+		chain[tech] = true
+		open.append_array(sim.config.techs[tech].requires)
+	return chain
+
+
+## After the award, pays to redraw a research direction when no card on the way to a late great
+## work is on offer, as a player chasing one would.
+func _seek_late_work_tech() -> void:
+	if not uses_great_works or str(sim.state.status) != "success":
+		return
+	if today() - last_reshuffle < RESHUFFLE_PERIOD:
+		return
+	var chain: Dictionary = _late_chain()
+	for tech: String in chain:
+		var category: String = str(sim.config.techs[tech].category)
+		if sim.state.research.offers.get(category, []).has(tech):
+			return
+	var keep: float = _late_work_keep()
+	if float(sim.state.cash) < sim.Research.reshuffle_cost(sim) + keep:
+		return
+	for tech: String in chain:
+		var open: bool = true
+		for need: String in sim.config.techs[tech].requires:
+			open = open and sim._has(need)
+		if open:
+			act("research_reshuffle", {"category": str(sim.config.techs[tech].category)})
+			last_reshuffle = today()
+			return
 
 
 ## Everything between here and the technology the final stage cannot do without.
@@ -430,6 +603,9 @@ func _unconnected() -> Array:
 		var place: Dictionary = sim.state.settlements[at]
 		var joined: bool = false
 		for road: Dictionary in sim.state.roads:
+			# A shuttle line is a stopgap: the outpost still needs its road or sea route.
+			if str(road.get("variant", "")) == sim.Keys.ROUTE_SHUTTLE:
+				continue
 			joined = joined or int(road.a) == int(place.region) or int(road.b) == int(place.region)
 		if not joined:
 			missing.append(int(place.region))
@@ -497,21 +673,34 @@ func _best_link(site: int) -> Dictionary:
 func _connect_settlements(reserve: float) -> void:
 	for site: Variant in _unconnected():
 		var link: Dictionary = _best_link(int(site))
+		# A shuttle carries a little at once while the road is saved for and built.
+		if uses_shuttle and not link.is_empty():
+			_shuttle_to(int(link.from), int(site), reserve)
 		# Food and materials wait on this road: it comes before any cushion.
 		if not link.is_empty() and float(sim.state.cash) >= float(link.cost) + reserve * 0.1:
 			act("connect", {"a": int(link.from), "b": int(site), "variant": link.variant})
 		return
 
 
-## A road that runs full holds up everything behind it.
-func _pave_busy_roads(reserve: float) -> void:
-	if not sim._has(str(sim.config.road_upgrade.tech)):
+## A shuttle line to a new outpost with no link yet, when the cash is there.
+func _shuttle_to(from: int, site: int, reserve: float) -> void:
+	if not sim.Logistics.road_between(sim, from, site).is_empty():
 		return
+	var quote: Dictionary = sim.road_quote(from, site, sim.Keys.ROUTE_SHUTTLE)
+	if str(quote.refusal) == "" and float(sim.state.cash) >= float(quote.cost) + reserve:
+		act("connect", {"a": from, "b": site, "variant": sim.Keys.ROUTE_SHUTTLE})
+
+
+## A link that runs full holds up everything behind it: pave or widen the road, or enlarge the
+## docks, when the next level is open and the money is there.
+func _upgrade_busy_links(reserve: float) -> void:
 	for road: Dictionary in sim.state.roads:
-		if bool(road.get("paved", false)) or str(road.get("variant", "")) == "sea":
+		if float(road.sent_today) <= float(road.capacity):
 			continue
-		var cost: float = float(road.cost) * float(sim.config.road_upgrade.cost_factor)
-		if float(road.sent_today) > float(road.capacity) and float(sim.state.cash) > cost + reserve:
+		var step: Dictionary = sim.Logistics.next_level(sim, road)
+		if step.is_empty() or str(step.refusal) != "":
+			continue
+		if float(sim.state.cash) > float(step.cost) + reserve:
 			act("upgrade_road", {"road": int(road.id)})
 			return
 
@@ -1029,7 +1218,7 @@ func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) 
 	var batch: int = mini(mini(limit, wanted), sim.Population.free_beds(sim, place))
 	if batch < 1:
 		return false
-	var cost: float = sim.Population.campaign_price(sim, kind) * batch
+	var cost: float = sim.Population.campaign_cost(sim, kind, batch)
 	if float(sim.state.cash) < cost + reserve + recruit_buffer:
 		return false
 	return act("recruit", {"region": region, "kind": kind, "count": batch}) == ""
@@ -1167,6 +1356,207 @@ func _invest(reserve: float) -> void:
 				return
 
 
+## Public cash over the mean daily operating expense of the recent past (`Sim.cash_cover`).
+func cash_cover() -> float:
+	return sim.cash_cover()
+
+
+## Money with nothing better to do buys people a better life, a level at a time.
+func _public_services() -> void:
+	if not uses_services or today() % SERVICES_REVIEW_PERIOD != 0:
+		return
+	var level: int = int(sim.state.policy.get("services", 0))
+	var cover: float = cash_cover()
+	if cover >= SERVICES_UP_COVER and level < int(sim.pop_rules.services.levels):
+		act("policy", {"services": level + 1})
+	elif cover < SERVICES_DOWN_COVER and level > 0:
+		act("policy", {"services": level - 1})
+
+
+## Late great works: the next stage or level of one that stands, else the next one unlocked, when
+## cash pays for it and keeps `LATE_WORKS_RESERVE_DAYS` of expenses. One step a review.
+func _late_great_works() -> void:
+	if not uses_great_works or today() % COMMISSION_REVIEW_PERIOD != 0:
+		return
+	var step: Dictionary = _next_late_work()
+	if step.is_empty() or float(sim.state.cash) < float(step.cost) + _late_work_keep():
+		return
+	var region: int = int(step.region)
+	var kind: String = str(step.kind)
+	# The cost counts the supplies, so a refusal is something saving cannot fix: the step is left
+	# alone for a while. Great works need no crews to work, so none are waited for.
+	if str(step.action) == "upgrade":
+		if act("upgrade", {"region": region, "index": int(step.index)}) != "":
+			late_work_blocked[UPGRADE_KEY + kind] = today()
+		return
+	if sim.Sites.find_plot(sim, region, kind) < 0 and not _clear_ground(region):
+		late_work_blocked[kind] = today()
+		return
+	# The plot just cleared goes to the great work at once.
+	if act("build", {"region": region, "kind": kind}) != "":
+		late_work_blocked[kind] = today()
+
+
+## The next late great work step open now: {action, region, index or kind, cost}, or empty.
+func _next_late_work() -> Dictionary:
+	for place: Dictionary in _places():
+		for index: int in range(place.buildings.size()):
+			if not place.buildings[index].kind in LATE_WORKS:
+				continue
+			var rule: Dictionary = sim.upgrade_preview(int(place.region), index)
+			if (
+				rule.is_empty()
+				or not sim._has(str(rule.tech))
+				or int(place.buildings[index].remaining) > 0
+			):
+				continue
+			if int(place.buildings[index].get("upgrade_days", 0)) > 0:
+				continue
+			var kind: String = str(place.buildings[index].kind)
+			if _late_work_waiting(UPGRADE_KEY + kind):
+				continue
+			return {
+				"action": "upgrade",
+				"region": int(place.region),
+				"index": index,
+				"kind": kind,
+				"cost": float(rule.cost) + float(rule.get("supply_cost", 0.0)),
+			}
+	for kind: String in LATE_WORKS:
+		if not sim._has(str(sim.config.buildings[kind].requires_tech)) or _anywhere(kind):
+			continue
+		var at: int = _late_work_site(kind)
+		if at < 0 or _late_work_waiting(kind):
+			continue
+		var forecast: Dictionary = sim.build_forecast(at, kind)
+		if forecast.is_empty():
+			continue
+		return {"action": "build", "region": at, "kind": kind, "cost": _with_supplies(forecast)}
+	return {}
+
+
+func _late_work_waiting(key: String) -> bool:
+	return today() - int(late_work_blocked.get(key, -LATE_WORK_RETRY_DAYS)) < LATE_WORK_RETRY_DAYS
+
+
+## A build's price with its materials and parts bought at import price, as an empty warehouse
+## would have it.
+func _with_supplies(forecast: Dictionary) -> float:
+	var supplies: float = (
+		float(forecast.materials) * float(sim.config.prices.materials)
+		+ float(forecast.parts) * float(sim.config.prices.parts)
+	)
+	return float(forecast.cost) + supplies * (1.0 + float(sim.config.economy.port_fee))
+
+
+## Where a late great work can stand, by the rules and not the money: a town of the kind it needs
+## with a plot for it, home first; when every such town is full, the first with a public factory to
+## pull down for it. The capital district goes only in the hall's town, cleared the same way. -1
+## when there is none.
+func _late_work_site(kind: String) -> int:
+	if kind == "capital_district":
+		return _hall_town()
+	var towns: Array[int] = [home]
+	for place: Dictionary in _places():
+		if int(place.region) != home:
+			towns.append(int(place.region))
+	var fallback: int = -1
+	for region: int in towns:
+		var place: Dictionary = sim.settlement(region)
+		var spec: Dictionary = sim.build_preview(region, kind)
+		var ground: Dictionary = sim.state.world.regions[region]
+		if sim.Production._place_refusal(place, ground, spec) != "":
+			continue
+		if sim.Sites.find_plot(sim, region, kind) >= 0:
+			return region
+		if fallback < 0 and _public_factory(place) >= 0:
+			fallback = region
+	return fallback
+
+
+## The first public factory in a town, which a great work may replace; -1 when there is none.
+func _public_factory(place: Dictionary) -> int:
+	for index: int in range(place.buildings.size()):
+		var building: Dictionary = place.buildings[index]
+		if str(building.get("owner", "public")) != "public" or int(building.remaining) > 0:
+			continue
+		if sim.Production.role_of(sim, str(building.kind)) == "factory":
+			return index
+	return -1
+
+
+func _late_work_keep() -> float:
+	var days: float = (
+		LATE_WORKS_RESERVE_DAYS
+		if str(sim.state.status) == "success"
+		else LATE_WORKS_EARLY_RESERVE_DAYS
+	)
+	return days * float(sim.cover_view().expense)
+
+
+## After the award, new investment waits while the next late great work is being saved for.
+func _saving_for_great_work() -> bool:
+	if not uses_great_works or str(sim.state.status) != "success":
+		return false
+	var step: Dictionary = _next_late_work()
+	return not step.is_empty() and float(sim.state.cash) < float(step.cost) + _late_work_keep()
+
+
+## The settlement with the capital hall, or -1.
+func _hall_town() -> int:
+	for place: Dictionary in _places():
+		for b: Dictionary in place.buildings:
+			if b.kind == "capital_hall" and int(b.remaining) <= 0:
+				return int(place.region)
+	return -1
+
+
+## Commissions on what the charter needs next (or on every running project), by cash cover.
+func _commissions() -> void:
+	if not uses_commissions or today() % COMMISSION_REVIEW_PERIOD != 0:
+		return
+	var cover: float = cash_cover()
+	var level: int = 0
+	if cover >= commission_cover * 2.0:
+		level = 2
+	elif cover >= commission_cover:
+		level = 1
+	var chain: Dictionary = _hall_chain()
+	var targets: Array = []
+	for column: Dictionary in sim.research_cards():
+		var running: Dictionary = column.running
+		if not running.is_empty():
+			targets.append(str(running.id))
+	if not commission_all:
+		var goal: Array = targets.filter(func(tech: String) -> bool: return chain.has(tech))
+		targets = goal.slice(0, 1) if not goal.is_empty() else targets.slice(0, 1)
+	var projects: Dictionary = sim.state.research.projects
+	for tech: String in projects:
+		var wanted: int = level if targets.has(tech) else 0
+		if cover < COMMISSION_FLOOR_COVER:
+			wanted = 0
+		if (
+			int(projects[tech].get("commission", 0)) != wanted
+			and not sim.state.research.completed.has(tech)
+		):
+			act("research_commission", {"tech": tech, "level": wanted})
+
+
+## After the award, money a finished colony has no use for goes to the career balance, keeping
+## `TRANSFER_COVER` days of expenses at home.
+func _career_transfer() -> void:
+	if not uses_transfer or today() % TRANSFER_REVIEW_PERIOD != 0:
+		return
+	if str(sim.state.status) != "success":
+		return
+	var cover: Dictionary = sim.cover_view()
+	var spare: float = float(sim.state.cash) - TRANSFER_COVER * float(cover.expense)
+	var view: Dictionary = sim.Career.transfer_preview(sim)
+	var amount: float = floorf(minf(float(view.room), spare / float(view.rate)))
+	if amount >= 1.0:
+		act("career_transfer", {"amount": amount})
+
+
 ## Raises pay only when people are staying away for lack of appeal, not for lack of beds or food.
 func _wages() -> void:
 	if fixed_wage > 0.0:
@@ -1259,6 +1649,9 @@ func _upgrades(reserve: float) -> void:
 
 
 func _upgrade_worthwhile(place: Dictionary, building: Dictionary, rule: Dictionary) -> bool:
+	# Great works grow by their own rule, from cash cover (_late_great_works).
+	if bool(sim.config.buildings[building.kind].get("megaproject", false)):
+		return false
 	var extra_jobs: int = int(rule.get("jobs", 0))
 	match str(building.kind):
 		"mine_ore", "mine_copper", "mine_crystal":
@@ -1329,14 +1722,19 @@ func _hall_site() -> int:
 	return best
 
 
-## Makes way for something that matters more than a factory that can stand elsewhere.
-func _clear_ground(region: int) -> void:
+## Makes way for something that matters more than a factory that can stand elsewhere: pulls down
+## the first public factory the town lets go. False when there is none.
+func _clear_ground(region: int) -> bool:
 	var place: Dictionary = sim.settlement(region)
 	for index: int in range(place.buildings.size()):
 		var building: Dictionary = place.buildings[index]
-		if sim.Production.role_of(sim, str(building.kind)) == "factory":
-			act("demolish", {"region": region, "index": index})
-			return
+		if str(building.get("owner", "public")) != "public":
+			continue
+		if sim.Production.role_of(sim, str(building.kind)) != "factory":
+			continue
+		if act("demolish", {"region": region, "index": index}) == "":
+			return true
+	return false
 
 
 func _anywhere(kind: String) -> bool:

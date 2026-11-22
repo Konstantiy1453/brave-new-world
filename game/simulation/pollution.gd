@@ -89,7 +89,12 @@ static func daily(sim: RefCounted) -> void:
 	if loss >= float(_rules(sim).notice):
 		var bill: float = 0.0
 		for s: Dictionary in sim.state.settlements:
-			bill += float(s.population) * float(_rules(sim).health_per_person) * loss
+			bill += (
+				float(s.population)
+				* float(_rules(sim).health_per_person)
+				* loss
+				* sim.Population.services_effect(sim, "health")
+			)
 			sim._short(s, Keys.SH_POLLUTION)
 		sim._public_expense(bill, "company.health", "external")
 	var now: int = stage(sim)

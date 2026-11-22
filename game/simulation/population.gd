@@ -17,6 +17,8 @@ static func ensure_state(state: Dictionary) -> void:
 		state.recruit_campaigns = []
 	if not state.policy.has("wage"):
 		state.policy.wage = 1.0
+	if not state.policy.has("services"):
+		state.policy.services = 0
 	for s: Dictionary in state.settlements:
 		if not s.has("arrival_accrual"):
 			s.arrival_accrual = 0.0
@@ -27,6 +29,45 @@ static func ensure_state(state: Dictionary) -> void:
 
 
 ## Food per person per day, after what cold chains and reserves save.
+## The public services budget (1.9). Level 0 is the 1.8 colony. It is paid at the start of the day
+## for every resident, and works only on a day it was paid in full.
+static func services_level(sim: RefCounted) -> int:
+	if int(sim.state.policy.get("services_paid_day", -1)) != int(sim.state.day):
+		return 0
+	return int(sim.state.policy.get("services", 0))
+
+
+## The budget's effect on `key` (appeal, departures, births or health) at today's level.
+static func services_effect(sim: RefCounted, key: String) -> float:
+	var table: Array = sim.pop_rules.get("services", {}).get(key, [])
+	var level: int = services_level(sim)
+	if level < 0 or level >= table.size():
+		return 0.0 if key == "appeal" else 1.0
+	return float(table[level])
+
+
+## What a level costs a day for the colony as it is now.
+static func services_cost(sim: RefCounted, level: int) -> float:
+	var table: Array = sim.pop_rules.get("services", {}).get("cost_per_resident", [])
+	if level <= 0 or level >= table.size():
+		return 0.0
+	var residents: int = 0
+	for s: Dictionary in sim.state.settlements:
+		residents += int(s.population)
+	return float(table[level]) * residents
+
+
+static func pay_services(sim: RefCounted) -> void:
+	var level: int = int(sim.state.policy.get("services", 0))
+	if level <= 0:
+		return
+	var cost: float = services_cost(sim, level)
+	if sim.optional_room() < cost:
+		return
+	sim._public_expense(cost, "services.budget", "external")
+	sim.state.policy.services_paid_day = int(sim.state.day)
+
+
 static func food_rate(sim: RefCounted) -> float:
 	return (
 		float(sim.config.economy.food_per_person)
@@ -96,6 +137,9 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 	var services: float = service_total(sim, s, "appeal")
 	if services > 0.0:
 		parts.services = float(parts.get("services", 0.0)) + services
+	var budget: float = services_effect(sim, "appeal")
+	if budget > 0.0:
+		parts.budget = budget
 	var dirty: float = Pollution.penalty(sim) * float(sim.progression.pollution.appeal_weight)
 	if dirty >= 0.005:
 		parts.pollution = -dirty
@@ -104,6 +148,9 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 	var learned: float = Research.bonus(sim, "appeal")
 	if learned > 0.0:
 		parts.tech = learned
+	var district: float = Megaprojects.district_appeal(sim, s)
+	if district > 0.0:
+		parts.district = district
 	for shortage: Dictionary in s.shortages:
 		if shortage.key in [Keys.SH_POWER, Keys.SH_WATER]:
 			parts.shortages = float(rules.shortage)
@@ -240,6 +287,7 @@ static func _births(sim: RefCounted, s: Dictionary) -> void:
 	var yearly: float = (
 		float(sim.pop_rules.births.per_adult_per_year)
 		* (1.0 + service_total(sim, s, "births") + Research.bonus(sim, "births"))
+		* services_effect(sim, "births")
 	)
 	s.birth_accrual = float(s.birth_accrual) + adults * yearly / 360.0
 	if float(s.birth_accrual) < 1.0:
@@ -249,6 +297,7 @@ static func _births(sim: RefCounted, s: Dictionary) -> void:
 		s.children += 1
 		s.population += 1
 		sim.state.births_total += 1
+		Stats.count(sim.state, "births", int(s.region), 1)
 		s.cohorts.append(
 			{"count": 1, "mature_day": int(sim.state.day) + int(sim.config.economy.mature_days)}
 		)
@@ -280,7 +329,7 @@ static func _train(sim: RefCounted, s: Dictionary) -> void:
 				s.workers -= 1
 				s.scientists += 1
 				reconcile_jobs(sim, s)
-				sim._log(s.name + "教学研究所完成 1 支工程队的科研职业培训。")
+				sim._log(s.name + "教学研究所完成 1 名职工的科研职业培训。")
 				break
 
 
@@ -295,6 +344,11 @@ static func _recruit_arrivals(sim: RefCounted) -> void:
 			continue
 		var scientists: int = int(party.count) if party.kind == "scientist" else 0
 		_admit(sim, s, int(party.count) - scientists, scientists)
+		if str(party.kind) == "crew":
+			# A crew recruited from outside: one more resident, who works as a crew (crews.gd).
+			sim.Crews.found(sim, s, int(party.count))
+			sim._log("%s：%d 支招募的工程队抵达。" % [s.name, int(party.count)])
+			continue
 		sim._log("%s：%d 名招募人员抵达。" % [s.name, int(party.count)])
 	sim.state.recruits = keep
 
@@ -325,6 +379,8 @@ static func _move_workers(sim: RefCounted, from: Dictionary, to: Dictionary, lim
 	from.population = int(from.population) - moving
 	to.workers = int(to.workers) + moving
 	to.population = int(to.population) + moving
+	Stats.count(sim.state, "moves", int(from.region), -moving)
+	Stats.count(sim.state, "moves", int(to.region), moving)
 	to.employed = int(to.employed) + moving
 
 
@@ -343,10 +399,12 @@ static func daily(sim: RefCounted) -> void:
 
 static func campaign_price(sim: RefCounted, kind: String) -> float:
 	var rules: Dictionary = sim.pop_rules.recruitment
-	var base: float = (
-		float(rules.scientist_price if kind == "scientist" else rules.worker_price)
-		* maxf(0.2, 1.0 + Research.bonus(sim, "recruit_price"))
-	)
+	var price: float = float(rules.worker_price)
+	if kind == "scientist":
+		price = float(rules.scientist_price)
+	elif kind == "crew":
+		price = float(rules.get("crew_price", rules.worker_price))
+	var base: float = price * maxf(0.2, 1.0 + Research.bonus(sim, "recruit_price"))
 	var window: int = int(rules.window_days)
 	var recent: int = 0
 	for day: Variant in sim.state.recruit_campaigns:
@@ -359,7 +417,7 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 	var s: Dictionary = sim.settlement(region)
 	if s.is_empty() or int(s.arrival) > 0:
 		return "需要已经运转的据点"
-	if not kind in ["worker", "scientist"]:
+	if not kind in ["worker", "scientist", "crew"]:
 		return "未知招募类型"
 	var rules: Dictionary = sim.pop_rules.recruitment
 	if kind == "scientist" and not sim._has(str(rules.scientist_tech)):
@@ -368,10 +426,22 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 		return "每次招募 1—%d 人" % int(rules.max_per_campaign)
 	if free_beds(sim, s) < count:
 		return "需要 %d 张空床位，目前可用 %d 张" % [count, maxi(0, free_beds(sim, s))]
-	var cost: float = campaign_price(sim, kind) * count
+	var cost: float = campaign_cost(sim, kind, count)
 	if float(sim.state.cash) < cost:
 		return "招募需要 %.0f 资金" % cost
 	return ""
+
+
+## What a campaign of `count` costs: the price each, and for crews each one dearer by the colony's
+## crew count (crews.gd `expansion_factor`).
+static func campaign_cost(sim: RefCounted, kind: String, count: int) -> float:
+	var price: float = campaign_price(sim, kind)
+	if kind != "crew":
+		return price * count
+	var total: float = 0.0
+	for index: int in range(count):
+		total += price * sim.Crews.expansion_factor(sim, index)
+	return total
 
 
 static func recruit(sim: RefCounted, region: int, kind: String, count: int) -> String:
@@ -379,7 +449,7 @@ static func recruit(sim: RefCounted, region: int, kind: String, count: int) -> S
 	if refusal != "":
 		return refusal
 	var rules: Dictionary = sim.pop_rules.recruitment
-	sim._transfer("public", "external", campaign_price(sim, kind) * count, "recruit", false, kind)
+	sim._transfer("public", "external", campaign_cost(sim, kind, count), "recruit", false, kind)
 	sim.state.recruit_campaigns.append(int(sim.state.day))
 	var window: int = int(rules.window_days)
 	while (
@@ -422,7 +492,37 @@ static func view(sim: RefCounted, region: int) -> Dictionary:
 		"prospects": job_prospects(sim, s),
 		"arrived_30": int(_people_30(sim, "arrivals", region)),
 		"departed_30": int(_people_30(sim, "departures", region)),
+		# The town's measured change and what made it (stats.gd).
+		"change": Stats.population_change(sim.state, region),
+		"jobless_share": _jobless_share(s),
+		"jobless_free": float(sim.pop_rules.immigration.jobless_free_share),
+		"jobless_stop": float(sim.pop_rules.immigration.jobless_stop_share),
+		# Who would come in the next 30 days, within the beds free after reservations.
+		"expected_30": mini(roundi(rate), maxi(0, free_beds(sim, s))),
+		"occupations": occupations(s),
 	}
+
+
+## A town's people by occupation, every one counted as one person (one bed, one wage): workers in
+## the facilities (职工, with the jobless among them), farmers on the farms (农民), research teams
+## (研究团队, each counted as one person), crews (工程队, each counted as its resident foreman)
+## and the young (未成年). They add up to the town's population.
+static func occupations(s: Dictionary) -> Dictionary:
+	var farmers: int = clampi(int(s.get("farmers", 0)), 0, int(s.get("workers", 0)))
+	return {
+		"workers": int(s.get("workers", 0)) - farmers,
+		"farmers": farmers,
+		"researchers": int(s.get("scientists", 0)),
+		"crews": int(s.get("crew", 0)),
+		"children": int(s.get("children", 0)),
+		"jobless":
+		maxi(0, int(s.get("workers", 0)) + int(s.get("scientists", 0)) - int(s.get("employed", 0))),
+	}
+
+
+static func _jobless_share(s: Dictionary) -> float:
+	var adults: int = maxi(1, int(s.workers) + int(s.scientists))
+	return float(maxi(0, adults - int(s.employed))) / adults
 
 
 ## Beds in one housing building at its level.
@@ -446,6 +546,7 @@ static func refresh(sim: RefCounted, s: Dictionary) -> void:
 			and b.get("enabled", true)
 		):
 			s.housing += habitat_beds(sim, b)
+	s.housing += Megaprojects.district_beds(sim, s)
 	s.food_days = float(s.stock.food) / maxf(0.001, float(s.population) * food_rate(sim))
 	if s.housing < s.population:
 		sim._short(s, Keys.SH_HOUSING)
@@ -463,6 +564,7 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 	var specialists: int = int(s.scientists) - research_employed
 	s.employed_workers = 0
 	s.employed_scientists = research_employed
+	s.farmers = 0
 	for b: Dictionary in s.buildings:
 		b.employed = mini(int(b.get("employed", 0)), available)
 		b.specialists = mini(int(b.get("specialists", 0)), specialists)
@@ -470,6 +572,9 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 		specialists -= int(b.specialists)
 		s.employed_workers += int(b.employed)
 		s.employed_scientists += int(b.specialists)
+		var role: String = str(sim.config.buildings.get(str(b.kind), {}).get("role", ""))
+		if role in sim.Production.FARMING_ROLES:
+			s.farmers = int(s.farmers) + int(b.employed)
 		if b.kind == "service" and not sim.state.enterprise.is_empty():
 			sim.state.enterprise.employees = b.employed
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)

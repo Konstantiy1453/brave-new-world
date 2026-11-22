@@ -6,6 +6,9 @@ extends RefCounted
 
 const HIGH_GROUND: float = 0.38
 const SEA_SPEED_KM_PER_DAY: float = 340.0
+## The shuttle flies: a straight hop drawn with this many points, no terrain in the way.
+const AIR: String = "shuttle"
+const AIR_POINTS: int = 12
 const NEIGHBORS: Array[Vector2i] = [
 	Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)
 ]
@@ -33,7 +36,10 @@ static func unit(lat: float, lon: float) -> Vector3:
 
 ## Packed copies of what the search reads. One per world, shared.
 static func _prepared(world: Dictionary) -> Dictionary:
-	var key: String = str(world.get("terrain_key", world.get("hash", "")))
+	# Distances are in km: two games on one seed at different radii must not share them.
+	var key: String = (
+		"%s|%.1f" % [str(world.get("terrain_key", world.get("hash", ""))), float(world.radius_km)]
+	)
 	if _terrain.has(key):
 		return _terrain[key]
 	var grid: Array = world.grid
@@ -77,6 +83,8 @@ static func find(
 	var regions: Array = world.regions
 	if a < 0 or b < 0 or a >= regions.size() or b >= regions.size() or a == b:
 		return _unreachable(variant, "请选择两个不同的地点")
+	if variant == AIR:
+		return _air(world, a, b, rules)
 	var terrain: Dictionary = _prepared(world)
 	var low: int = mini(a, b)
 	var high: int = maxi(a, b)
@@ -91,9 +99,65 @@ static func find(
 	if found.reachable and a != low:
 		found.path.reverse()
 		found.coordinates.reverse()
+	# Cells, not places: the route runs between cell centres but starts and ends at the towns
+	# themselves, which a player may have put anywhere in their cells.
+	if found.reachable and not found.coordinates.is_empty():
+		found.coordinates[0] = [float(regions[a].lat), float(regions[a].lon)]
+		found.coordinates[found.coordinates.size() - 1] = [
+			float(regions[b].lat), float(regions[b].lon)
+		]
 	found.a = a
 	found.b = b
 	return found
+
+
+## A route from site `a` to a point no site stands on yet: what an expedition there would travel.
+## The point is a site for the search only; the world is not changed.
+static func find_to_point(
+	world: Dictionary, a: int, lat: float, lon: float, variant: String, rules: Dictionary
+) -> Dictionary:
+	var width: int = int(world.grid_width)
+	var height: int = int(world.grid_height)
+	var row: int = clampi(int((90.0 - lat) / 180.0 * height), 0, height - 1)
+	var column: int = posmod(int(floor((lon + 180.0) / 360.0 * width)), width)
+	var probe: Dictionary = {"lat": lat, "lon": lon, "grid_index": row * width + column}
+	var view: Dictionary = world.duplicate(false)
+	view.regions = world.regions.duplicate(false)
+	view.regions.append(probe)
+	var found: Dictionary = find(view, a, view.regions.size() - 1, variant, rules)
+	found.b = -1
+	return found
+
+
+## A short hop by air: a great-circle line, nothing in the way, but only up to `max_km`.
+static func _air(world: Dictionary, a: int, b: int, rules: Dictionary) -> Dictionary:
+	var spec: Dictionary = rules[AIR]
+	var from: Vector3 = unit(float(world.regions[a].lat), float(world.regions[a].lon))
+	var to: Vector3 = unit(float(world.regions[b].lat), float(world.regions[b].lon))
+	var distance: float = roundf(from.angle_to(to) * float(world.radius_km))
+	if distance > float(spec.max_km):
+		return _unreachable(AIR, "超出穿梭机航程：%.0f km，最远 %.0f km" % [distance, float(spec.max_km)])
+	var coordinates: Array = []
+	for index: int in range(AIR_POINTS + 1):
+		var point: Vector3 = from.slerp(to, float(index) / AIR_POINTS).normalized()
+		coordinates.append(
+			[rad_to_deg(asin(clampf(point.y, -1.0, 1.0))), rad_to_deg(atan2(point.x, point.z))]
+		)
+	return {
+		"reachable": true,
+		"distance": distance,
+		"days": maxi(int(spec.min_days), ceili(distance / float(spec.speed_km_per_day))),
+		"cost": roundf(float(spec.base_cost) + distance * float(spec.cost_per_km)),
+		"path": [],
+		"coordinates": coordinates,
+		"mountain": false,
+		"variant": AIR,
+		"a": a,
+		"b": b,
+		"capacity": int(spec.capacity),
+		"reason": str(spec.reason),
+		"build_days": int(spec.build_days),
+	}
 
 
 static func _unreachable(variant: String, reason: String) -> Dictionary:
@@ -115,7 +179,7 @@ static func _unreachable_reason(variant: String) -> String:
 		return "两地之间没有可通行的海路"
 	if variant == "valley":
 		return "高山或海洋阻断河谷公路"
-	return "海洋阻断陆路；可以开辟沿海航线"
+	return "海洋阻断陆路；两地靠海时可以建小型货运码头开辟航线"
 
 
 static func _passable(terrain: Dictionary, cell: int, variant: String, ends: Array[int]) -> bool:

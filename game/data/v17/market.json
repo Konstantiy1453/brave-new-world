@@ -1,12 +1,14 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "scale": "tonnes of saturation at which the price falls by the full depth",
-    "decay_per_day": "fraction of saturation lost per day"
+    "decay_per_day": "fraction of saturation lost per day",
+    "preview_tonnes": "tonnes the market page prices ahead"
   },
   "decay_per_day": 0.02,
   "depth": 0.4,
-  "floor": 0.6,
+  "floor": 0.55,
+  "preview_tonnes": 100.0,
   "scale": {
     "ore": 6000.0,
     "copper": 3000.0,
@@ -16,6 +18,9 @@
     "components": 600.0,
     "alloy": 1000.0,
     "machinery": 300.0,
-    "pharma": 500.0
+    "pharma": 500.0,
+    "nickel": 1600.0,
+    "cobalt": 500.0,
+    "superalloy": 400.0
   }
 }

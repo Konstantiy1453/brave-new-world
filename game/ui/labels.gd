@@ -2,6 +2,7 @@ extends RefCounted
 ## English simulation keys to player-facing text. Simulation code never reads this file.
 
 const Keys = preload("res://simulation/keys.gd")
+const Rules = preload("res://simulation/rules.gd")
 
 const RESOURCE_NAMES: Dictionary = {
 	"ore": "铁矿",
@@ -14,6 +15,31 @@ const RESOURCE_NAMES: Dictionary = {
 	"alloy": "合金",
 	"machinery": "精密机械",
 	"pharma": "药品",
+	"nickel": "镍矿",
+	"cobalt": "钴矿",
+	"superalloy": "高温合金",
+}
+## Goods that need telling apart at a glance, in the colours their deposits have on the maps:
+## iron rust, copper brass, crystal blue; nickel a pale green-grey, cobalt a deep blue. Other goods
+## keep the interface's ink.
+const GOOD_COLORS: Dictionary = {
+	"ore": Color("d4764f"),
+	"copper": Color("e6b34a"),
+	"crystal": Color("74b8f2"),
+	"nickel": Color("a9c3a4"),
+	"cobalt": Color("6f86e8"),
+	"food": Color("9dcd6c"),
+}
+## Money sinks on the economy page, in display order.
+const SINK_NAMES: Dictionary = {
+	"buildings": "建设",
+	"great_works": "巨型工程",
+	"upgrades": "升级",
+	"roads": "道路",
+	"recruitment": "招募",
+	"services": "公共服务",
+	"commissions": "委托研究",
+	"transfer": "生涯转存",
 }
 const SITE_KIND_NAMES: Dictionary = {
 	Keys.SITE_RESIDENTIAL: "居住据点",
@@ -21,7 +47,7 @@ const SITE_KIND_NAMES: Dictionary = {
 }
 const SITE_KIND_TEXT: Dictionary = {
 	Keys.SITE_RESIDENTIAL: "人们在这里安家：住房、医疗、学校、研究所和精密工厂都建在这里。自发移民多，有新生儿；只能开轻型矿场。",
-	Keys.SITE_FRONTIER: "工程队驻扎的矿区或农区：重型矿场、大田农业只能建在这里，产量 +15%，远征更便宜。很少有人自愿来，要靠道路把人调过来。",
+	Keys.SITE_FRONTIER: "职工驻扎的矿区或农区：重型矿场、大田农业只能建在这里，产量 +15%，远征更便宜。很少有人自愿来，要靠道路把人调过来。",
 }
 const ENTERPRISE_STATUS: Dictionary = {
 	Keys.E_FITTING: "装修中",
@@ -33,7 +59,7 @@ const ENTERPRISE_STATUS: Dictionary = {
 const ENTERPRISE_REASON: Dictionary = {
 	Keys.ER_FITTING: "自主租用社区商业场地；装修需要 4 天",
 	Keys.ER_PAUSED: "玩家暂停了服务设施",
-	Keys.ER_NO_WORKERS: "可雇用工程队不足",
+	Keys.ER_NO_WORKERS: "可雇用职工不足",
 	Keys.ER_NO_CASH: "企业现金不足以支付工资与租金",
 	Keys.ER_RUNNING: "自主经营，无需逐日操作；利润税只对正利润征收",
 	Keys.ER_RECOVERING: "有偿重组或迁址，3 日后重新营业",
@@ -55,6 +81,7 @@ const LEDGER: Dictionary = {
 	"enterprise.tax": "本地企业利润税",
 	"enterprise.recovery": "企业复业重组投资",
 	"admin": "殖民行政费",
+	"services.budget": "公共服务预算",
 	"governor.share": "公司总督分成",
 	"wages.public": "公共工资",
 	"upkeep.facility": "设施维护",
@@ -148,6 +175,8 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 	"jobs": "工作机会",
 	"wage": "工资政策",
 	"services": "生活服务",
+	"budget": "公共服务预算",
+	"district": "首府新区",
 	"pollution": "污染",
 	"shortages": "水电短缺",
 	"company": "公司审查",
@@ -246,6 +275,12 @@ static func goal(row: Dictionary) -> Dictionary:
 			}
 		"frontiers":
 			return {"text": "边疆据点 %d / %d" % [value, target], "hint": "派远征队时选择边疆据点", "page": ""}
+		"operating_route":
+			return {
+				"text": "运转的网络（三选一）" + ("：已达成" if value >= target else "：尚未达成"),
+				"hint": "粮食走廊、远程矿区网络或沿海贸易网，任意一条运转起来即可；合同页列出各自的进度",
+				"page": "contract"
+			}
 		"capital_population":
 			return {
 				"text": "首府人口 %d / %d" % [value, target],
@@ -285,6 +320,21 @@ static func icon_key(config: Dictionary, kind: String) -> String:
 	if spec.has("output"):
 		return str(spec.output)
 	return str(spec.get("model", kind)).trim_prefix("mine_")
+
+
+## The people of a town or the colony by occupation (population.gd `occupations`), each counted as
+## one person: one bed, one wage. A crew counts as its resident foreman.
+static func occupations_text(jobs: Dictionary) -> String:
+	return (
+		"职工 %d · 农民 %d · 研究团队 %d · 工程队 %d · 未成年 %d（每人一张床、一份工资；研究团队和工程队每支计 1 人）"
+		% [
+			int(jobs.get("workers", 0)),
+			int(jobs.get("farmers", 0)),
+			int(jobs.get("researchers", 0)),
+			int(jobs.get("crews", 0)),
+			int(jobs.get("children", 0)),
+		]
+	)
 
 
 static func building_name(config: Dictionary, kind: String) -> String:
@@ -337,7 +387,7 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 	var detail: String = str(entry.get("detail", ""))
 	match str(entry.get("key", "")):
 		Keys.SH_JOBS_WORKERS:
-			return "岗位缺员：%s（需要工程队）" % building_name(config, detail)
+			return "岗位缺员：%s（需要职工）" % building_name(config, detail)
 		Keys.SH_JOBS_SPECIALISTS:
 			return "岗位缺员：%s（需要研究团队）" % building_name(config, detail)
 		Keys.SH_POWER:
@@ -352,6 +402,8 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 			return "无本地货运站；依赖陆路补给"
 		Keys.SH_PORT_FULL:
 			return "港口吞吐不足：货物运不出去，补给也进不来"
+		Keys.SH_NO_HARBOUR:
+			return "海底采矿平台的矿石没有码头卸货：需要运转的小型码头"
 		Keys.SH_STARVING:
 			return "食品供给不足 · 已持续 %s 天" % detail
 		Keys.SH_HOUSING:
@@ -372,27 +424,39 @@ static func ledger(config: Dictionary, entry: Dictionary) -> String:
 	if key in ["invest.build", "invest.upgrade", "wages.public", "upkeep.facility"]:
 		return "%s · %s" % [name, building_name(config, detail)]
 	if key == "invest.road":
-		return "%s · 铺装" % name
+		return "%s · %s" % [name, road_level_name(config, detail)]
 	if key == "research.funding":
 		return "%s · %s" % [name, str(config.techs.get(detail, {}).get("name", detail))]
 	return "%s · %s" % [name, detail]
+
+
+## A link level named by its id in the ledger: 「铺装路面」, 「中型货运码头」.
+static func road_level_name(config: Dictionary, id: String) -> String:
+	var levels: Dictionary = config.get("road_levels", {})
+	for kind: String in ["land", "sea"]:
+		for step: Dictionary in levels.get(kind, []):
+			if str(step.get("id", "")) == id:
+				return str(step.name)
+	return "线路升级"
 
 
 ## The shortcut beside a shortage: what to do about it and where.
 static func fix(entry: Dictionary) -> Dictionary:
 	match str(entry.get("key", "")):
 		Keys.SH_POWER:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "power"}
 		Keys.SH_WATER:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "water"}
 		Keys.SH_HOUSING:
 			return {"text": "处理", "page": "build", "category": "people"}
 		Keys.SH_STARVING:
-			return {"text": "处理", "page": "build", "category": "food"}
+			return {"text": "处理", "page": "build", "category": "food", "kind": "farm"}
 		Keys.SH_DEPLETED, Keys.SH_PROCESSOR_INPUT:
 			return {"text": "处理", "page": "build", "category": "extraction"}
 		Keys.SH_NO_PORT, Keys.SH_PORT_FULL:
-			return {"text": "处理", "page": "build", "category": "utilities"}
+			return {"text": "处理", "page": "build", "category": "utilities", "kind": "port"}
+		Keys.SH_NO_HARBOUR:
+			return {"text": "处理", "page": "build", "kind": "harbor"}
 		Keys.SH_JOBS_WORKERS, Keys.SH_JOBS_SPECIALISTS:
 			return {"text": "处理", "page": "population"}
 		Keys.SH_POLLUTION:
@@ -403,16 +467,65 @@ static func fix(entry: Dictionary) -> Dictionary:
 ## Text for one row of the top resource table's tooltip: where the month's change came from.
 static func flow_text(name: String, stock: float, flows: Array) -> String:
 	return (
-		"%s：全部据点合计 %.0f t\n近 30 日：产出 %.0f · 进口 %.0f · 消耗 %.0f · 出口 %.0f"
-		% [name, stock, float(flows[0]), float(flows[3]), float(flows[1]), float(flows[2])]
+		"%s\n全部据点合计 %s\n近 30 日（吨）：产出 %s · 进口 %s · 消耗 %s · 出口 %s"
+		% [
+			name,
+			t(stock),
+			amount_text(tonnes(float(flows[0]))),
+			amount_text(tonnes(float(flows[3]))),
+			amount_text(tonnes(float(flows[1]))),
+			amount_text(tonnes(float(flows[2])))
+		]
 	)
+
+
+## Goods are kept in hundreds of tonnes (economy.json `display`); the interface shows tonnes.
+static func tonnes_per_unit() -> float:
+	return float(Rules.read("economy").get("display", {}).get("tonnes_per_unit", 1.0))
+
+
+static func tonnes(amount: float) -> float:
+	return amount * tonnes_per_unit()
+
+
+## A goods amount in tonnes, for any page: "8,600 t", "157.9万 t".
+static func t(amount: float) -> String:
+	return amount_text(tonnes(amount)) + " t"
+
+
+## A rate of goods in tonnes a day: "1,240 t/日".
+static func per_day(amount: float) -> String:
+	return amount_text(tonnes(amount)) + " t/日"
+
+
+## A count in tonnes: one decimal under ten, grouped by thousands below a hundred thousand, then 万.
+static func amount_text(value: float) -> String:
+	var size: float = absf(value)
+	if size >= 100000000.0:
+		return "%.2f亿" % (value / 100000000.0)
+	if size >= 100000.0:
+		return "%.1f万" % (value / 10000.0)
+	if size < 10.0 and size >= 0.05:
+		return "%.1f" % value
+	var whole: int = roundi(value)
+	var digits: String = str(absi(whole))
+	var grouped: String = ""
+	while digits.length() > 3:
+		grouped = "," + digits.substr(digits.length() - 3) + grouped
+		digits = digits.substr(0, digits.length() - 3)
+	return ("-" if whole < 0 else "") + digits + grouped
+
+
+## A price per 100 t, the unit goods are kept in, so the figure is the rules' own: "¥ 8.0 / 百吨".
+static func per_hundred(price: float) -> String:
+	return "¥ %.1f / 百吨" % price
 
 
 ## Text for one plot in the build dialog's plot list.
 static func plot(row: Dictionary) -> String:
 	if str(row.kind) == "deposit":
 		var depth: String = "深层 · " if bool(row.deep) else ""
-		return "%s品位 %.2f · 储量 %.0f t" % [depth, float(row.grade), float(row.reserves)]
+		return "%s品位 %.2f · 储量 %s" % [depth, float(row.grade), t(float(row.reserves))]
 	if str(row.kind) == "farm":
 		return "肥力 %.0f%%" % (float(row.fertility) * 100.0)
 	return "建设用地"
@@ -435,3 +548,29 @@ static func planet_type(types: Dictionary, character: Dictionary) -> String:
 	)
 	var relief: String = str(types.reliefs[character.relief].name)
 	return text if relief == "" else "%s，%s" % [text, relief]
+
+
+## 「现金可支撑 N 天」 for the top bar and the economy page; empty while nothing has been spent.
+static func cover_text(cover: Dictionary) -> String:
+	if float(cover.expense) < 1.0:
+		return ""
+	return (
+		"现金可支撑 %.0f 天（按近 %d 日平均经营支出 ¥ %.0f/日）"
+		% [float(cover.cover), int(cover.days), float(cover.expense)]
+	)
+
+
+## Where money with nothing to do could go, for the economy page and the advisor.
+static func idle_money(sim: RefCounted) -> String:
+	var services: Dictionary = sim.pop_rules.get("services", {})
+	if not services.is_empty() and int(sim.state.policy.get("services", 0)) < int(services.levels):
+		return "钱闲着：可以升级、扩建设施，或在人口移民里提高公共服务预算"
+	return "钱闲着：可以升级、扩建设施，或开辟新据点"
+
+
+## The share of export income that depends on mines running out, with advice once it is too much.
+static func mine_warning(outlook: Dictionary, warn: bool) -> String:
+	return (
+		"近 30 日出口收入中约 %.0f%% 依赖 %d 天内将采空的矿（含用其矿石加工的产品）%s"
+		% [float(outlook.share) * 100.0, int(outlook.days), "，收入会下滑：提前开新矿或发展加工" if warn else ""]
+	)

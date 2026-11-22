@@ -2,6 +2,8 @@ extends SceneTree
 ## Writes the capture suite's saves to data/v17/acceptance_*.save by playing them with the harness
 ## bots, so they always follow the current rules. Run by hand after a rule or save schema change:
 ## godot --headless --path game --script res://tests/make_fixtures_v17.gd
+## Options: --out=<folder> writes them elsewhere (the recorded ones stay as they are; on Linux the
+## world hash differs, so captures there need their own), --only=midgame,governor writes some.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -12,9 +14,17 @@ const FOLDER: String = "res://data/v17/"
 const SEED_VALUE: int = 260129
 const MAX_DAYS: int = 3300
 
+var folder: String = FOLDER
+var only: Array = []
+
 
 func _initialize() -> void:
 	Watchdog.arm(self)
+	for argument: String in OS.get_cmdline_user_args():
+		if argument.begins_with("--out="):
+			folder = argument.trim_prefix("--out=").trim_suffix("/") + "/"
+		if argument.begins_with("--only="):
+			only = Array(argument.trim_prefix("--only=").split(",", false))
 	var errors: int = 0
 	errors += _write("early", BalancedBot, _reached_day.bind(40))
 	errors += _write("midgame", BalancedBot, _reached_day.bind(900))
@@ -27,6 +37,8 @@ func _initialize() -> void:
 
 
 func _write(id: String, script: GDScript, done: Callable) -> int:
+	if not only.is_empty() and not only.has(id):
+		return 0
 	var sim: RefCounted = Sim.new()
 	sim.new_game(SEED_VALUE, "capital", 1, "normal")
 	var bot: RefCounted = script.new()
@@ -34,7 +46,7 @@ func _write(id: String, script: GDScript, done: Callable) -> int:
 	while int(sim.state.day) < MAX_DAYS and not bool(done.call(sim)):
 		bot.on_day()
 		sim.tick()
-	var path: String = FOLDER + "acceptance_" + id + ".save"
+	var path: String = folder + "acceptance_" + id + ".save"
 	var error: String = sim.save_game(ProjectSettings.globalize_path(path))
 	print("%s day %d stage %d: %s" % [id, sim.state.day, sim.state.contract.stage, error])
 	if not bool(done.call(sim)):

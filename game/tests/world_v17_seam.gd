@@ -42,18 +42,19 @@ func run() -> void:
 	var world: Dictionary = Geo.new().generate(260129)
 	map.setup(world)
 	map.sync_state({"world": world, "day": 0, "settlements": [], "route": {}})
+	# The seam is measured under 1.8's still, evenly lit globe: no spin, night or clouds.
+	map.set_visual_options(false, false, false)
+	map.freeze_motion()
 	map.planet_yaw = PI
 	map.planet_pitch = 0.0
 	map.planet_distance = 8.0
-	if map.cloud_shell != null:
-		map.cloud_shell.rotation.y = 0.0
 	for _frame: int in range(SETTLE_FRAMES):
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var image: Image = root.get_texture().get_image()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	image.save_png(ProjectSettings.globalize_path(OUT_DIR + "/world_v17_seam.png"))
-	var seam_point: Vector3 = Geo.unit_point(0.0, 180.0) * 3.0
+	var seam_point: Vector3 = map.planet.to_global(Geo.unit_point(0.0, 180.0) * 3.0)
 	var seam: Vector2 = map.camera.unproject_position(seam_point)
 	var x: int = int(round(seam.x))
 	var top: int = int(seam.y) - 160

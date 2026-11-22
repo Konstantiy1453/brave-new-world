@@ -3,6 +3,7 @@ extends RefCounted
 ## Poisson-disk filling, deposits, plots and names. Numbers are in data/v17/geography.json.
 
 const Plates = preload("res://world/geo2/plates.gd")
+const Geology = preload("res://world/geo2/geology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Routes = preload("res://world/routes.gd")
 const Rules = preload("res://simulation/rules.gd")
@@ -20,6 +21,9 @@ const QUOTA_ORDER: Array[String] = [
 	"grassland",
 ]
 const GOODS: Array[String] = ["ore", "copper", "crystal"]
+## Every mined good a plot can hold. Generated sites carry only the first three; nickel and cobalt
+## (1.10) come from the planet's deposits at towns founded on picked ground.
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 const GOOD_VALUE: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const MAX_LATITUDE: float = 74.0
 const LOCAL_UNITS_PER_DEGREE: float = 4.0
@@ -511,16 +515,320 @@ static func _deposit(
 
 
 ## `deposits` holds the tonnage the colony knows about: shallow plots that are not hidden, and
-## deep ones once deep mining is researched.
+## deep ones once deep mining is researched. Plots on one planetary deposit share its reserve, so it
+## counts once. Iron, copper and crystal are always listed; a later metal only once it is known.
 static func refresh_deposits(site: Dictionary) -> void:
 	var totals: Dictionary = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
 	var deep_known: bool = bool(site.get("deep_known", false))
+	var counted: Dictionary = {}
 	for plot: Dictionary in site.plots:
 		if plot.kind != "deposit" or bool(plot.hidden):
 			continue
+		var shared: String = str(plot.get("deposit", ""))
+		if shared != "":
+			if counted.has(shared):
+				continue
+			counted[shared] = true
 		if int(plot.depth) == 0 or deep_known:
-			totals[plot.resource] += float(plot.reserves)
+			var good: String = str(plot.resource)
+			totals[good] = float(totals.get(good, 0.0)) + float(plot.reserves)
 	site.deposits = totals
+
+
+## The grid cell under a coordinate.
+static func cell_at(world: Dictionary, lat: float, lon: float) -> int:
+	var width: int = int(world.grid_width)
+	var height: int = int(world.grid_height)
+	var row: int = clampi(int((90.0 - lat) / 180.0 * height), 0, height - 1)
+	var column: int = posmod(int(floor((lon + 180.0) / 360.0 * width)), width)
+	return row * width + column
+
+
+## The land cell that describes a coordinate: the cell under it, or, for a shore point in a cell that
+## is mostly sea, the nearest land cell around it. -1 when there is no land near.
+static func land_cell_at(world: Dictionary, lat: float, lon: float) -> int:
+	var index: int = cell_at(world, lat, lon)
+	if bool(world.grid[index].get("land", false)):
+		return index
+	var width: int = int(world.grid_width)
+	var height: int = int(world.grid_height)
+	var best: int = -1
+	var best_angle: float = INF
+	var here: Vector3 = SeedGeo.unit(lat, lon)
+	for dy: int in [-1, 0, 1]:
+		var y: int = index / width + dy
+		if y < 0 or y >= height:
+			continue
+		for dx: int in [-1, 0, 1]:
+			var other: int = y * width + posmod(index % width + dx, width)
+			if not bool(world.grid[other].get("land", false)):
+				continue
+			var middle: Vector3 = SeedGeo.unit(
+				90.0 - (float(y) + 0.5) * 180.0 / height,
+				(float(other % width) + 0.5) * 360.0 / width - 180.0
+			)
+			var angle: float = here.angle_to(middle)
+			if angle < best_angle:
+				best_angle = angle
+				best = other
+	return best
+
+
+## The archetype that suits a cell best, as the site generator scores it ("grassland" when none does).
+static func archetype_at(world: Dictionary, rules: Dictionary, index: int) -> String:
+	var scores: Dictionary = _scores(world, [{"index": index}], rules)
+	var best: String = "grassland"
+	var best_score: float = 0.0
+	for archetype: String in QUOTA_ORDER:
+		var score: float = float(scores[archetype][0])
+		if score > best_score:
+			best_score = score
+			best = archetype
+	return best
+
+
+static func _noise(world: Dictionary) -> FastNoiseLite:
+	var noise := FastNoiseLite.new()
+	noise.seed = int(world.seed)
+	noise.frequency = 1.8
+	noise.fractal_octaves = 4
+	return noise
+
+
+## A site at a coordinate the player chose (1.10 free placement), `id` its place in `world.regions`:
+## climate, water, coast and landmass from the grid cell under it; plots on the slots around the
+## exact point; deposit plots where the planet's own deposits reach them (geology.gd), each naming
+## its deposit, whose reserve all plots on it share.
+static func site_at(
+	world: Dictionary, rules: Dictionary, lat: float, lon: float, id: int
+) -> Dictionary:
+	var index: int = maxi(0, land_cell_at(world, lat, lon))
+	var cell: Dictionary = world.grid[index]
+	var archetype: String = archetype_at(world, rules, index)
+	var spec: Dictionary = rules.archetypes[archetype]
+	var rugged: float = float(cell.get("ruggedness", 0.0))
+	var noise: FastNoiseLite = _noise(world)
+	var height: float = float(Plates.sample_with_context(lat, lon, noise, world.plates).height)
+	var site: Dictionary = {
+		"id": id,
+		"name": site_number(id),
+		"named": false,
+		"placed": true,
+		"sea_links": bool(rules.validator.get("sea_partners", false)),
+		"start_bias": 1.0,
+		"lat": lat,
+		"lon": lon,
+		"canonical_lat": lat,
+		"canonical_lon": lon,
+		"elevation": maxf(20.0, height * 4300.0),
+		"fertility": float(cell.get("fertility", 0.05)),
+		"water": float(cell.get("water", 0.05)),
+		"temperature": float(cell.get("temperature", 0.0)),
+		"rainfall": float(cell.get("rainfall", 0.0)),
+		"deposits": {"ore": 0.0, "copper": 0.0, "crystal": 0.0},
+		"grade": {"ore": 1.0, "copper": 1.0, "crystal": 1.0},
+		"neighbors": [],
+		"terrain": str(spec.name),
+		"archetype": archetype,
+		"land_fraction": clampf(0.95 - rugged * 0.5, 0.35, 0.95),
+		"river": bool(cell.get("river", false)),
+		"grid_index": index,
+		"development_multiplier": float(spec.development) + rugged * 0.25,
+		"ruggedness": rugged,
+		"coast": bool(cell.get("coast", false)),
+		"landmass": int(world.landmass[index]),
+		"risks":
+		{
+			"cold": float(cell.get("risk_cold", 0.0)),
+			"arid": float(cell.get("risk_arid", 0.0)),
+			"flood": float(cell.get("risk_flood", 0.0)),
+		},
+		"survey": 0,
+		"plots": [],
+	}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%d|placed|%.4f|%.4f" % [int(world.seed), lat, lon])
+	var slots: Array = _slots(world, site, noise, world.plates, rules)
+	site.plots = _placed_plots(world, rules, site, slots, rng)
+	refresh_deposits(site)
+	for good: String in MINED:
+		var grades: Array = []
+		for plot: Dictionary in site.plots:
+			if plot.kind == "deposit" and str(plot.resource) == good:
+				grades.append(float(plot.grade))
+		if not grades.is_empty():
+			var total: float = 0.0
+			for value: float in grades:
+				total += value
+			site.grade[good] = total / grades.size()
+	return site
+
+
+## Plots of a placed site. Deposit plots lie where the planet's deposits reach a slot: a few slots on
+## each deposit and a limited number in all, picked in a seeded order so the centre and the edge are
+## alike; the town keeps at least `town_minimum` slots. Fields then take the lowest ground and the
+## town the nearest, as at a generated site.
+static func _placed_plots(
+	world: Dictionary, rules: Dictionary, site: Dictionary, slots: Array, rng: RandomNumberGenerator
+) -> Array:
+	var plots: Array = []
+	var reach: float = float(rules.geology.slot_reach)
+	var keep: int = mini(int(rules.plots.town_minimum), slots.size() / 2)
+	var spread: float = float(rules.plots.grade_spread) * 0.5
+	var reached: Array = []
+	for at: int in range(slots.size()):
+		var slot: Dictionary = slots[at]
+		var hits: Array = Geology.reaching(
+			world,
+			float(site.lat) - float(slot.z) / LOCAL_UNITS_PER_DEGREE,
+			float(site.lon) + float(slot.x) / LOCAL_UNITS_PER_DEGREE,
+			reach
+		)
+		if not hits.is_empty():
+			reached.append({"at": at, "deposit": hits[0].deposit})
+	for i: int in range(reached.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var swap: Dictionary = reached[i]
+		reached[i] = reached[j]
+		reached[j] = swap
+	var limit: int = mini(int(rules.placement.max_deposit_plots), slots.size() - keep)
+	var per: Dictionary = {}
+	var taken: Dictionary = {}
+	# A deposit under the chosen point itself takes the free slot nearest the point, even where no
+	# slot lies on it (slots stand 1.5° apart, a vein can be narrower): a town founded on the signal
+	# the player sited it for reaches that deposit.
+	for hit: Dictionary in Geology.reaching(world, float(site.lat), float(site.lon), reach):
+		var nearest: int = _nearest_free(slots, taken)
+		if taken.size() >= limit or nearest < 0:
+			break
+		var under: String = str(hit.deposit.id)
+		per[under] = int(per.get(under, 0)) + 1
+		taken[nearest] = hit.deposit
+	for entry: Dictionary in reached:
+		if taken.size() >= limit:
+			break
+		if taken.has(int(entry.at)):
+			continue
+		var id: String = str(entry.deposit.id)
+		if int(per.get(id, 0)) >= int(rules.placement.plots_per_deposit):
+			continue
+		per[id] = int(per.get(id, 0)) + 1
+		taken[int(entry.at)] = entry.deposit
+	var left: Array = []
+	for at: int in range(slots.size()):
+		var slot: Dictionary = slots[at]
+		if not taken.has(at):
+			left.append(slot)
+			continue
+		var deposit: Dictionary = taken[at]
+		(
+			plots
+			. append(
+				{
+					"kind": "deposit",
+					"resource": str(deposit.resource),
+					"grade": float(deposit.grade) * rng.randf_range(1.0 - spread, 1.0 + spread),
+					"reserves": float(deposit.reserve),
+					"depth": int(deposit.depth),
+					"hidden": bool(deposit.hidden),
+					"deposit": str(deposit.id),
+					"x": slot.x,
+					"z": slot.z,
+				}
+			)
+		)
+	_farm_plots(site, rules, left, plots, rng)
+	_general_plots(site, rules, left, plots)
+	return plots
+
+
+## The slot nearest a site's centre that no deposit has taken, -1 when none is left.
+static func _nearest_free(slots: Array, taken: Dictionary) -> int:
+	var nearest: int = -1
+	var best: float = INF
+	for at: int in range(slots.size()):
+		if taken.has(at):
+			continue
+		var slot: Dictionary = slots[at]
+		var distance: float = float(slot.x) * float(slot.x) + float(slot.z) * float(slot.z)
+		if distance < best:
+			best = distance
+			nearest = at
+	return nearest
+
+
+## What the ground at a coordinate is, for a player deciding where to settle. Reads the world only:
+## {lat, lon, land, cell, archetype, terrain, elevation, relief (m of height range around it), slope
+## (relief against the limit, 0-1), slope_word, river,
+## lake, water, coast, landmass, signals (per resource, 0-1 from orbit), slots (land plot slots),
+## temperature, fertility}.
+## How far round a point an orbital reading takes in, in degrees: a fixed ground distance
+## (placement `signal_radius_km`), so it covers more of a smaller planet's arc.
+static func signal_degrees(world: Dictionary, rules: Dictionary) -> float:
+	var km_per_degree: float = deg_to_rad(1.0) * float(world.get("radius_km", 6371.0))
+	return float(rules.placement.signal_radius_km) / maxf(1.0, km_per_degree)
+
+
+static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float) -> Dictionary:
+	var index: int = land_cell_at(world, lat, lon)
+	if index < 0:
+		index = cell_at(world, lat, lon)
+	var cell: Dictionary = world.grid[index]
+	var noise: FastNoiseLite = _noise(world)
+	var here: Dictionary = Plates.sample_with_context(lat, lon, noise, world.plates)
+	# Relief: the height range over the ground around the point, the way a builder sees slope at
+	# the scale of a district. The grid's ruggedness saturates on most land and cannot tell.
+	var low: float = INF
+	var high: float = -INF
+	var spread: float = float(rules.placement.relief_degrees)
+	for dy: float in [-spread, 0.0, spread]:
+		for dx: float in [-spread, 0.0, spread]:
+			var sampled: float = float(
+				Plates.sample_with_context(lat + dy, lon + dx, noise, world.plates).height
+			)
+			low = minf(low, sampled)
+			high = maxf(high, sampled)
+	var relief: float = maxf(0.0, (high - low) * 4300.0)
+	var slope: float = clampf(relief / float(rules.placement.max_relief_m), 0.0, 1.0)
+	var land: bool = bool(here.land)
+	var on_lake: bool = false
+	var point: Vector3 = SeedGeo.unit(lat, lon)
+	for lake: Dictionary in world.get("lakes", []):
+		var middle: Vector3 = SeedGeo.unit(float(lake.lat), float(lake.lon))
+		if rad_to_deg(point.angle_to(middle)) < float(lake.get("radius_degrees", 0.45)):
+			on_lake = true
+	var report: Dictionary = {
+		"lat": lat,
+		"lon": lon,
+		"land": land,
+		"cell": index,
+		"elevation": maxf(0.0, float(here.height) * 4300.0),
+		"slope": slope,
+		"relief": relief,
+		"slope_word": "平缓" if relief < 400.0 else ("起伏" if relief < 1200.0 else "陡峭"),
+		"river": bool(cell.get("river", false)) or float(cell.get("discharge", 0.0)) > 0.8,
+		"lake": float(cell.get("near_lake", 0.0)) > 0.0 or bool(cell.get("lake", false)),
+		"lake_here": on_lake,
+		"water": float(cell.get("water", 0.0)),
+		"coast": bool(cell.get("coast", false)),
+		"landmass": int(world.landmass[index]) if land else -1,
+		"temperature": float(cell.get("temperature", 0.0)),
+		"fertility": float(cell.get("fertility", 0.0)),
+		"archetype": "",
+		"terrain": "海洋" if not land else "",
+		# The ground cover under the point, as the maps draw it (forest, grassland, tundra...).
+		"biome": str(here.get("biome", "ocean")) if land else "ocean",
+		"signals": Geology.orbital_signals(world, lat, lon, signal_degrees(world, rules)),
+		"slots": 0,
+	}
+	if not land or not bool(cell.get("land", false)):
+		return report
+	var archetype: String = archetype_at(world, rules, index)
+	report.archetype = archetype
+	report.terrain = str(rules.archetypes[archetype].name)
+	var probe: Dictionary = {"lat": lat, "lon": lon}
+	report.slots = _slots(world, probe, noise, world.plates, rules).size()
+	return report
 
 
 ## Viable start pairs, best start first. Puts the best start at index 0 and its partner at 1.

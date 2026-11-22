@@ -40,15 +40,31 @@ func run():
 	var after: Array = map.surface.get_child(0).mesh.surface_get_arrays(0)
 	var failed: Array = []
 	var hashes: Dictionary = {}
-	for index in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_COLOR]:
+	# Geometry stays the v1.5 ground to the vertex. Since 1.9 the vertex colour carries geography
+	# for the ground shader instead of a baked colour, so colour is checked for its meaning below.
+	for index in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL]:
 		var a: String = var_to_bytes(before[index]).hex_encode().sha256_text()
 		var b: String = var_to_bytes(after[index]).hex_encode().sha256_text()
 		hashes[str(index)] = {"before": a, "after": b}
 		if a != b:
 			failed.append("mesh array changed: " + str(index))
+	var terrain: MeshInstance3D = map.surface.get_child(0)
+	if not terrain.material_override is ShaderMaterial:
+		failed.append("ground is not drawn by the palette shader")
+	var data: PackedColorArray = after[Mesh.ARRAY_COLOR]
+	var land_points: int = 0
+	for color: Color in data:
+		if color.a > 0.5:
+			land_points += 1
+	if data.size() != before[Mesh.ARRAY_VERTEX].size() or land_points == 0:
+		failed.append("ground data missing")
 	var result: Dictionary = {
 		"scope":
-		"original frozen v1.5 map terrain routine compared with v1.6 at signed32 seed260129; actual packed vertex,normal,color arrays",
+		(
+			"original frozen v1.5 map terrain routine compared with the current one at signed32"
+			+ " seed260129; packed vertex and normal arrays, plus the ground data the shader"
+			+ " colours from"
+		),
 		"old_terrain_ms": old_ms,
 		"new_region_ms": map.last_region_ms,
 		"array_hashes": hashes,

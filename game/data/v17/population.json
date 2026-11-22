@@ -1,18 +1,33 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "time": "game day",
     "money": "account units",
-    "people": "persons",
-    "share": "fraction 0-1"
+    "people": "persons: every count of people is in persons, and a worker (职工), a farmer (农民, a worker on a farm), a research team (研究团队, named so by the 1.8 request, counted as one person), a crew (工程队, counted as its resident foreman) and a child (未成年) each count one, take one bed and draw one wage",
+    "share": "fraction 0-1",
+    "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews"
   },
   "housing": {
     "capital": 60,
     "outpost": 24,
     "frontier": 30
   },
+  "crews": {
+    "opening": 1,
+    "expedition": 1,
+    "wage": 2.0,
+    "train_cost": 900.0,
+    "train_days": 15,
+    "free_crews": 2,
+    "growth_per_crew": 0.25,
+    "urgent": {
+      "water": ["water"],
+      "power": ["power"],
+      "starving": ["farm", "indoor_farm", "harbor"]
+    }
+  },
   "immigration": {
-    "base_per_month": 9.0,
+    "base_per_month": 11.0,
     "savings_per_person": 60.0,
     "scientist_share_per_lab": 0.12,
     "scientist_share_max": 0.3,
@@ -52,6 +67,7 @@
   "recruitment": {
     "worker_price": 400.0,
     "scientist_price": 700.0,
+    "crew_price": 1500.0,
     "travel_days": 30,
     "price_step": 0.2,
     "window_days": 180,
@@ -64,6 +80,14 @@
   },
   "births": {
     "per_adult_per_year": 0.01
+  },
+  "services": {
+    "levels": 3,
+    "cost_per_resident": [0.0, 0.3, 0.6, 1.0],
+    "appeal": [0.0, 0.05, 0.1, 0.15],
+    "departures": [1.0, 0.85, 0.7, 0.55],
+    "births": [1.0, 1.1, 1.2, 1.3],
+    "health": [1.0, 0.85, 0.7, 0.55]
   },
   "migration": {
     "per_road_per_day": 3,

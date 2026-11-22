@@ -1,0 +1,92 @@
+{
+  "build": "packaged PCK",
+  "checks": [
+    {
+      "label": "saved on day 201: ",
+      "ok": true
+    }
+  ],
+  "game_version": "1.10.0",
+  "ok": true,
+  "options": {
+    "after": "",
+    "before": "",
+    "bots": "<copy of tests/balance/bots>",
+    "days": "700",
+    "make": "true",
+    "out": "make.json",
+    "save": "before-1.10.0.save",
+    "seed": "20261029"
+  },
+  "snapshot": {
+    "cash": 533.796619700079,
+    "crews": [
+      [
+        1,
+        8,
+        "travel",
+        1
+      ],
+      [
+        2,
+        8,
+        "build",
+        17
+      ],
+      [
+        3,
+        8,
+        "",
+        0
+      ]
+    ],
+    "day": 201,
+    "research": {
+      "done": [
+        "education"
+      ],
+      "work": {
+        "education": 160.0,
+        "school_system": 14.4,
+        "survey": 20.4
+      }
+    },
+    "stage": "2",
+    "towns": [
+      [
+        "地点 09",
+        8,
+        -11.25,
+        -41.25,
+        98
+      ],
+      [
+        "地点 02",
+        1,
+        -13.75,
+        -16.25,
+        12
+      ]
+    ],
+    "under_way": [
+      [
+        8,
+        17,
+        "port",
+        23
+      ],
+      [
+        1,
+        15,
+        "power",
+        2
+      ],
+      [
+        1,
+        16,
+        "water",
+        2
+      ]
+    ]
+  }
+}

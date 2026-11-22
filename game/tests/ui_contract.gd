@@ -64,7 +64,20 @@ func _initialize():
 		scene.open_page(page)
 		await process_frame
 	assert(scene.paused, "management panel must pause for accessible decisions")
+	scene.open_page("economy")
+	await process_frame
+	var economy_text: PackedStringArray = []
+	for node: Node in scene.find_children("*", "Label", true, false):
+		economy_text.append((node as Label).text)
+	var shown: String = "\n".join(economy_text)
+	assert(
+		"现金可支撑" in shown and "行政开支" in shown and "底价" in shown,
+		"economy page shows cash cover, how administration grows and the market floor"
+	)
 	print(
-		"PASS: UI boots; pause and 1x/4x exact equality; sphere/flat/region preserve state; persistent save/load; ten management pages build"
+		(
+			"PASS: UI boots; pause and 1x/4x exact equality; sphere/flat/region preserve state; "
+			+ "persistent save/load; ten management pages build; economy page shows the money readouts"
+		)
 	)
 	quit(0)

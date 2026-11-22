@@ -3,8 +3,19 @@ const D = preload("res://ui/design.gd")
 const WG = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
+const BuildPage = preload("res://ui/build_page.gd")
+const Graphics = preload("res://ui/graphics.gd")
+const EventLines = preload("res://ui/event_lines.gd")
+const PeopleLines = preload("res://ui/people_lines.gd")
+const BayLines = preload("res://ui/bay_lines.gd")
+const CrewPanel = preload("res://ui/crew_panel.gd")
+const GroundPanel = preload("res://ui/ground_panel.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
+## Years of spending by sink on the economy page, this year included.
+const SINK_YEARS: int = 4
+## Ways to join two settlements, in the order the transport page offers them.
+const ROUTE_VARIANTS: Array[String] = ["valley", "engineered", "sea", "shuttle"]
 const RES = {
 	"ore": "铁矿",
 	"copper": "铜矿",
@@ -15,12 +26,19 @@ const RES = {
 	"components": "电子元件",
 	"alloy": "合金",
 	"machinery": "精密机械",
-	"pharma": "药品"
+	"pharma": "药品",
+	"nickel": "镍矿",
+	"cobalt": "钴矿",
+	"superalloy": "高温合金"
 }
 const CORE_GOODS: Array[String] = ["ore", "copper", "crystal", "food", "materials", "parts"]
 
 
 static func region(g, b):
+	# Picked ground (1.10): the point itself, not the recommended site last selected.
+	if not g.ground.is_empty():
+		GroundPanel.panel(g, b)
+		return
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
 	var title = D.row(b)
@@ -67,6 +85,9 @@ static func region(g, b):
 
 ## The buttons under the sidebar's scrolling part, so the next action is always on screen.
 static func region_actions(g, b):
+	if not g.ground.is_empty():
+		GroundPanel.actions(g, b)
+		return
 	var known: Dictionary = g.sim.site_view(g.selected)
 	if g.settlement().is_empty():
 		_site_actions(g, b, known)
@@ -93,7 +114,9 @@ static func _site_card(g, b, known: Dictionary):
 	var links: Dictionary = g.sim.site_links(g.selected)
 	if not links.is_empty():
 		var ways: PackedStringArray = []
-		for variant: String in ["valley", "engineered", "sea"]:
+		for variant: String in ROUTE_VARIANTS:
+			if not links.variants.has(variant):
+				continue
 			var road: Dictionary = links.variants[variant]
 			if bool(road.reachable):
 				ways.append(
@@ -137,12 +160,17 @@ static func _site_actions(g, b, known: Dictionary):
 static func name_site(g, b):
 	var reg: Dictionary = g.sim.state.world.regions[g.naming_site]
 	var first: bool = g.sim.state.settlements.is_empty()
-	D.label(b, Labels.site_label(reg), 22, D.TEAL)
+	if g.naming_ground and not g.ground.is_empty():
+		GroundPanel.naming_lines(g, b)
+	else:
+		D.label(b, Labels.site_label(reg), 22, D.TEAL)
 	if first:
 		D.label(b, "第一座据点是首府，也是一座居住据点：人们要在这里安家。", 17, D.MUTED)
 	elif not g.naming_again:
 		_site_kind_choice(g, b)
 	var fallback: String = str(reg.name)
+	if g.naming_ground and not g.ground.is_empty():
+		fallback = g.sim.Sites.SiteGen.site_number(g.sim.state.world.regions.size())
 	var hint: String = "写什么都行，最多 %d 个字。" % g.sim.Sites.NAME_LIMIT
 	if not g.naming_again:
 		hint += "留空就叫「%s」。" % fallback
@@ -178,7 +206,11 @@ static func _site_kind_choice(g, b):
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_color_override("font_color", D.GOLD if g.naming_kind == kind else D.INK)
 	D.label(b, str(Labels.SITE_KIND_TEXT[g.naming_kind]), 17, D.MUTED)
-	var refusal: String = g.sim.settle_refusal(g.naming_site, g.naming_kind)
+	var refusal: String = (
+		str(GroundPanel.view(g).refusal)
+		if g.naming_ground and not g.ground.is_empty()
+		else g.sim.settle_refusal(g.naming_site, g.naming_kind)
+	)
 	if refusal != "":
 		D.label(b, refusal, 16, D.GOLD)
 
@@ -207,93 +239,15 @@ static func building_column(g, b):
 	var day: int = int(g.sim.state.day)
 	if int(s.arrival) > 0:
 		D.label(b, "远征队在途，预计 %s 抵达" % Labels.short_date(day + int(s.arrival)), 15, D.GOLD)
-	var underway: int = 0
-	for index: int in range(s.buildings.size()):
-		var item: Dictionary = s.buildings[index]
-		if int(item.remaining) > 0 or int(item.get("upgrade_days", 0)) > 0:
-			if underway == 0:
-				D.label(b, "在建", 14, D.GOLD)
-			underway += 1
-			_underway_row(g, b, item, day)
+	CrewPanel.underway(g, b, s)
 	D.label(b, "已建成", 14, D.TEAL)
 	_building_groups(g, b, s)
-
-
-static func _underway_row(g, b, item: Dictionary, day: int):
-	var card = D.card(b)
-	var line = D.row(card)
-	D.icon(line, Labels.icon_key(g.sim.config, str(item.kind)), 20)
-	var building: bool = int(item.remaining) > 0
-	var left: int = int(item.remaining) if building else int(item.upgrade_days)
-	var words: String = Labels.building_name(g.sim.config, item.kind)
-	if not building:
-		words += " 升级到 %d 级" % (int(item.level) + 1)
-	var caption = D.label(line, words, 15, D.INK)
-	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var total: int = maxi(left, int(item.get("total_days", left)))
-	if not building:
-		total = maxi(left, _upgrade_total(g, item))
-	D.progress(card, 1.0 - float(left) / maxi(1, total), D.GOLD)
-	D.label(card, "%s 完工 · 还要 %d 天" % [Labels.short_date(day + left), left], 13, D.MUTED)
-
-
-static func _upgrade_total(g, item: Dictionary) -> int:
-	var rules: Array = g.sim.config.get("upgrades", {}).get(item.kind, [])
-	var step: int = int(item.get("level", 1)) - 1
-	return int(rules[step].days) if step >= 0 and step < rules.size() else 0
 
 
 ## Every building of the colony in one place, what is still being built first.
 static func buildings(g, b):
 	var state: Dictionary = g.sim.state
-	var underway: Array = []
-	for s: Dictionary in state.settlements:
-		if int(s.arrival) > 0:
-			underway.append({"days": int(s.arrival), "text": "远征队前往 %s" % str(s.name), "total": 0})
-		for item: Dictionary in s.buildings:
-			var name: String = Labels.building_name(g.sim.config, item.kind)
-			if int(item.remaining) > 0:
-				var spec: Dictionary = g.sim.config.buildings.get(item.kind, {})
-				(
-					underway
-					. append(
-						{
-							"days": int(item.remaining),
-							"text": "%s · %s" % [name, str(s.name)],
-							"total": maxi(int(spec.get("days", 0)), int(item.remaining)),
-						}
-					)
-				)
-			elif int(item.get("upgrade_days", 0)) > 0:
-				(
-					underway
-					. append(
-						{
-							"days": int(item.upgrade_days),
-							"text": "%s 升级到 %d 级 · %s" % [name, int(item.level) + 1, str(s.name)],
-							"total": 0,
-						}
-					)
-				)
-	underway.sort_custom(
-		func(x: Dictionary, y: Dictionary) -> bool:
-			return (
-				str(x.text) < str(y.text)
-				if int(x.days) == int(y.days)
-				else int(x.days) < int(y.days)
-			)
-	)
-	D.label(b, "在建工程 %d 项" % underway.size(), 21, D.GOLD)
-	if underway.is_empty():
-		D.label(b, "现在没有在建的工程。", 16, D.MUTED)
-	var queue = D.grid(D.card(b), 2)
-	for row: Dictionary in underway:
-		var text = D.label(queue, str(row.text), 16, D.INK, false)
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var left: String = "还需 %d 天" % int(row.days)
-		if int(row.total) > 0:
-			left += " / 共 %d 天" % int(row.total)
-		D.label(queue, left, 16, D.TEAL, false)
+	CrewPanel.colony_underway(g, b)
 	for s: Dictionary in state.settlements:
 		_settlement_buildings(g, b, s)
 
@@ -335,7 +289,7 @@ static func _settlement_buildings(g, b, s: Dictionary):
 			var note: String = Labels.building_status(item)
 			row.notes[note] = int(row.notes.get(note, 0)) + 1
 	var table = D.grid(card, 4)
-	for heading: String in ["设施", "数量", "运营", "工程队"]:
+	for heading: String in ["设施", "数量", "运营", "职工"]:
 		D.label(table, heading, 14, D.MUTED, false)
 	for kind: String in kinds:
 		var row: Dictionary = kinds[kind]
@@ -355,22 +309,29 @@ static func _settlement_buildings(g, b, s: Dictionary):
 
 
 static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
-	D.label(
-		b,
-		(
-			"人口 %d  ·  床位 %d\n就业 %d / 劳动力 %d  ·  研究团队 %d  ·  未成年 %d"
-			% [
-				s.population,
-				s.get("housing", 0),
-				s.get("employed", 0),
-				int(s.workers) + int(s.scientists),
-				s.scientists,
-				s.children
-			]
-		),
-		16
+	var jobs: Dictionary = g.sim.Population.occupations(s)
+	(
+		D
+		. label(
+			b,
+			(
+				"人口 %d 人  ·  床位 %d 张\n%s\n就业 %d / 劳动力 %d"
+				% [
+					s.population,
+					s.get("housing", 0),
+					Labels.occupations_text(jobs),
+					s.get("employed", 0),
+					int(s.workers) + int(s.scientists),
+				]
+			),
+			16
+		)
 	)
+	var main: Dictionary = PeopleLines.limit(g.sim, s, g.sim.population_view(int(s.region)))
+	if str(main.key) != "none":
+		D.label(b, "增长受限：" + str(main.text), 15, D.GOLD)
 	D.label(b, "食品可吃 %.1f 天" % s.get("food_days", 0), 18, D.GOLD)
+	BayLines.offshore(g, b, s)
 	D.label(
 		b,
 		(
@@ -396,10 +357,10 @@ static func _settlement_panel(g, b, s: Dictionary, known: Dictionary):
 			)
 			D.font_size(action, 14)
 			action.custom_minimum_size.y = 28
+	EventLines.marks(g, b, int(s.region))
 	D.label(b, "地块与矿藏", 14, D.TEAL)
 	_site_facts(g, b, known)
-	if g.sim.state.research.completed.has("prospecting"):
-		_survey_button(g, b, known)
+	_survey_button(g, b, known)
 
 
 ## One line per kind of building, those with problems first; individual controls on demand.
@@ -438,7 +399,7 @@ static func _building_groups(g, b, s: Dictionary):
 			continue
 		var open: bool = bool(g.expanded_kinds.get(kind, false))
 		var line = D.row(b)
-		D.icon(line, Labels.icon_key(g.sim.config, kind), 20)
+		D.building_icon(line, kind, Labels.icon_key(g.sim.config, kind), 32)
 		var words: String = (
 			"%s ×%d · 运营 %d"
 			% [Labels.building_name(g.sim.config, kind), group.rows.size(), group.running]
@@ -495,11 +456,15 @@ static func _building_row(g, b, s: Dictionary, index: int):
 	)
 	var upgrade: Dictionary = g.sim.upgrade_preview(int(s.region), index)
 	if not upgrade.is_empty() and g.sim.state.research.completed.has(upgrade.tech):
+		var supply: float = float(upgrade.get("supply_cost", 0.0))
+		var note: String = str(upgrade.disabled_reason)
+		if note == "" and supply > 0.0:
+			note = "含工程物资采购 ¥ %.0f：本地仓库缺的建材和部件按进口价买入" % supply
 		var raise_level = D.button(
 			b,
-			"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost)],
+			"升级到 %d 级 · ¥ %.0f" % [int(upgrade.level), float(upgrade.cost) + supply],
 			func(): g.act("upgrade", {"region": g.selected, "index": index}),
-			str(upgrade.disabled_reason)
+			note
 		)
 		D.font_size(raise_level, 13)
 		raise_level.custom_minimum_size.y = 28
@@ -530,11 +495,17 @@ static func _site_filter(g, b) -> OptionButton:
 	)
 
 
-## Figures with their uncertainty: a range until the site has been surveyed well enough.
-static func _estimate_text(g, row: Dictionary, band: float) -> String:
+## Reserves with their uncertainty, in tonnes: a range until the site is surveyed well enough.
+static func _estimate_text(row: Dictionary, band: float) -> String:
 	if band <= 0.0:
-		return g.money(row.mid)
-	return "%s–%s" % [g.money(row.low), g.money(row.high)]
+		return Labels.amount_text(Labels.tonnes(float(row.mid)))
+	return (
+		"%s–%s"
+		% [
+			Labels.amount_text(Labels.tonnes(float(row.low))),
+			Labels.amount_text(Labels.tonnes(float(row.high)))
+		]
+	)
 
 
 static func _share_text(row: Dictionary, band: float) -> String:
@@ -543,20 +514,26 @@ static func _share_text(row: Dictionary, band: float) -> String:
 	return "%d–%d%%" % [float(row.low) * 100.0, float(row.high) * 100.0]
 
 
-static func _site_facts(g, b, known: Dictionary):
+static func _site_facts(_g, b, known: Dictionary):
 	var band: float = float(known.band)
-	var quality: String = "精确数据" if band <= 0.0 else ("地面勘察 ±%d%%" % (band * 100.0))
-	if int(known.survey) == 0 and g.settlement().is_empty():
-		quality = "轨道估算 ±%d%%" % (band * 100.0)
+	var level: int = int(known.get("survey_level", known.survey))
+	var quality: String = "精确数据"
+	if band > 0.0 and level < 1:
+		quality = "轨道估算 ±%d%%" % roundi(band * 100.0)
+	elif band > 0.0:
+		quality = (
+			"地面勘察 %d / %d 次 · ±%d%%"
+			% [level, int(known.get("survey_levels", 1)), roundi(band * 100.0)]
+		)
 	D.label(b, quality, 15, D.TEAL)
 	D.label(
 		b,
 		(
-			"耕作潜力  %s    水源  %s\n一座农场约产 %.0f t/日\n海拔  %d m    建设费 ×%.2f"
+			"耕作潜力  %s    水源  %s\n一座农场约产 %s\n海拔  %d m    建设费 ×%.2f"
 			% [
 				_share_text(known.fertility, band * 0.5),
 				_share_text(known.water, band * 0.5),
-				float(known.farm_yield),
+				Labels.per_day(float(known.farm_yield)),
 				known.elevation,
 				float(known.development)
 			]
@@ -564,26 +541,29 @@ static func _site_facts(g, b, known: Dictionary):
 		16,
 		D.MUTED
 	)
-	for key in ["ore", "copper", "crystal"]:
+	for key: String in ["ore", "copper", "crystal", "nickel", "cobalt"]:
+		# Nickel and cobalt show only where the colony knows of some (towns on picked ground).
+		if not known.deposits.has(key) or float(known.deposits[key].high) <= 0.0:
+			if key in ["nickel", "cobalt"]:
+				continue
 		var row = D.row(b)
-		D.icon(row, key, 24)
+		D.tinted_icon(row, key, 24, Labels.GOOD_COLORS.get(key, Color.WHITE))
 		D.label(
 			row,
-			"%s储量  %s t" % [RES[key], _estimate_text(g, known.deposits[key], band)],
+			"%s储量  %s t" % [RES[key], _estimate_text(known.deposits[key], band)],
 			16,
 			D.INK,
 			false
 		)
 	var plots: Dictionary = known.plots
-	D.label(
-		b,
-		(
-			"空闲地块：建设 %d · 农田 %d · 铁 %d · 铜 %d · 晶体 %d"
-			% [plots.general, plots.farm, plots.ore, plots.copper, plots.crystal]
-		),
-		15,
-		D.MUTED
+	var free_text: String = (
+		"空闲地块：建设 %d · 农田 %d · 铁 %d · 铜 %d · 晶体 %d"
+		% [plots.general, plots.farm, plots.ore, plots.copper, plots.crystal]
 	)
+	for metal: Array in [["nickel", "镍"], ["cobalt", "钴"]]:
+		if int(plots.get(metal[0], 0)) > 0:
+			free_text += " · %s %d" % [metal[1], int(plots[metal[0]])]
+	D.label(b, free_text, 15, D.MUTED)
 	var notes: PackedStringArray = []
 	if bool(known.coast):
 		notes.append("沿海")
@@ -601,21 +581,52 @@ static func _site_facts(g, b, known: Dictionary):
 		D.label(b, " · ".join(notes), 15, D.GOLD)
 
 
+## The next survey: what it costs, how long it takes and how close it brings the estimates.
 static func _survey_button(g, b, known: Dictionary):
 	if int(known.surveying) > 0:
 		D.label(b, "勘察队在途，余 %d 天" % int(known.surveying), 15, D.TEAL)
 		return
-	var deep: bool = g.sim.state.research.completed.has("prospecting")
-	if int(known.survey) >= 1 and not deep:
-		return
 	var at: int = int(known.id)
+	var next: Dictionary = g.sim.Sites.next_survey(g.sim, at)
+	if not bool(next.narrows) and not bool(next.prospecting):
+		return
+	var outcome: String = "找隐藏矿床"
+	var hint: String = "远程勘测：派队查找周边的隐藏矿床；储量估算已经勘察到最细。"
+	if bool(next.narrows):
+		var after: String = (
+			"精确" if float(next.band) <= 0.0 else "±%d%%" % roundi(float(next.band) * 100.0)
+		)
+		outcome = "→ " + after
+		hint = (
+			"第 %d / %d 次地面勘察：储量和品位的估算从 ±%d%% 缩小到 %s，勘察队 %d 天后回报。"
+			% [
+				int(next.level),
+				int(next.levels),
+				roundi(float(next.band_now) * 100.0),
+				after,
+				int(next.days)
+			]
+		)
+		if bool(next.prospecting):
+			hint += "有远程勘测技术，还会查找周边的隐藏矿床。"
+	if str(next.refusal) != "":
+		hint = str(next.refusal)
 	var button = D.button(
 		b,
-		"%s ¥ %.0f" % ["远程勘测" if deep else "地面勘察", float(g.sim.Sites.survey_cost(g.sim))],
+		(
+			"%s ¥ %s · %d 天 %s"
+			% [
+				"地面勘察" if bool(next.narrows) else "远程勘测",
+				Labels.amount_text(float(next.cost)),
+				int(next.days),
+				outcome
+			]
+		),
 		func(): g.act("survey", {"site": at}),
-		"缩小储量和品位的估算范围；有远程勘测技术时还能发现隐藏矿床。",
+		hint,
 		"SurveyButton"
 	)
+	button.disabled = str(next.refusal) != ""
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.font_size(button, 14)
 	button.custom_minimum_size = Vector2(60, 38)
@@ -626,7 +637,7 @@ static func populate(g, b, page):
 		"contract":
 			contract(g, b)
 		"build":
-			build(g, b)
+			BuildPage.build(g, b)
 		"buildings":
 			buildings(g, b)
 		"name_site":
@@ -785,13 +796,14 @@ static func contract(g, b):
 	D.label(
 		v,
 		(
-			"开局支持：¥ %.0f；食品 %.0f t、建材 %.0f t、部件 %.0f t。工程队 %d、研究团队 %d、未成年 %d。"
+			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。职工 %d 人、工程队 %d 支（每支计 1 人）、研究团队 %d 支（每支计 1 人）、未成年 %d 人。"
 			% [
 				float(op.cash) * capital,
-				op.food,
-				op.materials,
-				op.parts,
-				op.workers,
+				Labels.t(float(op.food)),
+				Labels.t(float(op.materials)),
+				Labels.t(float(op.parts)),
+				int(op.workers) - int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
+				int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
 				op.scientists,
 				op.children
 			]
@@ -852,157 +864,87 @@ static func _contract_stage(g, b, stage: Dictionary, current: int):
 			fix.custom_minimum_size.y = 30
 		elif not goal_row.ok:
 			D.label(line, str(text.hint), 15, D.MUTED, false)
+		if str(goal_row.key) == "operating_route":
+			_route_lines(g, card)
 
 
-static func build(g, b):
-	D.label(b, g.sim.state.world.regions[g.selected].name + " / 建设目录", 23, D.TEAL)
-	var s: Dictionary = g.settlement()
-	if s.is_empty():
-		D.label(b, "请先在这里建立据点。", 18, D.GOLD)
-		return
-	D.label(
-		b,
-		(
-			"%s。工程消耗本地仓库的建材和部件，缺的部分有货运站时按进口价现买。空闲工程队 %d · 公共资金 ¥ %s · 建材 %.0f t · 部件 %.0f t"
-			% [
-				str(Labels.SITE_KIND_NAMES.get(s.kind, "")),
-				g.sim.free_workers(s),
-				g.money(g.sim.state.cash),
-				s.stock.materials,
-				s.stock.parts
-			]
-		),
-		17,
-		D.MUTED
-	)
-	var filters = D.row(b)
-	_category_button(g, filters, "all", "全部")
-	for key: String in Labels.BUILD_CATEGORIES:
-		_category_button(g, filters, key, str(Labels.BUILD_CATEGORIES[key]))
-	for category: String in Labels.BUILD_CATEGORIES:
-		if g.build_category != "all" and g.build_category != category:
-			continue
-		D.label(b, str(Labels.BUILD_CATEGORIES[category]), 19, D.TEAL)
-		for key: String in g.sim.config.buildings:
-			var spec: Dictionary = g.sim.config.buildings[key]
-			if str(spec.get("category", "")) != category:
-				continue
-			# What the colony has not discovered, or this kind of settlement cannot hold, stays off the list.
-			if (
-				spec.has("requires_tech")
-				and not g.sim.state.research.completed.has(spec.requires_tech)
-			):
-				continue
-			if spec.has("site_kinds") and not spec.site_kinds.has(str(s.kind)):
-				continue
-			_build_card(g, b, key)
-
-
-static func _category_button(g, parent, key: String, text: String):
-	var button = D.button(
-		parent,
-		text,
-		func():
-			g.build_category = key
-			g.populate_current_page(),
-		"",
-		"Cat_" + key
-	)
-	D.font_size(button, 15)
-	button.custom_minimum_size.y = 32
-	button.add_theme_color_override("font_color", D.GOLD if g.build_category == key else D.INK)
-
-
-static func _build_card(g, b, key: String):
-	var spec: Dictionary = g.sim.build_preview(g.selected, key)
-	var choices: Array = g.sim.plot_choices(g.selected, key)
-	var plot: int = _chosen_plot(g, key, choices)
-	var forecast: Dictionary = g.sim.build_forecast(g.selected, key, plot)
-	var refusal: String = str(forecast.disabled_reason)
-	var card = D.card(b)
-	var r = D.row(card)
-	D.icon(r, Labels.icon_key(g.sim.config, key), 31)
-	var text = D.col(r)
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	D.label(text, spec.name, 20)
-	D.label(
-		text,
-		"¥ %d · 建材 %d · 部件 %d · %d 天" % [spec.cost, spec.materials, spec.parts, spec.days],
-		16,
-		D.GOLD
-	)
-	D.label(
-		text,
-		(
-			"岗位 %d（空闲工程队 %d） · 电 %.0f · 水 %.0f · 维护 ¥ %.1f/日"
-			% [
-				int(forecast.jobs),
-				int(forecast.free_workers),
-				spec.power,
-				spec.water,
-				spec.maintenance
-			]
-		),
-		15,
-		D.MUTED
-	)
-	var outcome: String = _forecast_text(forecast)
-	if outcome != "":
-		D.label(text, outcome, 15, D.TEAL)
-	var order = D.button(
-		r,
-		"下达建设",
-		func(): g.act("build", {"site": g.selected, "kind": key, "plot": plot}),
-		refusal,
-		"Build_" + key
-	)
-	order.disabled = refusal != ""
-	if choices.size() > 1 and str(choices[0].kind) != "general":
-		var names: Array = []
-		var picked: int = 0
-		for index: int in range(choices.size()):
-			names.append(Labels.plot(choices[index]))
-			if int(choices[index].index) == plot:
-				picked = index
-		D.option(
+## Stage three's three routes, each with its measures over the last 30 days (operating_routes.gd).
+static func _route_lines(g, card: Control) -> void:
+	for route: Dictionary in g.sim.Contract.OperatingRoutes.view(g.sim):
+		var parts: PackedStringArray = []
+		for part: Dictionary in route.parts:
+			var value: float = float(part.value)
+			var target: float = float(part.target)
+			if target < 1.0:
+				parts.append("%s %.0f%% / %.0f%%" % [part.label, value * 100.0, target * 100.0])
+			elif str(part.label) == "沿海据点":
+				parts.append("%s %d / %d" % [part.label, int(value), int(target)])
+			else:
+				parts.append("%s %s / %s" % [part.label, Labels.t(value), Labels.t(target)])
+		D.label(
 			card,
-			"Plot_" + key,
-			names,
-			picked,
-			func(id):
-				g.build_plots[key] = int(choices[id].index)
-				g.populate_current_page()
+			"　%s %s：%s" % ["✓" if bool(route.ok) else "·", route.name, " · ".join(parts)],
+			15,
+			D.TEAL if bool(route.ok) else D.MUTED
 		)
-	D.label(card, str(spec.description), 15, D.MUTED)
-	if bool(spec.get("megaproject", false)):
-		D.label(card, "巨型工程：每颗星球一座；本地缺少的工程物资按进口价随工程采购。", 15, D.TEAL)
-	if refusal != "":
-		D.label(card, refusal, 15, D.GOLD)
 
 
-## The plot the player picked for this kind if it is still free, otherwise the best one.
-static func _chosen_plot(g, key: String, choices: Array) -> int:
-	if choices.is_empty():
-		return -1
-	var wanted: int = int(g.build_plots.get(key, -1))
-	for row: Dictionary in choices:
-		if int(row.index) == wanted:
-			return wanted
-	return int(choices[0].index)
+## The public services budget: an optional running cost that keeps people, by level.
+static func _services_budget(g, b) -> void:
+	var rules: Dictionary = g.sim.pop_rules.get("services", {})
+	if rules.is_empty():
+		return
+	(
+		D
+		. label(
+			b,
+			(
+				"公共服务预算：按全殖民地居民每天付费，提高吸引力、减少离开、增加出生，并减少污染带来的健康支出。现金在留足 %.0f 天日常开支后不够付当天预算时，当天不付也不生效，不会因此欠债。"
+				% float(g.sim.config.economy.get("optional_reserve_days", 0.0))
+			),
+			17,
+			D.MUTED
+		)
+	)
+	var row = D.row(b)
+	var current: int = int(g.sim.state.policy.get("services", 0))
+	for level: int in range(int(rules.levels) + 1):
+		var cost: float = g.sim.Population.services_cost(g.sim, level)
+		var text: String = (
+			"关"
+			if level == 0
+			else ("%d 级 · ¥ %.0f/日 · 吸引力 +%.2f" % [level, cost, float(rules.appeal[level])])
+		)
+		var chosen: int = level
+		var button = D.button(
+			row, text, func(): g.act("policy", {"services": chosen}), "", "Services_%d" % level
+		)
+		button.toggle_mode = true
+		button.button_pressed = level == current
 
 
-static func _forecast_text(forecast: Dictionary) -> String:
-	var parts: PackedStringArray = []
-	for good: String in forecast.outputs:
-		parts.append("%s %.1f t/日" % [RES.get(good, good), float(forecast.outputs[good])])
-	if float(forecast.revenue_per_day) != 0.0:
-		parts.append("收入 ¥ %.0f/日" % float(forecast.revenue_per_day))
-	parts.append("净 ¥ %+.0f/日" % float(forecast.net_per_day))
-	if float(forecast.payback_days) > 0.0:
-		parts.append("约 %.0f 日回本" % float(forecast.payback_days))
-	if float(forecast.reserve_days) >= 0.0:
-		parts.append("储量够挖 %.0f 日" % float(forecast.reserve_days))
-	return " · ".join(parts)
+## Cash cover, by band: red when it runs short, a hint where to spend it when money sits idle.
+static func _cover_line(g, b) -> void:
+	var cover: Dictionary = g.sim.cover_view()
+	var text: String = Labels.cover_text(cover)
+	if text == "":
+		return
+	var color: Color = D.TEAL
+	if str(cover.band) == Keys.COVER_SHORT:
+		color = D.RED
+	elif str(cover.band) == Keys.COVER_IDLE:
+		text += " · " + Labels.idle_money(g.sim)
+		color = D.GOLD
+	D.label(b, text, 17, color)
+
+
+## Export income that leans on mines about to run out, from the last 30 days' exports.
+static func _mine_line(g, b, month: Dictionary) -> void:
+	var outlook: Dictionary = g.sim.mine_outlook(month)
+	if float(outlook.share) <= 0.0:
+		return
+	var warn: bool = float(outlook.share) >= float(g.sim.config.economy.mine_warning_share)
+	D.label(b, Labels.mine_warning(outlook, warn), 16, D.RED if warn else D.MUTED)
 
 
 static func economy(g, b):
@@ -1020,6 +962,24 @@ static func economy(g, b):
 	if float(summary.runway) >= 0.0:
 		lasting = "预计现金可维持 %.1f 天" % float(summary.runway)
 	D.label(b, "近 7 日平均净额 ¥ %+.0f/日 · %s" % [float(summary.operating_average), lasting], 19, D.TEAL)
+	_cover_line(g, b)
+	var totals: Dictionary = g.sim.stats_window(30)
+	_mine_line(g, b, totals)
+	var admin: Dictionary = g.sim.admin_view()
+	D.label(
+		b,
+		(
+			"行政开支 ¥ %.0f/日：每多 %d 人 +¥ %.1f/日，每多一处据点 +¥ %.1f/日"
+			% [
+				float(admin.daily),
+				int(admin.residents_step),
+				float(admin.per_residents),
+				float(admin.per_settlement)
+			]
+		),
+		16,
+		D.MUTED
+	)
 	if float(state.get("debt", 0)) > 0.0:
 		D.label(
 			b,
@@ -1048,7 +1008,6 @@ static func economy(g, b):
 		"CashChart",
 		[{"values": series.cash, "color": D.GOLD}, {"values": series.net, "color": D.TEAL}]
 	)
-	var totals: Dictionary = g.sim.stats_window(30)
 	var columns = D.row(b)
 	_money_column(g, columns, "近 30 日收入", totals.income, D.TEAL)
 	_money_column(g, columns, "近 30 日支出", totals.expense, D.GOLD)
@@ -1057,24 +1016,37 @@ static func economy(g, b):
 		_money_column(g, capital, "近 30 日投资（不计经营）", totals.invest, D.MUTED)
 		_money_column(g, capital, "近 30 日外来资金（不计经营）", totals.funding, D.MUTED)
 	_goods_table(b, totals.goods)
-	D.label(b, "出口价格：出口越多价格越低，停售后缓慢恢复", 20, D.TEAL)
+	_sinks_table(g, b)
+	D.label(
+		b,
+		"出口价格：出口越多价格越低，停售后缓慢恢复；最低按基准的 %.0f%% 结算" % (float(g.sim.market_rules.floor) * 100.0),
+		20,
+		D.TEAL
+	)
 	for row_data: Dictionary in g.sim.market_view():
 		var arrow: String = {-1: "↓", 0: "→", 1: "↑"}[int(row_data.trend)]
-		D.label(
-			b,
-			(
-				"%s  ¥ %.1f / t  %s（基准 %.1f，%.0f%%）"
-				% [
-					RES.get(row_data.good, row_data.good),
-					row_data.price,
-					arrow,
-					row_data.base,
-					row_data.factor * 100.0
-				]
-			),
-			16,
-			D.INK if float(row_data.factor) > 0.8 else D.GOLD
+		var line: String = (
+			"%s  %s  %s（基准 %.1f，%.0f%%）"
+			% [
+				RES.get(row_data.good, row_data.good),
+				Labels.per_hundred(float(row_data.price)),
+				arrow,
+				row_data.base,
+				row_data.factor * 100.0
+			]
 		)
+		if bool(row_data.at_floor):
+			line += " · 市场已饱和：再多卖只能按底价结算"
+		else:
+			line += (
+				" · 再卖 %s 后 ¥ %.1f · 底价 ¥ %.1f"
+				% [
+					Labels.t(float(row_data.ahead_tonnes)),
+					float(row_data.ahead_price),
+					float(row_data.floor_price)
+				]
+			)
+		D.label(b, line, 16, D.INK if float(row_data.factor) > 0.8 else D.GOLD)
 	for s in state.settlements:
 		var c = D.card(b)
 		D.label(c, s.name + " / 本地库存", 20)
@@ -1084,16 +1056,25 @@ static func economy(g, b):
 				continue
 			var v = D.col(r)
 			v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			D.icon(v, key)
+			D.tinted_icon(v, key, 27, Labels.GOOD_COLORS.get(key, Color.WHITE))
+			var delta: float = float(s.stock_delta.get(key, 0))
 			D.label(
 				v,
-				RES[key] + "\n%.1f t\n%+.1f /日" % [s.stock.get(key, 0), s.stock_delta.get(key, 0)],
+				(
+					RES[key]
+					+ "\n"
+					+ Labels.t(float(s.stock.get(key, 0)))
+					+ "\n"
+					+ ("+" if delta >= 0.0 else "")
+					+ Labels.per_day(delta)
+				),
 				16
 			)
 		var lines: PackedStringArray = []
 		for shortage in s.get("shortages", []):
 			lines.append(Labels.shortage(g.sim.config, shortage))
 		D.label(c, "\n".join(lines), 16, D.RED)
+	EventLines.colony(g, b)
 	D.button(b, "查看公司审查原因、整改期限与救助义务", func(): g.open_page("company"))
 	var detail: bool = bool(g.detailed_info)
 	D.label(b, "详情：最近资金流水（来源 → 去向 / 金额）", 20, D.TEAL)
@@ -1170,6 +1151,40 @@ static func _money_column(g, parent, title: String, amounts: Dictionary, color: 
 		D.label(c, "其他  ¥ %s" % g.money(rest), 15, D.MUTED)
 
 
+## 「钱花在哪」: spending by sink in the colony's last few years, this year so far on the right.
+static func _sinks_table(g, b) -> void:
+	var years: Array = g.sim.sinks_by_year()
+	if years.is_empty():
+		return
+	var first: int = maxi(0, years.size() - SINK_YEARS)
+	var c = D.card(b)
+	D.label(c, "钱花在哪：每年投入（不含工资、维护等日常开支；最右一列为今年至今）", 17, D.TEAL)
+	var table = D.grid(c, years.size() - first + 1)
+	D.label(table, "去向", 15, D.MUTED, false)
+	for year: int in range(first, years.size()):
+		D.label(table, "第 %d 年" % (year + 1), 15, D.MUTED, false)
+	for sink: String in Labels.SINK_NAMES:
+		var used: bool = false
+		for year: int in range(first, years.size()):
+			used = used or float(years[year].get(sink, 0.0)) > 0.0
+		if not used:
+			continue
+		var name = D.label(table, str(Labels.SINK_NAMES[sink]), 15, D.INK, false)
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for year: int in range(first, years.size()):
+			var cell = D.label(
+				table, "¥ " + g.money(float(years[year].get(sink, 0.0))), 15, D.INK, false
+			)
+			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+static func _all_zero(row: Array) -> bool:
+	for amount: Variant in row:
+		if absf(float(amount)) > 0.0001:
+			return false
+	return true
+
+
 static func _goods_table(b, goods: Dictionary):
 	var c = D.card(b)
 	D.label(c, "近 30 日物资流向（吨）：产出 / 消耗 / 出口 / 进口 / 陆海运输", 17, D.TEAL)
@@ -1178,10 +1193,14 @@ static func _goods_table(b, goods: Dictionary):
 		D.label(table, heading, 15, D.MUTED, false)
 	for good: String in RES:
 		var row: Array = goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		if good in ["nickel", "cobalt", "superalloy"] and _all_zero(row):
+			continue
 		var name = D.label(table, str(RES[good]), 15, D.INK, false)
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		for amount: Variant in row:
-			var cell = D.label(table, "%.0f" % float(amount), 15, D.INK, false)
+			var cell = D.label(
+				table, Labels.amount_text(Labels.tonnes(float(amount))), 15, D.INK, false
+			)
 			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
@@ -1189,7 +1208,11 @@ static func transport(g, b):
 	D.label(b, "矿物向港口汇集，食品向居民流动。", 25, D.TEAL)
 	D.label(
 		b,
-		"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；运力有限，陆路不会穿海。两端都有货运站就能开航线。",
+		(
+			"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；"
+			+ "运力有限，陆路不会穿海。两地都靠海时，可以在两端各建一座小型货运码头开辟航线。"
+			+ "建成的线路还能升级：公路先铺装、再拓宽为四车道干线；码头可扩建为中型、大型。"
+		),
 		18,
 		D.MUTED
 	)
@@ -1205,21 +1228,20 @@ static func transport(g, b):
 		var z: int = int(other.region)
 		if z != a:
 			_road_options(g, b, a, z)
-	var paving: Dictionary = g.sim.config.road_upgrade
 	for road: Dictionary in state.roads:
-		_road_card(g, b, road, paving)
-	D.label(b, "累计运输 %.0f t" % float(state.get("transported_total", 0)), 18, D.TEAL)
+		_road_card(g, b, road)
+	D.label(b, "累计运输 " + Labels.t(float(state.get("transported_total", 0))), 18, D.TEAL)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
 		D.label(
 			b,
 			(
-				"%s → %s   %s %.1f t  /  还有 %d 天抵达"
+				"%s → %s   %s %s  /  还有 %d 天抵达"
 				% [
 					state.world.regions[int(sh.from)].name,
 					state.world.regions[int(sh.to)].name,
 					RES.get(sh.resource, sh.resource),
-					sh.amount,
+					Labels.t(float(sh.amount)),
 					sh.remaining
 				]
 			),
@@ -1232,13 +1254,15 @@ static func _road_options(g, b, a: int, z: int):
 	var state: Dictionary = g.sim.state
 	var c = D.card(b)
 	D.label(c, "%s → %s" % [state.world.regions[a].name, state.world.regions[z].name], 21)
-	for variant: String in ["valley", "engineered", "sea"]:
+	for variant: String in ROUTE_VARIANTS:
 		var quote: Dictionary = g.sim.road_quote(a, z, variant)
 		var spec: Dictionary = g.sim.config.roads[variant]
 		if not bool(quote.reachable):
 			if variant != "sea":
 				D.label(c, "%s：%s" % [spec.name, str(quote.reason)], 16, D.MUTED)
 			continue
+		if variant == Keys.ROUTE_SHUTTLE:
+			D.label(c, str(spec.reason), 15, D.MUTED)
 		var risk: String = "无"
 		if float(quote.closure_chance) > 0.0:
 			risk = "约每 %.0f 日一次" % (1.0 / float(quote.closure_chance))
@@ -1247,14 +1271,14 @@ static func _road_options(g, b, a: int, z: int):
 			. label(
 				c,
 				(
-					"%s：%.0f km · 工期 %d 天 · 单程 %d 天 · 建设 ¥ %.0f · 运力 %d t/日 · 养护 ¥ %.1f/日 · 封路 %s"
+					"%s：%.0f km · 工期 %d 天 · 单程 %d 天 · 建设 ¥ %.0f · 运力 %s · 养护 ¥ %.1f/日 · 封路 %s"
 					% [
 						spec.name,
 						float(quote.distance),
 						int(quote.build_days),
 						int(quote.days),
 						float(quote.cost),
-						int(quote.capacity),
+						Labels.per_day(float(quote.capacity)),
 						float(quote.upkeep),
 						risk,
 					]
@@ -1279,19 +1303,30 @@ static func _closure_text(chance: float) -> String:
 	return "封路 约每 %d 日一次" % roundi(1.0 / chance)
 
 
-static func _road_card(g, b, road: Dictionary, paving: Dictionary):
+## What a link is called on its card: the road with its surface, or the pair of docks.
+static func _link_title(g, road: Dictionary) -> String:
+	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
+	var level: String = g.sim.Logistics.level_name(g.sim, road)
+	if bool(road.get("retired", false)):
+		return "%s（已停飞：两地已有道路或航线）" % spec.name
+	if level == "":
+		return str(spec.name)
+	if g.sim.Logistics.is_sea(road):
+		return level
+	return "%s · %s" % [spec.name, level]
+
+
+static func _road_card(g, b, road: Dictionary):
 	var state: Dictionary = g.sim.state
 	var c = D.card(b)
-	var spec: Dictionary = g.sim.config.roads[str(road.get("variant", "valley"))]
 	var building: bool = WG.road_building(road, int(state.day))
 	var blocked: bool = WG.road_blocked(road, int(state.day)) and not building
 	D.label(
 		c,
 		(
-			"%s%s：%s ↔ %s"
+			"%s：%s ↔ %s"
 			% [
-				spec.name,
-				"（已铺装）" if bool(road.get("paved", false)) else "",
+				_link_title(g, road),
 				state.world.regions[int(road.a)].name,
 				state.world.regions[int(road.b)].name
 			]
@@ -1302,12 +1337,12 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	D.label(
 		c,
 		(
-			"%.0f km · 单程 %d 天 · 运力 %d t/日 · 今日已发 %.1f t · 养护 ¥ %.1f/日 · %s%s"
+			"%.0f km · 单程 %d 天 · 运力 %s · 今日已发 %s · 养护 ¥ %.1f/日 · %s%s"
 			% [
 				float(road.get("distance", 0.0)),
 				g.sim.Logistics.road_days(g.sim, road),
-				int(road.capacity),
-				float(road.sent_today),
+				Labels.per_day(float(road.capacity)),
+				Labels.t(float(road.sent_today)),
 				float(road.get("upkeep", 0.0)),
 				_closure_text(g.sim.Logistics.closure_chance(g.sim, road)),
 				" · 封路至 %s" % Labels.short_date(int(road.blocked_until)) if blocked else ""
@@ -1322,8 +1357,26 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 		D.label(
 			c, "在建 · %s 通车 · 还要 %d 天" % [Labels.short_date(int(road.ready_day)), left], 16, D.GOLD
 		)
+	var crew_line: String = _road_crew_line(g, road)
+	if crew_line != "":
+		D.label(c, crew_line, 15, D.MUTED)
 	if int(road.get("paving_until", 0)) > int(state.day):
-		D.label(c, "铺装中 · %s 完工" % Labels.short_date(int(road.paving_until)), 16, D.GOLD)
+		D.label(
+			c,
+			(
+				"升级为%s · %s 完工；施工期间照常通行"
+				% [
+					g.sim.Logistics.level_name(
+						g.sim,
+						road,
+						int(road.get("upgrade_to", g.sim.Logistics.link_level(road) + 1))
+					),
+					Labels.short_date(int(road.paving_until))
+				]
+			),
+			16,
+			D.GOLD
+		)
 	var moving: Dictionary = {}
 	for cargo: Dictionary in state.shipments:
 		if int(cargo.get("road", -1)) == int(road.id):
@@ -1331,25 +1384,73 @@ static func _road_card(g, b, road: Dictionary, paving: Dictionary):
 	if not moving.is_empty():
 		var words: PackedStringArray = []
 		for good: String in moving:
-			words.append("%s %.0f t" % [RES.get(good, good), float(moving[good])])
+			words.append("%s %s" % [RES.get(good, good), Labels.t(float(moving[good]))])
 		D.label(c, "在途：" + "、".join(words), 15, D.MUTED)
-	if (
-		state.research.completed.has(paving.tech)
-		and not bool(road.get("paved", false))
-		and not building
-		and int(road.get("paving_until", 0)) <= int(state.day)
-		and str(road.get("variant", "valley")) != "sea"
-	):
-		var id: int = int(road.id)
-		D.button(
-			c,
-			(
-				"铺装道路 · ¥ %.0f + 建材 %.0f t"
-				% [float(road.cost) * float(paving.cost_factor), float(paving.materials)]
-			),
-			func(): g.act("upgrade_road", {"road": id}),
-			"运力 +50%，单程 -1 天，封路风险 -70%"
-		)
+	_level_row(g, c, road)
+
+
+## Who works at a road that needs a crew (crews.gd): the crew on it, or that it waits for one and
+## its finish moves a day later for each day without; empty for a road that needs none today.
+static func _road_crew_line(g, road: Dictionary) -> String:
+	var work: Dictionary = g.sim.Crews.road_work(g.sim, road)
+	if work.is_empty():
+		return ""
+	var what: String = "抢修" if str(work.kind) == "repair" else "施工"
+	for team: Dictionary in g.sim.Crews.view(g.sim).teams:
+		if str(team.task) == str(work.kind) and int(team.target) == int(road.id):
+			return "工程队 #%d 正在%s，按现在的进度约 %d 天" % [int(team.id), what, int(work.remaining)]
+	if str(work.kind) == "repair":
+		return "没有工程队抢修：按原定日期自行恢复；派一支工程队可以快一倍"
+	return "等工程队：两端据点的工程队空出来才开工，没有工程队的日子工期顺延"
+
+
+## The link's next level: what it costs, what it gives, what it waits for, and the order.
+static func _level_row(g, c, road: Dictionary):
+	if g.sim.Logistics.is_shuttle(road):
+		return
+	var step: Dictionary = g.sim.Logistics.next_level(g.sim, road)
+	var level: int = g.sim.Logistics.link_level(road)
+	var top: int = g.sim.Logistics.level_steps(g.sim, road).size()
+	if int(road.get("paving_until", 0)) > int(g.sim.state.day):
+		D.label(c, "等级 %d / %d · 升级施工中" % [level, top], 15, D.MUTED)
+		return
+	if step.is_empty():
+		D.label(c, "等级 %d / %d · 已是最高等级" % [level, top], 15, D.MUTED)
+		return
+	var gains: PackedStringArray = ["运力 ×%.2f" % float(step.capacity)]
+	if int(step.days) != 0:
+		gains.append("单程 %+d 天" % int(step.days))
+	if float(step.closure) < 1.0:
+		gains.append("封路风险 -%d%%" % roundi((1.0 - float(step.closure)) * 100.0))
+	if float(step.upkeep) > 0.0:
+		gains.append("养护 +¥ %.1f/日" % float(step.upkeep))
+	var price: String = (
+		"¥ %s + 建材 %s" % [Labels.amount_text(float(step.cost)), Labels.t(float(step.materials))]
+	)
+	if float(step.parts) > 0.0:
+		price += " + 部件 %s" % Labels.t(float(step.parts))
+	var needs: String = ""
+	if str(step.tech) != "":
+		var tech_name: String = str(g.sim.config.techs[step.tech].name)
+		needs = (" · 技术「%s」%s" % [tech_name, "✓" if g.sim._has(str(step.tech)) else "未掌握"])
+	D.label(
+		c,
+		(
+			"等级 %d / %d · 下一级 %s：%s · 工期 %d 天 · %s%s"
+			% [level, top, str(step.name), price, int(step.build_days), "，".join(gains), needs]
+		),
+		15,
+		D.MUTED
+	)
+	var id: int = int(road.id)
+	var order: Button = D.button(
+		c,
+		"升级为" + str(step.name),
+		func(): g.act("upgrade_road", {"road": id}),
+		str(step.refusal),
+		"Upgrade_%d" % id
+	)
+	order.disabled = str(step.refusal) != ""
 
 
 static func enterprise(g, b):
@@ -1440,6 +1541,51 @@ static func enterprise(g, b):
 	)
 
 
+## Picture quality (the renderer, from the next start) and anti-aliasing (at once).
+static func _quality(g, b) -> void:
+	D.label(b, "画质", 20)
+	D.label(b, Graphics.status_text(), 16, D.GOLD if Graphics.fell_back() else D.MUTED)
+	var choices = D.row(b)
+	var chosen: String = Graphics.chosen()
+	for entry: Array in [
+		[Graphics.STANDARD, "标准画质", "兼容渲染（OpenGL 3.3）：任何显卡都能运行，最省电"],
+		[
+			Graphics.HIGH,
+			"高画质",
+			"Forward+（Vulkan / Direct3D 12）：环境光遮蔽、柔和阴影、泛光和真实路灯，需要较新的显卡。重启游戏后生效；显卡不支持时自动以标准画质运行",
+		],
+	]:
+		var method: String = str(entry[0])
+		var on: bool = chosen == method
+		D.button(
+			choices,
+			str(entry[1]) + (" ✓" if on else ""),
+			func(): g.choose_renderer(method),
+			str(entry[2]),
+			"Render_" + method,
+			"chip_on" if on else "chip"
+		)
+	if Graphics.restart_pending():
+		D.button(choices, "立即重启", g.restart_game, "未保存的进度会丢失：请先存档", "RestartGame", "primary")
+	D.label(b, "抗锯齿", 20)
+	var smoothing = D.row(b)
+	for entry: Array in [
+		[Graphics.AA_OFF, "关", "最快；模型和道路边缘有锯齿"],
+		[Graphics.AA_MEDIUM, "中", "2 倍多重采样"],
+		[Graphics.AA_HIGH, "高", "4 倍多重采样；高画质下另加 SMAA"],
+	]:
+		var level: String = str(entry[0])
+		var on: bool = str(g.visual_aa) == level
+		D.button(
+			smoothing,
+			"抗锯齿：" + str(entry[1]),
+			func(): g.set_anti_aliasing(level),
+			str(entry[2]),
+			"AA_" + level,
+			"chip_on" if on else "chip"
+		)
+
+
 static func settings(g, b):
 	D.label(b, "安全存档 / 独立保存世界与经营状态", 23, D.TEAL)
 	D.label(
@@ -1452,7 +1598,15 @@ static func settings(g, b):
 		18,
 		D.GOLD
 	)
-	D.label(b, "自动存档每 10 个模拟日写入。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。", 18, D.MUTED)
+	D.label(
+		b,
+		(
+			"自动存档每 %d 天（每季度）写入一次。手动档与自动档分开，临时文件写完后替换。退出前建议手动保存。"
+			% int(g.sim.progression.time.get("autosave_days", 90))
+		),
+		18,
+		D.MUTED
+	)
 	var r = D.row(b)
 	D.button(r, "保存手动档", func(): g.save_slot(g.SAVE_MANUAL))
 	D.button(r, "读取手动档", func(): g.load_path(g.SAVE_MANUAL))
@@ -1470,6 +1624,10 @@ static func settings(g, b):
 		D.button(b, "读取1.5兼容性示例（中期）", func(): g.load_path("res://data/acceptance_midgame.json"))
 		D.button(b, "导出可读 JSON（开发用）", func(): g.export_state_json())
 	for item: Array in [
+		["读取 1.9 手动档（原文件保留）", g.old_save_path(g.V19_SAVE_MANUAL)],
+		["读取 1.9 自动档（原文件保留）", g.old_save_path(g.V19_SAVE_AUTO)],
+		["读取 1.8 手动档（原文件保留）", g.old_save_path(g.V18_SAVE_MANUAL)],
+		["读取 1.8 自动档（原文件保留）", g.old_save_path(g.V18_SAVE_AUTO)],
 		["读取 1.7 手动档（原文件保留）", g.old_save_path(g.V17_SAVE_MANUAL)],
 		["读取 1.7 自动档（原文件保留）", g.old_save_path(g.V17_SAVE_AUTO)],
 		["读取 1.6 手动档（原文件保留）", g.old_save_path(g.OLD_SAVE_MANUAL)],
@@ -1488,6 +1646,30 @@ static func settings(g, b):
 	D.button(
 		b, "打开面板时暂停：开（关闭后恢复原速度）" if g.panel_pause else "打开面板时暂停：关（面板打开时时间继续）", g.toggle_panel_pause
 	)
+	D.label(b, "地图画面", 20)
+	var visuals = D.row(b)
+	for entry: Array in [
+		["spin", "行星自转", g.visual_spin, "球面总览中行星缓慢自转；拖动或点选地点时会停下"],
+		["day_night", "昼夜与灯光", g.visual_day_night, "太阳照亮一半星球，入夜后城市与公路亮灯；地区视图随当地时间明暗"],
+		["weather", "云层与天气", g.visual_weather, "云层随风带移动，热带风暴生成与消散，地区地面有云影；关闭后不画云，显卡较弱时可关"],
+		["routes", "运输网络", g.visual_routes, "在球面和平面图上画出全部线路；关闭后夜里只看得见出城处和路口的灯、路上行驶的货运"],
+	]:
+		var key: String = str(entry[0])
+		D.button(
+			visuals,
+			"%s：%s" % [entry[1], "开" if bool(entry[2]) else "关"],
+			func(): g.toggle_visual(key),
+			str(entry[3]),
+			"Visual_" + key
+		)
+	D.button(
+		visuals,
+		"空地块标记：开" if g.plot_marks else "空地块标记：关",
+		g.toggle_plot_marks,
+		"地区视图中用细圈标出所有空闲地块，规划时打开；关闭时只显示矿床的矿石露头和农田",
+		"Visual_plots"
+	)
+	_quality(g, b)
 	D.label(b, "新手引导", 20)
 	var teaching = D.row(b)
 	D.button(teaching, "重新开始新手引导（开始一局引导专用的新游戏）", g.start_tutorial, "当前未保存的进度会丢失", "ReplayTutorial")
@@ -1530,7 +1712,7 @@ static func settings(g, b):
 static func guide(_g, b):
 	D.label(b, "怎样经营一块殖民地", 25, D.GOLD)
 	var steps = [
-		"01  选址。卡片上的储量是估算，派勘察队可以缩小范围。星球有地球那么大：两个地点之间常常隔着几千公里。",
+		"01  选址。卡片上的储量是估算，派勘察队可以缩小范围；再派一次范围更窄，但更贵、更久。星球有地球那么大：两个地点之间常常隔着几千公里。",
 		"02  开矿出口。在矿床地块上建矿场，矿石到货运站自动卖出。货运站的吞吐是共用的，出口越多价格越低，别只卖一种。",
 		"03  住房和工作。床位满了没人来，没工作的人多了新移民也不来。工资影响吸引力，招募来得最快但越招越贵。",
 		"04  研究。每个类别一个课题，从候选里挑一张，再派研究团队。5 支团队的速度只有 10 支的 60%。候选不合意可以花钱重新调研。",
@@ -1551,10 +1733,8 @@ static func population(g, b):
 		return
 	var v: Dictionary = g.sim.population_view(int(s.region))
 	D.label(b, s.name + " / 人口与移民", 24, D.TEAL)
-	D.label(b, "吸引力 %.2f  ·  约每月 %.1f 人迁入" % [v.attractiveness, v.arrivals_per_month], 20, D.GOLD)
-	D.label(b, "近 30 日迁入 %d 人 · 离开 %d 人" % [int(v.arrived_30), int(v.departed_30)], 17)
-	if float(v.prospects) < 1.0:
-		D.label(b, "失业的人多，新移民正在减少（就业前景 %.0f%%）。" % (float(v.prospects) * 100.0), 16, D.GOLD)
+	D.label(b, "吸引力 %.2f" % float(v.attractiveness), 20, D.GOLD)
+	PeopleLines.growth(g.sim, b, s, v)
 	var parts = D.card(b)
 	D.label(parts, "吸引力构成（基础 1.00）", 17, D.TEAL)
 	for key: String in v.parts:
@@ -1585,6 +1765,7 @@ static func population(g, b):
 		"×"
 	)
 	D.button(wage_row, "应用工资", func(): g.act("policy", {"wage": wage.value}), "", "ApplyWage")
+	_services_budget(g, b)
 	var rules: Dictionary = g.sim.pop_rules.recruitment
 	D.label(
 		b,
@@ -1597,19 +1778,19 @@ static func population(g, b):
 	)
 	var recruit_row = D.row(b)
 	var count = D.spin(
-		recruit_row, "RecruitCount", 1, g.sim.pop_rules.recruitment.max_per_campaign, 1, 10, "支"
+		recruit_row, "RecruitCount", 1, g.sim.pop_rules.recruitment.max_per_campaign, 1, 10, "人"
 	)
 	var region: int = int(s.region)
 	D.button(
 		recruit_row,
-		"招募工程队 · ¥ %.0f/支" % float(v.worker_price),
+		"招募职工 · ¥ %.0f/人" % float(v.worker_price),
 		func(): g.act("recruit", {"region": region, "kind": "worker", "count": int(count.value)}),
 		"",
 		"RecruitWorkers"
 	)
 	D.button(
 		recruit_row,
-		"招募研究团队 · ¥ %.0f/支" % float(v.scientist_price),
+		"招募研究团队 · ¥ %.0f/支（计 1 人）" % float(v.scientist_price),
 		func():
 			g.act("recruit", {"region": region, "kind": "scientist", "count": int(count.value)}),
 		"",

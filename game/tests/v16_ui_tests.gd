@@ -4,6 +4,12 @@ var failures: Array = []
 var count: int = 0
 
 
+## 1.10 keeps the part of a day already run across a stop (the brief of 2026-11-19); what the old
+## rule protected still holds: never a whole day of backlog left to replay.
+func _part_of_a_day(g) -> bool:
+	return float(g.accumulator) < float(g.sim.progression.time.seconds_per_day)
+
+
 func check(ok: bool, label: String):
 	count += 1
 	if not ok:
@@ -75,7 +81,7 @@ func run():
 		g.event_pause_required()
 	)
 	check(
-		g.sim.state.day == 38 and g.paused and g.accumulator == 0,
+		g.sim.state.day == 38 and g.paused and _part_of_a_day(g),
 		"F06 long frame stops exactly on governor award"
 	)
 	g.close_modal()
@@ -90,7 +96,7 @@ func run():
 	g.paused = false
 	g.advance_time(200)
 	check(
-		g.sim.state.day == 0 and g.paused and g.accumulator == 0,
+		g.sim.state.day == 0 and g.paused and _part_of_a_day(g),
 		"required event blocks whole long frame before next day"
 	)
 	g.close_modal()
@@ -110,7 +116,7 @@ func run():
 			g.sim.state.company.stage == "review"
 			and g.sim.state.day == day + 1
 			and g.paused
-			and g.accumulator == 0
+			and _part_of_a_day(g)
 		),
 		"company review interrupts on first affected day"
 	)
@@ -125,7 +131,7 @@ func run():
 			g.sim.state.status == "failed"
 			and g.sim.state.day == day + 1
 			and g.paused
-			and g.accumulator == 0
+			and _part_of_a_day(g)
 		),
 		"takeover interrupts on exact failure day"
 	)

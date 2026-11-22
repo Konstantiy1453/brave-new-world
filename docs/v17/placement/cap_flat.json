@@ -1,0 +1,169 @@
+{
+  "area": {
+    "away_degrees": 6.5,
+    "centre": [
+      21.25,
+      -118.75
+    ],
+    "points": [
+      {
+        "coast": true,
+        "lat": 23.7374000549316,
+        "lon": -112.306701660156,
+        "other_site_degrees": 30.2715145147124,
+        "own_site_degrees": 6.45078881020464,
+        "terrain": "滨海平原"
+      },
+      {
+        "coast": true,
+        "lat": 25.8462009429932,
+        "lon": -123.681503295898,
+        "other_site_degrees": 30.8933827480746,
+        "own_site_degrees": 6.44544461406593,
+        "terrain": "滨海平原"
+      }
+    ],
+    "site": 0,
+    "site_name": "地点 01"
+  },
+  "build": "packaged PCK",
+  "candidates": 29,
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "two eligible points in one generated site's old area",
+      "ok": true
+    },
+    {
+      "label": "the target is 72 px from the nearest marker (old pick radius 43 px)",
+      "ok": true
+    },
+    {
+      "label": "the click selected the ground under the pointer",
+      "ok": true
+    },
+    {
+      "label": "at the target: 25.8462, -123.6815 (precision ±0.093°)",
+      "ok": true
+    },
+    {
+      "label": "and no site marker stays selected",
+      "ok": true
+    },
+    {
+      "label": "the capital is founded",
+      "ok": true
+    },
+    {
+      "label": "on a site of its own, not Site 01",
+      "ok": true
+    },
+    {
+      "label": "the naming dialog showed the stored place: 自选地点 · 北纬 25.85° · 西经 123.68°",
+      "ok": true
+    },
+    {
+      "label": "stored where clicked: 25.8462, -123.6815",
+      "ok": true
+    },
+    {
+      "label": "not snapped to the old site's centre (6.4° away)",
+      "ok": true
+    },
+    {
+      "label": "the district opens on the same place",
+      "ok": true
+    },
+    {
+      "label": "the save continues from the menu",
+      "ok": true
+    },
+    {
+      "label": "after save, quit and reload the capital is where it was: 25.8462, -123.6815",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "found": {
+    "confirmation": "(25.85, -123.68)",
+    "confirmation_text": "自选地点 · 北纬 25.85° · 西经 123.68°"
+  },
+  "game_version": "1.10.1",
+  "ok": true,
+  "options": {
+    "bots": "",
+    "case": "capital",
+    "coast": "0",
+    "out": "record.json",
+    "pck": "build/v17/ColonyCharter.pck",
+    "seed": "3",
+    "target": "1",
+    "view": "flat"
+  },
+  "pck": "build/v17/ColonyCharter.pck",
+  "pck_sha256": "78181ecca53e41633adbdb37598b0a21403c6100db868994b3f9f46b55af786f",
+  "pick": {
+    "map_selected_marker": -1,
+    "nearest_marker_px": 72.2279739379883,
+    "panel_text": "北纬 25.85° · 西经 123.68°",
+    "picked": {
+      "lat": 25.8461990356445,
+      "lon": -123.681503295898,
+      "precision": 0.0933303833007812,
+      "view": "flat"
+    },
+    "screen": [
+      712.5,
+      450.0
+    ],
+    "selected_site_after_click": 0,
+    "target": [
+      25.8462009429932,
+      -123.681503295898
+    ],
+    "terrain_text": "地表：森林 · 地点类型：滨海平原",
+    "verdict": "✓ 可以在这里建立首府"
+  },
+  "reloaded": {
+    "lat": 25.8462,
+    "lon": -123.6815,
+    "name": "自选首都",
+    "region": 29
+  },
+  "res_has_tests": false,
+  "seed": 3,
+  "stored": {
+    "lat": 25.8462,
+    "lon": -123.6815,
+    "name": "自选首都",
+    "region": 29
+  },
+  "viewport": [
+    1600.0,
+    900.0
+  ],
+  "views": {
+    "district": {
+      "lat": 25.8462,
+      "lon": -123.6815,
+      "region": 29
+    },
+    "flat": {
+      "marker_screen": [
+        712.5,
+        450.0
+      ],
+      "selected_marker": 29
+    },
+    "planet": {
+      "marker_screen": [
+        605.793579101562,
+        450.0
+      ],
+      "selected_marker": 29
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+	"failures": [],
+	"harbour_day": 75,
+	"housing_day": 55,
+	"mode": "ordinary play",
+	"played_by": "balanced bot + orders: habitat (day 3), harbour (after the home is lived in)",
+	"shots": [
+		{
+			"mode": "planet",
+			"name": "play_landing_globe",
+			"path": "<capture folder>/play_landing_globe.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "flat",
+			"name": "play_landing_flat",
+			"path": "<capture folder>/play_landing_flat.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "region",
+			"name": "play_landing_district",
+			"path": "<capture folder>/play_landing_district.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "planet",
+			"name": "play_housing_globe",
+			"path": "<capture folder>/play_housing_globe.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "flat",
+			"name": "play_housing_flat",
+			"path": "<capture folder>/play_housing_flat.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "region",
+			"name": "play_housing_district",
+			"path": "<capture folder>/play_housing_district.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "planet",
+			"name": "play_harbour_globe",
+			"path": "<capture folder>/play_harbour_globe.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "flat",
+			"name": "play_harbour_flat",
+			"path": "<capture folder>/play_harbour_flat.png",
+			"spin": 0.712733537400283
+		},
+		{
+			"mode": "region",
+			"name": "play_harbour_district",
+			"path": "<capture folder>/play_harbour_district.png",
+			"spin": 0.712733537400283
+		}
+	],
+	"stages": {
+		"harbour": {
+			"buildings": 11,
+			"centroid": "Vector2(7.077369, -23.344398)",
+			"day": 75,
+			"homes_lit": 1,
+			"lights": 19,
+			"population": 71,
+			"sea_cargo": {
+				"amount": 9.38864579194174,
+				"day": 75,
+				"direction": "export",
+				"resource": "ore",
+				"value": 74.0192497592193
+			},
+			"ships": 1
+		},
+		"housing": {
+			"buildings": 10,
+			"centroid": "Vector2(7.1239223, -23.287203)",
+			"day": 55,
+			"homes_lit": 1,
+			"lights": 18,
+			"population": 61,
+			"sea_cargo": {
+
+			},
+			"ships": 0
+		},
+		"landing": {
+			"buildings": 3,
+			"centroid": "Vector2(9.4078045, -24.53728)",
+			"day": 2,
+			"homes_lit": 0,
+			"lights": 10,
+			"population": 60,
+			"sea_cargo": {
+
+			},
+			"ships": 0
+		}
+	}
+}

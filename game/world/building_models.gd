@@ -136,7 +136,8 @@ func _build_facility(root: Node3D, kind: String, active: bool) -> void:
 		.35,
 		.7 if active else .12
 	)
-	var glass := _mat("glass", Color("204e62"), .55, .16)
+	# Working buildings light their windows after dark; idle ones stay dark.
+	var glass := _window_mat(active)
 	var gold := _mat("industrial", Color("c7a36b"), .4, .5)
 	_cylinder(root, Vector3(0, .08, 0), 2.30, .16, _mat("pad", Color("43545a"), .3, .85), 6)
 	match kind:
@@ -348,6 +349,57 @@ func _build_facility(root: Node3D, kind: String, active: bool) -> void:
 	# A physical status beacon is attached to every facility.
 	_cylinder(root, Vector3(1.8, .35, -1.7), .045, .5, metal, 6)
 	_sphere(root, Vector3(1.8, .64, -1.7), .09, accent, 8, 4)
+
+
+## Window glass. The lit variant carries an emission the map turns up at night.
+func _window_mat(lit: bool) -> StandardMaterial3D:
+	var material := _mat("glass_on" if lit else "glass", Color("204e62"), .55, .16)
+	if lit and not material.emission_enabled:
+		material.emission_enabled = true
+		material.emission = Color("ffc976")
+		material.emission_energy_multiplier = 0.0
+	return material
+
+
+## A town vehicle, front towards +Z, wheels on y = 0. Kinds: truck, van, bus.
+func _build_vehicle(root: Node3D, kind: String) -> void:
+	var paints: Dictionary = {
+		"truck": Color("d9a441"), "van": Color("dfe6e8"), "bus": Color("4fb3a9")
+	}
+	var paint := _mat("vehicle_" + kind, paints.get(kind, Color("dfe6e8")), .35, .45)
+	var dark := _mat("darkmetal", Color("354954"), .65, .38)
+	var screen := _mat("vehicle_glass", Color("1b3a49"), .5, .15)
+	var tyre := _mat("tyre", Color("1d2327"), 0, .9)
+	var head := _mat("headlight", Color("fff1c8"), 0, .4, 0.4)
+	var tail := _mat("taillight", Color("e0523f"), 0, .4, 0.6)
+	var length: float = 1.1
+	var wheels: Array = [.36, -.1, -.38]
+	match kind:
+		"truck":
+			_box(root, Vector3(0, .17, 0), Vector3(.4, .1, length), dark)
+			_box(root, Vector3(0, .36, .38), Vector3(.4, .3, .3), paint)
+			_box(root, Vector3(0, .43, .535), Vector3(.34, .12, .02), screen)
+			var cargo := _mat("cargo", Color("8a9aa3"), .3, .6)
+			_box(root, Vector3(0, .39, -.17), Vector3(.42, .34, .72), cargo)
+		"bus":
+			length = 1.3
+			wheels = [.42, -.4]
+			_box(root, Vector3(0, .34, 0), Vector3(.42, .4, length), paint)
+			for side: float in [-.212, .212]:
+				_box(root, Vector3(side, .43, 0), Vector3(.01, .12, length - .25), screen)
+			_box(root, Vector3(0, .43, length * .5 + .004), Vector3(.34, .14, .01), screen)
+		_:
+			length = .8
+			wheels = [.24, -.24]
+			_box(root, Vector3(0, .31, 0), Vector3(.38, .32, length), paint)
+			_box(root, Vector3(0, .41, length * .5 - .02), Vector3(.32, .12, .05), screen)
+	for z: float in wheels:
+		for x: float in [-.2, .2]:
+			var wheel := _cylinder(root, Vector3(x, .09, z), .085, .06, tyre, 10)
+			wheel.rotation_degrees.z = 90
+	for x: float in [-.13, .13]:
+		_box(root, Vector3(x, .25, length * .5 + .006), Vector3(.07, .045, .012), head)
+		_box(root, Vector3(x, .25, -length * .5 - .006), Vector3(.06, .04, .012), tail)
 
 
 func _construction_frame(root: Node3D) -> void:

@@ -1,5 +1,6 @@
 extends RefCounted
-## Save schema 4 (3 is read too): "CCS3" | u32 header length | header JSON | zstd(var_to_bytes(state)).
+## Save schema 6 (3, 4 and 5 are read too): "CCS3" | u32 header length | header JSON |
+## zstd(var_to_bytes(state)).
 ## The header can be read without touching the payload. Landing checkpoint and stewardship
 ## archives live in sibling files named with their hash. Geography is not saved: it is
 ## regenerated from the seed and checked against the stored world hash.
@@ -13,15 +14,18 @@ const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
 const SaveMigration = preload("res://simulation/save_migration.gd")
-const SCHEMA: int = 4
-## 1.7 saves: same format, older rules. Newer systems arrive through ensure_systems on load.
-const OLD_SCHEMA: int = 3
+const SCHEMA: int = 6
+## 1.7 (3), 1.8 (4) and 1.9 (5) saves: same format, older rules. Newer systems arrive through
+## ensure_systems on load, the log says so, and the original file is left as it was.
+const OLD_SCHEMAS: Dictionary = {3: "1.7", 4: "1.8", 5: "1.9"}
+const CURRENT_VERSION: String = "1.10"
 const MAGIC: String = "CCS3"
 const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
 const ARCHIVE_SUFFIX: String = ".arch"
 const RUN_STATUSES: Array[String] = ["planning", "active", "success", "failed"]
-const MAX_SITES: int = 64
+## Generated sites and the ones players found at coordinates of their own choosing (1.10).
+const MAX_SITES: int = 96
 
 
 ## Serializes on the calling thread. Returns everything a worker needs to finish the write.
@@ -106,7 +110,10 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	var header: Variant = JSON.parse_string(
 		bytes.slice(HEADER_OFFSET, HEADER_OFFSET + header_size).get_string_from_utf8()
 	)
-	if not header is Dictionary or not int(header.get("version", 0)) in [SCHEMA, OLD_SCHEMA]:
+	if not header is Dictionary:
+		return "存档格式或版本不兼容"
+	var version: int = int(header.get("version", 0))
+	if version != SCHEMA and not OLD_SCHEMAS.has(version):
 		return "存档格式或版本不兼容"
 	var payload: PackedByteArray = bytes.slice(HEADER_OFFSET + header_size)
 	if _sha256(payload) != str(header.get("sha256", "")):
@@ -115,8 +122,11 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	if raw_size <= 0:
 		return "存档校验失败"
 	var candidate: Variant = bytes_to_var(payload.decompress(raw_size, FileAccess.COMPRESSION_ZSTD))
-	if int(header.version) == OLD_SCHEMA and candidate is Dictionary:
+	if candidate is Dictionary:
 		_upgrade_old_schema(sim, candidate)
+		# Crews arrived within schema 6: a save from before them gets them. Only them: the other
+		# systems' upgrades run for older schemas, so a current save reloads byte for byte.
+		sim.Crews.ensure_state(candidate)
 	var error: String = validate(sim, candidate)
 	if error != "":
 		return error
@@ -125,10 +135,23 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 
 
 static func _upgrade_old_schema(sim: RefCounted, candidate: Dictionary) -> void:
-	if int(candidate.get("schema", 0)) != OLD_SCHEMA:
+	var old: int = int(candidate.get("schema", 0))
+	if not OLD_SCHEMAS.has(old):
 		return
 	sim.ensure_systems(candidate)
 	candidate.schema = SCHEMA
+	if candidate.get("log") is Array:
+		(
+			candidate
+			. log
+			. append(
+				{
+					"day": candidate.get("day", 0),
+					"text":
+					"%s 存档按 %s 规则继续经营：新规则从今天起生效，原存档文件不会被改动。" % [OLD_SCHEMAS[old], CURRENT_VERSION],
+				}
+			)
+		)
 
 
 ## Binds a validated state to its geography and commits it. Any failure leaves sim unchanged.
@@ -154,6 +177,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 static func validate(sim: RefCounted, candidate: Variant) -> String:
 	if not candidate is Dictionary:
 		return "存档状态无效"
+	fill_goods(candidate)
 	var error: String = shape(candidate, _state_shape(sim), "state")
 	if error != "":
 		return error
@@ -263,6 +287,7 @@ static func shape(value: Variant, pattern: Variant, path: String) -> String:
 static func _state_shape(sim: RefCounted) -> Dictionary:
 	return {
 		"schema": 0,
+		"next_building_uid": 0,
 		"world":
 		{
 			"seed": 0,
@@ -460,6 +485,31 @@ static func _validate_roads(candidate: Dictionary, site_count: int) -> String:
 	return ""
 
 
+## Goods newer than a save (nickel, cobalt and superalloy in 1.10): every stock and every goods
+## ledger gets them at nought, so the save keeps its shape and its sums. A save that has them is
+## left as it is, byte for byte.
+static func fill_goods(candidate: Dictionary) -> void:
+	var books: Array = []
+	for s: Variant in candidate.get("settlements", []):
+		if s is Dictionary:
+			for field: String in ["stock", "stock_delta"]:
+				if s.get(field) is Dictionary:
+					books.append(s[field])
+	for field: String in ["resource_sources", "resource_sinks"]:
+		if candidate.get(field) is Dictionary:
+			books.append(candidate[field])
+	for book: Dictionary in books:
+		for key: String in Keys.RESOURCES:
+			if not book.has(key):
+				book[key] = 0.0
+
+
+static func _building_shape() -> Dictionary:
+	var pattern: Dictionary = Production.building_record("", 0)
+	pattern.uid = 0
+	return pattern
+
+
 static func _settlement_shape(sim: RefCounted) -> Dictionary:
 	return {
 		"region": 0,
@@ -471,7 +521,7 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 		"scientists": 0,
 		"stock": sim._stock(),
 		"stock_delta": sim._stock(),
-		"buildings": [Production.new_building(sim, "", 0)],
+		"buildings": [_building_shape()],
 		"jobs": 0,
 		"housing": 0,
 		"base_housing": 0,

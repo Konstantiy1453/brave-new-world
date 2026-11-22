@@ -1,0 +1,199 @@
+{
+  "build": "packaged PCK",
+  "checks": [
+    {
+      "label": "the old save loads: ",
+      "ok": true
+    },
+    {
+      "label": "the same day: 201",
+      "ok": true
+    },
+    {
+      "label": "the same money: ¥ 534",
+      "ok": true
+    },
+    {
+      "label": "the same contract stage: 2",
+      "ok": true
+    },
+    {
+      "label": "every town, its name, place and people: [[\"地点 09\", 8.0, -11.25, -41.25, 98.0], [\"地点 02\", 1.0, -13.75, -16.25, 12.0]]",
+      "ok": true
+    },
+    {
+      "label": "construction under way: [[8.0, 17.0, \"port\", 23.0], [1.0, 15.0, \"power\", 2.0], [1.0, 16.0, \"water\", 2.0]]",
+      "ok": true
+    },
+    {
+      "label": "the crews and what they do: [[1.0, 8.0, \"travel\", 1.0], [2.0, 8.0, \"build\", 17.0], [3.0, 8.0, \"\", 0.0]]",
+      "ok": true
+    },
+    {
+      "label": "research done and in progress: 1 done",
+      "ok": true
+    },
+    {
+      "label": "the audit holds: []",
+      "ok": true
+    },
+    {
+      "label": "ten days on, the audit holds",
+      "ok": true
+    },
+    {
+      "label": "and every town is still there",
+      "ok": true
+    },
+    {
+      "label": "saved again by this build on day 211",
+      "ok": true
+    },
+    {
+      "label": "and that save loads",
+      "ok": true
+    }
+  ],
+  "game_version": "1.10.1",
+  "later": {
+    "cash": 1748.0547154892,
+    "crews": [
+      [
+        1,
+        1,
+        "",
+        0
+      ],
+      [
+        2,
+        8,
+        "build",
+        17
+      ],
+      [
+        3,
+        8,
+        "",
+        0
+      ]
+    ],
+    "day": 211,
+    "research": {
+      "done": [
+        "education"
+      ],
+      "work": {
+        "education": 160.0,
+        "school_system": 26.4,
+        "survey": 32.4
+      }
+    },
+    "stage": "2",
+    "towns": [
+      [
+        "地点 09",
+        8,
+        -11.25,
+        -41.25,
+        103
+      ],
+      [
+        "地点 02",
+        1,
+        -13.75,
+        -16.25,
+        13
+      ]
+    ],
+    "under_way": [
+      [
+        8,
+        17,
+        "port",
+        13
+      ]
+    ]
+  },
+  "loaded": {
+    "cash": 533.796619700079,
+    "crews": [
+      [
+        1.0,
+        8.0,
+        "travel",
+        1.0
+      ],
+      [
+        2.0,
+        8.0,
+        "build",
+        17.0
+      ],
+      [
+        3.0,
+        8.0,
+        "",
+        0.0
+      ]
+    ],
+    "day": 201.0,
+    "research": {
+      "done": [
+        "education"
+      ],
+      "work": {
+        "education": 160.0,
+        "school_system": 14.4,
+        "survey": 20.4
+      }
+    },
+    "stage": "2",
+    "towns": [
+      [
+        "地点 09",
+        8.0,
+        -11.25,
+        -41.25,
+        98.0
+      ],
+      [
+        "地点 02",
+        1.0,
+        -13.75,
+        -16.25,
+        12.0
+      ]
+    ],
+    "under_way": [
+      [
+        8.0,
+        17.0,
+        "port",
+        23.0
+      ],
+      [
+        1.0,
+        15.0,
+        "power",
+        2.0
+      ],
+      [
+        1.0,
+        16.0,
+        "water",
+        2.0
+      ]
+    ]
+  },
+  "ok": true,
+  "options": {
+    "after": "after-1.10.1.save",
+    "before": "make.json",
+    "bots": "",
+    "check": "true",
+    "days": "700",
+    "out": "check_pck.json",
+    "save": "before-1.10.0.save",
+    "seed": "20261029"
+  }
+}

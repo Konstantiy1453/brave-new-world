@@ -55,14 +55,23 @@ static func social_environment(sim) -> void:
 		):
 			var leaving: int = mini(
 				int(s.workers) - 2,
-				maxi(1, int(float(s.population) * float(sim.pop_rules.departure.share)))
+				maxi(
+					1,
+					int(
+						(
+							float(s.population)
+							* float(sim.pop_rules.departure.share)
+							* Population.services_effect(sim, "departures")
+						)
+					)
+				)
 			)
 			s.workers -= leaving
 			s.population -= leaving
 			sim.state.departed_total += leaving
 			Stats.people(sim.state, int(s.region), false, leaving)
 			sim._reconcile_jobs(s)
-			sim._log("%s：持续缺乏住房、工作或食品，%d 支工程队离开星球。" % [s.name, leaving])
+			sim._log("%s：持续缺乏住房、工作或食品，%d 名职工离开星球。" % [s.name, leaving])
 
 
 ## The settlement that most lacks what this aid carries; ties go to the earliest settlement.

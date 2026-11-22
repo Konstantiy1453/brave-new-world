@@ -7,88 +7,76 @@ records are in `evidence/v17/balance/<timestamp>.json`.
 ## Current results
 
 <!-- results:begin -->
-Run: **v1.8.0** · 2026-11-01T03-10-20 · 2888 s wall clock. Source: balance harness.
+Run: **placement-c5dda12** · 2026-11-20T08-22-08 · 4420 s wall clock. Source: balance harness.
 
 | Area | Target | Measured | Status |
 |---|---|---|---|
-| Floor | rush bot day >= 1440 | earliest day 2086 | PASS |
-| Balanced award, normal | 2160-2880 | median 2454 (27/30 awarded) | PASS |
-| Balanced award, easy | 1800-2520 | median 2343 (28/30 awarded) | PASS |
-| Balanced award, hard | 2520-3240 | median 2709 (27/30 awarded) | PASS |
-| Openings | medians within 15%; best bot differs by opening | capital 2752, workers 2623, science 2294; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
+| Floor | rush bot day >= 1440 | earliest day 2295 | PASS |
+| Balanced award, normal | 2160-2880 | median 2646 (8/9 awarded) | PASS |
+| Balanced award, easy | 1800-2520 | median -1 (0/0 awarded) | NOT_MEASURED |
+| Balanced award, hard | 2520-3240 | median -1 (0/0 awarded) | NOT_MEASURED |
+| Openings | medians within 15%; best bot differs by opening | capital 2639, workers 2631, science 2654; best { "capital": "research_first", "workers": "research_first", "science": "research_first" }; without rush { "capital": "research_first", "workers": "research_first", "science": "research_first" } | MISS |
 | Failure, passive | review 150-400, failure 400-900 | review 168, failure 438 | PASS |
-| Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 30/30 | PASS |
-| Population | >= 300 by year 2; >= 800 by year 4 | 385 / 946 | PASS |
-| Research, balanced | >= 40 techs; every category; research teams 10-20% | 40 techs; 4 categories; 12% | PASS |
-| Research-first | more techs than balanced, award in standard band | 74 techs; day 2163 | PASS |
-| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 92%; x3.70 | PASS |
-| Export mix | no good > 60% after year 2 | median 30%, worst 41% | PASS |
-| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 215 days; 53 distinct; 0 repeats; 71 short, 12 chains; 30% off; seeds share 47% | PASS |
-| Distrust | largest daily rise <= 0.8 | worst 0.52 | PASS |
-| Pollution | output penalty < 2% through year 3 | year 3 worst 0.5%; year 8 median 2.9% | PASS |
-| Roads | first road takes 90-300 days | median 146 days | PASS |
-| Pollution, no control | output penalty >= 15% by year 8 | 32.8% | PASS |
-| Audits | 0 errors in every run | 0 errors in 480 runs | PASS |
-| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 147 to 185 arrivals (+26%) | PASS |
-| Geography | sites 14-20 / 20-30 / 28-40; 3+ start pairs; 3+ start archetypes; land 25-45%; continents 2-6 | sites 15-20 / 20-30 / 28-40; pairs min 3; 4 archetypes; land 25-45%; continents 2,3,4,5,6 | PASS |
-| Road trade-off | cheaper road is the slower one for 30-70% of pairs | 90% of 2568 pairs | MISS |
+| Failure, sloppy | review on all difficulties; fails on hard | all reach review: true; hard failed 0/0 | MISS |
+| Population | >= 300 by year 2; >= 800 by year 4 | 333 / 940 | PASS |
+| Research, balanced | >= 40 techs; every category; research teams 10-20% | 42 techs; 4 categories; 11% | PASS |
+| Research-first | more techs than balanced, award in standard band | 74 techs; day 2244 | PASS |
+| Money | reinvest >= 60%; income x2.5 from year 2 to year 6 | 106%; x3.96 | PASS |
+| Export mix | no good > 60% after year 2 | median 28%, worst 33% | PASS |
+| Cash cover before the award | day 720 to award: median <= 60 days, p90 <= 120 | median 14 days, p90 98 days | PASS |
+| Cash cover after the award | last day, runs awarded by 2880: median <= 180 days, p90 <= 365 | median 19 days, p90 124 days | PASS |
+| Services budget | used by the balanced bot (1.9 optional spending) | 8 of 9 runs, median 390 days paid | PASS |
+| Absorption | spending >= 80% of operating surplus in years 3-7 | y3 90%, y4 117%, y5 118%, y6 114%, y7 94% | PASS |
+| Spending by sink | balanced, normal: median a year in years 3-7 (no target) | buildings 311k, recruitment 109k, upgrades 79k, great_works 15k, services 12k, roads 8k, commissions 7k | INFO |
+| Windfall | ¥1,000,000 on day 1,080, balanced, normal, capital (no target) | without: award 2639, cover on day 1440 32 days, 0 of 3 taken over; with: award 2574, cover on day 1440 204 days, 0 of 3 taken over; extra spending a run in years 4-6: services +520k, recruitment +472k, commissions +131k, buildings +91k | INFO |
+| Late great works | standing at the end, balanced, rush and windfall runs (no target) | terraforming 0/21 (level 0), capital_district 2/21 (level 1), exchange 0/21 (level 0), shipyard 0/21 (level 0), emergency_net 8/21 (level 1) | INFO |
+| Shuttle lines | rush runs that opened a short-range shuttle line (no target) | 8/9 runs, 15 lines, 15 stood down for a road or sea route | INFO |
+| Events | <= 1 pause per 40 days; >= 25 distinct; 60 short, 10 chains; >= 25% off each run | 1 per 203 days; 65 distinct; 0 repeats; 79 short, 27 chains; 33% off; seeds share 46% | PASS |
+| Distrust | largest daily rise <= 0.8 | worst 0.43 | PASS |
+| Pollution | output penalty < 2% through year 3 | year 3 worst 0.0%; year 8 median 2.8% | PASS |
+| Roads | first road takes 90-300 days | median 166 days | PASS |
+| Pollution, no control | output penalty >= 15% by year 8 | 41.5% | PASS |
+| Audits | 0 errors in every run | 0 errors in 51 runs | PASS |
+| Labour lever | wage 1.0x to 1.3x changes 360-day immigration by >= 20% | 158 to 175 arrivals (+10%) | MISS |
 | Determinism | same seed + action log => identical state | 3/3 replays identical | PASS |
 
 | Bot | Difficulty | Opening | Runs | Awarded | Award day | Failed | Failure day | Min cash | Pop y2 / y4 / y8 | Techs at award |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| balanced | easy | capital | 10 | 100% | 2472 | 0% | -1 | 316 | 413 / 955 / 2323 | 40 |
-| balanced | easy | science | 10 | 90% | 2281 | 10% | 2797 | 375 | 299 / 879 / 2241 | 40 |
-| balanced | easy | workers | 10 | 90% | 2359 | 10% | 3184 | 458 | 438 / 948 / 2287 | 40 |
-| balanced | hard | capital | 10 | 80% | 2681 | 20% | 2663 | 231 | 365 / 951 / 2400 | 40 |
-| balanced | hard | science | 10 | 90% | 2579 | 20% | 3114 | 339 | 325 / 862 / 2267 | 48 |
-| balanced | hard | workers | 10 | 100% | 2786 | 0% | -1 | 284 | 381 / 940 / 2348 | 40 |
-| balanced | normal | capital | 10 | 80% | 2752 | 20% | 3283 | 281 | 383 / 951 / 2315 | 40 |
-| balanced | normal | science | 10 | 100% | 2294 | 10% | 3268 | 478 | 335 / 924 / 1931 | 46 |
-| balanced | normal | workers | 10 | 90% | 2623 | 10% | 3265 | 488 | 401 / 989 / 2235 | 40 |
-| passive | easy | capital | 10 | 0% | -1 | 100% | 536 | 25821 | -1 / -1 / -1 | -1 |
-| passive | easy | science | 10 | 0% | -1 | 100% | 522 | 9025 | -1 / -1 / -1 | -1 |
-| passive | easy | workers | 10 | 0% | -1 | 100% | 542 | 5454 | -1 / -1 / -1 | -1 |
-| passive | hard | capital | 10 | 0% | -1 | 100% | 353 | 13852 | -1 / -1 / -1 | -1 |
-| passive | hard | science | 10 | 0% | -1 | 100% | 342 | 3592 | -1 / -1 / -1 | -1 |
-| passive | hard | workers | 10 | 0% | -1 | 100% | 362 | 523 | -1 / -1 / -1 | -1 |
-| passive | normal | capital | 10 | 0% | -1 | 100% | 438 | 15851 | -1 / -1 / -1 | -1 |
-| passive | normal | science | 10 | 0% | -1 | 100% | 426 | 3684 | -1 / -1 / -1 | -1 |
-| passive | normal | workers | 10 | 0% | -1 | 100% | 446 | 656 | -1 / -1 / -1 | -1 |
-| random_legal | easy | capital | 10 | 0% | -1 | 90% | 471 | 8034 | 90 / -1 / -1 | -1 |
-| random_legal | hard | science | 10 | 0% | -1 | 100% | 311 | 0 | -1 / -1 / -1 | -1 |
-| random_legal | normal | workers | 10 | 0% | -1 | 100% | 393 | 0 | -1 / -1 / -1 | -1 |
-| research_first | easy | capital | 10 | 100% | 1771 | 0% | -1 | 285 | 400 / 1151 / -1 | 59 |
-| research_first | easy | science | 10 | 100% | 1714 | 0% | -1 | 248 | 371 / 1124 / -1 | 65 |
-| research_first | easy | workers | 10 | 100% | 1759 | 0% | -1 | 344 | 413 / 1171 / -1 | 59 |
-| research_first | hard | capital | 10 | 70% | 2256 | 30% | 2536 | 254 | 355 / 830 / 2441 | 74 |
-| research_first | hard | science | 10 | 90% | 2199 | 10% | 2729 | 293 | 361 / 933 / 2150 | 80 |
-| research_first | hard | workers | 10 | 70% | 2234 | 30% | 1633 | 127 | 340 / 849 / -1 | 76 |
-| research_first | normal | capital | 10 | 100% | 2209 | 0% | -1 | 282 | 373 / 875 / 1801 | 74 |
-| research_first | normal | science | 10 | 100% | 1982 | 0% | -1 | 250 | 407 / 1055 / -1 | 74 |
-| research_first | normal | workers | 10 | 100% | 2299 | 0% | -1 | 290 | 372 / 1088 / -1 | 75 |
-| rush | easy | capital | 10 | 100% | 2497 | 0% | -1 | 193 | 411 / 886 / -1 | 40 |
-| rush | easy | science | 10 | 100% | 2196 | 0% | -1 | 220 | 403 / 1024 / -1 | 40 |
-| rush | easy | workers | 10 | 100% | 2497 | 0% | -1 | 220 | 409 / 939 / -1 | 40 |
-| rush | hard | capital | 10 | 50% | 2664 | 50% | 2634 | 217 | 324 / 827 / 1820 | 43 |
-| rush | hard | science | 10 | 50% | 2654 | 50% | 2815 | 221 | 311 / 838 / 2189 | 45 |
-| rush | hard | workers | 10 | 70% | 2672 | 30% | 2619 | 137 | 346 / 887 / 2174 | 41 |
-| rush | normal | capital | 10 | 60% | 2528 | 40% | 2820 | 142 | 376 / 946 / 1891 | 40 |
-| rush | normal | science | 10 | 90% | 2509 | 10% | 3281 | 220 | 331 / 950 / 2354 | 45 |
-| rush | normal | workers | 10 | 80% | 2515 | 20% | 2828 | 290 | 404 / 985 / 1892 | 40 |
-| sloppy | easy | capital | 10 | 0% | -1 | 100% | 947 | 16388 | 60 / -1 / -1 | -1 |
-| sloppy | easy | science | 10 | 0% | -1 | 100% | 947 | 2258 | 60 / -1 / -1 | -1 |
-| sloppy | easy | workers | 10 | 0% | -1 | 100% | 820 | 1000 | 105 / -1 / -1 | -1 |
-| sloppy | hard | capital | 10 | 0% | -1 | 100% | 642 | 354 | -1 / -1 / -1 | -1 |
-| sloppy | hard | science | 10 | 0% | -1 | 100% | 642 | 239 | -1 / -1 / -1 | -1 |
-| sloppy | hard | workers | 10 | 0% | -1 | 100% | 566 | 312 | -1 / -1 / -1 | -1 |
-| sloppy | normal | capital | 10 | 0% | -1 | 100% | 764 | 3588 | 60 / -1 / -1 | -1 |
-| sloppy | normal | science | 10 | 0% | -1 | 100% | 764 | 218 | 60 / -1 / -1 | -1 |
-| sloppy | normal | workers | 10 | 0% | -1 | 100% | 670 | 358 | 104 / -1 / -1 | -1 |
+| balanced | normal | capital | 3 | 100% | 2639 | 0% | -1 | 262 | 336 / 970 / 2416 | 40 |
+| balanced | normal | science | 3 | 100% | 2654 | 0% | -1 | 260 | 277 / 940 / 2236 | 45 |
+| balanced | normal | workers | 3 | 67% | 2631 | 33% | 3281 | 320 | 333 / 876 / 2328 | 43 |
+| passive | normal | capital | 3 | 0% | -1 | 100% | 438 | 15249 | -1 / -1 / -1 | -1 |
+| passive | normal | science | 3 | 0% | -1 | 100% | 426 | 2725 | -1 / -1 / -1 | -1 |
+| passive | normal | workers | 3 | 0% | -1 | 100% | 446 | 208 | -1 / -1 / -1 | -1 |
+| random_legal | easy | capital | 1 | 0% | -1 | 0% | -1 | 0 | 29 / -1 / -1 | -1 |
+| random_legal | hard | science | 1 | 0% | -1 | 100% | 332 | 0 | -1 / -1 / -1 | -1 |
+| random_legal | normal | workers | 1 | 0% | -1 | 100% | 531 | 0 | -1 / -1 / -1 | -1 |
+| research_first | normal | capital | 3 | 100% | 2321 | 0% | -1 | 224 | 320 / 899 / -1 | 72 |
+| research_first | normal | science | 3 | 100% | 2166 | 0% | -1 | 328 | 325 / 773 / -1 | 74 |
+| research_first | normal | workers | 3 | 67% | 2386 | 33% | 2919 | 318 | 280 / 592 / 640 | 78 |
+| rush | normal | capital | 3 | 67% | 2990 | 33% | 3280 | 227 | 254 / 651 / 2260 | 40 |
+| rush | normal | science | 3 | 67% | 2435 | 33% | 3284 | 350 | 255 / 692 / 2690 | 42 |
+| rush | normal | workers | 3 | 67% | 2807 | 33% | 3284 | 44 | 259 / 677 / 1635 | 40 |
+| sloppy | normal | capital | 3 | 0% | -1 | 100% | 764 | 8 | 60 / -1 / -1 | -1 |
+| sloppy | normal | science | 3 | 0% | -1 | 100% | 764 | 23 | 60 / -1 / -1 | -1 |
+| sloppy | normal | workers | 3 | 0% | -1 | 100% | 717 | 193 | 105 / -1 / -1 | -1 |
+| windfall | normal | capital | 3 | 100% | 2574 | 0% | -1 | 262 | 336 / 996 / 2554 | 40 |
 <!-- results:end -->
 
 ## History
 
 <!-- history:begin -->
+- 2026-11-20T08-22-08 · placement-c5dda12 (quick): 19 targets met, 3 missed.
+- 2026-11-20T02-09-12 · spur-21fef0f (quick): 19 targets met, 3 missed.
+- 2026-11-19T20-53-56 · crews-234a06c (quick): 19 targets met, 3 missed.
+- 2026-11-19T15-37-44 · fixes-0a30df2 (quick): 17 targets met, 5 missed.
+- 2026-11-14T06-17-50 · immigration-11 (quick): 18 targets met, 4 missed.
+- 2026-11-14T03-29-20 · stage4-5f596ee (quick): 18 targets met, 4 missed.
+- 2026-11-13T09-53-32 · events-bot-days (quick): 18 targets met, 4 missed.
+- 2026-11-13T09-05-58 · events-d36d01a (quick): 18 targets met, 4 missed.
+- 2026-11-12T14-06-04 · fix-tips-5c50b0f (quick): 19 targets met, 3 missed.
+- 2026-11-08T21-57-33 · 1.9-final-linux (quick): 19 targets met, 3 missed.
+- 2026-11-07T14-03-08 · 1.9-money-linux (quick): 20 targets met, 2 missed.
 - 2026-11-01T03-10-20 · v1.8.0 (full): 20 targets met, 2 missed.
 - 2026-11-01T02-21-34 · 1.8 fifth full (full): 20 targets met, 2 missed.
 - 2026-11-01T01-32-25 · 1.8 fourth full (full): 20 targets met, 2 missed.
@@ -103,6 +91,229 @@ Run: **v1.8.0** · 2026-11-01T03-10-20 · 2888 s wall clock. Source: balance har
 - 2026-10-31T03-00-14 · phase 2 (quick): 3 targets met, 10 missed.
 - 2026-10-31T02-23-14 · phase 1 (full): 4 targets met, 11 missed.
 - 2026-10-31T02-00-23 · 1.6 baseline (full): 4 targets met, 11 missed.
+
+## 1.9 money
+
+The current results are a quick run (3 seeds, normal difficulty) on the Linux build: the easy and hard
+rows are not measured there, and the sloppy row cannot pass without hard games. The 1.9 money settings
+were compared over five such runs (1.8.0, the plan's starting values, gentle, stronger, and the kept
+gentle settings with homes exempt from the copy surcharge); the comparison table is in `PROGRESS.md`
+under "Money: quick harness on Linux". A full run (10 seeds, 3 difficulties) on Windows is still to do.
+
+## 1.9 fix tips
+
+Quick run `fix-tips-5c50b0f` (2026-11-12, Linux, 51 runs, 0 audit errors) after the cargo docks, link
+levels, gift technologies and surveys, against `1.9-final-linux` (2026-11-08). The medians hold: the
+balanced award 2694 → 2708, income ×4.08 → ×4.22, export worst 35% → 33%. Services budget MISS →
+PASS (8 of 9 runs). Openings stay MISS (research-first is the best bot for every opening, as before).
+Two rows moved the wrong way, and both turn out to be noise around their bar:
+
+- **Labour lever, +23% → +6% (MISS).** `lever_probe.gd` (six seeds, year-2 immigration at wage 1.0
+  and 1.3, medians):
+
+  | Code | Change | Lever |
+  |---|---|---:|
+  | `608d645` (before) | as recorded | +23% |
+  | `608d645` | event dice nudged (+1) | +15% |
+  | `608d645` | event dice nudged (+2) | +16% |
+  | `5c50b0f` (this) | as is | +6% |
+  | `5c50b0f` | the three new events removed | +35% |
+  | `5c50b0f` | the new events in the deck but never dealt | +6% |
+  | `5c50b0f` | the new events only after year 2 | +6% |
+  | `5c50b0f` | sea links need freight stations again | +3% |
+
+  The new events never come up in the lever's window; what changes the result is the three extra
+  rolls when a run deals its event deck, which reshuffle every later event. On unchanged code the
+  event dice alone move the lever between +15% and +23%; over all eight probes it runs from +3% to
+  +35%, around +15%. The recorded +23% was a lucky draw, and the bar needs more seeds to be measured,
+  and may be a real miss at about +15%.
+- **Payback, light iron mine in year 6** (`v19_payback`, seed 260129, band 70–150): 72 and 69 days
+  before (as recorded and with nudged event dice), 63, 59 and 64 with this change and two variants,
+  61 with a dearer iron mine (which also moved two other checks out of band). The colony's path
+  decides whether its iron market is saturated by year 6.
+- Per run, outcomes churn both ways: four runs that failed before now win, six that won now fail
+  (two of them after their award). The balanced capital run on seed 20261029, awarded on day 3,033
+  before (already past the band), now misses its main contract and is taken over on day 3,284.
+
+Proposed for the user: measure the lever and the payback bands over more seeds (the lever over the
+ten full-run seeds at least) before tuning anything; tuning to one path would chase noise.
+
+## 1.9 events rewrite
+
+Quick run `events-d36d01a` (2026-11-13, Linux, 51 runs, 0 audit errors). It covers everything since
+`fix-tips-5c50b0f`: stage three a year later, the coast fix (no effect on the simulation) and GPT's
+rewritten events. A run measuring stage three alone was started and then stopped: a shard died, and
+its retry would have read the new events. Nothing from it is recorded.
+
+| Row | fix-tips-5c50b0f | events-d36d01a |
+|---|---|---|
+| Balanced award, normal | median 2708, 8 of 9 awarded | median 2782, 6 of 9 awarded (PASS) |
+| Income ×, year 2 to year 6 | ×4.22 | ×3.30 (PASS, bar ×2.5) |
+| Labour lever | +6% (MISS) | +27% (PASS) |
+| Research, balanced | 41 techs, research teams 11% (PASS) | 48 techs, 10% (MISS, just under the band) |
+| Services budget | 8 of 9 runs (PASS) | 5 of 9 runs (MISS) |
+| Events | 56 distinct, 72 short, 14 chains | 65 distinct, 79 short, 27 chains; a pause every 205 days |
+| Largest daily distrust rise | 0.33 | 0.65 (bar 0.8) |
+| Targets | 19 met, 3 missed | 18 met, 4 missed |
+
+Two balanced runs finished stage three on days 1,751 and 1,698. Under the old day-1,500 deadline
+they would have failed there, so the extension does what the user asked. Overall, though, the
+balanced bot does worse: three of nine runs miss the main contract and are taken over around day
+3,280 (one before), and in the run inspected the mid-game operating surplus falls by about half.
+
+Much of that is the bot, not the events. `colony_bot._option_value` scores an event option as
+reward − pay ± goods, plus a flat (factor − 1) × 500 for each effect, whatever its length. So it
+always takes a free 90-day production cut (−125) over paying to avoid it (−2,700 at reference
+income, more as the colony grows). The rewritten events make those free options long and heavy on
+purpose, so the bot collects every penalty a sensible player would pay to avoid.
+
+Quick run `events-bot-days` (same code, 51 runs, 0 audit errors): the bots value an event option in
+money, with payments scaled as the game scales them, goods at their prices, and each effect over its
+days on the share of daily income its kind touches, less its upkeep.
+
+| Row | fix-tips-5c50b0f | events-d36d01a | events-bot-days |
+|---|---|---|---|
+| Balanced award, normal | 2708, 8 of 9 | 2782, 6 of 9 | 2686, 8 of 9 (PASS) |
+| Income ×, year 2 to year 6 | ×4.22 | ×3.30 | ×3.40 (PASS) |
+| Labour lever | +6% (MISS) | +27% | +38% (PASS) |
+| Research, balanced | 41 techs, 11% | 48, 10% (MISS) | 40, 10% (PASS) |
+| Research-first | 76 techs, day 2235 | 78, day 2206 | 74, day 2129 (MISS: 31 days before the band) |
+| Services budget | 8 of 9 | 5 of 9 (MISS) | 7 of 9 (MISS) |
+| Windfall runs awarded | 3 of 3 | 2 of 3 | 3 of 3 |
+| Targets | 19 met, 3 missed | 18 met, 4 missed | 18 met, 4 missed |
+
+A bot that weighs event costs is awarded as often as before the rewrite, and at the same median.
+The events take a larger share of the economy than before, as designed: income grows ×3.4 from year
+2 to year 6 against ×4.2. The two new misses (research-first a month early, services in 7 of 9 runs)
+are of the size quick runs swing by. The current results block is this run.
+
+## 1.9 stage four 14 months later
+
+Quick run `stage4-5f596ee` (2026-11-14, Linux, 51 runs, 0 audit errors). Changes since
+`events-bot-days`: stage four's deadline is 420 days later (normal 2,520) with stage five's kept at
+2,880; the payback suite and the event option texts do not touch the simulation.
+
+| Row | events-bot-days | stage4-5f596ee |
+|---|---|---|
+| Balanced award, normal | 2686, 8 of 9 | 2546, 7 of 9 (PASS) |
+| Income ×, year 2 to year 6 | ×3.40 | ×3.22 (PASS) |
+| Cash cover before the award | median 11 days | median 28 days (PASS) |
+| Cash cover after the award | median 59 days | median 89 days (PASS) |
+| Windfall runs taken over (without / with) | 1 / 0 of 3 | 0 / 0 of 3 |
+| Largest daily distrust rise | 0.67 | 0.55 |
+| Targets | 18 met, 4 missed | 18 met, 4 missed (the same four) |
+
+Every run is identical through stage three. Runs part only after day ~1,700, where lateness on
+stage four used to add distrust from day 2,100. One balanced run won that lost before (capital,
+seed 42, day 3,211), and two lost that won before: workers on seed 20261029, and workers on seed
+42, which had won only on day 3,239, nearly a year late. That is quick-run churn around marginal
+runs; nine balanced runs cannot show a deadline effect this size.
+
+## 1.9 faster immigration
+
+Quick run `immigration-11` (2026-11-14, Linux, 51 runs, 0 audit errors). Free immigration 9 → 11 a
+month in every town (+22%), the user's choice for stage three; nothing else in the simulation
+changed since `stage4-5f596ee` (the event payoff engine only acts on data that uses its new keys).
+
+| Row | stage4-5f596ee | immigration-11 |
+|---|---|---|
+| Population, year 2 / year 4 | 331 / 865 | 376 / 1038 (PASS) |
+| Balanced bot, stage three done (median, latest) | day 1,238, 1,515 | day 1,134, 1,474 |
+| Balanced bot, stage four done (median) | day 1,787 | day 1,679 |
+| Balanced award, normal | 2546, 7 of 9 | 2254, 8 of 9 (PASS) |
+| Floor (earliest rush award) | day 2,559 | day 2,376 (PASS, bar 1,440) |
+| Income ×, year 2 to year 6 | ×3.22 | ×3.69 (PASS) |
+| Labour lever | +38% | +34% (PASS) |
+| Targets | 18 met, 4 missed | 18 met, 4 missed (the same four) |
+
+Stage three comes about a hundred days sooner for the balanced bot, and stage four with it. The
+money rows hold, and the wage lever keeps its strength. Openings still miss, but science's best bot
+is now balanced rather than research-first.
+
+## 1.10 verified feedback
+
+Quick run `fixes-0a30df2` (2026-11-19, Linux, 51 runs, 0 audit errors). It covers the fixes of
+1.10 plan A, on top of `immigration-11`:
+- building uids;
+- research states;
+- the farm forecast counting usable food;
+- the water lesson;
+- the clock's fraction;
+- events choosing their town after the draw.
+
+Only the last two touch the bots' play: the farm forecast changes which farms the bots build, and
+the event towns change the event dice.
+
+| Row | immigration-11 | fixes-0a30df2 |
+|---|---|---|
+| Balanced award, normal | 2254, 8 of 9 | 2529, 9 of 9 (PASS) |
+| Population, year 2 / year 4 | 376 / 1038 | 374 / 1014 (PASS) |
+| Income ×, year 2 to year 6 | ×3.69 | ×4.04 (PASS) |
+| Cash cover before the award, median / p90 | 13 / 92 days | 16 / 78 days (PASS) |
+| Labour lever | +34% | +16% (MISS) |
+| Targets | 18 met, 4 missed | 17 met, 5 missed |
+
+The lever's miss is the event dice again. Choosing an event's town takes one more roll, which
+reshuffles every later event, and this measure has run from +3% to +35% on dice alone (1.9 fix
+tips probes). Nothing in plan A touches wages or appeal. The other misses are the four standing
+ones: sloppy failure, research-first, services budget and openings.
+
+## 1.10 crews and the bay
+
+Quick run `crews-234a06c` (2026-11-19, Linux, 51 runs, 0 audit errors, 3/3 replays identical). It
+covers plan C on top of `fixes-0a30df2`: one engineering crew at the landing and every building
+waiting for a crew (the bots train and send crews), mine roads to far deposits, the small harbour
+and the offshore signal (the bots build no harbour).
+
+| Row | fixes-0a30df2 | crews-234a06c | spur-21fef0f |
+|---|---|---|---|
+| Balanced award, normal | 2529, 9 of 9 | 2646, 7 of 9 (PASS) | 2584, 8 of 9 (PASS) |
+| Failures of the balanced, rush and research-first bots | 1 of 27 | 6 of 27 | 5 of 27 |
+| Population, year 2 / year 4 | 374 / 1014 | 296 / 783 (MISS) | 332 / 982 (PASS) |
+| Income ×, year 2 to year 6 | ×4.04 | ×5.29 (PASS) | ×4.79 (PASS) |
+| Cash cover before the award, median / p90 | 16 / 78 days | 27 / 99 days (PASS) | 22 / 99 days (PASS) |
+| Labour lever | +16% | +5% (MISS) | +10% (MISS) |
+| Research-first | 72 techs, day 2036 (MISS) | 78 techs, day 2312 (PASS) | 74 techs, day 2171 (PASS) |
+| Services budget | 6 of 9 runs (MISS) | 8 of 9 runs (PASS) | 7 of 9 runs (MISS) |
+
+The lost people were not the crews' doing. A probe of the balanced bot on three seeds, four years
+each, with each part of plan C switched off in turn (population at year 2):
+
+| Variant | 260129 | 20261029 | 42 |
+|---|---:|---:|---:|
+| As run (`crews-234a06c`) | 333 | 317 | 271 |
+| No crew limit | 362 | 265 | 281 |
+| No mine roads | 413 | 388 | 420 |
+| Mine roads that carry the next mine (spurs) | 404 | 325 | 332 |
+
+Every mine paid its whole road from the town centre, so the bots built fewer mines, jobs held
+immigration (the people page's limit was "jobs" on 89-100% of the days from 200 to 600 people in
+`bay_openings`), and seed 42 stalled at 300 people for two years. A road now carries the next mine,
+which pays only the spur from the nearest mine (DECISIONS).
+
+Quick run `spur-21fef0f` (2026-11-20, Linux, 51 runs, 0 audit errors, 3/3 replays identical)
+measures it, with the harbour's forecast and the night views (neither touches the bots).
+- **What recovered.** Population is back above the bar (332 / 982), and the balanced bot's award
+  moves to day 2584 with 8 of 9 awarded.
+- **The misses are the standing ones.** Sloppy failure; the labour lever, which ran from +3% to +35%
+  on dice alone in the 1.9 probes; and the services budget, which has moved between 6 and 8 of 9
+  runs from one run to the next.
+- **What crews still cost.** The well-played bots fail 5 of 27 runs against 1 of 27 before crews.
+  - Four of the five meet stage four and miss stage five by the contract's last date, with their
+    capital hall built and 1,900–2,600 people.
+  - The rush and research-first bots award close to that date even when they succeed (rush on days
+    2,896–3,123 against 3,240), so the late projects that now wait for a crew push some of them
+    over.
+  - One research-first run misses stage three's deadline at 546 people.
+
+  Neither bot is a target row. The next step, if players find the late game slow too, is to let
+  several crews work one big project (a great work is one crew's job today); it is not tuned in this
+  round.
+
+The bay's own measure is `game/tests/balance/bay_openings.gd`: mine road against harbour first on
+five seeds (`docs/v17/REVIEW_BAY_20261119.md`). With spurs, all ten colonies meet stage three,
+harbour first sooner on four seeds; without them (`bay-c39e828`) one harbour-first colony was taken
+over.
 
 ## Before and after
 

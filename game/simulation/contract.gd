@@ -7,9 +7,11 @@ const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
+const Research = preload("res://simulation/research.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
-const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
+const MINING_GOODS: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 
 
 static func ensure_state(state: Dictionary) -> void:
@@ -17,6 +19,7 @@ static func ensure_state(state: Dictionary) -> void:
 		# A 1.7 colony that finished its three stages has earned the award for good.
 		if state.status == "success" and int(state.contract.stage) == OLD_STAGE_COUNT + 1:
 			state.contract.stage = STAGE_COUNT + 1
+		OperatingRoutes.ensure_state(state)
 		return
 	var finished: bool = state.get("status", "") == "success"
 	state.contract = {
@@ -33,6 +36,7 @@ static func ensure_state(state: Dictionary) -> void:
 		"today_food": 0.0,
 		"milestones": [],
 	}
+	OperatingRoutes.ensure_state(state)
 
 
 static func _difficulty_scale(sim: RefCounted) -> float:
@@ -190,7 +194,7 @@ static func goal_value(sim: RefCounted, key: String) -> float:
 		"population":
 			return population_total(sim)
 		"technologies":
-			return sim.state.research.completed.size()
+			return Research.researched(sim.state)
 		"employment":
 			return _employment(sim)
 		"housed":
@@ -209,6 +213,8 @@ static func goal_value(sim: RefCounted, key: String) -> float:
 			return int(sim.state.settlements[0].population)
 		"capital_hall":
 			return 1.0 if Megaprojects.active(sim, "capital_hall") else 0.0
+		"operating_route":
+			return OperatingRoutes.operating(sim)
 	return 0.0
 
 
@@ -290,6 +296,7 @@ static func _record_windows(sim: RefCounted) -> void:
 			mining += float(entry.amount)
 		else:
 			other += float(entry.amount)
+	OperatingRoutes.close_day(sim)
 	contract.income_window.append([mining, other])
 	while contract.income_window.size() > int(sim.contract_rules.windows.non_mining):
 		contract.income_window.pop_front()
@@ -338,7 +345,7 @@ static func _check_milestones(sim: RefCounted) -> void:
 			"megaprojects":
 				reached = Megaprojects.count(sim) >= int(milestone.target)
 			"technologies":
-				reached = sim.state.research.completed.size() >= int(milestone.target)
+				reached = Research.researched(sim.state) >= int(milestone.target)
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)
@@ -365,6 +372,7 @@ static func daily(sim: RefCounted) -> void:
 	contract.stage_streak = int(contract.stage_streak) + 1 if _solvent_week(sim) else 0
 	sim.state.grace_days = int(sim.state.grace_days) + 1 if sim.state.debt > 0.001 else 0
 	_record_windows(sim)
+	OperatingRoutes.check_achievements(sim)
 	if sim.state.status == "success":
 		_check_milestones(sim)
 		return

@@ -184,11 +184,12 @@ func _deadlines_feed_company() -> void:
 
 func _difficulty_scales_goals() -> void:
 	var sim: RefCounted = make()
-	var people: float = float(sim.contract_rules.stages[2].goals.population)
+	# Stage four's population goal (stage three's 600 people became an achievement in 1.10).
+	var people: float = float(sim.contract_rules.stages[3].goals.population)
 	for level: String in ["easy", "normal", "hard"]:
 		var scale: float = float(sim.contract_rules.difficulty_scale[level])
 		check(
-			int(Contract.goal_target(make(level), 3, "population")) == int(round(people * scale)),
+			int(Contract.goal_target(make(level), 4, "population")) == int(round(people * scale)),
 			level + " population goal"
 		)
 	var share: float = float(sim.contract_rules.stages[3].goals.employment)
@@ -407,16 +408,19 @@ func _running_costs() -> void:
 	var sim: RefCounted = make()
 	var residents: int = int(sim.settlement(0).population)
 	var rules: Dictionary = sim.config.economy
+	# 1.9: the per-resident part grows with the colony's size (one settlement here, so the
+	# per-settlement part is still the straight line).
+	var crowding: float = float(residents) / float(rules.admin_resident_scale)
 	check(
 		is_equal_approx(
 			sim._admin_cost(),
 			(
 				float(rules.admin)
-				+ float(rules.admin_per_resident) * residents
+				+ float(rules.admin_per_resident) * residents * (1.0 + crowding)
 				+ float(rules.admin_per_settlement)
 			)
 		),
-		"administration grows with the colony"
+		"administration grows a little faster than the colony"
 	)
 
 
@@ -497,7 +501,9 @@ func _needs_first() -> void:
 func _depleted_mines() -> void:
 	var sim: RefCounted = make()
 	sim.act("build", {"region": 0, "kind": "mine_ore"})
-	for _i: int in range(int(sim.config.buildings.mine_ore.days) + 2):
+	# A far deposit builds its mine road with the mine (1.10): wait until the mine stands.
+	var site: Dictionary = sim.settlement(0).buildings.back()
+	for _i: int in range(int(site.remaining) + 2):
 		sim.tick()
 	var region: Dictionary = sim.state.world.regions[0]
 	for plot: Dictionary in region.plots:

@@ -2,6 +2,104 @@ extends "res://world/planet_view.gd"
 ## Native lightweight 3D renderer: owns the camera, the view mode and input.
 
 const SUN_ROTATION: Vector3 = Vector3(-26, -46, 0)
+const DAY_AMBIENT: Color = Color("8aacbe")
+const NIGHT_AMBIENT: Color = Color("4a6a96")
+const DAY_SKY: Color = Color("080f1c")
+const NIGHT_SKY: Color = Color("03070f")
+## Deep space on the globe: the dome's radius, and the star's distance and size (scene units).
+const SPACE_RADIUS: float = 320.0
+const STAR_DISTANCE: float = 200.0
+const STAR_SIZE: float = 170.0
+const SPACE_SHADER: String = """
+shader_type spatial;
+render_mode unshaded, cull_front, depth_draw_never, fog_disabled, shadows_disabled;
+uniform vec3 band_normal = vec3(0.32, 0.86, 0.40);
+varying vec3 dir;
+void vertex() {
+	dir = normalize(VERTEX);
+}
+float hash(vec3 p) {
+	p = fract(p * 0.3183099 + 0.1);
+	p *= 17.0;
+	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(
+		mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x),
+			mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
+		mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x),
+			mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p) {
+	float v = 0.0;
+	float a = 0.5;
+	for (int i = 0; i < 5; i++) {
+		v += a * noise(p);
+		p = p * 2.03 + vec3(1.7, 9.2, 3.1);
+		a *= 0.5;
+	}
+	return v;
+}
+void fragment() {
+	vec3 d = normalize(dir);
+	float h = dot(d, normalize(band_normal));
+	float band = exp(-h * h / 0.03);
+	float n = fbm(d * 3.0);
+	float fine = fbm(d * 9.0 + 4.0);
+	float dust = smoothstep(0.47, 0.75, fbm(d * 6.0 + 11.0)) * band;
+	vec3 col = vec3(0.010, 0.018, 0.040);
+	col += vec3(0.09, 0.13, 0.23) * band * (0.5 + 0.9 * n);
+	col += vec3(0.20, 0.22, 0.29) * pow(band, 3.0) * fine;
+	col *= 1.0 - dust * 0.7;
+	col += vec3(0.03, 0.09, 0.15) * smoothstep(0.52, 0.86, fbm(d * 2.2 + 7.0));
+	col += vec3(0.09, 0.03, 0.13) * smoothstep(0.56, 0.9, fbm(d * 2.6 - 3.0));
+	vec3 cell = floor(d * 720.0);
+	float s = hash(cell);
+	float star = step(0.9972, s) * (0.3 + 0.7 * hash(cell + 3.1));
+	star += step(0.990, s) * band * 0.35;
+	col += vec3(0.72, 0.80, 1.0) * star * 0.55;
+	ALBEDO = col;
+}
+"""
+## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
+## that hides the landscape's far edge: it begins and is complete this far from the eye.
+const REGION_DAY_AIR: Color = Color("6b8291")
+const REGION_DUSK_AIR: Color = Color("8a6b5b")
+const REGION_NIGHT_AIR: Color = Color("070b13")
+const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
+## The town view's near clip plane. Its camera orbits 31 units or more from its pivot and at least
+## 7 units above it, so nothing comes this close; the depth buffer is ten times finer than with the
+## globe's 0.05, and ground and water no longer flicker where they meet.
+const REGION_NEAR: float = 0.5
+const SUN_ENERGY: float = 1.12
+## Pixels around a marker that a hover shows its name for (and a click picked before 1.10).
+const HOVER_RADIUS: float = 43.0
+## The planet sphere's radius and the flat map's surface plane, as the maps draw them.
+const GLOBE_RADIUS: float = 3.0
+const FLAT_SURFACE_Z: float = 0.035
+## Forward+ (高画质) tuning. Colour grade (brightness, contrast, saturation) that brings Forward+
+## to the Compatibility palette; ambient occlusion in the town (radius in units, intensity,
+## power); glow (intensity, bloom, HDR threshold); how far shadow edges soften.
+const HQ_GRADE: Vector3 = Vector3(0.92, 1.12, 1.38)
+const HQ_AO: Vector3 = Vector3(1.2, 1.6, 1.5)
+const HQ_GLOW: Vector3 = Vector3(0.4, 0.0, 1.6)
+const HQ_SHADOW_BLUR: float = 1.3
+
+var environment: Environment
+var fill_light: DirectionalLight3D
+var star_field: MultiMeshInstance3D
+## Deep space behind the globe (1.10.1): a dome far beyond the stars with the galaxy's band, dust
+## lanes and faint nebulae, and the planet's own star, a large glare in the sun's real direction.
+## The planet hides the star when it stands in front, so it shows as the globe is turned towards it.
+var space_dome: MeshInstance3D
+var star_glare: MeshInstance3D
+## A site the camera keeps in view while the spin eases out after a click.
+var focus_site: int = -1
+## 0 by full day, 1 by full night, at the selected site: lamps and windows read this.
+var region_night: float = 0.0
 
 
 func _ready() -> void:
@@ -17,6 +115,8 @@ func setup(data: Dictionary) -> void:
 		if entry.surface != surface:
 			_clear_node(entry.surface)
 	region_cache.clear()
+	camp_cache.clear()
+	harbor_cache.clear()
 	selected_region = 0
 	signature = ""
 	marker_signature = ""
@@ -39,6 +139,7 @@ func setup(data: Dictionary) -> void:
 	_clear_node(flat_world)
 	flat_marker_root = null
 	flat_transport_root = null
+	flat_mover_root = null
 	planet = Node3D.new()
 	planet.name = "AuthoritativePlanet"
 	add_child(planet)
@@ -53,6 +154,13 @@ func setup(data: Dictionary) -> void:
 	if str(world.version) != "CC-GEO-1.4" and not world.regions.is_empty():
 		planet_yaw = deg_to_rad(float(world.regions[0].lon))
 		planet_pitch = deg_to_rad(float(world.regions[0].lat))
+	sky.reset(int(world.seed), planet_yaw)
+	focus_site = -1
+	lights_signature = ""
+	globe_movers.clear()
+	flat_movers.clear()
+	globe_ships.clear()
+	flat_ships.clear()
 	_build_planet()
 	_build_flat()
 	show_planet()
@@ -66,6 +174,10 @@ func sync_state(data: Dictionary) -> void:
 	state = data
 	if world.is_empty():
 		return
+	var stages: float = float(_terraforming_stages())
+	for material: ShaderMaterial in [globe_shader, flat_shader]:
+		if material != null:
+			material.set_shader_parameter("terraform", stages)
 	var markers_now: String = _marker_signature()
 	if markers_now != marker_signature:
 		marker_signature = markers_now
@@ -74,6 +186,10 @@ func sync_state(data: Dictionary) -> void:
 	if transport_now != transport_signature:
 		transport_signature = transport_now
 		_update_transport()
+	var lights_now: String = _lights_signature()
+	if lights_now != lights_signature:
+		lights_signature = lights_now
+		_update_night_lights()
 	if mode == "region" and not region_busy:
 		var new_signature := _building_signature()
 		if new_signature != signature:
@@ -97,7 +213,21 @@ func _marker_signature() -> String:
 				str(place.get("name", ""))
 			]
 		)
-	return "%d|%s|%s" % [selected_region, str(settled), marker_filter]
+	var signals: Array = []
+	for place: Dictionary in state.get("settlements", []):
+		signals.append(not signal_reading(int(place.region)).is_empty())
+	# Prospecting anomalies are drawn as rings: their stages and zones change what is shown.
+	for anomaly: Dictionary in state.get("prospecting", {}).get("anomalies", []):
+		signals.append([int(anomaly.id), str(anomaly.stage), snappedf(float(anomaly.zone), 0.01)])
+	return (
+		"%d|%s|%s|%s|%s"
+		% [selected_region, str(settled), marker_filter, str(_event_places()), str(signals)]
+	)
+
+
+## Towns and lit roads change the night side; a few dozen people more do not.
+func _lights_signature() -> String:
+	return LightField.signature(state, Rules.read("economy").buildings)
 
 
 func _transport_signature() -> String:
@@ -107,7 +237,14 @@ func _transport_signature() -> String:
 	var moving: Array = []
 	for cargo: Dictionary in state.get("shipments", []):
 		moving.append([int(cargo.from), int(cargo.remaining), int(cargo.total_days)])
-	return "%s|%s" % [str(roads), str(moving)]
+	# A quay that starts work, and then its first cargo, bring its ship light.
+	var quays: Array = []
+	var economy: Dictionary = Rules.read("economy")
+	var calls: int = int(economy.get("bay", {}).get("ship_call_days", 30))
+	for place: Dictionary in state.get("settlements", []):
+		quays.append(LightField.quay_working(state, place, economy.buildings))
+		quays.append(Consignments.ship_calling(state, place, calls))
+	return "%s|%s|%s" % [str(roads), str(moving), str(quays)]
 
 
 func show_planet() -> void:
@@ -129,6 +266,7 @@ func show_planet() -> void:
 	camera.near = .05
 	camera.far = 700
 	_update_camera(1.0)
+	_apply_mode_quality()
 
 
 func show_flat() -> void:
@@ -145,6 +283,7 @@ func show_flat() -> void:
 	_update_camera(1.0)
 	_update_flat_markers()
 	_update_flat_transport()
+	_apply_mode_quality()
 
 
 func cancel_region_load() -> void:
@@ -165,6 +304,7 @@ func show_region(id: int) -> void:
 	var token: int = region_load_token
 	selected_region = id
 	mode = "region"
+	_apply_mode_quality()
 	planet.visible = false
 	flat_world.visible = false
 	surface.visible = false
@@ -174,6 +314,10 @@ func show_region(id: int) -> void:
 			old_cached = true
 	if not old_cached:
 		_clear_node(surface)
+	if region_cache.has(id) and str(region_cache[id].get("terraces", "")) != terrace_signature(id):
+		# A plot has come to light since this ground was cut: cut it again with its terrace.
+		_clear_node(region_cache[id].surface)
+		region_cache.erase(id)
 	last_region_cached = region_cache.has(id)
 	if last_region_cached:
 		var entry: Dictionary = region_cache[id]
@@ -198,6 +342,7 @@ func show_region(id: int) -> void:
 	camera_pivot = Vector3.ZERO
 	camera.fov = 43
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.near = REGION_NEAR
 	camera.far = 700
 	_update_camera(1.0)
 	if not last_region_cached:
@@ -222,6 +367,7 @@ func show_region(id: int) -> void:
 			"lakes": local_lakes.duplicate(true),
 			"heights": height_field,
 			"forests": forest_field,
+			"terraces": terrace_signature(id),
 		}
 	signature = _building_signature()
 	if buildings_root == null or str(surface.get_meta("building_signature", "")) != signature:
@@ -238,6 +384,8 @@ func orbit(dx: float, dy: float) -> void:
 	if mode == "flat":
 		pan(dx, dy)
 	elif mode == "planet":
+		focus_site = -1
+		sky.hold_spin()
 		planet_yaw -= dx * .005
 		planet_pitch = clampf(planet_pitch + dy * .004, -1.25, 1.25)
 	else:
@@ -248,8 +396,10 @@ func orbit(dx: float, dy: float) -> void:
 func zoom(amount: float) -> void:
 	if mode == "flat":
 		flat_user_zoomed = true
-		flat_size = clampf(flat_size + amount * .85, 4.2, 23.0)
+		# Zoomed out as far as it goes, the poles sit on the window's top and bottom edges.
+		flat_size = clampf(flat_size + amount * .85, 4.2, FLAT_HEIGHT)
 	elif mode == "planet":
+		sky.hold_spin()
 		planet_distance = clampf(planet_distance + amount * .65, 7.0, 15.8)
 	else:
 		local_distance = clampf(local_distance + amount * 3.5, 31.0, 140.0)
@@ -258,8 +408,11 @@ func zoom(amount: float) -> void:
 func pan(dx: float, dy: float) -> void:
 	if mode == "flat":
 		flat_center += Vector2(-dx, dy) * flat_size * .0012
-		flat_center.x = clampf(flat_center.x, -9.0, 9.0)
-		flat_center.y = clampf(flat_center.y, -4.5, 4.5)
+		# East and west without end: past 180° the view comes round to -180°, where the copies of
+		# the map stand (`_refresh_flat_ghosts`).
+		flat_center.x = wrapf(flat_center.x, -FLAT_WIDTH * 0.5, FLAT_WIDTH * 0.5)
+		var room: float = maxf(0.0, (FLAT_HEIGHT - flat_size) * 0.5)
+		flat_center.y = clampf(flat_center.y, -room, room)
 		return
 	if mode != "region" or camera == null:
 		return
@@ -272,25 +425,29 @@ func pan(dx: float, dy: float) -> void:
 	camera_pivot.z = clampf(camera_pivot.z, -26.0, 26.0)
 
 
-## The site marker under a screen position, among those the filter shows.
-func _region_at(screen_pos: Vector2) -> int:
+## The site marker under a screen position, among those the filter shows, within `radius` pixels.
+func _region_at(screen_pos: Vector2, radius: float = HOVER_RADIUS) -> int:
 	if mode not in ["planet", "flat"] or camera == null:
 		return -1
 	var nearest: int = -1
-	var best: float = 43.0
+	var best: float = radius
 	for reg in world.regions:
 		if not _marker_shown(reg):
 			continue
 		var point: Vector3 = (
 			_flat_point(reg.lat, reg.lon)
 			if mode == "flat"
-			else Geo.unit_point(reg.lat, reg.lon) * 3.055
+			else planet.to_global(Geo.unit_point(reg.lat, reg.lon) * 3.055)
 		)
 		if mode == "planet" and point.normalized().dot(camera.position.normalized()) < .18:
 			continue
 		if camera.is_position_behind(point):
 			continue
 		var distance: float = camera.unproject_position(point).distance_to(screen_pos)
+		if mode == "flat":
+			for side: float in [-FLAT_WIDTH, FLAT_WIDTH]:
+				var copy: Vector3 = point + Vector3(side, 0, 0)
+				distance = minf(distance, camera.unproject_position(copy).distance_to(screen_pos))
 		if distance < best:
 			best = distance
 			nearest = int(reg.id)
@@ -311,46 +468,272 @@ func set_marker_filter(key: String) -> void:
 		_update_markers()
 
 
-func pick_region(screen_pos: Vector2) -> int:
-	var nearest: int = _region_at(screen_pos)
+func pick_region(screen_pos: Vector2, radius: float = HOVER_RADIUS) -> int:
+	var nearest: int = _region_at(screen_pos, radius)
 	if nearest >= 0:
+		ground_point = {}
 		selected_region = nearest
+		if mode == "planet":
+			sky.hold_spin()
 		_update_markers()
 		region_selected.emit(nearest)
 	return nearest
 
 
+## The ground under a screen position on the globe or the flat map (1.10 free placement):
+## {lat, lon, precision (degrees one pixel spans there), view}, or empty off the planet.
+func pick_ground(screen_pos: Vector2) -> Dictionary:
+	if camera == null or mode not in ["planet", "flat"]:
+		return {}
+	var here: Variant = _ground_hit(screen_pos)
+	if here == null:
+		return {}
+	var beside: Variant = _ground_hit(screen_pos + Vector2(1.0, 0.0))
+	var below: Variant = _ground_hit(screen_pos + Vector2(0.0, 1.0))
+	var at: Vector2 = here
+	var precision: float = 0.0
+	for other: Variant in [beside, below]:
+		if other == null:
+			continue
+		var step: Vector2 = other
+		var scale: float = cos(deg_to_rad(at.x))
+		precision = maxf(
+			precision, Vector2(wrapf(step.y - at.y, -180.0, 180.0) * scale, step.x - at.x).length()
+		)
+	return {"lat": at.x, "lon": at.y, "precision": precision, "view": mode}
+
+
+## The coordinate (lat, lon) under a screen position, or null when the pointer is off the planet.
+func _ground_hit(screen_pos: Vector2) -> Variant:
+	var origin: Vector3 = camera.project_ray_origin(screen_pos)
+	var direction: Vector3 = camera.project_ray_normal(screen_pos)
+	if mode == "planet":
+		if planet == null:
+			return null
+		var local_origin: Vector3 = planet.to_local(origin)
+		var local_direction: Vector3 = (planet.global_basis.inverse() * direction).normalized()
+		var b: float = local_origin.dot(local_direction)
+		var c: float = local_origin.length_squared() - GLOBE_RADIUS * GLOBE_RADIUS
+		var disc: float = b * b - c
+		if disc < 0.0:
+			return null
+		var t: float = -b - sqrt(disc)
+		if t < 0.0:
+			return null
+		var p: Vector3 = (local_origin + local_direction * t).normalized()
+		return Vector2(rad_to_deg(asin(clampf(p.y, -1.0, 1.0))), rad_to_deg(atan2(p.x, p.z)))
+	if flat_world == null:
+		return null
+	var flat_origin: Vector3 = flat_world.to_local(origin)
+	var flat_direction: Vector3 = flat_world.global_basis.inverse() * direction
+	if absf(flat_direction.z) < 0.000001:
+		return null
+	var hit: Vector3 = (
+		flat_origin + flat_direction * ((FLAT_SURFACE_Z - flat_origin.z) / flat_direction.z)
+	)
+	var lat: float = hit.y * 20.0
+	if absf(lat) > 90.0:
+		return null
+	return Vector2(lat, wrapf(hit.x * 20.0, -180.0, 180.0))
+
+
+## Shows the picked ground on both maps, or none with an empty point. The marker selection clears:
+## the ground is what the founding button acts on now.
+func set_ground(point: Dictionary) -> void:
+	ground_point = point.duplicate() if not point.is_empty() else {}
+	if not ground_point.is_empty():
+		selected_region = -1
+	_update_markers()
+
+
+func focus_ground(lat: float) -> void:
+	focus_site = -1
+	sky.hold_spin()
+	planet_pitch = deg_to_rad(lat) * .75
+
+
 func focus_region(id: int) -> void:
 	if id < 0 or id >= world.regions.size():
 		return
+	ground_point = {}
 	selected_region = id
-	planet_yaw = deg_to_rad(float(world.regions[id].lon))
+	focus_site = id
+	sky.hold_spin()
+	_track_focus()
 	planet_pitch = deg_to_rad(float(world.regions[id].lat)) * .75
 	_update_markers()
+
+
+## Keeps a clicked site in front of the camera while the planet comes to rest under it.
+func _track_focus() -> void:
+	if focus_site < 0 or focus_site >= world.regions.size():
+		return
+	var target: float = deg_to_rad(float(world.regions[focus_site].lon)) + sky.spin
+	planet_yaw = smooth_yaw + wrapf(target - smooth_yaw, -PI, PI)
 
 
 func _process(delta: float) -> void:
 	_poll_atlas_job()
 	if camera == null:
 		return
+	sky.advance(delta)
+	if planet != null and is_instance_valid(planet):
+		planet.rotation.y = sky.spin
+	if focus_site >= 0 and mode == "planet":
+		_track_focus()
+		if sky.hold <= 0.0:
+			focus_site = -1
 	_update_camera(1.0 - exp(-delta * 9.0))
-	if cloud_shell != null and is_instance_valid(cloud_shell):
-		cloud_shell.rotation.y += delta * .0015
+	_apply_sky()
+	if mode == "region" and surface != null and surface.visible:
+		_animate_region(delta)
+	elif mode == "planet":
+		_place_movers(globe_movers, sky.day_fraction)
+		place_ships(globe_ships, sky.day_fraction)
+	elif mode == "flat":
+		_place_movers(flat_movers, sky.day_fraction)
+		place_ships(flat_ships, sky.day_fraction)
 	if marker_root != null and is_instance_valid(marker_root) and planet.visible:
+		var toward: Vector3 = planet.to_local(camera.global_position).normalized()
 		for child in marker_root.get_children():
 			if child is Node3D and child.has_meta("point"):
-				child.visible = (
-					Vector3(child.get_meta("point")).normalized().dot(camera.position.normalized())
-					> .12
-				)
+				child.visible = Vector3(child.get_meta("point")).normalized().dot(toward) > .12
+
+
+## The town after dark: windows, street lamps, headlights and pools of lamp light follow the
+## night at the site; vehicles run while the game clock runs.
+func _animate_region(delta: float) -> void:
+	if traffic != null and is_instance_valid(traffic):
+		traffic.running = sky.running
+		traffic.rate = sky.rate
+		traffic.advance(delta)
+	if sky.running:
+		_sail(delta * sky.rate)
+		_fly(delta * sky.rate)
+	var night: float = region_night if day_night_enabled else 0.0
+	if mats.has("glass_on"):
+		mats["glass_on"].emission_energy_multiplier = night * 0.85
+	if mats.has("lamps"):
+		mats["lamps"].emission_energy_multiplier = 1.3 + night * 3.0
+	if mats.has("headlight"):
+		mats["headlight"].emission_energy_multiplier = 0.4 + night * 3.5
+	if glow_material != null:
+		glow_material.set_shader_parameter("intensity", night * 0.8)
+	for lamp: OmniLight3D in lamp_lights:
+		lamp.light_energy = night * LAMP_ENERGY
+		lamp.visible = night > 0.02
+	if mats.has("smoke"):
+		var shade: float = lerpf(1.0, 0.32, night)
+		mats["smoke"].albedo_color = Color(shade, shade, shade * 1.04, 1.0)
+
+
+## What the game clock is doing; main.gd calls this every frame.
+func set_clock(running: bool, speed: int, day: int, fraction: float) -> void:
+	sky.set_clock(running, speed, day, fraction)
+
+
+## Player settings: a turning planet, day and night with lights, moving weather.
+func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
+	sky.spin_enabled = spin
+	sky.weather_enabled = weather
+	day_night_enabled = day_night
+	weather_enabled = weather
+	if not spin:
+		sky.spin_factor = 0.0
+
+
+## The complete transport diagram on the globe and the flat map. Off, the night shows only what
+## lights a route: where it leaves town, junctions and the cargo moving on it.
+func set_route_overlay(on: bool) -> void:
+	routes_shown = on
+	flat_ghosts_dirty = true
+	for root: Variant in [transport_root, flat_transport_root]:
+		if root is Node3D and is_instance_valid(root):
+			(root as Node3D).visible = on
+
+
+## Captures and window tests want the same picture every time: the clock stops where it is,
+## with the planet unturned. Day, night and clouds stay as the settings have them.
+func freeze_motion() -> void:
+	sky.frozen = true
+	sky.spin = 0.0
+	if planet != null and is_instance_valid(planet):
+		planet.rotation.y = 0.0
+
+
+## Feeds the visual clock to every map shader. In planet frames: the shaders never turn anything.
+## Terraforming stages finished, read from the state the map was given (0-3).
+func _terraforming_stages() -> int:
+	for s: Dictionary in state.get("settlements", []):
+		for b: Dictionary in s.get("buildings", []):
+			if str(b.kind) == "terraforming" and int(b.get("remaining", 0)) <= 0:
+				return int(b.get("level", 1))
+	return 0
+
+
+func _apply_sky() -> void:
+	var sun: Vector3 = sky.sun_local()
+	if not day_night_enabled:
+		sun = _shoulder_sun()
+	var night_value: float = 1.0 if day_night_enabled else 0.0
+	var storms: Array[Vector4] = sky.storm_vectors()
+	var radii: PackedFloat32Array = sky.storm_radii()
+	var season: float = sky.season() if day_night_enabled else 0.0
+	if globe_shader != null and planet.visible:
+		globe_shader.set_shader_parameter("sun_local", sun)
+		globe_shader.set_shader_parameter("camera_local", planet.to_local(camera.global_position))
+		globe_shader.set_shader_parameter("season", season)
+		globe_shader.set_shader_parameter("day_night", night_value)
+	if cloud_shell != null and is_instance_valid(cloud_shell):
+		cloud_shell.visible = weather_enabled
+	if flat_shader != null:
+		flat_shader.set_shader_parameter("cloud_opacity", 0.22 if weather_enabled else 0.0)
+	for material: ShaderMaterial in [cloud_shader, flat_shader]:
+		if material == null:
+			continue
+		material.set_shader_parameter("sun_local", sun)
+		material.set_shader_parameter("weather_time", sky.weather_time)
+		material.set_shader_parameter("storms", storms)
+		material.set_shader_parameter("storm_radius", radii)
+		material.set_shader_parameter("day_night", night_value)
+	if flat_shader != null:
+		flat_shader.set_shader_parameter("season", season)
+	if atmosphere_shader != null:
+		atmosphere_shader.set_shader_parameter("sun_local", sun)
+		atmosphere_shader.set_shader_parameter("day_night", night_value)
+	for key: String in ["terrain_ground_true", "terrain_ground_false"]:
+		if mats.has(key):
+			mats[key].set_shader_parameter("weather_time", sky.weather_time)
+			mats[key].set_shader_parameter("cloud_shadow", 0.35 if weather_enabled else 0.0)
+	for kind: String in ["globe_footprint_town", "globe_footprint_farm"]:
+		if mats.has(kind):
+			mats[kind].set_shader_parameter("sun_world", sky.sun_world())
+			mats[kind].set_shader_parameter("day_night", night_value)
+
+
+## Without day and night the globe is lit as in 1.8: from over the viewer's shoulder.
+func _shoulder_sun() -> Vector3:
+	if camera == null or planet == null:
+		return Vector3(0.6, 0.3, 0.7)
+	var basis: Basis = camera.global_transform.basis
+	var toward_sun: Vector3 = (basis.z + basis.x * -0.55 + basis.y * 0.5).normalized()
+	return planet.global_transform.basis.inverse() * toward_sun
 
 
 func _update_camera(weight: float) -> void:
+	_place_space()
 	if mode == "flat":
 		var ui_scale: float = get_window().content_scale_factor
 		if not flat_user_zoomed:
-			flat_size = 16.6 * maxf(1.0, ui_scale)
-		camera.size = lerpf(camera.size, flat_size, weight)
+			flat_size = FLAT_HEIGHT
+		flat_size = minf(flat_size, FLAT_HEIGHT)
+		camera.size = minf(lerpf(camera.size, flat_size, weight), FLAT_HEIGHT)
+		# The view never goes past a pole: at the widest it shows them on its top and bottom edges.
+		var room: float = maxf(0.0, (FLAT_HEIGHT - camera.size) * 0.5)
+		flat_center.y = clampf(flat_center.y, -room, room)
+		var half_width: float = camera.size * 0.5 * get_viewport().get_visible_rect().size.aspect()
+		if flat_ghosts_dirty and absf(flat_center.x) + half_width + 1.0 > FLAT_WIDTH * 0.5:
+			_refresh_flat_ghosts()
 		camera.position = Vector3(flat_center.x, flat_center.y, 16)
 		camera.look_at(Vector3(flat_center.x, flat_center.y, 0), Vector3.UP)
 		camera.h_offset = flat_size * 87.5 * ui_scale / 900.0
@@ -370,19 +753,91 @@ func _update_camera(weight: float) -> void:
 	_aim_sun()
 
 
-## On the globe the sun stays over the viewer's shoulder, so the part being looked at is never in
-## the dark. The regional scene keeps its fixed sun and its long shadows.
+## On the globe the light comes from the real sun (or over the viewer's shoulder without day and
+## night). In a region the sun stands where it stands over that site on the turning planet.
 func _aim_sun() -> void:
+	_place_space()
 	if sun_light == null:
 		return
+	if mode == "region" and day_night_enabled and not world.is_empty():
+		_aim_region_sun()
+		return
+	_light_day_scene()
 	if mode != "planet":
 		sun_light.rotation_degrees = SUN_ROTATION
 		return
-	var basis: Basis = camera.global_transform.basis
-	var toward_sun: Vector3 = (basis.z + basis.x * -0.55 + basis.y * 0.5).normalized()
-	sun_light.look_at_from_position(toward_sun * 10.0, Vector3.ZERO, Vector3.UP)
-	if globe_shader != null:
-		globe_shader.set_shader_parameter("sun_direction", toward_sun)
+	var toward_sun: Vector3 = sky.sun_world()
+	if not day_night_enabled and planet != null:
+		toward_sun = planet.global_transform.basis * _shoulder_sun()
+	sun_light.look_at_from_position(toward_sun * 10.0, Vector3.ZERO, _up_hint(toward_sun))
+
+
+static func _up_hint(direction: Vector3) -> Vector3:
+	return Vector3.RIGHT if absf(direction.normalized().y) > 0.98 else Vector3.UP
+
+
+func _light_day_scene() -> void:
+	region_night = 0.0
+	sun_light.light_energy = SUN_ENERGY
+	sun_light.light_color = Color("f6ecd1")
+	if environment != null:
+		environment.ambient_light_color = DAY_AMBIENT
+		environment.ambient_light_energy = .38
+		environment.background_color = DAY_SKY
+	if fill_light != null:
+		fill_light.light_energy = .18
+	_region_air(1.0, 0.0)
+
+
+## The site's sky: east is +x, north is -z, as the regional ground is laid out.
+func _aim_region_sun() -> void:
+	var reg: Dictionary = world.regions[selected_region]
+	var up: Vector3 = Geo.unit_point(float(reg.lat), float(reg.lon)).rotated(Vector3.UP, sky.spin)
+	var east: Vector3 = Vector3(up.z, 0.0, -up.x).normalized()
+	if east.length() < 0.5:
+		east = Vector3.RIGHT
+	var north: Vector3 = up.cross(east)
+	var sun: Vector3 = sky.sun_world()
+	var height: float = sun.dot(up)
+	var local := Vector3(sun.dot(east), maxf(height, 0.06), -sun.dot(north)).normalized()
+	var daylight: float = smoothstep(-0.1, 0.14, height)
+	region_night = 1.0 - daylight
+	sun_light.look_at_from_position(local * 10.0, Vector3.ZERO, _up_hint(local))
+	sun_light.light_energy = SUN_ENERGY * smoothstep(-0.02, 0.12, height)
+	sun_light.light_color = Color("ffad6b").lerp(Color("f6ecd1"), smoothstep(0.04, 0.35, height))
+	if environment != null:
+		environment.ambient_light_color = NIGHT_AMBIENT.lerp(DAY_AMBIENT, daylight)
+		environment.ambient_light_energy = lerpf(.62, .38, daylight)
+		environment.background_color = NIGHT_SKY.lerp(DAY_SKY, daylight)
+	if fill_light != null:
+		fill_light.light_energy = lerpf(.85, .18, daylight)
+	var dusk: float = smoothstep(-0.12, 0.04, height) * (1.0 - smoothstep(0.04, 0.3, height))
+	_region_air(daylight, dusk * 0.55)
+
+
+## A generated region stands under its own sky: the horizon takes the time of day and the far
+## landscape fades into it, so no edge of the ground shows. The globe, the flat map and older
+## worlds keep the dark of space and the stars.
+func _region_air(daylight: float, dusk: float) -> void:
+	var landscape: bool = (
+		mode == "region" and not world.is_empty() and Geo.is_generated(str(world.version))
+	)
+	if star_field != null:
+		star_field.visible = not landscape
+	if environment == null:
+		return
+	environment.fog_enabled = landscape
+	if not landscape:
+		return
+	var air: Color = REGION_NIGHT_AIR.lerp(REGION_DAY_AIR, daylight).lerp(REGION_DUSK_AIR, dusk)
+	environment.background_color = air
+	environment.fog_mode = Environment.FOG_MODE_DEPTH
+	environment.fog_light_color = air
+	environment.fog_light_energy = 1.0
+	environment.fog_sun_scatter = 0.0
+	environment.fog_density = 1.0
+	environment.fog_depth_begin = REGION_HAZE.x
+	environment.fog_depth_end = REGION_HAZE.y
 
 
 func _build_environment() -> void:
@@ -391,7 +846,7 @@ func _build_environment() -> void:
 	camera = Camera3D.new()
 	camera.current = true
 	add_child(camera)
-	var environment := Environment.new()
+	environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color("080f1c")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -415,7 +870,44 @@ func _build_environment() -> void:
 	fill.light_energy = .18
 	fill.rotation_degrees = Vector3(35, 140, 0)
 	add_child(fill)
+	fill_light = fill
+	_apply_render_quality()
 	_build_stars()
+
+
+## Forward+ (高画质) draws what Compatibility cannot: ambient occlusion where buildings meet the
+## ground, bloom on lit windows and town lights, finer and softer shadows. Forward+ renders in
+## linear light and comes out about a fifth less saturated, so a colour grade keeps one palette
+## across both renderers.
+func _apply_render_quality() -> void:
+	high_quality = RenderingServer.get_current_rendering_method() != "gl_compatibility"
+	if not high_quality:
+		return
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = HQ_GRADE.x
+	environment.adjustment_contrast = HQ_GRADE.y
+	environment.adjustment_saturation = HQ_GRADE.z
+	environment.ssao_radius = HQ_AO.x
+	environment.ssao_intensity = HQ_AO.y
+	environment.ssao_power = HQ_AO.z
+	environment.ssao_detail = 0.5
+	environment.glow_enabled = true
+	environment.glow_intensity = HQ_GLOW.x
+	environment.glow_bloom = HQ_GLOW.y
+	environment.glow_hdr_threshold = HQ_GLOW.z
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	sun_light.shadow_blur = HQ_SHADOW_BLUR
+	sun_light.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	RenderingServer.directional_soft_shadow_filter_set_quality(
+		RenderingServer.SHADOW_QUALITY_SOFT_HIGH
+	)
+	_apply_mode_quality()
+
+
+## Ambient occlusion belongs to the town at its scale; the globe and the flat map do without.
+func _apply_mode_quality() -> void:
+	if environment != null and high_quality:
+		environment.ssao_enabled = mode == "region"
 
 
 func _build_stars() -> void:
@@ -451,6 +943,76 @@ func _build_stars() -> void:
 	var stars := MultiMeshInstance3D.new()
 	stars.multimesh = mm
 	add_child(stars)
+	star_field = stars
+	_build_space()
+
+
+## The space dome and the star's glare (see `space_dome`).
+func _build_space() -> void:
+	var dome := SphereMesh.new()
+	dome.radius = SPACE_RADIUS
+	dome.height = SPACE_RADIUS * 2.0
+	dome.radial_segments = 64
+	dome.rings = 32
+	var sky_shader := Shader.new()
+	sky_shader.code = SPACE_SHADER
+	var sky_material := ShaderMaterial.new()
+	sky_material.shader = sky_shader
+	space_dome = MeshInstance3D.new()
+	space_dome.name = "SpaceDome"
+	space_dome.mesh = dome
+	space_dome.material_override = sky_material
+	space_dome.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(space_dome)
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * STAR_SIZE
+	# The star's glare: a white core in a warm halo, always facing the camera, added to the sky.
+	var glow := Gradient.new()
+	glow.offsets = PackedFloat32Array([0.0, 0.05, 0.14, 0.34, 0.62, 1.0])
+	glow.colors = PackedColorArray(
+		[
+			Color(1.0, 1.0, 1.0, 1.0),
+			Color(1.0, 0.98, 0.9, 1.0),
+			Color(1.0, 0.9, 0.68, 0.75),
+			Color(1.0, 0.78, 0.48, 0.3),
+			Color(1.0, 0.66, 0.36, 0.08),
+			Color(1.0, 0.6, 0.3, 0.0)
+		]
+	)
+	var texture := GradientTexture2D.new()
+	texture.gradient = glow
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	texture.width = 256
+	texture.height = 256
+	var glare_material := StandardMaterial3D.new()
+	glare_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glare_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glare_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	glare_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	glare_material.albedo_texture = texture
+	glare_material.albedo_color = Color(1.6, 1.5, 1.35, 1.0)
+	glare_material.disable_fog = true
+	star_glare = MeshInstance3D.new()
+	star_glare.name = "StarGlare"
+	star_glare.mesh = quad
+	star_glare.material_override = glare_material
+	star_glare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(star_glare)
+	_place_space()
+
+
+## Space shows on the globe only; the star stands in the real sun's direction (also when day and
+## night are off and the globe is lit over the viewer's shoulder).
+func _place_space() -> void:
+	var on_globe: bool = mode == "planet"
+	if space_dome != null and is_instance_valid(space_dome):
+		space_dome.visible = on_globe
+	if star_glare != null and is_instance_valid(star_glare):
+		star_glare.visible = on_globe
+		if on_globe:
+			star_glare.position = sky.sun_world().normalized() * STAR_DISTANCE
 
 
 func _exit_tree() -> void:

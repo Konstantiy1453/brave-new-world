@@ -44,6 +44,8 @@ func make(advantage: String = "capital"):
 	var s = Sim.new()
 	s.new_game(20261029, advantage, 1)
 	s.state.contract.licences.append("expedition")
+	# These checks are about trade, money and deposits, not crews: every site moves on (1.10).
+	s.Crews.unlimited(s)
 	return s
 
 
@@ -57,7 +59,8 @@ func run_tests() -> void:
 	check(
 		a.act("build", {"region": 0, "kind": "mine_ore"}) == "", "initial ore extraction available"
 	)
-	for i in range(int(a.config.buildings.mine_ore.days) + 12):
+	# The building's own days: an inland deposit adds the mine road's haul (1.10).
+	for i in range(int(a.settlement(0).buildings.back().remaining) + 12):
 		a.tick()
 	check(a.state.exports_total > 0, "first export is real external income")
 	check(
@@ -349,7 +352,7 @@ func _boundary_tests() -> void:
 	)]
 	finite.state.world.regions[0].deposits.crystal -= float(seam.reserves) - 0.25
 	seam.reserves = 0.25
-	for i in range(int(finite.config.buildings.mine_crystal.days) + 3):
+	for i in range(int(finite.settlement(0).buildings.back().remaining) + 3):
 		finite.tick()
 	check(
 		close(finite.state.resource_sources.crystal, 0.25),

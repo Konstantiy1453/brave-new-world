@@ -21,6 +21,8 @@ var tip: Dictionary = {}
 var tips_enabled: bool = true
 var title_label: Label
 var text_label: Label
+## Why a lesson is waiting, or what an outcome cost: Tutorial.note, refreshed with every check.
+var note_label: Label
 var progress_label: Label
 var back_button: Button
 var next_button: Button
@@ -46,6 +48,9 @@ func setup(owner_game: Node) -> void:
 	progress_label = D.label(column, "", 14, D.TEAL, false)
 	title_label = D.label(column, "", 21, D.GOLD)
 	text_label = D.label(column, "", 17)
+	note_label = D.label(column, "", 15, D.GOLD)
+	note_label.name = "CoachNote"
+	note_label.visible = false
 	var buttons := HBoxContainer.new()
 	column.add_child(buttons)
 	back_button = D.button(buttons, "上一步", back, "", "CoachBack")
@@ -89,6 +94,28 @@ static func completed() -> bool:
 	return bool(preferences.get_value("tutorial", "done", false))
 
 
+## The lessons follow the town the player actually founded, wherever that is.
+func _follow_home() -> void:
+	if not game.sim.state.settlements.is_empty():
+		var landed: int = int(game.sim.state.settlements[0].region)
+		if int(context.home) != landed:
+			context.home = landed
+			_show_step()
+
+
+## A step's words: inland ones where the player's town is not on the coast (no harbour there).
+func step_text(step: Dictionary) -> String:
+	if step.has("text_inland") and not _home_coastal():
+		return str(step.text_inland)
+	return str(step.text)
+
+
+func _home_coastal() -> bool:
+	var home: int = int(context.get("home", Tutorial.data().start_site))
+	var regions: Array = game.sim.state.world.get("regions", [])
+	return home >= 0 and home < regions.size() and bool(regions[home].get("coast", false))
+
+
 func start() -> void:
 	context = Tutorial.new_context()
 	context.home = int(Tutorial.data().start_site)
@@ -124,7 +151,7 @@ func forward() -> void:
 		tip = {}
 		visible = false
 		return
-	if not reviewing and not _done():
+	if not reviewing and not _done() and not _waited_out():
 		return
 	_advance()
 
@@ -149,6 +176,8 @@ func _enter() -> void:
 		game.refresh_sidebar()
 	if str(step.get("enter", "")) == "shortage" and int(context.shortage_day) < 0:
 		context.shortage_day = int(game.sim.state.day)
+		context.water_built = Tutorial.water_count(game.sim, int(context.home))
+		context.water_working = Tutorial.water_count(game.sim, int(context.home), true)
 		game.act("tutorial_shortage", {"site": int(context.home)})
 		game.selected = int(context.home)
 		game.refresh_sidebar()
@@ -159,7 +188,7 @@ func _show_step() -> void:
 	var step: Dictionary = steps()[index]
 	progress_label.text = "新手引导 · %d / %d" % [index + 1, steps().size()]
 	title_label.text = str(step.title)
-	text_label.text = str(step.text)
+	text_label.text = str(step_text(step))
 	back_button.visible = index > 0
 	end_button.visible = true
 	_update_next_button()
@@ -169,9 +198,32 @@ func _show_step() -> void:
 		outline.get_parent().move_child(outline, -1)
 
 
+## Keeps the panel and its outline above a dialog that has just opened over them.
+func keep_on_top() -> void:
+	move_to_front()
+	if is_instance_valid(outline) and outline.get_parent() != null:
+		outline.get_parent().move_child(outline, -1)
+
+
 func _update_next_button() -> void:
 	next_button.text = "下一步"
-	next_button.visible = reviewing or _done()
+	# A fault that passed by itself is not a lesson done, but the player may move on.
+	next_button.visible = reviewing or _done() or _waited_out()
+	var note: String = ""
+	if index >= 0 and index < steps().size() and not reviewing:
+		note = Tutorial.note(game.sim, steps()[index].done, context)
+	note_label.text = note
+	note_label.visible = note != ""
+
+
+## The water lesson's fault passed by itself: not done, but the player may move on.
+func _waited_out() -> bool:
+	if index < 0 or index >= steps().size():
+		return false
+	var condition: Dictionary = steps()[index].done
+	return (
+		str(condition.get("name", "")) == "shortage_cleared" and Tutorial.waited(game.sim, context)
+	)
 
 
 func _done() -> bool:
@@ -192,6 +244,7 @@ func _process(delta: float) -> void:
 	since_check = 0.0
 	if not active():
 		return
+	_follow_home()
 	visible = not game.menu_open
 	if not reviewing and _done():
 		_advance()
@@ -275,8 +328,11 @@ func note_page(page: String) -> void:
 	context.pages_opened[page] = true
 
 
-## Called once per simulated day: shows the first tip whose moment has come.
+## Called once per simulated day: counts the water lesson's shortage, and shows the first tip
+## whose moment has come.
 func on_day() -> void:
+	if active():
+		Tutorial.count_shortage(game.sim, context)
 	if active() or not tips_enabled or not tip.is_empty():
 		return
 	for row: Dictionary in Tutorial.data().tips:

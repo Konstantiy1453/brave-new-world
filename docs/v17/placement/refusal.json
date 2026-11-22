@@ -1,0 +1,138 @@
+{
+  "build": "packaged PCK",
+  "candidates": 29,
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "ground for the 海面 case",
+      "ok": true
+    },
+    {
+      "label": "海面: the panel says ✗ 这里是海面，不能建立据点, the button is off, nothing is founded",
+      "ok": true
+    },
+    {
+      "label": "ground for the 极地 case",
+      "ok": true
+    },
+    {
+      "label": "极地: the panel says ✗ 太靠近极地：纬度 78.8°，据点最远建在纬度 74° 以内, the button is off, nothing is founded",
+      "ok": true
+    },
+    {
+      "label": "ground for the 地势太陡 case",
+      "ok": true
+    },
+    {
+      "label": "地势太陡: the panel says ✗ 地势太陡：周围高差 4343 m，超过 3000 m 就平整不出城区和工地, the button is off, nothing is founded",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "game_version": "1.10.1",
+  "ok": true,
+  "options": {
+    "bots": "",
+    "case": "refusal",
+    "coast": "0",
+    "out": "record.json",
+    "pck": "build/v17/ColonyCharter.pck",
+    "seed": "3",
+    "target": "0",
+    "view": "planet"
+  },
+  "pck": "build/v17/ColonyCharter.pck",
+  "pck_sha256": "78181ecca53e41633adbdb37598b0a21403c6100db868994b3f9f46b55af786f",
+  "refusals": [
+    {
+      "button_disabled": true,
+      "case": "海面",
+      "founded": false,
+      "pick": {
+        "map_selected_marker": -1,
+        "nearest_marker_px": 394.104309082031,
+        "panel_text": "北纬 78.75° · 西经 178.75°",
+        "picked": {
+          "lat": 78.7500076293945,
+          "lon": -178.749984741211,
+          "precision": 0.0702884197235107,
+          "view": "planet"
+        },
+        "screen": [
+          607.979248046875,
+          302.965393066406
+        ],
+        "selected_site_after_click": 0,
+        "target": [
+          78.75,
+          -178.75
+        ],
+        "terrain_text": "",
+        "verdict": "✗ 这里是海面，不能建立据点"
+      }
+    },
+    {
+      "button_disabled": true,
+      "case": "极地",
+      "founded": false,
+      "pick": {
+        "map_selected_marker": -1,
+        "nearest_marker_px": 354.445465087891,
+        "panel_text": "北纬 78.75° · 西经 156.25°",
+        "picked": {
+          "lat": 78.7499771118164,
+          "lon": -156.249984741211,
+          "precision": 0.0702579170465469,
+          "view": "planet"
+        },
+        "screen": [
+          607.979187011719,
+          302.965606689453
+        ],
+        "selected_site_after_click": 0,
+        "target": [
+          78.75,
+          -156.25
+        ],
+        "terrain_text": "地表：苔原 · 地点类型：海岛",
+        "verdict": "✗ 太靠近极地：纬度 78.8°，据点最远建在纬度 74° 以内"
+      }
+    },
+    {
+      "button_disabled": true,
+      "case": "地势太陡",
+      "founded": false,
+      "pick": {
+        "map_selected_marker": -1,
+        "nearest_marker_px": 190.569808959961,
+        "panel_text": "北纬 61.25° · 西经 153.75°",
+        "picked": {
+          "lat": 61.2500076293945,
+          "lon": -153.749984741211,
+          "precision": 0.0668792724609375,
+          "view": "planet"
+        },
+        "screen": [
+          605.79345703125,
+          449.999969482422
+        ],
+        "selected_site_after_click": 0,
+        "target": [
+          61.25,
+          -153.75
+        ],
+        "terrain_text": "地表：苔原 · 地点类型：海岛",
+        "verdict": "✗ 地势太陡：周围高差 4343 m，超过 3000 m 就平整不出城区和工地"
+      }
+    }
+  ],
+  "res_has_tests": false,
+  "seed": 3,
+  "viewport": [
+    1600.0,
+    900.0
+  ]
+}

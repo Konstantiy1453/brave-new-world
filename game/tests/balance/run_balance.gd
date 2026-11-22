@@ -14,7 +14,10 @@ const BOTS: Dictionary = {
 	"passive": preload("res://tests/balance/bots/passive_bot.gd"),
 	"sloppy": preload("res://tests/balance/bots/sloppy_bot.gd"),
 	"random_legal": preload("res://tests/balance/bots/random_legal_bot.gd"),
+	"windfall": preload("res://tests/balance/bots/windfall_bot.gd"),
 }
+## The windfall case: the balanced bot with ¥1,000,000 on day 1,080, on its seeds, normal, capital.
+const WINDFALL_OPENING: String = "capital"
 const SEEDS: Array[int] = [
 	260129,
 	20261029,
@@ -142,6 +145,19 @@ func _build_cases() -> Array:
 						)
 					)
 	if not options.has("bots"):
+		for seed_value: int in seed_pool:
+			(
+				cases
+				. append(
+					{
+						"bot": "windfall",
+						"seed": seed_value,
+						"opening": WINDFALL_OPENING,
+						"difficulty": "normal",
+						"days": days,
+					}
+				)
+			)
 		var fuzz_runs: int = QUICK_FUZZ_RUNS if quick else FULL_FUZZ_RUNS
 		for index: int in range(fuzz_runs):
 			(

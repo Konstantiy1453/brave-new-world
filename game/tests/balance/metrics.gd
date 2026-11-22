@@ -2,6 +2,7 @@ extends RefCounted
 ## Per-run metrics, read from Sim state after every simulated day.
 
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Research = preload("res://simulation/research.gd")
 const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
 const RESEARCH_WINDOW_FIRST_DAY: int = 360
 const RESEARCH_WINDOW_LAST_DAY: int = 1440
@@ -10,6 +11,12 @@ const INCOME_SAMPLE_DAYS: int = 30
 const EARLY_INCOME_DAY: int = 720
 const LATE_INCOME_DAY: int = 2160
 const POLLUTION_CHECK_DAYS: Array[int] = [1080, 2880]
+## Cash cover (1.9): public cash over the mean daily operating expense of the last 90 days,
+## sampled every 30 days from day 720.
+const COVER_WINDOW_DAYS: int = 90
+const COVER_EVERY_DAYS: int = 30
+const COVER_FROM_DAY: int = 720
+const YEAR_DAYS: int = 360
 
 var record: Dictionary = {}
 var _pending_seen: Dictionary = {}
@@ -20,6 +27,9 @@ var _operating_surplus: float = 0.0
 var _reinvested: float = 0.0
 var _last_entry: Dictionary = {}
 var _opened_at: Dictionary = {}
+var _expense_days: Array[float] = []
+var _expense_today: float = 0.0
+var _expense_day: int = -1
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -56,6 +66,11 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"first_road_days": -1,
 				"final_day": 0,
 				"final_status": "",
+				"cover_samples": [],
+				"services_days": 0,
+				"services_max": 0,
+				"year_surplus": [],
+				"year_invested": [],
 			}
 		)
 	)
@@ -69,6 +84,10 @@ func sample(sim: RefCounted) -> void:
 	_scan_events(sim)
 	_scan_company(state)
 	_scan_income(state, day)
+	_scan_cover(state, day)
+	if int(state.policy.get("services_paid_day", -1)) == day:
+		record.services_days = int(record.services_days) + 1
+		record.services_max = maxi(int(record.services_max), int(state.policy.get("services", 0)))
 	var issues: Array = sim.audit()
 	if not issues.is_empty():
 		record.audit_error_count += issues.size()
@@ -84,12 +103,12 @@ func sample(sim: RefCounted) -> void:
 	)
 	if int(record.first_road_days) < 0:
 		for road: Dictionary in state.roads:
-			if str(road.get("variant", "")) != "sea":
+			if not str(road.get("variant", "")) in ["sea", "shuttle"]:
 				record.first_road_days = int(road.get("build_days", 0))
 				break
 	if state.status == "success" and int(record.award_day) < 0:
 		record.award_day = day
-		record.techs_by_award = state.research.completed.size()
+		record.techs_by_award = Research.researched(state)
 		record.scientist_share_at_award = _scientist_share(state)
 		record.categories_at_award = _categories(sim)
 	if state.status == "failed" and int(record.failure_day) < 0:
@@ -106,6 +125,9 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.distinct_events = _distinct_events(state)
 	record.events_off = state.get("events_v2", {}).get("off", []).size()
 	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
+	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
+	record.great_works = _great_works(sim)
+	record.shuttle_lines = _shuttle_lines(sim)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
@@ -113,10 +135,34 @@ func finish(sim: RefCounted) -> Dictionary:
 	return record
 
 
+## Finished great works at the end of the run, by kind, with their level.
+func _great_works(sim: RefCounted) -> Dictionary:
+	var built: Dictionary = {}
+	for s: Dictionary in sim.state.settlements:
+		for b: Dictionary in s.buildings:
+			var spec: Dictionary = sim.config.buildings.get(b.kind, {})
+			if bool(spec.get("megaproject", false)) and int(b.remaining) <= 0:
+				built[str(b.kind)] = int(b.get("level", 1))
+	return built
+
+
+## Short-range shuttle lines opened over the run, and how many stood down for a road or sea route.
+func _shuttle_lines(sim: RefCounted) -> Dictionary:
+	var lines: Dictionary = {"opened": 0, "retired": 0}
+	for road: Dictionary in sim.state.roads:
+		if str(road.get("variant", "")) != sim.Keys.ROUTE_SHUTTLE:
+			continue
+		lines.opened += 1
+		if bool(road.get("retired", false)):
+			lines.retired += 1
+	return lines
+
+
 func _categories(sim: RefCounted) -> int:
 	var seen: Dictionary = {}
 	for tech: String in sim.state.research.completed:
-		seen[str(sim.config.techs[tech].category)] = true
+		if not Research.is_gift(tech):
+			seen[str(sim.config.techs[tech].category)] = true
 	return seen.size()
 
 
@@ -154,6 +200,20 @@ func _count_entry(entry: Dictionary, day: int) -> void:
 	var key: String = str(entry.key)
 	var amount: float = float(entry.amount)
 	var operating: bool = bool(entry.operating)
+	var year: int = int(max(day - 1, 0) / YEAR_DAYS)
+	while record.year_surplus.size() <= year:
+		record.year_surplus.append(0.0)
+		record.year_invested.append(0.0)
+	if operating and entry.to == "public":
+		record.year_surplus[year] = float(record.year_surplus[year]) + amount
+	if operating and entry.from == "public":
+		record.year_surplus[year] = float(record.year_surplus[year]) - amount
+		if day != _expense_day:
+			_close_expense_day(day)
+		_expense_today += amount
+	if not operating and entry.from == "public" and entry.to == "external":
+		if key != "arrears" and not key.begins_with("aid."):
+			record.year_invested[year] = float(record.year_invested[year]) + amount
 	if key == "export" and day > EXPORT_MIX_FROM_DAY:
 		var good: String = str(entry.detail)
 		record.export_revenue[good] = float(record.export_revenue.get(good, 0.0)) + amount
@@ -209,6 +269,22 @@ func _scan_company(state: Dictionary) -> void:
 	if not record.company_stages.has(stage):
 		record.company_stages.append(stage)
 		record.company_stage_days[stage] = int(state.day)
+
+
+func _close_expense_day(day: int) -> void:
+	if _expense_day >= 0:
+		_expense_days.append(_expense_today)
+		if _expense_days.size() > COVER_WINDOW_DAYS:
+			_expense_days.pop_front()
+	_expense_today = 0.0
+	_expense_day = day
+
+
+func _scan_cover(state: Dictionary, day: int) -> void:
+	if day < COVER_FROM_DAY or day % COVER_EVERY_DAYS != 0 or _expense_days.is_empty():
+		return
+	var expense: float = maxf(_mean(_expense_days), 1.0)
+	record.cover_samples.append([day, snappedf(float(state.cash) / expense, 0.1)])
 
 
 func _scan_income(state: Dictionary, day: int) -> void:

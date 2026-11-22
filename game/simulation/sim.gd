@@ -22,7 +22,12 @@ const Market = preload("res://simulation/market.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
-const SAVE_VERSION: int = 4
+const Crews = preload("res://simulation/crews.gd")
+const Bay = preload("res://simulation/bay.gd")
+const Placement = preload("res://simulation/placement.gd")
+const Consignments = preload("res://simulation/consignments.gd")
+const Prospecting = preload("res://simulation/prospecting.gd")
+const SAVE_VERSION: int = SaveIo.SCHEMA
 const KEYS: Array[String] = Keys.RESOURCES
 const LEDGER_LIMIT: int = 1800
 const LOG_LIMIT: int = 120
@@ -40,6 +45,10 @@ var blobs: Dictionary = {"checkpoint": PackedByteArray(), "archives": {}}
 ## What finished technologies add up to. Derived from state, rebuilt when the list grows.
 var tech_effects: Dictionary = {}
 var tech_effects_count: int = -1
+## The great works' effect totals for one day of one state (Megaprojects.effect).
+var great_effects: Dictionary = {}
+var great_effects_day: int = -1
+var great_effects_state: Dictionary = {}
 
 
 func _init() -> void:
@@ -50,14 +59,28 @@ func _init() -> void:
 	market_rules = Rules.read("market")
 
 
+## A new game on the world of `seed_value`. `radius` is the planet's radius in Earth radii (the
+## new-game slider, geography.json `planet_radius`); without one, the old size presets apply. The
+## radius picks the site layout's band (`size`) and sets every distance; the ground is the seed's.
 func new_game(
-	seed_value: Variant, advantage: String, size: int = 1, difficulty: String = "normal"
+	seed_value: Variant,
+	advantage: String,
+	size: int = 1,
+	difficulty: String = "normal",
+	radius: float = 0.0
 ) -> void:
 	if not progression.difficulty.has(difficulty):
 		difficulty = "normal"
 	if not config.openings.has(advantage):
 		advantage = "capital"
+	var planet: Dictionary = progression_geo().planet_radius
+	if radius > 0.0:
+		radius = clampf(radius, float(planet.min), float(planet.max))
+		var bands: Array = planet.size_bands
+		size = 0 if radius < float(bands[0]) else (2 if radius >= float(bands[1]) else 1)
 	geo = WorldGen.new().build(seed_value, size)
+	if radius > 0.0:
+		geo.radius_km = snappedf(radius * float(planet.earth_km), 0.1)
 	blobs = {"checkpoint": PackedByteArray(), "archives": {}}
 	tech_effects_count = -1
 	state = {
@@ -135,6 +158,11 @@ static func ensure_systems(target: Dictionary) -> void:
 	Sites.ensure_state(target)
 	EventsV2.ensure_state(target)
 	Stats.ensure_state(target)
+	# After Production.ensure_state: crews follow buildings by uid.
+	Crews.ensure_state(target)
+	Placement.ensure_state(target)
+	Consignments.ensure_state(target)
+	Prospecting.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -158,6 +186,15 @@ func act(action: String, args: Dictionary = {}) -> String:
 		return "本局已经结束，请读取存档或开始新局"
 	var refusal: String = "未知操作"
 	match action:
+		"settle_at":
+			refusal = Placement.settle_at(
+				self,
+				float(args.get("lat", 0.0)),
+				float(args.get("lon", 0.0)),
+				int(args.get("from", -1)),
+				str(args.get("name", "")),
+				str(args.get("kind", Keys.SITE_RESIDENTIAL))
+			)
 		"settle":
 			refusal = Sites.settle(
 				self,
@@ -182,6 +219,15 @@ func act(action: String, args: Dictionary = {}) -> String:
 			)
 		"survey":
 			refusal = Sites.survey(self, _site_arg(args))
+		"prospect_observe":
+			refusal = Prospecting.observe(
+				self,
+				str(args.get("resource", "")),
+				float(args.get("lat", 0.0)),
+				float(args.get("lon", 0.0))
+			)
+		"prospect_send":
+			refusal = Prospecting.send(self, str(args.get("step", "")), int(args.get("id", 0)))
 		"tutorial_begin":
 			refusal = Tutorial.begin(self)
 		"tutorial_shortage":
@@ -229,6 +275,22 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Logistics.upgrade_road(self, int(args.get("road", 0)))
 		"research_contract":
 			refusal = Research.set_contract(self, int(args.get("staff", 0)))
+		"career_transfer":
+			refusal = Career.transfer(self, float(args.get("amount", 0.0)))
+		"survey_offshore":
+			refusal = Bay.survey(self, _site_arg(args))
+		"crew_train":
+			refusal = Crews.train(self, int(args.get("region", args.get("site", -1))))
+		"crew_send":
+			refusal = Crews.send(self, int(args.get("crew", -1)), int(args.get("to", -1)))
+		"crew_next":
+			refusal = Crews.choose_next(self, _site_arg(args), int(args.get("uid", -1)))
+		"crew_order":
+			refusal = Crews.set_order(self, _site_arg(args), str(args.get("order", "")))
+		"research_commission":
+			refusal = Research.commission(
+				self, str(args.get("tech", "")), int(args.get("level", 0))
+			)
 	return refusal
 
 
@@ -253,6 +315,11 @@ func _set_policy(args: Dictionary) -> String:
 		float(pop_rules.wage.min),
 		float(pop_rules.wage.max)
 	)
+	state.policy.services = clampi(
+		int(args.get("services", state.policy.get("services", 0))),
+		0,
+		int(pop_rules.get("services", {}).get("levels", 0))
+	)
 	if args.get("event_pause", "") in [EventsV2.PAUSE_ALL, EventsV2.PAUSE_CRITICAL]:
 		state.policy.event_pause = str(args.event_pause)
 	_log("贸易保留 %.0f 天食品，企业利润税 %.0f%%。" % [state.policy.food_reserve, state.policy.tax * 100.0])
@@ -270,7 +337,10 @@ func tick() -> void:
 	for s: Dictionary in state.settlements:
 		stocks[str(s.region)] = s.stock.duplicate(true)
 	_repay()
+	Population.pay_services(self)
 	Logistics.advance_shipments(self)
+	# Which buildings a crew works on today (crews.gd); the rest of the sites wait.
+	Crews.daily(self)
 	for s: Dictionary in state.settlements:
 		if s.arrival > 0:
 			s.arrival -= 1
@@ -286,8 +356,11 @@ func tick() -> void:
 	Logistics.dispatch(self)
 	Logistics.road_daily(self)
 	Sites.daily(self)
+	Prospecting.daily(self)
+	Bay.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
+	_public_expense(Crews.wages(self), "crew.wages", "residents")
 	Population.daily(self)
 	Company.social_environment(self)
 	Pollution.daily(self)
@@ -323,18 +396,33 @@ func tick() -> void:
 
 ## Growth has running costs: a base, a per-resident part and a per-settlement part.
 func _admin_cost() -> float:
+	return _admin_for(_residents(), state.settlements.size())
+
+
+func _residents() -> int:
 	var residents: int = 0
 	for s: Dictionary in state.settlements:
 		residents += int(s.population)
+	return residents
+
+
+## Administration grows a little faster than the colony: per resident with size, per settlement
+## with the number of settlements. Without the 1.9 keys it is the 1.8 straight line.
+func _admin_for(residents: int, places: int) -> float:
 	var saved: float = Research.bonus(self, "admin")
 	for s: Dictionary in state.settlements:
 		saved += Population.service_total(self, s, "admin")
+	var rules: Dictionary = config.economy
+	var crowding: float = (
+		float(residents) / maxf(1.0, float(rules.get("admin_resident_scale", INF)))
+	)
+	var spread: float = float(rules.get("admin_settlement_growth", 0.0)) * maxi(0, places - 1)
 	return (
 		maxf(0.3, 1.0 + saved)
 		* (
-			float(config.economy.admin)
-			+ float(config.economy.admin_per_resident) * residents
-			+ float(config.economy.admin_per_settlement) * state.settlements.size()
+			float(rules.admin)
+			+ float(rules.admin_per_resident) * residents * (1.0 + crowding)
+			+ float(rules.admin_per_settlement) * places * (1.0 + spread)
 		)
 	)
 
@@ -399,7 +487,8 @@ func _resolve_legacy_event(id: String, choice: String) -> String:
 				s.scientists += 4
 				s.population += 8
 				state.immigrants_total += 8
-				_log("4 支研究团队与 4 支工程队入住首府。")
+				Stats.people(state, int(s.region), true, 8)
+				_log("4 支研究团队与 4 名职工入住首府。")
 	return ""
 
 
@@ -476,7 +565,26 @@ func _transfer(
 		Stats.money(state, "invest", key, amount)
 	elif to == "public":
 		Stats.money(state, "funding", key, amount)
+	if from == "public":
+		Stats.sink(state, _sink_of(key, detail), amount)
 	return amount
+
+
+## Which money sink a payment from public cash feeds (1.9 spending by sink), or "" for none.
+## Building and upgrading a great work count as great works.
+func _sink_of(key: String, detail: String) -> String:
+	var sink: String = str(config.economy.get("money_sinks", {}).get(key, ""))
+	if (
+		(sink == Keys.SINK_BUILDINGS or sink == Keys.SINK_UPGRADES)
+		and bool(config.buildings.get(detail, {}).get("megaproject", false))
+	):
+		return Keys.SINK_GREAT_WORKS
+	return sink
+
+
+## Spending by sink, one dictionary per 360-day year, for the economy page and the harness.
+func sinks_by_year() -> Array:
+	return state.get("stats", {}).get("sinks", [])
 
 
 func _public_expense(amount: float, key: String, to: String, detail: String = "") -> void:
@@ -507,6 +615,11 @@ func _repay() -> void:
 	state.debt = maxf(0.0, state.debt)
 
 
+## Goods are kept in hundreds of tonnes (economy.json `display`): messages show tonnes.
+func tonnes(amount: float) -> float:
+	return amount * float(config.get("display", {}).get("tonnes_per_unit", 1.0))
+
+
 func summary() -> Dictionary:
 	var population: int = 0
 	var employed: int = 0
@@ -535,6 +648,57 @@ func summary() -> Dictionary:
 	}
 
 
+## Days of public cash at the mean daily operating expense of the recent past: the money
+## readout of the economy page, the top bar and the advisor, and what the bots steer by.
+## Money counts as idle only once a full window has been seen, not in the first months.
+func cover_view() -> Dictionary:
+	var history: Array = state.operating_history
+	var rules: Dictionary = config.economy
+	var window: int = int(rules.get("cover_window_days", HISTORY_LIMIT))
+	var days: int = mini(window, history.size())
+	var expense: float = 0.0
+	for index: int in range(history.size() - days, history.size()):
+		expense += float(history[index].expense)
+	var cover: float = float(state.cash) / maxf(1.0, expense / maxi(1, days))
+	var band: String = Keys.COVER_NORMAL
+	if cover < float(rules.get("cover_short_days", 0.0)):
+		band = Keys.COVER_SHORT
+	elif cover >= float(rules.get("cover_idle_days", INF)) and days >= window:
+		band = Keys.COVER_IDLE
+	return {"cover": cover, "expense": expense / maxi(1, days), "days": days, "band": band}
+
+
+func cash_cover() -> float:
+	return float(cover_view().cover)
+
+
+## Cash optional daily spending may use (services budget, commissioned research): what is left
+## after keeping `optional_reserve_days` of average operating expenses for today's bills, so an
+## optional payment never leaves a wage or an upkeep bill unpaid.
+func optional_room() -> float:
+	var keep: float = float(config.economy.get("optional_reserve_days", 0.0))
+	return float(state.cash) - keep * float(cover_view().expense)
+
+
+## How much of a window's export value comes from mines about to run out (the advisor's warning).
+func mine_outlook(window: Dictionary) -> Dictionary:
+	return Production.mine_outlook(self, window)
+
+
+## What administration costs today and what growth adds to it, for the economy page.
+func admin_view() -> Dictionary:
+	var residents: int = _residents()
+	var places: int = state.settlements.size()
+	var today: float = _admin_for(residents, places)
+	var step: int = int(config.economy.get("admin_preview_residents", 100))
+	return {
+		"daily": today,
+		"residents_step": step,
+		"per_residents": _admin_for(residents + step, places) - today,
+		"per_settlement": _admin_for(residents, places + 1) - today,
+	}
+
+
 func audit() -> Array:
 	var errors: Array = []
 	var total: float = float(state.cash) + float(state.resident_cash) + float(state.enterprise_cash)
@@ -556,8 +720,13 @@ func audit() -> Array:
 		errors.append("cash conservation")
 	var holdings: Dictionary = _stock()
 	for s: Dictionary in state.settlements:
-		if int(s.population) != int(s.children) + int(s.workers) + int(s.scientists):
+		if (
+			int(s.population)
+			!= int(s.children) + int(s.workers) + int(s.scientists) + int(s.get("crew", 0))
+		):
 			errors.append("population partition")
+		if int(s.get("farmers", 0)) > int(s.workers) or int(s.get("farmers", 0)) < 0:
+			errors.append("farmers outside the workers")
 		if s.employed_workers > s.workers or s.employed_scientists > s.scientists:
 			errors.append("duplicate job allocation")
 		if int(s.workers) < 0 or int(s.scientists) < 0 or int(s.children) < 0:
@@ -574,6 +743,9 @@ func audit() -> Array:
 		if int(party.count) <= 0 or settlement(int(party.region)).is_empty():
 			errors.append("recruit party invalid")
 	errors.append_array(_audit_sites())
+	errors.append_array(Crews.audit(state))
+	errors.append_array(Consignments.audit(state))
+	errors.append_array(Prospecting.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")
 	for s: Dictionary in state.settlements:
@@ -608,6 +780,13 @@ func audit() -> Array:
 
 func _audit_sites() -> Array:
 	var errors: Array = []
+	var uids: Dictionary = {}
+	for s: Dictionary in state.settlements:
+		for b: Dictionary in s.buildings:
+			var uid: int = int(b.get("uid", 0))
+			if uid <= 0 or uid >= int(state.get("next_building_uid", 1)) or uids.has(uid):
+				errors.append("building uid invalid or repeated")
+			uids[uid] = true
 	for s: Dictionary in state.settlements:
 		var plots: Array = state.world.regions[int(s.region)].plots
 		var used: Dictionary = {}
@@ -622,18 +801,32 @@ func _audit_sites() -> Array:
 			used[plot] = true
 	for reg: Dictionary in state.world.regions:
 		var known: Dictionary = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
+		var counted: Dictionary = {}
 		for plot: Dictionary in reg.plots:
 			if plot.kind != "deposit":
 				continue
 			if float(plot.reserves) < -0.00001:
 				errors.append("negative reserves")
+			# Plots on one planetary deposit share its reserve: it counts once.
+			var shared: String = str(plot.get("deposit", ""))
+			if shared != "":
+				if counted.has(shared):
+					continue
+				counted[shared] = true
+				var left: Variant = state.get("geology", {}).get("remaining", {}).get(shared)
+				if left != null and absf(float(left) - float(plot.reserves)) > 0.01:
+					errors.append("shared deposit out of step")
 			if (
 				not bool(plot.hidden)
 				and (int(plot.depth) == 0 or bool(reg.get("deep_known", false)))
 			):
-				known[plot.resource] += float(plot.reserves)
+				var good: String = str(plot.resource)
+				known[good] = float(known.get(good, 0.0)) + float(plot.reserves)
 		for good: String in known:
-			if absf(float(known[good]) - float(reg.deposits[good])) > 0.01:
+			if absf(float(known[good]) - float(reg.deposits.get(good, 0.0))) > 0.01:
+				errors.append("deposit total differs from plots")
+		for good: String in reg.deposits:
+			if not known.has(good) and absf(float(reg.deposits[good])) > 0.01:
 				errors.append("deposit total differs from plots")
 	for road: Dictionary in state.roads:
 		if settlement(int(road.a)).is_empty() or settlement(int(road.b)).is_empty():

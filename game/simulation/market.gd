@@ -14,10 +14,14 @@ static func ensure_state(state: Dictionary) -> void:
 
 
 static func factor(sim: RefCounted, good: String) -> float:
+	return factor_at(sim, good, float(sim.state.market.saturation.get(good, 0.0)))
+
+
+## The price factor a good would have at this saturation: today's, or a preview of later.
+static func factor_at(sim: RefCounted, good: String, saturation: float) -> float:
 	var rules: Dictionary = sim.market_rules
 	if not rules.scale.has(good):
 		return 1.0
-	var saturation: float = float(sim.state.market.saturation.get(good, 0.0))
 	var level: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
 	var depth: float = float(rules.depth) * float(level.market_depth_factor)
 	var market_size: float = float(rules.scale[good]) * (1.0 + Research.bonus(sim, "market_depth"))
@@ -25,9 +29,14 @@ static func factor(sim: RefCounted, good: String) -> float:
 
 
 static func price(sim: RefCounted, good: String) -> float:
+	return price_at(sim, good, factor(sim, good))
+
+
+## The export price at a given market factor, with today's colony-wide bonuses.
+static func price_at(sim: RefCounted, good: String, market_factor: float) -> float:
 	return (
 		float(sim.config.prices[good])
-		* factor(sim, good)
+		* market_factor
 		* Megaprojects.export_factor(sim)
 		* EventsV2.colony_modifier(sim, "export_price")
 		* (1.0 + Research.bonus(sim, "export_price"))
@@ -47,20 +56,30 @@ static func daily(sim: RefCounted) -> void:
 		saturation[good] = float(saturation[good]) * keep
 
 
-## Prices for display: current price and the direction the saturation is moving.
+## Prices for display: current price, the direction the saturation is moving, the floor and
+## what the price would be once another `preview_tonnes` had been sold.
 static func view(sim: RefCounted) -> Array:
 	var rows: Array = []
+	var floor_factor: float = float(sim.market_rules.floor)
+	var ahead: float = float(sim.market_rules.get("preview_tonnes", 100.0))
 	for good: String in sim.market_rules.scale:
+		var saturation: float = float(sim.state.market.saturation.get(good, 0.0))
+		var today: float = factor_at(sim, good, saturation)
 		(
 			rows
 			. append(
 				{
 					"good": good,
-					"price": price(sim, good),
+					"price": price_at(sim, good, today),
 					"base": float(sim.config.prices[good]),
-					"factor": factor(sim, good),
-					"saturation": float(sim.state.market.saturation.get(good, 0.0)),
+					"factor": today,
+					"saturation": saturation,
 					"trend": _trend(sim, good),
+					"floor": floor_factor,
+					"floor_price": price_at(sim, good, floor_factor),
+					"at_floor": today <= floor_factor,
+					"ahead_tonnes": ahead,
+					"ahead_price": price_at(sim, good, factor_at(sim, good, saturation + ahead)),
 				}
 			)
 		)

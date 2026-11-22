@@ -6,7 +6,9 @@
     "year_days": 360,
     "money": "account units",
     "staff": "persons",
-    "stock": "tonnes"
+    "stock": "tonnes",
+    "commission": "speedup: extra points a day per point of the team's own rate, by level; price: money per point by tier 1-5, times 1 + crowding per other running commission",
+    "event_towns": "recent_days: days after a town's last event before it is fully eligible again; recent_floor: its weight the day after one; focus_bonus: extra weight per building of the kind the story is about, up to focus_cap buildings"
   },
   "scope": "all difficulties share rules; normal is baseline candidate calibration",
   "difficulty": {
@@ -49,6 +51,11 @@
     "projects_per_lab": 2,
     "minimum_staff": 3,
     "contract_point_price": 50.0,
+    "commission": {
+      "speedup": [0.0, 0.5, 1.0],
+      "price_per_point_by_tier": [100.0, 150.0, 220.0, 320.0, 450.0],
+      "crowding": 0.25
+    },
     "contract_tech": "research_network",
     "science_opening_rate": 1.1,
     "science_opening_funding": 0.5
@@ -112,10 +119,17 @@
       "parts": 80.0
     }
   },
+  "event_towns": {
+    "recent_days": 120,
+    "recent_floor": 0.15,
+    "focus_bonus": 0.5,
+    "focus_cap": 3
+  },
   "time": {
     "fast_multiplier": 3,
     "seconds_per_day": 5,
-    "very_fast_multiplier": 6
+    "very_fast_multiplier": 6,
+    "autosave_days": 90
   },
   "pollution": {
     "absorption_per_day": 6.0,

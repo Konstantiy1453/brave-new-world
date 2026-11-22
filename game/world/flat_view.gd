@@ -18,6 +18,41 @@ const MARKER_RICH_TONNES: Dictionary = {"ore": 6000.0, "copper": 4000.0, "crysta
 const MARKER_RICH_FERTILITY: float = 0.55
 const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
+## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
+const FLAT_WRAP_JUMP: float = 9.0
+## The flat map's width and height in scene units (360° and 180° at 20° a unit).
+const FLAT_WIDTH: float = 18.0
+const FLAT_HEIGHT: float = 9.0
+## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
+const SHIP_DAYS: float = 3.0
+## Where in its call a ship is on the day of its town's latest sea cargo: alongside the quay.
+const SHIP_BERTH_PHASE: float = 0.45
+const SHIP_LIGHT: Color = Color("d6f1ff")
+## The ship light against a cargo dot: its size and its glow. At the berth it lies this share of its
+## line out from the quay, so it reads beside the quay's lamps instead of summing with them into
+## one white spot (the 1.10.1 night captures).
+const SHIP_LIGHT_SIZE: float = 0.7
+const SHIP_LIGHT_GLOW: float = 0.55
+const SHIP_BERTH_OFFSET: float = 0.18
+## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
+const GROUND_CURSOR_DEGREES: float = 1.2
+const GROUND_CURSOR_COLOR: Color = Color("f4fbff")
+## Prospecting anomalies by resource: iron rust, copper green, crystal violet, nickel pale sage,
+## cobalt deep blue.
+const ANOMALY_COLORS: Dictionary = {
+	"ore": Color("d9895a"),
+	"copper": Color("4fc3a1"),
+	"crystal": Color("b493e8"),
+	"nickel": Color("c2d6b0"),
+	"cobalt": Color("6f86e8"),
+}
+
+## Cargo markers placed every frame along their route, between the daily updates.
+var globe_movers: Array = []
+var flat_movers: Array = []
+## The ship lights at working quays, placed every frame from the game clock.
+var globe_ships: Array = []
+var flat_ships: Array = []
 
 
 func _flat_point(lat: float, lon: float) -> Vector3:
@@ -25,53 +60,62 @@ func _flat_point(lat: float, lon: float) -> Vector3:
 
 
 func _build_flat() -> void:
-	var shader := Shader.new()
-	shader.code = """
-shader_type spatial;
-render_mode unshaded,cull_disabled;
-uniform sampler2D atlas:source_color,filter_linear_mipmap,repeat_disable;
-void fragment(){
- vec4 tex=texture(atlas,UV);
- vec2 step_uv=1.0/vec2(textureSize(atlas,0));
- float slope=texture(atlas,UV-vec2(step_uv.x,0)).a-texture(atlas,UV+vec2(step_uv.x,0)).a;
- slope+=texture(atlas,UV-vec2(0,step_uv.y)).a-texture(atlas,UV+vec2(0,step_uv.y)).a;
- float relief=clamp(slope*26.0,-.24,.24);
- relief*=smoothstep(.50,.57,tex.a);
- ALBEDO=tex.rgb*(.76+relief);
-}
-"""
 	var material := ShaderMaterial.new()
-	material.shader = shader
+	material.shader = Shaders.shader("flat")
 	material.set_shader_parameter("atlas", geography_atlas)
+	material.set_shader_parameter("noise3d", Shaders.noise_texture())
+	material.set_shader_parameter("lights", _night_lights_texture())
+	_apply_town_lights(material)
+	material.set_shader_parameter("ice_latitude", _ice_latitude())
+	material.set_shader_parameter("coverage", _cloud_coverage())
 	flat_shader = material
 	var sheet := QuadMesh.new()
 	sheet.size = Vector2(18, 9)
 	_mesh(flat_world, sheet, Vector3.ZERO, material)
-	# A restrained cartographic frame, not the regional construction grid.
-	var frame: Array[Vector3] = [
-		Vector3(-9, -4.5, .02),
-		Vector3(9, -4.5, .02),
-		Vector3(9, 4.5, .02),
-		Vector3(-9, 4.5, .02),
-		Vector3(-9, -4.5, .02)
-	]
-	_line(flat_world, frame, Color("5a8491"), .15)
-	for lon in range(-180, 181, 60):
+	# No frame and no east or west edge: the map repeats round the planet (`_refresh_flat_ghosts`).
+	# Longitude ticks along the top edge; 180° once, where the copies meet.
+	for lon in range(-120, 181, 60):
 		var p := _flat_point(90, lon)
 		_line(flat_world, [p, p + Vector3(0, .12, 0)], Color("718e9c"), .1)
 		_flat_label(flat_world, Vector3(p.x, 4.78, .03), "%d°" % lon, Color("8da6b4"), .0065, 26)
-	for lat in [-60, -30, 0, 30, 60]:
-		_flat_label(
-			flat_world, Vector3(-9.38, lat / 20.0, .03), "%d°" % lat, Color("8da6b4"), .0065, 26
-		)
-	_flat_label(flat_world, Vector3(0, -4.9, .03), "全球勘察图  /  等距经纬投影", Color("90aeb9"), .0068, 30)
 	flat_marker_root = Node3D.new()
 	flat_world.add_child(flat_marker_root)
 	flat_transport_root = Node3D.new()
 	flat_world.add_child(flat_transport_root)
+	flat_transport_root.visible = routes_shown
+	flat_mover_root = Node3D.new()
+	flat_mover_root.name = "FlatMovers"
+	flat_world.add_child(flat_mover_root)
 	_build_global_water(flat_world, true)
 	_update_flat_markers()
 	_update_flat_transport()
+	flat_ghosts_dirty = true
+
+
+## Copies of the flat map's content one map width west and east (its moving cargo excepted), so a
+## view across the 180° meridian shows the planet going on. Rebuilt only when the map has changed.
+func _refresh_flat_ghosts() -> void:
+	for ghost: Node3D in flat_ghosts:
+		if is_instance_valid(ghost):
+			ghost.get_parent().remove_child(ghost)
+			ghost.queue_free()
+	flat_ghosts.clear()
+	flat_ghosts_dirty = false
+	if flat_world == null or not is_instance_valid(flat_world):
+		return
+	var originals: Array = []
+	for child: Node in flat_world.get_children():
+		if child == flat_mover_root or child.has_meta("flat_ghost"):
+			continue
+		originals.append(child)
+	for side: float in [-FLAT_WIDTH, FLAT_WIDTH]:
+		var ghost := Node3D.new()
+		ghost.set_meta("flat_ghost", true)
+		ghost.position = Vector3(side, 0, 0)
+		flat_world.add_child(ghost)
+		for child: Node in originals:
+			ghost.add_child(child.duplicate())
+		flat_ghosts.append(ghost)
 
 
 func _flat_label(
@@ -131,6 +175,9 @@ func _labelled_sites() -> Array:
 			var sb: float = _site_rank(b)
 			return int(a.id) < int(b.id) if sa == sb else sa > sb
 	)
+	# Candidates are named only while the player is choosing where to land, or filtering the map
+	# for a site; after that, the settled, selected and hovered sites keep their names.
+	var choosing: bool = state.get("settlements", []).is_empty() or marker_filter != "all"
 	var labelled: Array = []
 	for reg: Dictionary in ranked:
 		var id: int = int(reg.id)
@@ -138,7 +185,7 @@ func _labelled_sites() -> Array:
 			id == selected_region
 			or id == hovered_region
 			or _is_settled(id)
-			or labelled.size() < LABELLED_SITES
+			or (choosing and labelled.size() < LABELLED_SITES)
 		):
 			labelled.append(reg)
 	return labelled
@@ -178,6 +225,7 @@ func _place_flat_label(point: Vector3, text: String, placed: Array) -> Vector3:
 func _update_flat_markers() -> void:
 	if flat_marker_root == null or not is_instance_valid(flat_marker_root):
 		return
+	flat_ghosts_dirty = true
 	for child in flat_marker_root.get_children():
 		flat_marker_root.remove_child(child)
 		child.queue_free()
@@ -191,6 +239,71 @@ func _update_flat_markers() -> void:
 	for reg in world.regions:
 		if _marker_shown(reg) and not labelled.has(int(reg.id)):
 			_flat_marker(reg, false, placed)
+	_flat_signals()
+	_flat_anomalies()
+	_flat_ground_cursor()
+
+
+## The picked ground (1.10 free placement): a white ring and cross at the exact point.
+func _flat_ground_cursor() -> void:
+	if ground_point.is_empty():
+		return
+	var point := _flat_point(float(ground_point.lat), float(ground_point.lon)) + Vector3(0, 0, .03)
+	var holder := Node3D.new()
+	flat_marker_root.add_child(holder)
+	var size: float = GROUND_CURSOR_DEGREES / 20.0
+	var ring: Array[Vector3] = []
+	for i in range(41):
+		var angle := float(i) / 40.0 * TAU
+		ring.append(point + Vector3(cos(angle), sin(angle), 0) * size)
+	_line(holder, ring, GROUND_CURSOR_COLOR, 1.4)
+	for axis: Vector3 in [Vector3.RIGHT, Vector3.UP]:
+		for side: float in [-1.0, 1.0]:
+			var tick: Array[Vector3] = [
+				point + axis * size * 0.5 * side, point + axis * size * 1.6 * side
+			]
+			_line(holder, tick, GROUND_CURSOR_COLOR, 1.4)
+	_sphere(holder, point, .01, _marker_material(GROUND_CURSOR_COLOR), 8, 4)
+
+
+## The prospecting anomalies (prospecting.gd): a ring per anomaly, its zone's size, in its
+## resource's colour; a drilled deposit gets a dot in the middle.
+func _flat_anomalies() -> void:
+	for anomaly: Dictionary in state.get("prospecting", {}).get("anomalies", []):
+		var colour: Color = ANOMALY_COLORS.get(str(anomaly.resource), Color.WHITE)
+		var point := _flat_point(float(anomaly.lat), float(anomaly.lon)) + Vector3(0, 0, .025)
+		var size: float = float(anomaly.zone) / 20.0
+		var ring: Array[Vector3] = []
+		for i in range(49):
+			var angle := float(i) / 48.0 * TAU
+			ring.append(point + Vector3(cos(angle), sin(angle), 0) * size)
+		var holder := Node3D.new()
+		flat_marker_root.add_child(holder)
+		_line(holder, ring, colour, 1.2)
+		if str(anomaly.stage) == "drilled":
+			_sphere(holder, point, .014, _marker_material(colour), 8, 4)
+
+
+## Each settled coastal town's offshore signal while it is unknown or rich: a gold ring out over
+## the water, where the district floats its buoy.
+func _flat_signals() -> void:
+	for s: Dictionary in state.get("settlements", []):
+		var region: int = int(s.get("region", -1))
+		if signal_reading(region).is_empty():
+			continue
+		_fit_field()
+		var at: Vector2 = signal_point(region)
+		if not at.is_finite():
+			continue
+		var point := _flat_point(at.x, at.y) + Vector3(0, 0, .02)
+		var ring: Array[Vector3] = []
+		for i in range(33):
+			var angle := float(i) / 32.0 * TAU
+			ring.append(point + Vector3(cos(angle), sin(angle), 0) * .04)
+		var holder := Node3D.new()
+		flat_marker_root.add_child(holder)
+		_line(holder, ring, SIGNAL_COLOR, 1.1)
+		_sphere(holder, point, .012, _marker_material(SIGNAL_COLOR), 8, 4)
 
 
 func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
@@ -217,7 +330,7 @@ func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
 	_sphere(holder, point, .025, _marker_material(color), 8, 4)
 	if not with_label:
 		return
-	var text: String = _site_text(reg, settled)
+	var text: String = _site_name(reg, settled)
 	_flat_label(holder, _place_flat_label(point, text, placed), text, color, .0068, 40)
 
 
@@ -326,16 +439,27 @@ func _disc(
 func _update_flat_transport() -> void:
 	if flat_transport_root == null or not is_instance_valid(flat_transport_root):
 		return
-	for child in flat_transport_root.get_children():
-		flat_transport_root.remove_child(child)
-		child.queue_free()
+	flat_ghosts_dirty = true
+	for root: Node3D in [flat_transport_root, flat_mover_root]:
+		if root == null or not is_instance_valid(root):
+			continue
+		for child in root.get_children():
+			root.remove_child(child)
+			child.queue_free()
+	flat_movers.clear()
 	for route: Dictionary in state.get("roads", []):
-		_draw_road_on_flat(route)
+		if not bool(route.get("retired", false)):
+			_draw_road_on_flat(route)
+	_place_movers(flat_movers, sky.day_fraction)
+	flat_ships = _ship_movers(true)
+	place_ships(flat_ships, sky.day_fraction)
 
 
 func _draw_road_on_flat(route: Dictionary) -> void:
 	var day: int = int(state.get("day", 0))
 	var route_color := Color("e7bb75")
+	if str(route.get("variant", "")) == "shuttle":
+		route_color = SHUTTLE_COLOR
 	if Geo.road_building(route, day):
 		route_color = Color("8fa1a8")
 	elif Geo.road_blocked(route, day):
@@ -355,31 +479,135 @@ func _draw_road_on_flat(route: Dictionary) -> void:
 		segment.append(point)
 		points.append(point)
 	_line(flat_transport_root, segment, route_color, 1.1)
+	var lifted: Array[Vector3] = []
+	for point: Vector3 in points:
+		lifted.append(point + Vector3(0, 0, .03))
 	for shipment in state.get("shipments", []):
 		if points.is_empty() or int(shipment.get("road", 0)) != int(route.get("id", 0)):
 			continue
-		var progress: float = clampf(
-			(
-				1.0
-				- (
-					float(shipment.get("remaining", 1))
-					/ maxf(float(shipment.get("total_days", 1)), 1.0)
-				)
-			),
-			0,
-			1
-		)
-		if int(shipment.get("from", -1)) == int(route.get("b", -2)):
-			progress = 1.0 - progress
-		var index: int = clampi(int(progress * (points.size() - 1)), 0, points.size() - 1)
-		_sphere(
-			flat_transport_root,
-			points[index] + Vector3(0, 0, .03),
-			.031,
-			_mat("flatshipment", Color("fff0bd"), 0, 1, 2),
+		var marker := _sphere(
+			flat_mover_root if flat_mover_root != null else flat_transport_root,
+			lifted[0],
+			CARGO_DOT_FLAT,
+			_mat("flatshipment", Color("fff0bd"), 0, 1, CARGO_GLOW),
 			8,
 			4
 		)
+		flat_movers.append(_mover(marker, lifted, shipment, route, FLAT_WRAP_JUMP))
+
+
+## A cargo marker and the path it follows. Lengths skip wrap jumps, so a marker leaps the
+## antimeridian on the flat map instead of crossing the whole sheet.
+func _mover(
+	node: Node3D, points: Array[Vector3], shipment: Dictionary, route: Dictionary, jump: float
+) -> Dictionary:
+	var lengths := PackedFloat32Array([0.0])
+	for index: int in range(1, points.size()):
+		var step: float = points[index - 1].distance_to(points[index])
+		lengths.append(lengths[index - 1] + (0.0 if step > jump else step))
+	return {
+		"node": node,
+		"points": points,
+		"lengths": lengths,
+		"remaining": float(shipment.get("remaining", 1)),
+		"total": maxf(float(shipment.get("total_days", 1)), 1.0),
+		"reverse": int(shipment.get("from", -1)) == int(route.get("b", -2)),
+	}
+
+
+## A light for each ship calling at a working quay, on the line the district's ship sails
+## (`ship_line`): on the flat map or on the globe.
+func _ship_movers(flat: bool) -> Array:
+	var found: Array = []
+	var holder: Node3D = flat_mover_root if flat else mover_root
+	if holder == null or not is_instance_valid(holder):
+		return found
+	var economy: Dictionary = Rules.read("economy")
+	var buildings: Dictionary = economy.buildings
+	var call_days: int = int(economy.get("bay", {}).get("ship_call_days", 30))
+	for s: Dictionary in state.get("settlements", []):
+		var region: int = int(s.get("region", -1))
+		if region < 0 or region >= world.get("regions", []).size():
+			continue
+		if not bool(world.regions[region].get("coast", false)):
+			continue
+		if not LightField.quay_working(state, s, buildings):
+			continue
+		# A ship calls only with cargo: a harbour that has moved none yet has an empty berth.
+		if not Consignments.ship_calling(state, s, call_days):
+			continue
+		_fit_field()
+		var line: Array = ship_line(region)
+		if line.size() < 2:
+			continue
+		var ends: Array[Vector3] = []
+		for ll: Vector2 in line:
+			ends.append(
+				(
+					_flat_point(ll.x, ll.y) + Vector3(0, 0, .05)
+					if flat
+					else Geo.unit_point(ll.x, ll.y) * 3.05
+				)
+			)
+		var light := _sphere(
+			holder,
+			ends[0],
+			(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * SHIP_LIGHT_SIZE,
+			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW * SHIP_LIGHT_GLOW),
+			8,
+			4
+		)
+		var cargo_day: float = float(s.get("sea_cargo", {}).get("day", float(region) * 0.37))
+		var phase: float = SHIP_BERTH_PHASE * SHIP_DAYS - cargo_day
+		var berth: Vector3 = ends[1].lerp(ends[0], SHIP_BERTH_OFFSET)
+		found.append({"node": light, "from": ends[0], "to": berth, "phase": phase})
+	return found
+
+
+## Each ship light where its call has got to: in from the offing over the first third of its
+## days, at the berth, out again, then away beyond the horizon. From the game clock alone, so a
+## capture or a replay shows the same.
+func place_ships(ships: Array, fraction: float) -> void:
+	var day: float = float(state.get("day", 0)) + fraction
+	for entry: Dictionary in ships:
+		if not is_instance_valid(entry.node):
+			continue
+		var node: Node3D = entry.node
+		var phase: float = fposmod(day + float(entry.phase), SHIP_DAYS) / SHIP_DAYS
+		var from: Vector3 = entry.from
+		var to: Vector3 = entry.to
+		node.visible = phase < 0.92
+		if phase < 0.34:
+			node.position = from.lerp(to, smoothstep(0.0, 1.0, phase / 0.34))
+		elif phase < 0.58:
+			node.position = to
+		else:
+			node.position = to.lerp(from, smoothstep(0.0, 1.0, (phase - 0.58) / 0.34))
+
+
+## Glides every cargo marker to where it is part-way through the day.
+func _place_movers(movers: Array, fraction: float) -> void:
+	for mover: Dictionary in movers:
+		if not is_instance_valid(mover.node):
+			continue
+		var node: Node3D = mover.node
+		var done: float = clampf(
+			1.0 - (float(mover.remaining) - fraction) / float(mover.total), 0.0, 1.0
+		)
+		if bool(mover.reverse):
+			done = 1.0 - done
+		var points: Array[Vector3] = mover.points
+		var lengths: PackedFloat32Array = mover.lengths
+		var target: float = done * lengths[lengths.size() - 1]
+		var index: int = 0
+		while index < lengths.size() - 2 and lengths[index + 1] < target:
+			index += 1
+		var span: float = lengths[index + 1] - lengths[index] if lengths.size() > 1 else 0.0
+		if span <= 0.0:
+			node.position = points[mini(index + 1, points.size() - 1)]
+			continue
+		var t: float = (target - lengths[index]) / span
+		node.position = points[index].lerp(points[index + 1], t)
 
 
 func _build_global_water(parent: Node3D, flat: bool) -> void:

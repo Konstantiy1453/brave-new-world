@@ -1,3 +1,317 @@
+# Colony Charter 1.10 — Progress (the bay first, started 2026-11-19)
+
+The user's brief of 2026-11-19 covers free siting, geology per resource and prospecting, mobile engineering crews,
+a nightscape built from the game's own state, people and growth, and stories. The plan, in phases, is
+`docs/superpowers/plans/2026-11-19-v110-bay-first-instructions.md`. The check of the branch against
+the November 13 preview is `docs/v17/REVIEW_20261119.md`: most findings are still open, and immigration has
+changed since (11 a month). Branch `v17-bay`, from `v17-fix-tips` at `8c395db`. Evidence labels as in
+`CLAUDE.md`; everything runs in the Linux cloud container unless stated.
+
+| Phase | What | State |
+|---|---|---|
+| A. Verified feedback | building uids (schema 6, own folder), research states, commission ETA, farm forecast by usable food, tutorial planet and water lesson, the clock's fraction, event towns after the draw, report-back days | **done** (`f1bf55f`, `0a30df2`); suite `v110_fixes`; harness `fixes-0a30df2` |
+| B. Nightscape from state | lights from real plots on globe, flat map and district (`light_field.gd`), windows by occupancy, landing camp and quay positions shared with the district, transport diagram as an overlay | **done** (`185a4b2`, `9c2816c`, `c7bda43`); suite `v110_lights` with the decisive test |
+| People readouts | each town's net change, demand against room, main growth limit and remedy | **done** (`112867b`) |
+| C. The playable bay | mobile crews apart from the workforce (`crews.gd`): one at the landing, trained from the town's 职工 or recruited from outside, sent over finished links, a standing instruction (shortages first, then 先建, then the oldest order), each project's start and finish from the queue; the workforce renamed 职工; the small harbour with its forecast, mine roads for far deposits that carry the next mine, the offshore signal and its survey (`bay.gd`); first-shipment cards; the tutorial teaches crews; the bay in the three views (harbour site, quay lamps, masthead lamp, ship light, signal ring and buoy, round halos) | **done** (`aab8519`, `3e89426`, `234a06c`, `c39e828`, `5491ef0`, `acef816`, `21fef0f`); suites `v110_crews`, `v110_bay`, `v110_lights`; harness `crews-234a06c`, `spur-21fef0f` |
+| Reviews | 3 × 3 night sheet with labels and clean (`docs/v17/bay`), ship and zoom clips, gameplay review of the opening on five seeds and of stage three (`REVIEW_BAY_20261119.md`, tool `bay_openings.gd`) | **done** (`f67a608`); human playtest NOT_RUN |
+| Free placement (Nov 20 brief, release requirement) | a settlement at any coordinate, capital and later towns: the ground under a click on either map, its report and a specific refusal, the founding button acting on that point only, the point carried through naming, construction, expeditions, saves; planetary deposits per resource with shared reserves (`placement.gd`, `geology.gd`, `ground_panel.gd`) | **done** (`1c783d4`, `df24484`); suite `v110_placement`; interface driver `tools/verify/placement_driver.gd`, 95 checks passed on the source project and on the shipped PCK |
+| November 20 audit | first ore truck and first ship from recorded consignments (`consignments.gd`), mine roads after a cancelled mine, crews by freight's road rule, measured 30-day population change with its parts, farm forecast from the whole food balance at the delivered price, commissions quoted while blocked, the water lesson's three outcomes, the first lived-in home lit | **done** (`0d8ed9d`, `08e1320`); suite `v110_audit`, `v110_lights`; night captures through ordinary play `docs/v17/bay/play` |
+| Radius, stage three, tutorial, prospecting | radius slider 0.70–1.30 with km and gravity; stage three by one operating route of three, 600 people an achievement (measured on six seeds, `STAGE_THREE_ROUTES.md`); the tutorial opens on a bay with the mine-or-harbour decision; prospecting one resource at a time (orbit, field survey, drilling) | **done** (`0d8ed9d`, `4604991`, `3a35730`, `c5dda12`); suite `v110_audit` (102 checks) |
+| Not done from the Nov 20 brief | offshore surveying tech, seabed extraction and its cargo; nickel and cobalt; larger districts, natural slopes, landform clues and close-range surfaces; the farmer occupation and one population unit everywhere; crews for roads, repairs and surveys with standing orders and costlier crews; local consequences by kind of town; the immigrant transport tied to the homes it fills | open |
+
+**This round (2026-11-20).** The November 20 brief: free placement first, then the audit.
+- **Build.** `ColonyCharter-1.10.1-preview-20261120-placement`, commit `1853590`, PCK SHA-256
+  `78181ECC…786F`. Handoff with the plain status of every requirement: `docs/v17/HANDOFF_20261120.md`.
+- **Free placement on the shipped PCK.** The Linux runtime with `--main-pack`, driven through the real
+  interface by `tools/verify/placement_driver.gd`: 95 of 95 checks over six cases (two capitals, the
+  seed 3 regression, refusals, inland and coastal expeditions). Records are in `docs/v17/placement/`.
+  The Windows EXE was not run.
+- **Saves.** A save made by the 1.10.0 PCK carries over on the 1.10.1 PCK, 13 of 13 checks
+  (`save_carry_driver.gd`). The before and after files are in `docs/v17/placement/save_files/`.
+- **Night in ordinary play.** `docs/v17/bay/play/`: the first lived-in home now changes the globe and
+  flat-map night images (1,397 and 2,458 pixels).
+- **Suites (final run on `1853590`).** 47 of 52 headless suites pass. The four Linux-known ones fail as
+  their baselines. `v19_payback` misses three bands: iron mine 64 days against 70–150, smelter 461,
+  food processing 614.
+- **Harness `placement-c5dda12`.**
+  - Audits 0 errors; determinism 3 of 3 identical.
+  - Population 333 at year 2 and 940 at year 4; the balanced bot is awarded at a median of day 2646.
+  - Misses: the labour lever and the sloppy bot on hard (both standing), and openings (research-first
+    is best with every opening; new).
+- **Open.** See the "Not done" row above and the handoff's failing list.
+
+**This round (2026-11-19/20).** Phase C and the reviews.
+- **What changed.**
+  - A player now lands with one crew. Every building waits for a crew, and the town says who builds
+    what and when.
+  - The crew's first job is a choice: the mine road to the inland iron, or the small harbour.
+  - The first export and the first ship each get a card. Every coastal town has an offshore signal a
+    harbour can survey.
+  - The nightscape shows the quay's lamps and a ship sailing in, on all three views.
+- **Fixes found on the way.**
+  - The town panel wrote the offshore signal into the save when first shown (the read is now pure,
+    tested).
+  - The tutorial's pump waited two months behind the copper mine (shortages first).
+  - The harbour's order showed no income.
+  - Every mine paid its whole road again, which cost the bots a fifth of their people.
+- **Suites (final run on `faa0f97`).** 45 of 50 headless suites pass. The four Linux-known ones fail
+  exactly as their Linux baselines. `v19_payback` misses twice:
+  - the smelter, 372 days in year 4 against 120–300, as on the branch base;
+  - food processing in year 6, 357 days against 100–220, where only one of five colonies has one to
+    measure.
+
+  `v18_systems`' top-bar checks had failed on every platform since 2026-11-12 and now read the 1.9
+  format.
+- **Openings (bot play, five seeds).** Both openings met stage three on every seed. Harbour first
+  was sooner on four seeds, and later on a start with its own farmland.
+- **Harness `spur-21fef0f`.**
+  - 19 targets met. The 3 misses are standing: sloppy failure, the labour lever, the services
+    budget.
+  - Population at years 2 and 4 is 332 / 982.
+  - The well-played bots fail 5 of 27 runs against 1 before crews, mostly the rush and
+    research-first bots at stage five's last date.
+- **Open for the player.**
+  - How scarce crews should be: at ¥900 the bots train 12–24.
+  - What the bay should look like from orbit, on a real GPU.
+  - Jobs, which held growth from 200 to 600 people in every game.
+
+
+---
+
+# Colony Charter 1.9 — Progress (in development)
+
+Started 2026-11-07 from the user's request after a friend compared the 1.8 demo with TerraGenesis:
+the planet should turn, show day and night with lit towns and roads at night, the surface looked
+too rough, and the map needs moving elements such as clouds (Plague Inc. / Rebel Inc. style). The
+3ds Max models uploaded the same day (release `art-assets-20261107`) and the near-future set delivered on
+2026-11-09 (release `art-assets-20261109`) are placed in the game. Balance
+work follows `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` Part A.
+
+Evidence labels as in `CLAUDE.md`. Everything below ran in a Linux cloud container (Godot 4.5.1
+Linux build, software OpenGL under Xvfb); the Windows EXE, real-GPU frame times and a human playtest
+are **NOT_RUN**. Branch `v17` is on GitHub (`origin/v17`).
+
+## Done
+
+| Area | What | Evidence |
+|---|---|---|
+| Moving globe | Planet spins (240 s a turn at 1×, faster with game speed, eases out on drag, zoom and click; a clicked site stays in view); fixed sun with a real terminator; seasons over the 360-day year move the terminator and the ice edges; moonlit night side | source-project window, screenshots viewed (`evidence/v17/art/dynamics/globe_*.png`) |
+| Night lights | Warm town lights, cold industrial lights and dotted road lamps after sunset on the globe and the flat map; town patches fade at night | screenshots viewed |
+| Surface | Atlas stores geography; per-pixel palette shared by globe, flat map and regional ground: smooth coastlines, blended biomes, sun-lit relief, ocean depth, glint, organic ice caps | screenshots viewed |
+| Clouds | Animated clouds on latitude winds, cross-faded layers, drifting cyclones with eyes and arms, day/night cloud lighting, twilight tint, atmosphere rim lit by the sun | screenshots viewed |
+| Region dynamics | Day and night from the site's place on the globe; lit windows, lamp pools, headlights; trucks, vans and buses on the service roads; smoke from working plants; drifting cloud shadows; rippling water; smooth cargo motion on globe and flat map | screenshots viewed |
+| Settings | 「地图画面」: spin, day/night with lights, clouds/weather (off hides clouds) | automated tests (ui_contract) |
+| Models | `tests/art/convert_models.gd` turns the FBX exports of releases `art-assets-20261107` and `art-assets-20261109` into 122 runtime meshes (49 s, 6.9 MB, two runs byte-identical); each model within its triangle target, shares weighted by colour slot (five with open crop strips, tree crowns or glass panes are recorded exceptions); all 61 building kinds drawn with their own models but `service`; 36 kinds with their own construction state, the rest with the shared site kit; terraforming stages and district levels drawn as they are finished; shuttle (parked and in flight), its pad, trucks, vans and buses modelled; closed-mine plots by ore, landing pods, street lamps, route gantry, road closures, bridges, harbour quay and cargo ship placed in their game contexts; suite `v19_art` checks budgets, slots, footprints, depth, construction states and stages (plan B7) | automated tests (`v19_art` 1,063 checks), contact sheets viewed (`evidence/v17/art/gallery/`), region, shuttle and great-work captures viewed (`evidence/v17/art/models_1109*/`) |
+| Tests | Linux runner `tools/run_tests.py`; seam test measures under 1.8 lighting; terrain identity checks geometry | automated tests |
+| Money | Market floor 0.55; +2.5% cash per further copy (to ×1.75; homes, great works, roads and outposts exempt); data centres ×0.85 and foodworks beyond the sixth ×0.8 per copy; administration grows with residents (scale 2,500) and settlements (+15% each); optional public services budget (levels 0–3); bots use it by cash cover; harness rows for cash cover, absorption and budget use; new suite `v19_money` | balance harness (quick, Linux), automated tests, screenshots viewed (`evidence/v17/art/pages/`) |
+| Money readouts | Economy page: 「现金可支撑 N 天」 by band (red under 30 days; at 180+ once 90 days are seen, a hint where idle money could go), the administration line with the step for 100 more residents and one more settlement, market rows with the price after another 100 t and the floor price (「市场已饱和」 at the floor); cover days in the top-bar money tooltip; advisor line, in this order, for export income leaning on mines with under 360 days of reserves, counting goods made from their ore (a third or more of the month's export value; the share also shows on the economy page), for a good exported at its floor and for idle money. One `Sim.cover_view()` serves the page, the advisor and the bots | automated tests (`v19_money` 56 checks, `ui_contract`), developer probe (`tests/balance/mine_probe.gd`, normal play and `--hands-off=1080`), screenshots viewed (`evidence/v17/art/pages/economy*.png`, `economy_day1440.png`) |
+
+| Spending by sink | Every payment from public cash is summed by sink and colony year (`state.stats.sinks`); economy page 「钱花在哪」 for the last four years; harness INFO row | automated tests (`v19_money`), screenshots viewed |
+| Career transfer | After the award, public cash buys career funds at 2 : 1, up to ¥200,000 a colony year; career page control; bots move cash above 240 days of cover | automated tests (`v19_money`) |
+| Commissioned research | Levels 1/2 on a project its own team works on, ¥100–450 a point by tier, ×1.25 per other commission; research-page switch with cost and days saved; optional spending (this and services) only from cash beyond two days of bills | automated tests (`v19_money`), screenshot viewed (`research_commission.png`) |
+| Saves | Schema 5 in `ColonyCharter/v19`; 1.8 and 1.7 saves are read from their own folders, upgraded on load with a log line, and never written | automated tests (`v19_money`; the Windows-recorded save suites are for the Windows run) |
+| Paybacks | New suite `v19_payback` (plan bands; mines in year 6, factories in year 4); heavy mines dearer with twice the upkeep, renewables cheaper and stronger, commerce ¥0.3, foodworks dearer, processors valued at the import price | automated tests (`v19_payback` 39 checks) |
+| Windfall case | Harness case: the balanced bot with ¥1,000,000 on day 1,080, compared on the same seeds | balance harness |
+| Late great works | Terraforming (three stages, planet tint), capital district (five levels), exchange, shipyard, emergency network; five tier 4–5 techs (127 in all); later stages and levels buy missing materials and parts at import price, as the first stage does; bots build each step when cash pays for it with its supplies and keeps 10 days of expenses (60 before the award), save for the next one after the award and chase its technologies; harness INFO row; stand-in models | automated tests (`v19_money` 155 checks, `v19_payback` unchanged), developer probe (balanced bot, 10 years: emergency network on seeds 260129 and 42, capital district on 42), screenshot viewed (`terraform_compare.png`) |
+| Shuttle | Short-range shuttle line from the start: straight hop ≤ 3,500 km, pads in 10 days, 1–2 days a trip, 4 t a day, ¥8,000 + ¥2/km, ¥40 a day, 30× a road's fee; stands down when a road or sea route opens; not part of the contract network; cyan arcs on the maps, a pad and a flying craft in the region | automated tests (`v19_money` 149 checks), screenshots viewed (`evidence/v17/art/shuttle/`) |
+| Building icons | `tests/art/bake_icons.gd` renders every kind's model (tint, scale, the map's daylight) to `assets/icons/buildings/<kind>.webp` (lossless), 128 px with mipmaps; build card 64 px, building column 32 px; goods keep their SVG pictograms | screenshots viewed (`evidence/v17/art/pages/settlement.png`, `build.png`), automated tests (`ui_contract`, `v16_ui_tests`) |
+| Playtest preview | `ColonyCharter-1.9.0-preview-20261109-Windows-x64.zip` (54 MB: EXE, pack, licences, 预览版说明.md, CHANGELOG, PLAYTEST) exported in the cloud from commit `f7311cb` with the official 4.5.1 templates; no test material in the pack; the pack boots, lands, builds and runs 40 days with a clean audit on the Linux engine. The EXE has not been run on Windows. Second preview with the interface pass: `ColonyCharter-1.9.0-preview-20261109-ui-Windows-x64.zip` (55 MB) from branch `v17-ui-redesign` at `7141d6a` (pull request #1, not yet merged into `v17`); its pack boots, lands, builds, runs 40 days with a clean audit, and orders a building and shows the research topics through the new pages on the Linux engine. Not run on Windows either | exported EXE (pack smoke-tested on Linux, not on Windows), screenshots viewed |
+| Windows sheet | `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` and `tests/art/frame_time_probe.gd` for the run only the user's PC can do | — |
+| Interface pass (branch `v17-ui-redesign`, for review) | One style system in `ui/design.gd`: a neutral foundation in the 1.8 colours, a research variant (turquoise, cyan, yellow) and an industrial one (charcoal, gray-teal, muted gold); cached style boxes; skins reset on every reuse; fine borders with cut corners, focus ring, type scale (no text under 14 px on the two pages). Construction page in three parts (`ui/build_page.gd`: catalogue with quick orders, the chosen facility with a baked view of it at work, ledger with verdict and main order); 61 facility views (`tests/art/bake_facility_views.gd`). Research page (`ui/research_page.gd`): direction colours and icons, topic state tags, effects, unlock icons, progress, actions. The modal frame, navigation, facility list, production management and facility column follow their variant; the tutorial outline stays above dialogs. Decisions in `DECISIONS.md` (1.9: interface pass) | automated tests (new `v19_ui` 64 checks; `ui_contract`, `v16_ui_tests` 20, `v17_research` 144, `v17_bugs` 43, `v17_tutorial` 237 checks as before), source-project window: 34 captures and 52 checks (`ui/capture_suite_ui19.gd`: 4 window sizes × 3 text sizes, every action scrolled into view, keyboard focus, tooltip, page switching), screenshots viewed (`evidence/v17/ui19/`, a selection in `docs/v17/ui19/`). The two reference images were not available in the session; human playtest NOT_RUN |
+| Fix tips: top bar and units (branch `v17-fix-tips`) | Goods kept in hundreds of tonnes and shown in tonnes (×100; prices per 100 t; money, balance and saves unchanged); each top-bar figure with its change a day (7-day mean); labour (劳动力, crews and research teams) in place of population; iron, copper and crystal icons in their map colours, names first in the tooltip; autosave every 90 days | automated tests (`ui_contract`, `v16_ui_tests`, `v16_manage_target_review`, `v19_money`, `v19_ui`), screenshot viewed (`docs/v17/fix_tips/top_bar.webp`) |
+| Fix tips: region scene | Generated worlds only: the ground runs 520 units past the field under haze and a sky colour (no edge or underside in view); every visible plot cut into the slope as a level terrace, relief compressed on a log curve; the landing pods on a free cell; vehicles on service lanes between plot rows, stopping at the front of each pad and leaving by corners and junctions; the quay on a real shore clear of plots. 1.6 worlds unchanged to the vertex | automated tests (new `v19_region` 15 checks; `world_v16_terrain_identity`), screenshots viewed (`docs/v17/fix_tips/region_*.webp`, `quay_shore.webp`) |
+| Fix tips: town lights | Satellite-style town lights drawn in the globe and flat shaders: frayed outline, arms and suburbs that come with size, a street grid with dark blocks; a landing is a small patch, a town of 3,000 a sea of light; roads stay lit as before | screenshots viewed (`docs/v17/fix_tips/lights_*.webp`) |
+| Fix tips: transport | A sea link is two small cargo docks (no orbital freight station needed, ¥6,000 + ¥0.5/km); medium docks (no technology) and large ones (沿海航运); roads paved (铺装道路), then four-lane trunk roads (连续摊铺机); each level raises capacity, takes a day off and adds upkeep; the transport page shows each link's level and next step; three event-only gift technologies (红球快运车队, 高速货轮, 大型散货船) from three new events, not counted for the charter; red trucks and larger quays and ships as stand-ins | automated tests (new `v19_transport` 88 checks; `v17_sites`, `v17_research`, `v17_events`), source-project window, screenshots viewed (`docs/v17/fix_tips/transport_levels.webp`, `research_gifts.webp`, `town_redball.webp`) |
+| Fix tips: surveys | Three ground surveys (±12%, ±6%, ±3%; 15, 25, 40 days; ×1, ×1.5, ×2 the price), settled sites included; the button shows price, days and the range it leaves | automated tests (`v17_sites`), screenshots viewed (`docs/v17/fix_tips/*_survey.webp`) |
+| Fix tips: documents | Technology tree overview `docs/v17/TECH_TREE.md` (generated by `tools/tech_tree.py`); model fix sheet for GPT `docs/superpowers/plans/2026-11-12-v19-model-fix-sheet.md` (corners past the terrace in 35 of 67 building models, foundation skirts, scale outliers, docks, gift ships, red-ball truck, terrace pieces) | — |
+| Picture quality and terrain (2026-11-13) | 高画质 (Forward+) chosen in the settings, saved in a user override file, applied on restart, automatic fallback to the standard renderer; 4× anti-aliasing in both renderers (2× and off selectable), SMAA in Forward+; Forward+ colour grade, town ambient occlusion, glow on lights only, soft shadows, real lamp lights at night; natural ground on generated worlds (smoothed relief, layered detail, beach profiles, calm town ground, graded pads, no walls or mesas); no sea at inland sites; no hexagon plates (ore rocks, farmland patches, optional rings); candidate names only while choosing; smaller cargo dots; stage three's deadline a year later; research-complete notices | automated tests (new `v19_graphics`; `v19_region` with terrain checks: steepest step 0.71, town 0.12), source-project window in both renderers (software Vulkan for Forward+), screenshots viewed (`docs/v17/quality/`) |
+| Coast flicker (2026-11-13) | The land jumped where it met the sea: z-fighting. Beaches now cross the waterline at a slope (a straight share in the beach profile, and a smooth curve away from the sea's level), and the town view has its own near plane (0.5, ten times finer depth). A first fix with a fixed lift snapped the coast into steps and was replaced the same day | automated tests (`v19_region`: crossing slope p5 0.21, crossing spread 0.26), source-project window, screenshots viewed (flip masks: 4,660 land/water flips over seven views before, 563 after, with only the near plane moved) |
+| Events rewrite (2026-11-13) | GPT's full design: 86 events rewritten, 20 new, 249 nodes, 14 long chains; stakes in days of income (mostly 2–20, up to 80); same ids, versions and nodes for every old event, nothing new to the engine; `v17_events` follows the new chain paths | automated tests (`v17_events` 161 checks; data checks against the engine and the old file), balance harness (see BALANCE.md) |
+| Deadlines, payback, event options (2026-11-14) | Stage four's deadline 14 months later on every difficulty (normal 2,100 → 2,520), stage five's (the contract's last date) unchanged; `v19_payback` asserts each band on the median over five seeds (`--seeds=3` for a quicker check); every event option names its ending, or its next step and when, or a gamble's outcomes with their odds; a measured diagnosis of why the events still feel thin (`docs/v17/EVENTS_DIAGNOSIS.md`) | automated tests (`v19_graphics`, `v19_payback` 43 checks, event suites), screenshots viewed (event page with the new option lines) |
+| Event payoffs, engine side (2026-11-14) | Steps 1-4 of `EVENTS_DIAGNOSIS.md`, approved: ending scenes (`outcome`, a card per ending, kept on the events page, or else what changed; a default marked), nodes that pause (`critical` on a node), effects listed on the town panel and economy page with days left and named after their cause on the events page, 「通讯」 on the maps while an event is open, landmarks (eight kinds drawn around the town, permanent effects, listed on the panel), new gifts' effects in words. GPT writes the content: `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md` | automated tests (new `v19_event_payoff`, 45 checks; event suites), exported pack (two years with events), source-project window, screenshots viewed (`docs/v17/events_payoff/`: landmarks around a town, the town panel, an ending card) |
+| Faster immigration (2026-11-14) | Free arrivals 9 → 11 a month in every town (+22%), the user's choice for stage three's population goal instead of an economy retune | automated tests (population and economy suites), balance harness (BALANCE.md) |
+
+## Money: quick harness on Linux (3 seeds, standard)
+
+| | 1.8.0 on Linux | first pass (plan values) | gentle | stronger variant | **kept: gentle, homes exempt** |
+|---|---|---|---|---|---|
+| Balanced award, median | day 2,464 (9/9) | day 2,548 (8/9) | day 2,400 (9/9) | day 2,398 (9/9) | day 2,599 (9/9) |
+| Research-first award, median | day 2,204 | day 2,554 (8/9) | day 2,274 (8/9) | day 2,416 (8/9) | day 2,479 (9/9) |
+| Cover day 720 to award, median / p90 | 74 / 158 | 12 / 76 | 15 / 101 | 11 / 69 | 16 / 85 |
+| Cover one year after award, median / p90 | 85 / 634 | 24 / 60 | 8 / 40 | 3 / 82 | 12 / 81 |
+| Absorption, years 3–7 | 79–111% | 95–107% | 92–111% | 96–110% | 93–108% |
+| Taken over (rush, balanced, research-first) | 0 / 27 | 3 / 27 | 2 / 27 | 1 / 27 | 2 / 27 |
+| Wage lever | +26% | +17% | +18% | +23% | +23% |
+| Services budget used (balanced) | - | - | 7 / 9 runs | 4 / 9 runs | 6 / 9 runs |
+| Openings: spread of medians | 24% (miss) | 8% | 17% (miss) | 23% (miss) | 4% |
+
+The last column is the kept configuration, confirmed by the run in `BALANCE.md` (label `1.9-money-linux`,
+2026-11-07T14-03-08). It meets every row a quick run measures except two: the services budget is used in 6
+of 9 balanced runs (the row asks for 8), and the sloppy row needs hard difficulty, which only full runs play.
+The openings row passes (medians 4% apart; the workers opening favours rush). Award medians are about 200
+days later than the gentle run without the exemption, but single runs moved both ways (balanced, science,
+seed 260129: day 2,304 → 2,174; capital, seed 20261029: 2,706 → 3,042). Both takeovers are rush runs that
+missed the main contract deadline (days 3,091 and 3,248). With 3 seeds a cell all of this may be noise: a
+full run (10 seeds, 3 difficulties) on Windows is still to do.
+
+## Late great works and the shuttle: quick harness and probes (Linux)
+
+Quick harness `1.9-great-works-shuttle-linux` (commit `c5cb6d0`, 2026-11-08T20-29-06, 51 runs, 0 audit
+errors): balanced award median day 2,694 (9/9), research-first 77 techs by day 2,403, cover from day 720
+to the award 12 / 102 days (median / p90) — the same as the run before the great-works bots, because the
+bots before the award are unchanged. After the award the cover is 56 / 150 days (was 18 / 148): the bots
+now save for the next great work. Absorption 95–109% in years 3–7, wage lever +23%, determinism 3/3.
+Late great works standing at the end: emergency network 6 of 21 runs, capital district 1 (level 3),
+terraforming, exchange and shipyard none. Takeovers 4 of 27 (two research-first, two rush; the rush runs
+spent nothing on late works, so this is run-to-run spread, not the change). Misses, the same three as
+before: openings (research-first is best with every opening), sloppy (needs hard difficulty, which only
+full runs play), services budget (6 of 9 runs; the row asks for 8).
+
+Developer probes (`tests/balance/bots/balanced_bot.gd` and `rush_bot.gd`, scripts in the session's scratch
+area, figures here):
+
+- 15 years, balanced bot, seed 42, after the bots learned to clear ground in any full town (`3c19e77`):
+  all five works are built — emergency network from day 2,850, capital district 3,480 (level 5),
+  shipyard 4,250, exchange 4,720, terraforming started 5,250. Seed 20261029 (award day 3,033): district
+  level 5 and the emergency network started by day 5,400; its shipyard was unlocked on day 5,337. The
+  tier 4–5 technology chains (6–8 techs) set the pace; the harness ends 2–3 years after the award.
+- Shuttle, rush bot, the quick seeds and openings, 4 years: 8 of 9 games open shuttle lines, 13 lines
+  carrying 146–510 t each; 12 stood down when the road to the same outpost opened. The harness has a
+  "Shuttle lines" INFO row from `3c19e77` on.
+- Final quick harness `1.9-final-linux` (commit `3c19e77`, 2026-11-08T21-57-33, 51 runs, 0 audit errors,
+  in `BALANCE.md`): the same as the run above except the emergency network stands in 7 of 21 runs and the
+  cover a year after the award is 56 / 127 days. Shuttle lines: 8 of 9 rush runs, 20 lines, all 20 stood
+  down when a road or sea route to the same settlement opened.
+
+## Test results (Linux)
+
+Interface pass (branch `v17-ui-redesign`, code at `6c69c6c`): the 42 headless suites other than the
+`review_*` tools, 38 pass and 4 fail. The 4 are the same as on untouched `origin/v17` (`d9ef9dc`), run the
+same day in a scratch worktree, with the same failing checks and counts (`v17_saves` 97 checks / 1 failure,
+`v17_tutorial` 237 / 0 plus its 1.6-save script error, `v18_systems` 78 / 3, `world_v16_seed`). New
+`v19_ui`: 64 checks pass. Of the `review_*` tools, `review_save_nested` passes and the rest fail on their
+`D:` paths, as before. Window suites were not re-run.
+
+Headless suites at commit `3c19e77`: 37 pass, 4 fail — the same 4, with the same failing checks, as the
+untouched 1.8.0 source on Linux (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`:
+Windows-recorded fixtures and world hashes do not reproduce on the Linux build). `v19_money` (155 checks),
+`v19_payback` (39 checks) and the new `v19_art` (479 checks) pass; `ui_contract` checks the economy page's
+cover, administration and floor lines; `v17_contract_population` follows the 1.9 administration rule. Of
+the `review_*` tools, `review_save_nested` passes; the others fail on both versions on their hard-coded
+`D:` output paths (they then wait for the runner's 540 s timeout, so they were not run this time). Window
+suites under Xvfb: `world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` and
+`v16_scroll_probe` fail with the same script errors as 1.8.0 on Linux (22 and 8, counted on both): the
+1.6 acceptance fixture they load does not rebuild its world on the Linux build.
+
+Fix tips (branch `v17-fix-tips`, code at `5c50b0f`): of the 44 headless suites other than the `review_*`
+tools, 39 pass and 5 fail: the same 4 Windows-recorded ones as before (`v17_saves`, `v17_tutorial` with its 1.6-save
+script error, `v18_systems`, `world_v16_seed`) and `v19_payback` (light iron mine, item 9 below). New
+`v19_transport` (88 checks) and `v19_region` (15 checks) pass. Window suites under Xvfb:
+`world_v16_visual` and `world_v17_seam` pass; `v16_interaction_probe` (24 script errors) and
+`v16_scroll_probe` (8) fail on their 1.6 fixture as before. Quick harness `fix-tips-5c50b0f`: 51 runs, 0
+audit errors (BALANCE.md). Exported pack `ColonyCharter-1.9.0-preview-20261112-Windows-x64.zip` from
+`fef2eb7`: on the Linux engine it boots, lands, builds, runs 40 days with a clean audit and opens the
+transport, construction, research and economy pages and the region with no script error; not run on
+Windows.
+
+Event payoffs and faster immigration (code at `8c3506e`): on `82a85f3`, of the 46 headless suites
+other than the `review_*` tools, 41 pass and 5 fail: the same 4 Windows-recorded ones and
+`v19_payback`, whose miss moved from the light iron mine to the smelter (item 16). After the events
+page fix, the 14 event and interface suites ran again and pass (`v19_event_payoff` 45 checks).
+Quick harness `immigration-11`: 51 runs, 0 audit errors (BALANCE.md). Exported pack
+`ColonyCharter-1.9.0-preview-20261114-payoff-Windows-x64.zip` from `8c3506e`, on the Linux engine:
+the standard smoke is clean (deadlines 360 / 900 / 1,860 / 2,520 / 2,880, immigration 11 a month);
+two years with every event answered, on seeds 20261029 and 260129, give 15 and 9 endings, 9 and 5 of
+them saying what changed, a card for the newest ending, the effect lines on the town panel and the
+economy page while effects act, and no audit problem, refusal or script error. The colonies, played
+passively, fail on days 493 and 422, as before. Not run on Windows.
+
+## Not done / open
+
+1. Windows: re-record the capture fixtures (rules and save schema changed), rebake the menu atlas,
+   run every suite, export the EXE and measure frame times on a real GPU
+   (`tests/art/frame_time_probe.gd`; the cloud and flat-map shaders are the heaviest). Step by step,
+   with which way to fix each miss: `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md`.
+2. Models: the 2026-11-09 delivery is in the game (every kind's own model and most construction states,
+   the great works' stages and levels, the shuttle, its pad and the vehicles). Still to model, per the
+   brief: `service` (the private enterprise's site; the commerce arcade stands in), the level 2–3
+   upgrade add-ons, colonists, and four key-art renders for the menu and award screens. The 25 kinds
+   modelled before 1.9's brief (apartment, arcology, clinic, …) keep their present-day look and have
+   no construction state of their own.
+3. The converted models and icons are committed. Converting again is only needed after a new delivery; on the
+   user's PC `--source=D:\勇敢新世界` finds every `art_reserve/` pack, then re-bake the icons (window) and
+   run the import.
+4. Building icons are baked from the models; re-run `tests/art/bake_icons.gd` (window) and the import
+   whenever converted models change.
+   The plan's menu and award images wait for key art in the new look (requested in the model brief).
+5. Money: every plan A2 item is in; what is left is measurement. The full harness run (10 seeds, 3
+   difficulties) is for the Windows run. No late great work is dropped: the harness ends before the
+   late chains finish, and a 15-year game builds all five (DECISIONS.md).
+6. The README still describes the 1.8.0 release; its 「后期钱会花不完」 limitation (in
+   `docs/HISTORICAL_README_1.8.md`) is answered in the 1.9 release notes once the full run confirms the
+   money rows.
+7. **Found, not fixed: a won colony can still be taken over.** Balanced bot, seed 260129, capital
+   opening: awarded on day 2,527, then taken over by the company on day 3,787 while holding ¥498,000,
+   for "持续住房或就业不足" — its capital (1,090 people) has 486 idle workers for 357 jobs and no free
+   ground, because new homes took the ground as it grew. The bot from before this session's changes is
+   taken over the same way (day 4,043), so the cause is older than the great-works work. The 10-year
+   harness never sees it. Ways out, for the user to choose: a bot that keeps ground for jobs and clears
+   it for workplaces when idle workers pile up (what a careful player does); or a softer company rule
+   after the award (premise change); or both.
+8. Interface pass: compare both pages with the two reference images (`S2-kasako-inspired-research.png`,
+   `S1c-kasako-construction-dark-muted.png`, not available in the cloud session) and tune `PALETTES` in
+   `ui/design.gd`, the only place the colours live; look at both pages on Windows with a real GPU at 100%
+   and 125% display scaling; merge the pull request after review.
+
+9. **Fix tips: `v19_payback` misses on the light iron mine** (63 days in year 6 on seed 260129, band
+   70–150 with 5% slack). Since sea links need no freight station the balanced bot's colony settles
+   another coast first and its iron market is not saturated in year 6 (5.57 against the 4.40 floor);
+   clean runs of the commit before gave 72 and 69 days, three variants of this change 59–64. A dearer
+   light iron mine (2,250) does not fix it (61 days on its own path, and two more checks missed), so the
+   single-seed year-6 figure follows the colony's path. Recommended, for the user to approve: assert
+   the payback bands over several seeds (median per kind) instead of one seed.
+10. **Fix tips: labour lever +6% (MISS) on the quick run** (+23% before). It is noise from the event
+    dice (probes in BALANCE.md, 1.9 fix tips: +15% and +16% on unchanged code with nudged dice, +35%
+    on this code without its extra deck rolls); its central value looks like about +15%, under the
+    20% bar. For the user: measure it over more seeds, then decide whether wages need a stronger pull.
+11. Fix tips, models: `dock_medium`, `dock_large`, `ship_fast`, `ship_bulk` and `vehicle_truck_redball`
+    are drawn by stand-ins until delivered; the fix sheet lists them and the model fixes. The terrace
+    pieces (`terrace_wall`, `terrace_stair`, `cliff_habitat`) need placement code once they arrive.
+12. Fix tips on Windows: look at the region scene's far landscape and haze and the town lights at
+    100% and 125% scaling, and measure frame times with them (`tests/art/frame_time_probe.gd`).
+
+13. Picture quality on Windows: choose 高画质 in the settings, restart, compare with the standard
+    renderer at 100% and 125% scaling, and measure frame times in both
+    (`tests/art/frame_time_probe.gd`, once with `--rendering-method forward_plus`). Both Vulkan and
+    Direct3D 12 should run; a card without either falls back to the standard renderer and the
+    settings page says so. Steps: the Windows sheet, section "Picture quality".
+14. Stage three's deadline moved a year later as asked. Answered on 2026-11-14: stage four moved 14
+    months later (normal: day 2,520), stage five unchanged as the contract's last date (2,880).
+15. Events: GPT's rewrite is in (`docs/v17/events_rewrite/`, 106 events). Its 18 requests for new
+    mechanics (node-level pauses, single-road effects, cancellable upkeep, casualty records, and so
+    on: `04_奖惩与开发交接.md`) are not built; GPT wrote fallbacks with today's effects. Quick
+    harness: bots that weigh event costs by their days keep 8 of 9 balanced awards (median day
+    2,686), and income grows ×3.4 from year 2 to year 6 (×4.2 before the rewrite); with the old flat
+    valuation the bots took every long penalty and 3 of 9 were taken over. Playtest the new stakes:
+    GPT's own aim is a net 5–10% of income from events over ten years.
+16. Payback over five seeds (as the user agreed): one band misses. Before faster immigration it was
+    the light iron mine in year 6 (median 65 days, floor 66.5 with the tolerance); with it, the mine
+    is in band (67) and the smelter misses in year 4 (median 354 days, ceiling 315). A dearer iron
+    mine moves the miss the same way; the two trade through the ore supply (DECISIONS.md), so a fix
+    means retuning ore, the processing plant and the smelter together. The user's call.
+17. Events still feel thin (the user, 2026-11-14): diagnosis in `docs/v17/EVENTS_DIAGNOSIS.md`.
+    The engine side (steps 1-4) is built; GPT writes the content on branch `v17-events-payoff` from
+    `docs/superpowers/plans/2026-11-14-v19-events-payoff-sheet.md`. When it lands: check the data
+    against the contract (outcomes on every ending, landmark kinds and limits, effect sizes, gift
+    technologies), run the event suites and the harness, and capture a finale and a landmark.
+18. Landmarks are drawn from plain shapes; real models for the eight kinds can go to the model team
+    (a short sheet like `2026-11-12-v19-model-fix-sheet.md`).
+
+**Resume here.** Read `CLAUDE.md`, this section, then the 1.9 instructions in
+`docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md`.
+
+---
+
 # Colony Charter 1.8 — Progress
 
 ## Final summary

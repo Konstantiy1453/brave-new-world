@@ -2,6 +2,7 @@ extends RefCounted
 ## Candidate sites and their plots: founding settlements, what is known about a site, surveys,
 ## and which plot a building stands on. `state.world.regions` is the list of sites.
 
+const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Contract = preload("res://simulation/contract.gd")
@@ -10,6 +11,9 @@ const SiteGen = preload("res://world/geo2/site_gen.gd")
 const Rules = preload("res://simulation/rules.gd")
 
 const GOODS: Array[String] = ["ore", "copper", "crystal"]
+## Every mined good, for what the colony knows and can build on; nickel and cobalt (1.10) occur only at
+## towns founded on picked ground.
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 const KIT_GOODS: Array[String] = ["materials", "parts", "food"]
 const PLOT_SPACING: float = 6.0
 const LEGACY_TOWN_OFFSET: float = 12.0
@@ -23,6 +27,8 @@ const MINE_KINDS: Dictionary = {
 	"mine_ore_auto": "ore",
 	"mine_copper_auto": "copper",
 	"mine_crystal_auto": "crystal",
+	"mine_nickel": "nickel",
+	"mine_cobalt": "cobalt",
 }
 const NAME_LIMIT: int = 16
 const FIRST_PRINTABLE: int = 32
@@ -86,7 +92,8 @@ static func _legacy_plots(reg: Dictionary, buildings: Array) -> Array:
 	var others: int = 0
 	for b: Dictionary in buildings:
 		if MINE_KINDS.has(b.kind):
-			mines[MINE_KINDS[b.kind]] += 1
+			var good: String = str(MINE_KINDS[b.kind])
+			mines[good] = int(mines.get(good, 0)) + 1
 		elif b.kind == "farm":
 			farms += 1
 		else:
@@ -242,7 +249,9 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 	var reg: Dictionary = sim.state.world.regions[region]
 	var s: Dictionary = sim.settlement(region)
 	var taken: Dictionary = _taken(s) if not s.is_empty() else {}
-	var counts: Dictionary = {"general": 0, "farm": 0, "ore": 0, "copper": 0, "crystal": 0}
+	var counts: Dictionary = {"general": 0, "farm": 0}
+	for good: String in MINED:
+		counts[good] = 0
 	for index: int in range(reg.plots.size()):
 		if taken.has(index):
 			continue
@@ -250,19 +259,45 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 		if plot.kind == "deposit":
 			if not bool(plot.hidden) and float(plot.reserves) > 0.0:
 				if int(plot.depth) == 0 or sim._has("deep_mining"):
-					counts[plot.resource] += 1
+					counts[plot.resource] = int(counts.get(plot.resource, 0)) + 1
 		else:
 			counts[plot.kind] += 1
 	return counts
 
 
+## The ground surveys a site can have, closest last (1.9): each leaves a narrower band, costs more
+## and takes longer. Rules from before then have one.
+static func survey_levels(sim: RefCounted) -> Array:
+	var rules: Dictionary = sim.progression_geo().survey
+	return rules.get(
+		"levels", [{"band": float(rules.ground_band), "days": int(rules.days), "cost_factor": 1.0}]
+	)
+
+
+## How many ground surveys a site has had, up to the last level; a settlement counts as one.
+static func survey_level(sim: RefCounted, reg: Dictionary) -> int:
+	var level: int = int(reg.survey)
+	if level < 1 and not sim.settlement(int(reg.id)).is_empty():
+		level = 1
+	return mini(level, survey_levels(sim).size())
+
+
 static func _band(sim: RefCounted, reg: Dictionary) -> float:
+	return _band_at(sim, survey_level(sim, reg))
+
+
+## The band a site has after `level` ground surveys: from orbit at 0, exact with the survey
+## technology once a team has been there.
+static func _band_at(sim: RefCounted, level: int) -> float:
 	var rules: Dictionary = sim.progression_geo().survey
 	var opening: Dictionary = sim.config.openings[sim.state.advantage]
 	var sharper: float = float(opening.get("survey_band_factor", 1.0))
-	if int(reg.survey) >= 1 or not sim.settlement(int(reg.id)).is_empty():
-		return 0.0 if sim._has("survey") else float(rules.ground_band) * sharper
-	return float(rules.orbital_band) * sharper
+	if level < 1:
+		return float(rules.orbital_band) * sharper
+	if sim._has("survey"):
+		return 0.0
+	var levels: Array = survey_levels(sim)
+	return float(levels[mini(level, levels.size()) - 1].band) * sharper
 
 
 ## A true value seen through the survey band: `low..high` always holds it, off centre by a fixed
@@ -286,11 +321,13 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 	var band: float = _band(sim, reg)
 	var deposits: Dictionary = {}
 	var grades: Dictionary = {}
-	var salt: int = 1
-	for good: String in GOODS:
+	for good: String in MINED:
+		# Nickel and cobalt only where the site lists them: towns on picked ground that know of some.
+		if not good in GOODS and not reg.deposits.has(good):
+			continue
+		var salt: int = 1 + MINED.find(good)
 		deposits[good] = _estimate(sim, reg, float(reg.deposits[good]), band, salt)
-		grades[good] = _estimate(sim, reg, float(reg.grade[good]), band * 0.5, salt + 10)
-		salt += 1
+		grades[good] = _estimate(sim, reg, float(reg.grade.get(good, 1.0)), band * 0.5, salt + 10)
 	var fertility: Dictionary = _estimate(sim, reg, float(reg.fertility), band * 0.5, 30)
 	return {
 		"id": site,
@@ -299,6 +336,8 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 		"archetype": reg.get("archetype", ""),
 		"band": band,
 		"survey": int(reg.survey),
+		"survey_level": survey_level(sim, reg),
+		"survey_levels": survey_levels(sim).size(),
 		"surveying": _surveying(sim, site),
 		"deposits": deposits,
 		"grades": grades,
@@ -336,20 +375,47 @@ static func survey_cost(sim: RefCounted) -> float:
 	return cost
 
 
-## Sends a ground survey team. With prospecting it also uncovers hidden deposits nearby.
-static func survey(sim: RefCounted, site: int) -> String:
+## What the next ground survey of a site would do: the level it reaches, the band it leaves, its
+## days and price, and why it cannot be sent now (`refusal`, empty if it can). `narrows` is false
+## once the site is known as closely as surveys go; with prospecting a team can still go to look
+## for hidden deposits nearby (`prospecting`), at the first level's days and price.
+static func next_survey(sim: RefCounted, site: int) -> Dictionary:
 	if site < 0 or site >= sim.state.world.regions.size():
-		return "请选择候选地点"
+		return {"refusal": "请选择候选地点", "narrows": false, "prospecting": false}
 	var reg: Dictionary = sim.state.world.regions[site]
-	if int(reg.survey) >= 1 and not sim._has("prospecting"):
-		return "此地点已完成地面勘察"
-	if _surveying(sim, site) > 0:
-		return "勘察队已在途中"
-	var cost: float = survey_cost(sim)
-	if float(sim.state.cash) < cost:
-		return "地面勘察需要 %.0f 资金" % cost
-	sim._transfer("public", "external", cost, "invest.survey", false)
-	sim.state.surveys.append({"site": site, "days": int(sim.progression_geo().survey.days)})
+	var levels: Array = survey_levels(sim)
+	var level: int = survey_level(sim, reg)
+	var narrows: bool = level < levels.size() and _band_at(sim, level) > 0.0
+	var step: Dictionary = levels[level] if narrows else levels[0]
+	var quote: Dictionary = {
+		"level": level + 1 if narrows else level,
+		"levels": levels.size(),
+		"narrows": narrows,
+		"prospecting": sim._has("prospecting"),
+		"band_now": _band_at(sim, level),
+		"band": _band_at(sim, level + 1) if narrows else _band_at(sim, level),
+		"days": int(step.days),
+		"cost": survey_cost(sim) * float(step.get("cost_factor", 1.0)),
+	}
+	var refusal: String = ""
+	if not narrows and not bool(quote.prospecting):
+		refusal = "此地点的储量估算已经精确" if float(quote.band_now) <= 0.0 else "此地点已勘察到最细"
+	elif _surveying(sim, site) > 0:
+		refusal = "勘察队已在途中"
+	elif float(sim.state.cash) < float(quote.cost):
+		refusal = "地面勘察需要 %.0f 资金" % float(quote.cost)
+	quote.refusal = refusal
+	return quote
+
+
+## Sends a ground survey team: each one narrows the estimates a step further and takes longer.
+## With prospecting it also uncovers hidden deposits nearby.
+static func survey(sim: RefCounted, site: int) -> String:
+	var quote: Dictionary = next_survey(sim, site)
+	if str(quote.refusal) != "":
+		return str(quote.refusal)
+	sim._transfer("public", "external", float(quote.cost), "invest.survey", false)
+	sim.state.surveys.append({"site": site, "days": int(quote.days)})
 	return ""
 
 
@@ -361,8 +427,19 @@ static func daily(sim: RefCounted) -> void:
 			keep.append(entry)
 			continue
 		var reg: Dictionary = sim.state.world.regions[int(entry.site)]
-		reg.survey = maxi(int(reg.survey), 1)
-		sim._log("%s地面勘察完成。" % reg.name)
+		var levels: int = survey_levels(sim).size()
+		reg.survey = mini(survey_level(sim, reg) + 1, levels)
+		var band: float = _band(sim, reg)
+		sim._log(
+			(
+				"%s地面勘察完成（第 %d 次）：储量与品位估算%s。"
+				% [
+					reg.name,
+					int(reg.survey),
+					"已精确" if band <= 0.0 else "约 ±%d%%" % roundi(band * 100.0)
+				]
+			)
+		)
 		if sim._has("prospecting"):
 			_reveal_nearby(sim, reg)
 	sim.state.surveys = keep
@@ -411,7 +488,7 @@ static func links(sim: RefCounted, site: int) -> Dictionary:
 	if from < 0:
 		return {}
 	var variants: Dictionary = {}
-	for variant: String in ["valley", "engineered", "sea"]:
+	for variant: String in ["valley", "engineered", "sea", Keys.ROUTE_SHUTTLE]:
 		var road: Dictionary = Logistics.quote(sim, from, site, variant)
 		variants[variant] = {
 			"reachable": bool(road.reachable),
@@ -455,7 +532,7 @@ static func plot_choices(sim: RefCounted, site: int, building_kind: String) -> A
 static func start_score(sim: RefCounted, site: int) -> float:
 	var known: Dictionary = view(sim, site)
 	var value: float = 0.0
-	for good: String in GOODS:
+	for good: String in known.deposits:
 		value += (
 			float(known.deposits[good].mid)
 			* float(sim.config.prices[good])
@@ -560,12 +637,16 @@ static func settle_refusal(
 		return str(road.get("reason", "此地区没有可达陆路，也没有航线"))
 	var fare: float = expedition_cash(sim, kind)
 	if int(src.workers) < int(rules.min_source_workers):
-		return "出发据点工程队不足 %d 支" % int(rules.min_source_workers)
+		return "出发据点职工不足 %d 名" % int(rules.min_source_workers)
 	var kit: float = _kit_shortfall_cost(sim, src)
 	if kit > 0.0 and not Logistics._has_port(src):
 		return (
-			"出发据点需备齐 %.0f 建材、%.0f 部件、%.0f 食品作为前哨远征物资；有货运站才能现买"
-			% [float(rules.materials), float(rules.parts), float(rules.food)]
+			"出发据点需备齐 %.0f t 建材、%.0f t 部件、%.0f t 食品作为前哨远征物资；有货运站才能现买"
+			% [
+				sim.tonnes(float(rules.materials)),
+				sim.tonnes(float(rules.parts)),
+				sim.tonnes(float(rules.food))
+			]
 		)
 	if sim.state.cash < fare + kit:
 		return "建立前哨需要 %.0f 资金（含 %.0f 物资采购）" % [fare + kit, kit]
@@ -650,6 +731,7 @@ static func settle(
 		# Expedition population migrates; food stays physically in its convoy until arrival.
 		src.workers -= expedition_workers(sim, site_kind)
 		src.population -= expedition_workers(sim, site_kind)
+		Stats.count(sim.state, "moves", int(src.region), -expedition_workers(sim, site_kind))
 		sim._reconcile_jobs(src)
 	var op: Dictionary = sim.config.openings[sim.state.advantage]
 	var workers: int = int(op.workers) if first else expedition_workers(sim, site_kind)
@@ -693,9 +775,17 @@ static func settle(
 		"cohorts": [],
 		"port_used": 0.0,
 		"port_capacity": 0.0,
-		"food_consumed": 0.0
+		"food_consumed": 0.0,
+		"crew": 0
 	}
 	sim.state.settlements.append(s)
+	# The landing party or the expedition moves in: the town's first people.
+	Stats.count(sim.state, "moves", region, int(s.population))
+	var crews: Dictionary = sim.pop_rules.get("crews", {})
+	if first:
+		sim.Crews.found(sim, s, int(crews.get("opening", 1)))
+	else:
+		sim.Crews.join_expedition(sim, src, region, int(road.days), int(crews.get("expedition", 1)))
 	if first:
 		for res in ["materials", "parts", "food"]:
 			sim._produce(s, res, float(op[res]), "初始公司物资")
@@ -755,8 +845,10 @@ static func _can_expand_from(sim: RefCounted, region: int) -> bool:
 	return false
 
 
+## A prefabricated kit: it assembles itself as the expedition travels, with no crew.
 static func _place_prefab(sim: RefCounted, s: Dictionary, kind: String, days: int) -> void:
 	var building: Dictionary = sim._building(kind, days)
+	building.prefab = true
 	building.plot = find_plot(sim, int(s.region), kind)
 	s.buildings.append(building)
 

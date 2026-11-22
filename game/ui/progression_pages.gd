@@ -2,12 +2,14 @@ extends RefCounted
 const D = preload("res://ui/design.gd")
 const Career = preload("res://simulation/career.gd")
 const Labels = preload("res://ui/labels.gd")
+const ResearchPage = preload("res://ui/research_page.gd")
+const RadiusSlider = preload("res://ui/radius_slider.gd")
 
 
 static func populate(g, b, page: String):
 	match page:
 		"research":
-			research(g, b)
+			ResearchPage.research(g, b)
 		"company":
 			company(g, b)
 		"events":
@@ -16,165 +18,6 @@ static func populate(g, b, page: String):
 			career(g, b)
 		"manage":
 			manage(g, b)
-
-
-static func research(g, b):
-	var v: Dictionary = g.sim.research_view()
-	D.label(b, "科研 / 四个方向的课题", 25, D.TEAL)
-	D.label(
-		b,
-		(
-			"研究团队 %d · 调查 %d · 可用 %d · 科研席位 %d · 实验台 %d"
-			% [
-				int(v.total),
-				int(v.investigating),
-				int(v.available),
-				int(v.capacity),
-				int(v.benches)
-			]
-		),
-		20,
-		D.GOLD
-	)
-	D.label(
-		b,
-		"每个方向同时做一个课题，候选是随机出现的。挑一张，再派研究团队：5 支的速度是 10 支的 60%。换课题不丢进度；课题完成后，这个方向会出现新的候选。",
-		17,
-		D.MUTED
-	)
-	var columns: Array = g.sim.research_cards()
-	var grid = D.grid(b, columns.size())
-	for column: Dictionary in columns:
-		_research_column(g, grid, column, v)
-	_research_contract(g, b, v)
-	for column: Dictionary in columns:
-		if not column.finished.is_empty():
-			D.label(
-				b,
-				(
-					"%s 已完成 %d / %d：%s"
-					% [
-						column.name,
-						column.finished.size(),
-						int(column.pool),
-						"、".join(PackedStringArray(column.finished))
-					]
-				),
-				15,
-				D.MUTED
-			)
-
-
-static func _research_column(g, grid, column: Dictionary, v: Dictionary):
-	var box = D.col(grid)
-	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	box.add_theme_constant_override("separation", 6)
-	var id: String = str(column.id)
-	D.label(box, "%s（%s）" % [column.name, column.description], 17, D.TEAL)
-	var running: Dictionary = column.running
-	var wanted: int = int(g.research_team.get(id, clampi(int(v.available), 3, 10)))
-	var line = D.row(box)
-	D.label(line, "团队", 14, D.MUTED, false)
-	var count = D.spin(
-		line,
-		"Staff_" + id,
-		0,
-		maxi(10, int(v.total)),
-		1,
-		int(running.staff) if not running.is_empty() else wanted
-	)
-	if not running.is_empty():
-		var tech: String = str(running.id)
-		var apply = D.button(
-			line,
-			"调整",
-			func(): g.act("research_allocate", {"tech": tech, "staff": int(count.value)}),
-			"0 支就是暂停，已做的研究量不丢"
-		)
-		D.font_size(apply, 13)
-		apply.custom_minimum_size.y = 28
-	for row: Dictionary in column.offers:
-		_tech_card(g, box, row, count)
-	if column.offers.is_empty():
-		D.label(box, "这个方向暂时没有新课题。", 15, D.MUTED)
-	var category: String = id
-	var again = D.button(
-		box,
-		"重新调研 · ¥ %.0f" % float(g.sim.Research.reshuffle_cost(g.sim)),
-		func(): g.act("research_reshuffle", {"category": category}),
-		"付钱换掉还没开工的候选课题",
-		"Reshuffle_" + id
-	)
-	D.font_size(again, 13)
-	again.custom_minimum_size.y = 28
-
-
-static func _tech_card(g, parent, row: Dictionary, count):
-	var c = D.card(parent)
-	var running: bool = int(row.staff) > 0
-	D.label(c, str(row.name), 16, D.GOLD if running else D.INK)
-	D.label(c, "第 %d 级 · %.0f 点" % [int(row.tier), float(row.cost)], 13, D.MUTED)
-	if bool(row.charter):
-		D.label(c, "总督资格必需：这张课题不会被洗掉", 13, D.GOLD)
-	D.label(c, str(row.description), 13, D.MUTED)
-	var work: float = float(row.work)
-	if work > 0.0:
-		D.progress(c, work / float(row.cost), D.GOLD if running else D.MUTED)
-	if running:
-		if float(row.rate) > 0.0:
-			var left: int = ceili((float(row.cost) - work) / float(row.rate))
-			D.label(
-				c,
-				(
-					"%d 支团队 · 还要 %d 天（%s）"
-					% [int(row.effective), left, Labels.short_date(int(g.sim.state.day) + left)]
-				),
-				13,
-				D.TEAL
-			)
-		else:
-			D.label(c, str(row.reason), 13, D.GOLD)
-		return
-	var previews: PackedStringArray = []
-	for preview: Dictionary in row.previews:
-		previews.append("%d 支 %d 天" % [int(preview.staff), int(preview.days)])
-	D.label(c, "、".join(previews), 13, D.MUTED)
-	var tech: String = str(row.id)
-	var pick = D.button(
-		c,
-		"选这个课题",
-		func(): g.act("research_allocate", {"tech": tech, "staff": int(count.value)}),
-		"",
-		"Card_" + tech
-	)
-	D.font_size(pick, 14)
-	pick.custom_minimum_size.y = 30
-
-
-## Paid outside work for the labs, once the academic network exists.
-static func _research_contract(g, b, v: Dictionary):
-	var needed: String = str(g.sim.progression.research.contract_tech)
-	if not g.sim.state.research.completed.has(needed):
-		return
-	var contract: Dictionary = v.contract
-	var c = D.card(b)
-	D.label(c, "科研委托", 20, D.TEAL)
-	D.label(
-		c,
-		(
-			"占用一个实验台和研究团队，按研究量收取外部付款（每点 ¥ %.0f）。分配 %d 支 / 实投 %d 支 · 累计收入 ¥ %.0f"
-			% [
-				float(g.sim.progression.research.contract_point_price),
-				int(contract.staff),
-				int(contract.effective),
-				float(contract.earned)
-			]
-		),
-		17
-	)
-	var line = D.row(c)
-	var count = D.spin(line, "ContractStaff", 0, maxi(10, int(v.total)), 1, int(contract.staff))
-	D.button(line, "应用委托人数", func(): g.act("research_contract", {"staff": int(count.value)}))
 
 
 static func company(g, b):
@@ -219,12 +62,12 @@ static func company(g, b):
 	D.label(b, str(v.get("remedy", "优先恢复食品和住房，清偿到期欠款；暂停非必要扩张，调拨库存，必要时接受有条件援助。")), 17, D.MUTED)
 	for offer in v.get("offers", []):
 		var description = (
-			"援助现金 %.0f，食品 %.0ft，建材 %.0ft，部件 %.0ft；%d日后抵达。\n期限%d日，偿还%.0f；期间正经营结余追加分成%.0f%%。仅从超过%.0f现金保底的部分分期偿还。每方案一生涯当前星球仅可领取一次。"
+			"援助现金 %.0f，食品 %s，建材 %s，部件 %s；%d日后抵达。\n期限%d日，偿还%.0f；期间正经营结余追加分成%.0f%%。仅从超过%.0f现金保底的部分分期偿还。每方案一生涯当前星球仅可领取一次。"
 			% [
 				offer.cash,
-				offer.food,
-				offer.materials,
-				offer.parts,
+				Labels.t(float(offer.food)),
+				Labels.t(float(offer.materials)),
+				Labels.t(float(offer.parts)),
 				offer.arrival_days,
 				offer.duration,
 				offer.repayment,
@@ -361,11 +204,16 @@ static func events(g, b):
 		D.label(c, str(node.title) + " / 进行中", 21, D.TEAL)
 		var investigation: Dictionary = node.variables.get("investigation", {})
 		if not investigation.is_empty():
+			var report: int = int(node.get("report_day", -1))
 			D.label(
 				c,
 				(
-					"调查进度 %.1f / %.1f · 已保留科研团队"
-					% [investigation.get("progress", 0), investigation.get("work", 0)]
+					"调查进度 %.1f / %.1f · 已保留科研团队 · %s"
+					% [
+						investigation.get("progress", 0),
+						investigation.get("work", 0),
+						"预计 %s 回报" % g.Events._date(report) if report >= 0 else "团队不在岗，调查暂停"
+					]
 				),
 				17
 			)
@@ -373,10 +221,10 @@ static func events(g, b):
 			D.label(
 				c,
 				(
-					"订单已发 %.1f / 已到 %.1f · 已付款 %.2f"
+					"订单已发 %s / 已到 %s · 已付款 %.2f"
 					% [
-						node.order.get("dispatched", 0),
-						node.order.get("delivered", 0),
+						Labels.t(float(node.order.get("dispatched", 0))),
+						Labels.t(float(node.order.get("delivered", 0))),
 						node.order.get("paid", 0)
 					]
 				),
@@ -414,8 +262,42 @@ static func events(g, b):
 					16,
 					D.MUTED
 				)
+				# An ending keeps its scene (what happened, in the event's own words), or else
+				# what changed.
+				var scene: String = str(row.get("outcome", row.get("changes", "")))
+				if section == "history" and scene != "":
+					D.label(b, "　" + scene, 15, D.MUTED)
 			else:
 				D.label(b, str(row), 16, D.MUTED)
+
+
+## Career transfer after the award: idle public cash into career funds, at a loss, capped a year.
+static func _career_transfer(g, b) -> void:
+	var view: Dictionary = Career.transfer_preview(g.sim)
+	if not bool(view.open):
+		return
+	D.label(
+		b,
+		(
+			"生涯资金转存：公共现金 ¥ %.0f 换 ¥ 1 生涯资金，每年最多 ¥ %.0f；今年还可转 ¥ %.0f，累计已转 ¥ %.0f。"
+			% [float(view.rate), float(view.cap), float(view.room), float(view.transferred)]
+		),
+		17,
+		D.MUTED
+	)
+	if float(view.most) < 1.0:
+		return
+	var row = D.row(b)
+	var amount = D.spin(
+		row, "TransferAmount", 1, float(view.most), 1, minf(float(view.most), 10000.0)
+	)
+	D.button(
+		row,
+		"转存为生涯资金",
+		func(): g.act("career_transfer", {"amount": amount.value}),
+		"",
+		"CareerTransfer"
+	)
 
 
 static func career(g, b):
@@ -435,6 +317,7 @@ static func career(g, b):
 	var row = D.row(b)
 	var amount = D.spin(row, "InvestAmount", 0, float(c.balance), 1, minf(float(c.balance), 500))
 	D.button(row, "注入当前星球", func(): g.career_action("invest", {"amount": amount.value}))
+	_career_transfer(g, b)
 	for old in c.managed:
 		var card = D.card(b)
 		D.label(card, "代管星球 %d · 种子 %s" % [old.id, str(old.seed)], 22, D.TEAL)
@@ -482,11 +365,8 @@ static func career(g, b):
 		var next_row = D.row(b)
 		var next_seed = D.line_edit(next_row, "NextSeed", str(int(g.sim.state.world.seed) + 1))
 		next_seed.custom_minimum_size.x = 170
-		var next_size = D.option(
-			next_row,
-			"NextSize",
-			["小型 · 0.6 地球半径", "中型 · 1.0 地球半径", "大型 · 1.3 地球半径"],
-			int(g.sim.state.world.size)
+		var next_radius: HSlider = RadiusSlider.add(
+			b, "NextRadius", float(g.sim.state.world.radius_km) / 6371.0, true
 		)
 		var opening_keys: Array = g.sim.config.openings.keys()
 		var opening_names: Array = []
@@ -515,7 +395,7 @@ static func career(g, b):
 							"handover",
 							{
 								"seed": next_seed.text,
-								"size": next_size.selected,
+								"radius": next_radius.value,
 								"opening": opening_keys[next_opening.selected],
 								"difficulty": level_keys[next_level.selected]
 							}
@@ -580,15 +460,17 @@ static func manage(g, b):
 		)
 		caption.custom_minimum_size.x = 180
 		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Shown and typed in tonnes; the rules keep hundreds of tonnes (economy.json `display`).
+		var scale: float = Labels.tonnes_per_unit()
 		var amount = D.spin(
 			row,
 			"Target_" + key,
 			0,
-			maxf(10000, g.sim._target(s, key)),
-			0.000001,
-			g.sim._target(s, key)
+			maxf(10000, g.sim._target(s, key)) * scale,
+			0.000001 * scale,
+			g.sim._target(s, key) * scale
 		)
-		amount.custom_arrow_step = 0.1
+		amount.custom_arrow_step = 0.1 * scale
 		var resource = key
 		D.button(
 			row,
@@ -596,6 +478,6 @@ static func manage(g, b):
 			func():
 				g.act(
 					"stock_target",
-					{"region": g.selected, "resource": resource, "target": amount.value}
+					{"region": g.selected, "resource": resource, "target": amount.value / scale}
 				)
 		)
