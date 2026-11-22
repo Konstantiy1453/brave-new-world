@@ -130,13 +130,13 @@ sell, and its materials sell into a market the other three plants already supply
   day 1018 too. No order was given.
 - **Day 611, stage three** (7 of 14 technologies). The page: on track for day 962; commissioning the
   running projects (¥600 a day) would make it day 787, **175 days sooner**. The balanced bot played on:
-  day 993 without commissions, day 809 with every running project commissioned from day 611, **184
+  day 993 without commissions, day 808 with every running project commissioned from day 611, **185
   days sooner** (1.10.1: 1018 → 842, 176 days).
 
 ## Event pacing
 
 **Label: automated test (simulation)**, `pacing/`, `records/event_pacing.gd`: the balanced bot, six seeds,
-720 days. An independent event is one the random draw brought; a forced interruption is a step that
+720 days; 1.11 at `a3ee4db`. An independent event is one the random draw brought; a forced interruption is a step that
 stops the clock; "held back" is one the colony-wide cap kept in the panel instead.
 
 | | 1.10.1 | 1.11 |
@@ -144,12 +144,12 @@ stops the clock; "held back" is one the colony-wide cap kept in the panel instea
 | First 30 days | 3 events, 3 forced | 0, 0 |
 | First 90 days | 12, 5 forced | 2, 0 |
 | First 360 days | 59, 21 forced | 24, 15 forced |
-| First 720 days | 115 (1 set off by the colony), 29 forced | 60, 21 forced |
+| First 720 days | 115 (1 set off by the colony), 29 forced | 60, 19 forced |
 | Stage one, a month | 0.71 events, 0.26 forced | 0.12, 0.00 |
-| Stage two, a month | 0.83, 0.23 forced | 0.54, 0.23 |
-| Stage three, a month | 0.83, 0.06 forced | 0.35, 0.04 |
+| Stage two, a month | 0.83, 0.23 forced | 0.52, 0.21 |
+| Stage three, a month | 0.83, 0.06 forced | 0.43, 0.00 |
 | Held back by the cap | — | 0 |
-| The two-town water-station decision | — | 3 times |
+| The two-town water-station decision | — | once |
 
 The stage-three rate rests on 691 days of three seeds that reached it. By day 720 the 1.11 bot reached
 stage three on 3 of 6 seeds, 1.10.1 on 5 of 6.

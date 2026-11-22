@@ -2,7 +2,7 @@
   "finish": "done",
   "options": {
     "days": "720",
-    "out": "/home/user/probe_out/pacing/new_final.json",
+    "out": "/home/user/probe_out/pacing/new_x2.json",
     "seeds": "1,2,3,4,5,6"
   },
   "runs": [
@@ -28,51 +28,57 @@
         },
         {
           "day": 306,
-          "id": "industry",
+          "id": "price_window",
           "kind": "independent",
           "stage": 2
         },
         {
           "day": 338,
-          "id": "equipment_failure",
+          "id": "crack",
           "kind": "independent",
           "stage": 2
         },
         {
-          "day": 466,
-          "id": "stray_drone",
+          "day": 402,
+          "id": "company_audit",
           "kind": "independent",
           "stage": 2
         },
         {
-          "day": 562,
-          "id": "water_thief",
+          "day": 498,
+          "id": "night_shift_song",
           "kind": "independent",
           "stage": 2
         },
         {
-          "day": 594,
-          "id": "borrowed_engineer",
+          "day": 530,
+          "id": "bunk_fight",
           "kind": "independent",
           "stage": 2
+        },
+        {
+          "day": 674,
+          "id": "seed_crate",
+          "kind": "independent",
+          "stage": 3
         },
         {
           "day": 698,
-          "id": "frontier_water_station",
+          "id": "water_thief",
           "kind": "independent",
           "stage": 3
         }
       ],
       "by_stage": {
         "2": {
-          "forced": 4,
+          "forced": 5,
           "independent": 8,
           "muted": 0,
           "set_off": 0
         },
         "3": {
           "forced": 0,
-          "independent": 1,
+          "independent": 2,
           "muted": 0,
           "set_off": 0
         }
@@ -111,16 +117,24 @@
           "stage": 2
         },
         {
-          "day": 306,
+          "day": 338,
           "forced": true,
-          "id": "industry",
+          "id": "crack",
           "muted": false,
           "node": "start",
+          "stage": 2
+        },
+        {
+          "day": 368,
+          "forced": true,
+          "id": "crack",
+          "muted": false,
+          "node": "risk_held",
           "stage": 2
         }
       ],
       "tally": {
-        "drawn": 9,
+        "drawn": 10,
         "forced": 3,
         "muted": 0,
         "triggered": 0
@@ -139,8 +153,8 @@
           "set_off": 0
         },
         "720": {
-          "forced": 4,
-          "independent": 9,
+          "forced": 5,
+          "independent": 10,
           "muted": 0,
           "set_off": 0
         },
@@ -204,13 +218,19 @@
         },
         {
           "day": 485,
-          "id": "bunk_fight",
+          "id": "nw_b_shared_room",
+          "kind": "independent",
+          "stage": 3
+        },
+        {
+          "day": 509,
+          "id": "nw_b_seed_exchange",
           "kind": "independent",
           "stage": 3
         },
         {
           "day": 557,
-          "id": "nw_a_midnight_power",
+          "id": "local_species",
           "kind": "independent",
           "stage": 3
         },
@@ -222,7 +242,7 @@
         },
         {
           "day": 629,
-          "id": "nw_b_seed_exchange",
+          "id": "road_opening",
           "kind": "independent",
           "stage": 3
         },
@@ -247,8 +267,8 @@
           "set_off": 0
         },
         "3": {
-          "forced": 1,
-          "independent": 5,
+          "forced": 0,
+          "independent": 6,
           "muted": 0,
           "set_off": 0
         }
@@ -301,19 +321,11 @@
           "muted": false,
           "node": "sale_report",
           "stage": 2
-        },
-        {
-          "day": 557,
-          "forced": true,
-          "id": "nw_a_midnight_power",
-          "muted": false,
-          "node": "start",
-          "stage": 3
         }
       ],
       "tally": {
-        "drawn": 13,
-        "forced": 4,
+        "drawn": 14,
+        "forced": 3,
         "muted": 0,
         "triggered": 0
       },
@@ -331,8 +343,8 @@
           "set_off": 0
         },
         "720": {
-          "forced": 6,
-          "independent": 13,
+          "forced": 5,
+          "independent": 14,
           "muted": 0,
           "set_off": 0
         },
@@ -372,63 +384,51 @@
         },
         {
           "day": 421,
-          "id": "supply_delay",
+          "id": "local_species",
           "kind": "independent",
           "stage": 2
         },
         {
           "day": 453,
-          "id": "frontier_water_station",
-          "kind": "independent",
-          "stage": 2
-        },
-        {
-          "day": 485,
-          "id": "industry",
-          "kind": "independent",
-          "stage": 2
-        },
-        {
-          "day": 517,
-          "id": "dust",
-          "kind": "independent",
-          "stage": 2
-        },
-        {
-          "day": 549,
-          "id": "market_day",
-          "kind": "independent",
-          "stage": 2
-        },
-        {
-          "day": 613,
           "id": "water",
           "kind": "independent",
           "stage": 2
         },
         {
-          "day": 645,
-          "id": "water_thief",
-          "kind": "independent",
-          "stage": 2
-        },
-        {
-          "day": 677,
+          "day": 517,
           "id": "price_window",
           "kind": "independent",
           "stage": 2
         },
         {
+          "day": 549,
+          "id": "first_birth",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 581,
+          "id": "archive_grant",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
+          "day": 677,
+          "id": "market_day",
+          "kind": "independent",
+          "stage": 2
+        },
+        {
           "day": 709,
-          "id": "crack",
+          "id": "frozen_pipes",
           "kind": "independent",
           "stage": 2
         }
       ],
       "by_stage": {
         "2": {
-          "forced": 6,
-          "independent": 13,
+          "forced": 4,
+          "independent": 11,
           "muted": 0,
           "set_off": 0
         }
@@ -466,33 +466,17 @@
           "stage": 2
         },
         {
-          "day": 485,
-          "forced": true,
-          "id": "industry",
-          "muted": false,
-          "node": "start",
-          "stage": 2
-        },
-        {
-          "day": 613,
+          "day": 453,
           "forced": true,
           "id": "water",
-          "muted": false,
-          "node": "start",
-          "stage": 2
-        },
-        {
-          "day": 709,
-          "forced": true,
-          "id": "crack",
           "muted": false,
           "node": "start",
           "stage": 2
         }
       ],
       "tally": {
-        "drawn": 13,
-        "forced": 5,
+        "drawn": 11,
+        "forced": 3,
         "muted": 0,
         "triggered": 0
       },
@@ -510,8 +494,8 @@
           "set_off": 0
         },
         "720": {
-          "forced": 6,
-          "independent": 13,
+          "forced": 4,
+          "independent": 11,
           "muted": 0,
           "set_off": 0
         },
@@ -681,12 +665,12 @@
         },
         {
           "day": 530,
-          "id": "night_shift_song",
+          "id": "borrowed_engineer",
           "kind": "independent",
           "stage": 2
         },
         {
-          "day": 594,
+          "day": 562,
           "id": "first_birth",
           "kind": "independent",
           "stage": 2
@@ -816,7 +800,7 @@
         },
         {
           "day": 690,
-          "id": "company_audit",
+          "id": "meteor_shower",
           "kind": "independent",
           "stage": 2
         }
@@ -839,7 +823,7 @@
       "seed": 6,
       "stage_days": {
         "1": 0,
-        "2": 185
+        "2": 194
       },
       "status": "active",
       "stops": [

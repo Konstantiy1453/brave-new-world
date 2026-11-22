@@ -6,8 +6,8 @@
     "commission": "false",
     "limit": "1300",
     "mode": "branch",
-    "out": "/home/user/probe_out/s260129/branch611_commission_false.json",
-    "save": "/home/user/probe_out/baseline_saves/seed260129_day611.save"
+    "out": "/home/user/probe_out/s260129/x2_branch611_false.json",
+    "save": "/home/user/brave-new-world/docs/v17/decisions/save_files/seed260129_day611_1.10.1.save"
   },
   "outlook_start": {
     "bottleneck": "technologies",
