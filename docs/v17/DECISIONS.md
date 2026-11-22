@@ -1139,3 +1139,14 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The globe stands in deep space: a dome with the galaxy's band, dust, faint nebulae and dense faint
   stars behind the existing star field, and the planet's star as a large glare in the real sun's
   direction, globe only · a skybox image.
+- v19_payback judges a cell only where most seeds have the building that day (3 of 5, 2 of 3), and
+  says how many it judged: its median skipped colonies without one, so "median of 5 seeds" could be
+  one or two colonies. The bands are unchanged. Evidence (asserted cells, median and per-seed):
+  3e3ab15 iron mine 64 (80/99/53/64/51), tailings 200, smelter 461 (288/274/461/578/2487),
+  food processing y6 614 from 2 colonies (1097/131); 741e881 iron mine 81, tailings 316
+  (316/317/269/171/396), smelter 346, food processing y6 404 from 1 colony; 591f011 iron mine 83,
+  tailings 273 (267/364/336/158/273), smelter 282 (273/257/365/334/282), food processing y6 410 from
+  2 colonies (423/397), while years 2 and 4 judge it on 4-5 colonies at 113-116. The rules of these
+  buildings, the prices of existing goods and the market scales did not change between 3e3ab15 and
+  591f011; the medians move with how the balanced bot grows the five colonies (four new technologies
+  in the deck, dearer crews, roads that wait for crews) · widening the bands.

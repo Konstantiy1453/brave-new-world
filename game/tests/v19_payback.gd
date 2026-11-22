@@ -86,16 +86,27 @@ func run() -> void:
 				for table: Dictionary in tables:
 					values.append(float(table[day].get(kind, -1.0)))
 				var days: float = _median(values)
+				var present: int = _present(values)
 				var asserted: bool = day in group[3]
-				cells.append(_cell(days, values, asserted))
-				if not asserted or days < 0.0:
+				# Judged only where most seeds have one (3 of 5, 2 of 3): a median of one or two
+				# colonies is one colony's path, which the median over the seeds is there to rule out.
+				var judged: bool = asserted and present >= seeds.size() / 2 + 1
+				cells.append(_cell(days, values, judged))
+				if asserted and not judged and days >= 0.0:
+					print(
+						(
+							"NOT JUDGED %s on day %d: only %d of %d colonies have one (median %.0f)"
+							% [kind, day, present, seeds.size(), days]
+						)
+					)
+				if not judged or days < 0.0:
 					continue
 				measured += 1
 				check(
 					days >= low and days <= high,
 					(
-						"%s pays back in %.0f days on day %d, median of %d seeds (band %d-%d)"
-						% [kind, days, day, seeds.size(), int(band[0]), int(band[1])]
+						"%s pays back in %.0f days on day %d, median of %d of %d seeds (band %d-%d)"
+						% [kind, days, day, present, seeds.size(), int(band[0]), int(band[1])]
 					)
 				)
 			lines.append(
@@ -134,6 +145,15 @@ func _seed_count() -> int:
 
 ## The middle of the seeds that could build the kind (-1 where none could); the mean of the two
 ## middle ones for an even count.
+## How many seeds measured the building (a value of -1 is a colony without one).
+static func _present(values: Array[float]) -> int:
+	var count: int = 0
+	for value: float in values:
+		if value > 0.0:
+			count += 1
+	return count
+
+
 static func _median(values: Array[float]) -> float:
 	var found: Array[float] = []
 	for value: float in values:
