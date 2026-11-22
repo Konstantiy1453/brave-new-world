@@ -104,8 +104,14 @@ func _build_planet() -> void:
 func _grid_preview() -> Image:
 	# Reuse persisted geography for first feedback; background refinement keeps
 	# the existing 1536 x 768 final quality without a blocking second generation.
-	var width: int = int(world.grid_width)
-	var height: int = int(world.grid_height)
+	var width: int = int(world.get("grid_width", 0))
+	var height: int = int(world.get("grid_height", 0))
+	# A world from an older save (1.6) carries no grid: a plain sea-level placeholder until the
+	# background atlas, which works from the seed, arrives.
+	if width <= 0 or height <= 0 or world.get("grid", []).size() < width * height:
+		var blank := Image.create(2, 1, false, Image.FORMAT_RGBA8)
+		blank.fill(_geo_data({"height": 0.0, "temperature": 12.0, "rainfall": 0.4}))
+		return blank
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
 	for y in range(height):
 		for x in range(width):

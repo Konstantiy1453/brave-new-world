@@ -546,6 +546,8 @@ func _road_network() -> void:
 			waiting = waiting and int(cargo.remaining) > 0
 	check(waiting, "cargo on the closed road waits")
 	grant(sim, "paved_roads")
+	# Paving waits for a crew since 1.10.1 (crews.gd, its own suite): here every site moves on.
+	sim.Crews.unlimited(sim)
 	check(sim.act("upgrade_road", {"road": 1}) == "", "a chosen road can be paved")
 	for _day: int in range(int(sim.config.road_levels.land[1].build_days) + 1):
 		sim.tick()

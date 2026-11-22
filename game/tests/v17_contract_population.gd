@@ -460,6 +460,8 @@ func _roads() -> void:
 		"valley figures"
 	)
 	var net: float = float(calm.state.operating_net)
+	# This suite steps the roads alone: the road is built without waiting for a crew (crews.gd).
+	calm.Crews.unlimited(calm)
 	for _i: int in range(300):
 		calm.state.day = int(calm.state.day) + 1
 		Logistics.road_daily(calm)

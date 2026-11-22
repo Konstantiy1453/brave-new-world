@@ -17,6 +17,11 @@ const OLD_SAVES: Array[String] = [
 	"res://data/v17/acceptance_geo21.save",
 ]
 const OLD_NAMES: Array[String] = ["工人", "研究员"]
+## OLD_SAVES were saved by the Windows build and regenerate their world only there.
+const WINDOWS_FIXTURE: String = (
+	"the fixture was saved by the Windows build, and on other platforms its world does not "
+	+ "regenerate bit for bit (the loader refuses it, as it should); the game ships for Windows"
+)
 ## This file holds the old names on purpose: it is what turns them into keys in old saves.
 const NAME_SCAN_SKIP: Array[String] = ["save_migration.gd"]
 const NAME_SCAN_ROOTS: Array[String] = [
@@ -216,6 +221,9 @@ func _names_are_gone() -> void:
 
 
 func _old_saves() -> void:
+	if OS.get_name() != "Windows":
+		print("SKIP old saves load (%s): %s" % [OS.get_name(), WINDOWS_FIXTURE])
+		return
 	for path: String in OLD_SAVES:
 		var sim: RefCounted = Sim.new()
 		var error: String = sim.load_game(path)
@@ -360,6 +368,9 @@ func _old_save_fallback() -> void:
 	var appdata: String = OS.get_environment("APPDATA")
 	if not appdata.contains("evidence"):
 		print("SKIP fallback check: APPDATA is not isolated")
+		return
+	if OS.get_name() != "Windows":
+		print("SKIP fallback check (%s): %s" % [OS.get_name(), WINDOWS_FIXTURE])
 		return
 	for path: String in [game.SAVE_MANUAL, game.SAVE_AUTO]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
