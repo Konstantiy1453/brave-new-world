@@ -1166,3 +1166,10 @@ factories, so the game's cycle and the payback bands stay as they are.
   move 10 t; the v16 test reads the slowdown inputs (1.10's targets) by name.
 - Five files went past gdlint's 1,800 lines; parts moved out unchanged (`events_v2_saves.gd`,
   `top_bar.gd`, `decision_control.gd`, `contract_lines.gd`, `bot_charter.gd`) · raising the limit.
+- The planet's deposits hold twice 1.10's reserves (geography.json `geology.vein_reserve`,
+  `pocket_reserve`; version 3): since every town is now founded on the planet's own geology, the
+  1.10 figures (an iron vein 5,000-14,000 units) emptied a capital's mines by about day 600 and the
+  balanced bot failed stage two on seed 20261029 with cash near ¥300; twice that carries it through
+  (stage four by day 1200). Three and six times change little more, because colonies are already
+  richer than in 1.10.1 for other reasons (the food supply orders above all) · six times, the
+  generator sites' totals.
