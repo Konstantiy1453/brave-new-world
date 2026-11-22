@@ -87,6 +87,7 @@
     }
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "Z:/home/user/brave-new-world/build/v17/ColonyCharter.exe",
   "found": {
     "confirmation": "(25.85, -123.68)",
     "confirmation_text": "自选地点 · 北纬 25.85° · 西经 123.68°"
@@ -103,8 +104,9 @@
     "target": "1",
     "view": "flat"
   },
+  "os": "Windows",
   "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "pick": {
     "map_selected_marker": -1,
     "nearest_marker_px": 72.2279739379883,
@@ -160,8 +162,8 @@
     },
     "planet": {
       "marker_screen": [
-        605.793518066406,
-        450.0
+        605.793395996094,
+        450.000030517578
       ],
       "selected_marker": 29
     }

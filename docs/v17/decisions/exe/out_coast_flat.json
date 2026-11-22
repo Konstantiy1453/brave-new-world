@@ -111,6 +111,7 @@
     -103.3067
   ],
   "engine": "4.5.1-stable (official)",
+  "executable": "Z:/home/user/brave-new-world/build/v17/ColonyCharter.exe",
   "exports_at_unlock": 0.0,
   "found": {
     "confirmation": "(23.74, -103.31)",
@@ -128,8 +129,9 @@
     "target": "0",
     "view": "flat"
   },
+  "os": "Windows",
   "pck": "Z:\\home\\user\\brave-new-world\\build\\v17\\ColonyCharter.pck",
-  "pck_sha256": "10c9a62d8292de32acbf43334a39e8f9da9dfd759a8101a260f009ba9841e08f",
+  "pck_sha256": "e1aee4458e09c35f9ec9017921cbb07ac724f029ba538b305654bb565ecb3089",
   "pick": {
     "map_selected_marker": -1,
     "nearest_marker_px": 96.4285278320313,
@@ -210,8 +212,8 @@
     },
     "planet": {
       "marker_screen": [
-        605.793334960938,
-        449.999969482422
+        605.793395996094,
+        449.999938964844
       ],
       "selected_marker": 30
     }

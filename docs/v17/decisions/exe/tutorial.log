@@ -26,14 +26,14 @@ WARNING: All audio drivers failed, falling back to the dummy driver.
 
 Unicode parsing error, some characters were replaced with � (U+FFFD): Unexpected NUL character
 Unicode parsing error, some characters were replaced with � (U+FFFD): Unexpected NUL character
-MAP_SETUP ms=120 atlas_ms=12 cached=false
+MAP_SETUP ms=101 atlas_ms=10 cached=false
 PASS the menu's tutorial switch is on
-MAP_SETUP ms=337 atlas_ms=24 cached=false
-MAP_ATLAS_REFINED ms=38531 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
+MAP_SETUP ms=398 atlas_ms=20 cached=false
+MAP_ATLAS_REFINED ms=24741 key=5f5dc35be13c042a63004c9ac38f9cccaebbfaef7a3a1b78b876d33cd7dbcdbd
 PASS the tutorial starts at step 1
 PASS the tutorial reached step 4 by play (step 4)
-MAP_SETUP ms=73 atlas_ms=1 cached=true
-MAP_SETUP ms=144 atlas_ms=0 cached=true
+MAP_SETUP ms=79 atlas_ms=0 cached=true
+MAP_SETUP ms=146 atlas_ms=1 cached=true
 PASS the save carries step 4 (3)
 PASS the settings page's resume button (ResumeTutorial)
 PASS continuing resumes step 4 in the same colony (step 4)
