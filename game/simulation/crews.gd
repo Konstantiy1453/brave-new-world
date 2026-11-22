@@ -9,6 +9,12 @@ extends RefCounted
 ## wage. Training turns a worker into a crew (the town keeps its people); a crew recruited from
 ## outside arrives later and adds one. Prefabricated kits that arrive with an expedition assemble
 ## on their own.
+## Beyond buildings (1.10.1, the November 20 brief): a land road ordered now, and a road's upgrade,
+## move on only on a day a crew from one of its towns works on them (a day without one puts the
+## finish a day later); a crew on a road closed by rockfall clears it twice as fast; a field survey
+## or a drilling takes a crew from the nearest town into the field for its days. Each town has a
+## standing order for what its crews take after the shortages (`ORDERS`), and every crew the colony
+## adds beyond the first ones costs more to train or hire (`expansion_factor`).
 
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -18,6 +24,17 @@ const IDLE: String = ""
 const BUILD: String = "build"
 const TRAVEL: String = "travel"
 const TRAIN: String = "train"
+const ROAD: String = "road"
+const REPAIR: String = "repair"
+const FIELD: String = "field"
+## A town's standing order (`crews.orders`), after the projects that fix a shortage, which always
+## come first, and the one chosen to go next: everything in the order it was given, with a closed
+## road cleared first (the default); repairs and roads before facilities; or facilities before
+## repairs and roads.
+const ORDER_OLDEST: String = "oldest"
+const ORDER_ROADS: String = "roads"
+const ORDER_FACILITIES: String = "facilities"
+const ORDERS: Array[String] = [ORDER_OLDEST, ORDER_ROADS, ORDER_FACILITIES]
 
 
 static func rules(sim: RefCounted) -> Dictionary:
@@ -102,7 +119,7 @@ static func join_expedition(
 		for team: Dictionary in sim.state.crews.teams:
 			if sent >= count:
 				return
-			if int(team.region) != int(src.region) or str(team.task) in [TRAVEL, TRAIN]:
+			if int(team.region) != int(src.region) or str(team.task) in [TRAVEL, TRAIN, FIELD]:
 				continue
 			if idle_only and str(team.task) != IDLE:
 				continue
@@ -115,10 +132,11 @@ static func join_expedition(
 			sent += 1
 
 
+## The crews at a town: not on the way somewhere and not out in the field.
 static func teams_at(sim: RefCounted, region: int) -> Array:
 	var found_teams: Array = []
 	for team: Dictionary in sim.state.get("crews", {}).get("teams", []):
-		if int(team.region) == region and str(team.task) != TRAVEL:
+		if int(team.region) == region and not str(team.task) in [TRAVEL, FIELD]:
 			found_teams.append(team)
 	return found_teams
 
@@ -146,31 +164,51 @@ static func daily(sim: RefCounted) -> Dictionary:
 				s.population = int(s.population) + 1
 				Stats.count(sim.state, "moves", int(s.region), 1)
 				sim._log("%s · 一支工程队抵达。" % s.name)
-		elif str(team.task) == TRAIN and day >= int(team.until):
+		elif str(team.task) in [TRAIN, FIELD] and day >= int(team.until):
+			if str(team.task) == FIELD:
+				var home: Dictionary = sim.settlement(int(team.region))
+				sim._log("%s · 工程队 #%d 从野外回来。" % [str(home.get("name", "")), int(team.id)])
 			team.task = IDLE
 			team.target = 0
 	var working: Dictionary = {}
 	sim.state.crews.working = working
 	for team: Dictionary in sim.state.crews.teams:
-		if str(team.task) == BUILD:
-			var s: Dictionary = sim.settlement(int(team.region))
-			var index: int = sim.Production.index_of(s, int(team.target))
-			if index < 0 or int(s.buildings[index].remaining) <= 0:
-				team.task = IDLE
-				team.target = 0
-			else:
-				working[int(team.target)] = true
+		match str(team.task):
+			BUILD:
+				var s: Dictionary = sim.settlement(int(team.region))
+				var index: int = sim.Production.index_of(s, int(team.target))
+				if index < 0 or int(s.buildings[index].remaining) <= 0:
+					team.task = IDLE
+					team.target = 0
+				else:
+					working[int(team.target)] = true
+			ROAD, REPAIR:
+				var work: Dictionary = road_work(sim, _road(sim, int(team.target)))
+				if work.is_empty() or str(work.kind) != str(team.task):
+					team.task = IDLE
+					team.target = 0
+				else:
+					working[road_key(int(team.target))] = true
 	for team: Dictionary in sim.state.crews.teams:
 		if str(team.task) != IDLE:
 			continue
-		var next: int = next_project(sim, int(team.region), working)
-		if next > 0:
-			team.task = BUILD
-			team.target = next
-			working[next] = true
+		var waiting: Array = queue(sim, sim.settlement(int(team.region)), working)
+		if not waiting.is_empty():
+			_take(team, waiting[0], working)
 	_shortages_first(sim, working)
 	_forget_finished_choices(sim)
 	return working
+
+
+## A crew takes a queue item: a building (its uid) or road work (its road, by kind).
+static func _take(team: Dictionary, item: Dictionary, working: Dictionary) -> void:
+	working[int(item.get("uid", 0))] = true
+	if item.has("road"):
+		team.task = str(item.kind)
+		team.target = int(item.road)
+	else:
+		team.task = BUILD
+		team.target = int(item.get("uid", 0))
 
 
 static func _forget_finished_choices(sim: RefCounted) -> void:
@@ -182,24 +220,28 @@ static func _forget_finished_choices(sim: RefCounted) -> void:
 			chosen.erase(key)
 
 
-## An urgent project nobody works on takes a crew off a project at its town that is not urgent.
+## An urgent project nobody works on takes a crew off a project at its town that is not urgent: a
+## building, a road or a repair (each keeps its progress).
 static func _shortages_first(sim: RefCounted, working: Dictionary) -> void:
 	for team: Dictionary in sim.state.crews.teams:
-		if str(team.task) != BUILD:
+		if not str(team.task) in [BUILD, ROAD, REPAIR]:
 			continue
 		var s: Dictionary = sim.settlement(int(team.region))
-		var index: int = sim.Production.index_of(s, int(team.target))
-		if index < 0 or fixes_shortage(sim, s, s.buildings[index]):
-			continue
+		var key: int = int(team.target)
+		if str(team.task) == BUILD:
+			var index: int = sim.Production.index_of(s, key)
+			if index < 0 or fixes_shortage(sim, s, s.buildings[index]):
+				continue
+		else:
+			key = road_key(int(team.target))
 		var waiting: Array = queue(sim, s, working)
 		if waiting.is_empty() or not fixes_shortage(sim, s, waiting[0]):
 			continue
-		working.erase(int(team.target))
-		team.target = int(waiting[0].get("uid", 0))
-		working[int(team.target)] = true
+		working.erase(key)
+		_take(team, waiting[0], working)
 
 
-## The first project in a town's queue: its uid, or 0.
+## The first project in a town's queue: a building's uid, a road work key (`road_key`), or 0.
 static func next_project(sim: RefCounted, region: int, working: Dictionary) -> int:
 	var waiting: Array = queue(sim, sim.settlement(region), working)
 	if waiting.is_empty():
@@ -207,8 +249,10 @@ static func next_project(sim: RefCounted, region: int, working: Dictionary) -> i
 	return int(waiting[0].get("uid", 0))
 
 
-## A town's buildings still waiting for a crew, in the order crews take them: those that fix a
-## shortage the town has today first, then the one chosen to go next, then the oldest order.
+## What a town's crews still have to take, in the order they take it: the buildings that fix a
+## shortage the town has today, the one chosen to go next, then by the town's standing order
+## (`ORDERS`) the other buildings and the road work at its roads (`road_items`). A building is a
+## building record; road work is {uid (its road_key), road, kind, remaining, ordered, name}.
 static func queue(sim: RefCounted, s: Dictionary, working: Dictionary) -> Array:
 	var urgent: Array = []
 	var chosen: Array = []
@@ -227,7 +271,177 @@ static func queue(sim: RefCounted, s: Dictionary, working: Dictionary) -> Array:
 			rest.append(b)
 	urgent.sort_custom(_older)
 	rest.sort_custom(_older)
-	return _roads_first(urgent + chosen + rest)
+	var repairs: Array = []
+	var roads: Array = []
+	for item: Dictionary in road_items(sim, s, working):
+		if str(item.kind) == REPAIR:
+			repairs.append(item)
+		else:
+			roads.append(item)
+	match order_of(sim, int(s.get("region", -1))):
+		ORDER_ROADS:
+			return _roads_first(urgent + chosen + repairs + roads + rest)
+		ORDER_FACILITIES:
+			return _roads_first(urgent + chosen + rest + repairs + roads)
+	var merged: Array = rest + roads
+	merged.sort_custom(_ordered_before)
+	return _roads_first(urgent + repairs + chosen + merged)
+
+
+## Buildings and road works in the order they were given: by the day ordered (a building from
+## before 1.10.1 counts as the oldest), a building before a road on the same day, then by uid or id.
+static func _ordered_before(a: Dictionary, b: Dictionary) -> bool:
+	var day_a: int = int(a.get("ordered", 0))
+	var day_b: int = int(b.get("ordered", 0))
+	if day_a != day_b:
+		return day_a < day_b
+	var road_a: bool = a.has("road")
+	var road_b: bool = b.has("road")
+	if road_a != road_b:
+		return road_b
+	if road_a:
+		return int(a.road) < int(b.road)
+	return _older(a, b)
+
+
+## The key a road's work has among the projects under work: negative, apart from building uids.
+static func road_key(road: int) -> int:
+	return -1 - road
+
+
+static func _road(sim: RefCounted, road: int) -> Dictionary:
+	var roads: Array = sim.state.get("roads", [])
+	if road < 0 or road >= roads.size():
+		return {}
+	return roads[road]
+
+
+## Whether a road is a land road (not a sea link or a shuttle line).
+static func _land(r: Dictionary) -> bool:
+	var variant: String = str(r.get("variant", "valley"))
+	return variant != Keys.ROUTE_SEA and variant != Keys.ROUTE_SHUTTLE
+
+
+## What a road needs from a crew today, as a queue item, or empty: building a land road ordered
+## since crews build roads (`crew_built`), its upgrade (`upgrade_crew`), or a rockfall closure.
+static func road_work(sim: RefCounted, r: Dictionary) -> Dictionary:
+	if r.is_empty() or bool(r.get("retired", false)) or not _land(r):
+		return {}
+	var day: int = int(sim.state.day)
+	var kind: String = ""
+	var remaining: int = 0
+	if WorldGen.road_building(r, day):
+		if not bool(r.get("crew_built", false)):
+			return {}
+		kind = ROAD
+		remaining = maxi(1, int(r.ready_day) - day)
+	elif r.has("upgrade_to") and int(r.get("paving_until", 0)) >= day:
+		if not bool(r.get("upgrade_crew", false)):
+			return {}
+		kind = ROAD
+		remaining = maxi(1, int(r.paving_until) - day)
+	elif WorldGen.road_blocked(r, day):
+		kind = REPAIR
+		remaining = maxi(1, ceili(float(int(r.blocked_until) - day + 1) / 2.0))
+	else:
+		return {}
+	var names: Array = []
+	for end: int in [int(r.a), int(r.b)]:
+		names.append(str(sim.settlement(end).get("name", "?")))
+	return {
+		"uid": road_key(int(r.id)),
+		"road": int(r.id),
+		"kind": kind,
+		"remaining": remaining,
+		"ordered": int(r.get("ordered", 0)),
+		"name": ("抢修 %s ↔ %s" if kind == REPAIR else "修路 %s ↔ %s") % names,
+	}
+
+
+## The road work a town's crews can take: at each of its roads that needs a crew and has none.
+static func road_items(sim: RefCounted, s: Dictionary, working: Dictionary) -> Array:
+	var items: Array = []
+	for r: Dictionary in sim.state.get("roads", []):
+		if int(r.a) != int(s.get("region", -1)) and int(r.b) != int(s.get("region", -1)):
+			continue
+		if working.has(road_key(int(r.get("id", -1)))):
+			continue
+		var work: Dictionary = road_work(sim, r)
+		if not work.is_empty():
+			items.append(work)
+	return items
+
+
+## Whether a road being built moves on today: a crew works at it (or every site moves on without
+## crews, as in the suites for other systems).
+static func road_worked(sim: RefCounted, r: Dictionary) -> bool:
+	var crews: Dictionary = sim.state.get("crews", {})
+	if bool(crews.get("all_sites", false)):
+		return true
+	return crews.get("working", {}).has(road_key(int(r.get("id", -1))))
+
+
+## Whether a crew is clearing this closed road today (only a crew does: a closure keeps its days
+## without one).
+static func road_repaired(sim: RefCounted, r: Dictionary) -> bool:
+	return sim.state.get("crews", {}).get("working", {}).has(road_key(int(r.get("id", -1))))
+
+
+## A town's standing order for its crews (`ORDERS`).
+static func order_of(sim: RefCounted, region: int) -> String:
+	return str(sim.state.get("crews", {}).get("orders", {}).get(str(region), ORDER_OLDEST))
+
+
+## The player's standing order to a town's crews.
+static func set_order(sim: RefCounted, region: int, order: String) -> String:
+	ensure_state(sim.state)
+	if sim.settlement(region).is_empty():
+		return "请选择已建立的据点"
+	if not order in ORDERS:
+		return "未知的常设指令"
+	if not sim.state.crews.has("orders"):
+		sim.state.crews.orders = {}
+	sim.state.crews.orders[str(region)] = order
+	return ""
+
+
+## A crew goes into the field with a survey or a drilling team from its town until `until`: an idle
+## one if there is one, else one off its project (which waits). Its id, or 0 when the town has none
+## at home.
+static func take_for_field(sim: RefCounted, region: int, until: int, job: String) -> int:
+	ensure_state(sim.state)
+	for idle_only: bool in [true, false]:
+		for team: Dictionary in teams_at(sim, region):
+			if str(team.task) == TRAIN or (idle_only and str(team.task) != IDLE):
+				continue
+			team.task = FIELD
+			team.target = 0
+			team.until = until
+			team.job = job
+			return int(team.id)
+	return 0
+
+
+## Whether a town has a crew at home that could go into the field.
+static func can_take_for_field(sim: RefCounted, region: int) -> bool:
+	for team: Dictionary in teams_at(sim, region):
+		if str(team.task) != TRAIN:
+			return true
+	return false
+
+
+## What one more crew costs against the base price: 1, plus `growth_per_crew` for each crew the
+## colony has (and `extra` more about to be added) beyond its first `free_crews`.
+static func expansion_factor(sim: RefCounted, extra: int = 0) -> float:
+	var rule: Dictionary = rules(sim)
+	var count: int = sim.state.get("crews", {}).get("teams", []).size() + extra
+	var beyond: int = maxi(0, count - int(rule.get("free_crews", 0)))
+	return 1.0 + float(rule.get("growth_per_crew", 0.0)) * float(beyond)
+
+
+## Training one more crew today.
+static func train_price(sim: RefCounted) -> float:
+	return float(rules(sim).get("train_cost", 0.0)) * expansion_factor(sim)
 
 
 ## A mine that branches off another mine's road waits for that mine: the main road is built first.
@@ -291,13 +505,20 @@ static func eta(sim: RefCounted, s: Dictionary) -> Dictionary:
 		if not here and not coming:
 			continue
 		var at: int = day
-		if str(team.task) in [TRAVEL, TRAIN]:
+		if str(team.task) in [TRAVEL, TRAIN, FIELD]:
 			at = maxi(day, int(team.until) - 1)
 		elif str(team.task) == BUILD:
 			var index: int = sim.Production.index_of(s, int(team.target))
 			if index >= 0:
 				at = day + int(s.buildings[index].remaining)
 				result[int(team.target)] = {"start": day + 1, "finish": at, "crew": int(team.id)}
+		elif str(team.task) in [ROAD, REPAIR]:
+			var work: Dictionary = road_work(sim, _road(sim, int(team.target)))
+			if not work.is_empty():
+				at = day + int(work.remaining)
+				result[road_key(int(team.target))] = {
+					"start": day + 1, "finish": at, "crew": int(team.id)
+				}
 		free_at.append(at)
 		ids.append(int(team.id))
 	for b: Dictionary in s.get("buildings", []):
@@ -367,6 +588,8 @@ static func send(sim: RefCounted, crew_id: int, to: int) -> String:
 		return "没有这支工程队"
 	if str(team.task) in [TRAVEL, TRAIN]:
 		return "这支工程队正在路上或培训中"
+	if str(team.task) == FIELD:
+		return "这支工程队正在野外勘察，回来后才能派走"
 	var from: Dictionary = sim.settlement(int(team.region))
 	var dest: Dictionary = sim.settlement(to)
 	if dest.is_empty() or to == int(team.region):
@@ -429,7 +652,7 @@ static func train(sim: RefCounted, region: int) -> String:
 		return "请选择已建立的据点"
 	if int(s.workers) - int(s.employed_workers) < 1 and int(s.workers) < 2:
 		return "没有可以培训的职工"
-	var cost: float = float(rule.get("train_cost", 0.0))
+	var cost: float = train_price(sim)
 	if float(sim.state.cash) < cost:
 		return "公共资金不足：需要 %.0f" % cost
 	sim._transfer("public", "external", cost, "invest.crew", false, "train")
@@ -469,12 +692,21 @@ static func view(sim: RefCounted) -> Dictionary:
 		var row: Dictionary = team.duplicate()
 		var s: Dictionary = sim.settlement(int(team.region))
 		row.place = str(s.get("name", ""))
-		if str(team.task) == BUILD:
-			var index: int = sim.Production.index_of(s, int(team.target))
-			if index >= 0:
-				var b: Dictionary = s.buildings[index]
-				row.project = str(sim.config.buildings.get(b.kind, {}).get("name", b.kind))
-				row.days_left = int(b.remaining)
+		match str(team.task):
+			BUILD:
+				var index: int = sim.Production.index_of(s, int(team.target))
+				if index >= 0:
+					var b: Dictionary = s.buildings[index]
+					row.project = str(sim.config.buildings.get(b.kind, {}).get("name", b.kind))
+					row.days_left = int(b.remaining)
+			ROAD, REPAIR:
+				var work: Dictionary = road_work(sim, _road(sim, int(team.target)))
+				if not work.is_empty():
+					row.project = str(work.name)
+					row.days_left = int(work.remaining)
+			FIELD:
+				row.project = "实地勘察" if str(team.get("job", "")).begins_with("field") else "钻探"
+				row.days_left = maxi(0, int(team.until) - int(sim.state.day))
 		rows.append(row)
 	var waiting: Dictionary = {}
 	var urgent: Dictionary = {}
@@ -482,12 +714,24 @@ static func view(sim: RefCounted) -> Dictionary:
 	for s: Dictionary in sim.state.get("settlements", []):
 		var names: Array = []
 		for b: Dictionary in queue(sim, s, working):
+			if b.has("road"):
+				names.append(str(b.name))
+				continue
 			names.append(str(sim.config.buildings.get(b.kind, {}).get("name", b.kind)))
 			if fixes_shortage(sim, s, b):
 				urgent[int(s.region)] = int(urgent.get(int(s.region), 0)) + 1
 		if not names.is_empty():
 			waiting[int(s.region)] = names
-	return {"teams": rows, "waiting": waiting, "urgent": urgent}
+	var orders: Dictionary = {}
+	for s: Dictionary in sim.state.get("settlements", []):
+		orders[int(s.region)] = order_of(sim, int(s.region))
+	return {
+		"teams": rows,
+		"waiting": waiting,
+		"urgent": urgent,
+		"orders": orders,
+		"train_price": train_price(sim),
+	}
 
 
 ## Checks for the audit: every crew where a crew can be, each town's count matching its teams.

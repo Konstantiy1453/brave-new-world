@@ -238,7 +238,7 @@ func _crews(reserve: float) -> void:
 		if (
 			waiting > here
 			and spare > 1
-			and float(sim.state.cash) >= float(rule.train_cost) + reserve
+			and float(sim.state.cash) >= sim.Crews.train_price(sim) + reserve
 		):
 			act("crew_train", {"region": region})
 
@@ -1218,7 +1218,7 @@ func _recruit(region: int, wanted: int, reserve: float, for_goal: bool = false) 
 	var batch: int = mini(mini(limit, wanted), sim.Population.free_beds(sim, place))
 	if batch < 1:
 		return false
-	var cost: float = sim.Population.campaign_price(sim, kind) * batch
+	var cost: float = sim.Population.campaign_cost(sim, kind, batch)
 	if float(sim.state.cash) < cost + reserve + recruit_buffer:
 		return false
 	return act("recruit", {"region": region, "kind": kind, "count": batch}) == ""

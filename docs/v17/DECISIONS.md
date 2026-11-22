@@ -1109,3 +1109,22 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The ship light on the globe and the flat map is 0.7 of a cargo dot at 0.55 of its glow, and at the
   berth lies 18% of its line out from the quay: it read as a white spot summed with the quay's
   lamps · dimming the quay's lamps.
+- Crews beyond buildings (the 1.10 plan: "a project progresses only while a crew works on it"): a
+  land road ordered from 1.10.1 on, and any land road's upgrade, moves on only on a day a crew from
+  one of its two towns works at it; a day without one puts its finish a day later. Sea links and
+  shuttle lines need none (docks and flights, not road works), and a road from an older save keeps
+  its date · roads that build themselves, with crews only speeding them.
+- A rockfall closure keeps its days without a crew and clears twice as fast with one (each day
+  worked clears a day more) · closures that wait for a crew, which would strand freight in a town
+  with none.
+- A field survey or a drilling takes a crew from the town the team leaves (the nearest) for its
+  days: an idle one, else one off its project, which waits; with none at home it cannot go · survey
+  teams of their own.
+- Standing orders per town, after the projects that fix a shortage and the one chosen to go next:
+  in the order given, with closures cleared first (the default; buildings and roads by the day
+  ordered, a building before a road on the same day, buildings from older saves first); repairs
+  and roads first; or facilities first. A shortage still takes a crew off a road or a repair · a
+  global setting.
+- Each crew beyond the colony's first two costs a quarter of the base price more to train (¥ 900)
+  or to hire (¥ 1,500 before the campaign step): the third ¥ 1,125, the fourth ¥ 1,350 · a rising
+  wage, which would also punish crews already working.

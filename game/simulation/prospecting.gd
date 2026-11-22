@@ -12,6 +12,7 @@ extends RefCounted
 
 const Geology = preload("res://world/geo2/geology.gd")
 const WorldGen = preload("res://world/world_gen.gd")
+const Crews = preload("res://simulation/crews.gd")
 
 const STAGES: Array[String] = ["orbital", "field", "drilled"]
 const NAMES: Dictionary = {
@@ -105,8 +106,11 @@ static func quote(sim: RefCounted, step: String, lat: float, lon: float, id: int
 				"最近的据点也远在 %.0f km 外，队伍最远走 %.0f km"
 				% [float(town.get("km", INF)), float(rule.reach_km)]
 			)
+		elif not Crews.can_take_for_field(sim, int(town.town.region)):
+			result.refusal = "「%s」没有在家的工程队带队：培训一支，或等外出的回来" % str(town.town.name)
 		else:
 			result.from = str(town.town.name)
+			result.from_region = int(town.town.region)
 	return result
 
 
@@ -149,18 +153,17 @@ static func send(sim: RefCounted, step: String, id: int) -> String:
 	if str(q.refusal) != "":
 		return str(q.refusal)
 	sim._transfer("public", "external", float(q.cost), "invest.survey", false, step)
+	var until: int = int(sim.state.day) + int(q.days)
+	var key: String = "%s:%d" % [step, id]
+	# A crew from the town goes with the team for its days; its project waits (crews.gd).
+	var crew: int = Crews.take_for_field(sim, int(q.from_region), until, key)
 	sim.state.prospecting.jobs.append(
-		{
-			"key": "%s:%d" % [step, id],
-			"step": step,
-			"id": id,
-			"until": int(sim.state.day) + int(q.days)
-		}
+		{"key": key, "step": step, "id": id, "until": until, "crew": crew}
 	)
 	sim._log(
 		(
-			"%s：从%s出发，%d 天后回报。"
-			% ["实地勘察队" if step == "field" else "钻探队", str(q.get("from", "")), int(q.days)]
+			"%s：工程队 #%d 带队从%s出发，%d 天后回报。"
+			% ["实地勘察队" if step == "field" else "钻探队", crew, str(q.get("from", "")), int(q.days)]
 		)
 	)
 	return ""

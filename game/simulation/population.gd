@@ -426,10 +426,22 @@ static func recruit_refusal(sim: RefCounted, region: int, kind: String, count: i
 		return "每次招募 1—%d 人" % int(rules.max_per_campaign)
 	if free_beds(sim, s) < count:
 		return "需要 %d 张空床位，目前可用 %d 张" % [count, maxi(0, free_beds(sim, s))]
-	var cost: float = campaign_price(sim, kind) * count
+	var cost: float = campaign_cost(sim, kind, count)
 	if float(sim.state.cash) < cost:
 		return "招募需要 %.0f 资金" % cost
 	return ""
+
+
+## What a campaign of `count` costs: the price each, and for crews each one dearer by the colony's
+## crew count (crews.gd `expansion_factor`).
+static func campaign_cost(sim: RefCounted, kind: String, count: int) -> float:
+	var price: float = campaign_price(sim, kind)
+	if kind != "crew":
+		return price * count
+	var total: float = 0.0
+	for index: int in range(count):
+		total += price * sim.Crews.expansion_factor(sim, index)
+	return total
 
 
 static func recruit(sim: RefCounted, region: int, kind: String, count: int) -> String:
@@ -437,7 +449,7 @@ static func recruit(sim: RefCounted, region: int, kind: String, count: int) -> S
 	if refusal != "":
 		return refusal
 	var rules: Dictionary = sim.pop_rules.recruitment
-	sim._transfer("public", "external", campaign_price(sim, kind) * count, "recruit", false, kind)
+	sim._transfer("public", "external", campaign_cost(sim, kind, count), "recruit", false, kind)
 	sim.state.recruit_campaigns.append(int(sim.state.day))
 	var window: int = int(rules.window_days)
 	while (

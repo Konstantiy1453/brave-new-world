@@ -1,10 +1,11 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "time": "game day",
     "money": "account units",
     "people": "persons",
-    "share": "fraction 0-1"
+    "share": "fraction 0-1",
+    "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews"
   },
   "housing": {
     "capital": 60,
@@ -17,6 +18,8 @@
     "wage": 2.0,
     "train_cost": 900.0,
     "train_days": 15,
+    "free_crews": 2,
+    "growth_per_crew": 0.25,
     "urgent": {
       "water": ["water"],
       "power": ["power"],

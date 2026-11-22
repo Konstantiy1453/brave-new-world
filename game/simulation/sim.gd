@@ -285,6 +285,8 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Crews.send(self, int(args.get("crew", -1)), int(args.get("to", -1)))
 		"crew_next":
 			refusal = Crews.choose_next(self, _site_arg(args), int(args.get("uid", -1)))
+		"crew_order":
+			refusal = Crews.set_order(self, _site_arg(args), str(args.get("order", "")))
 		"research_commission":
 			refusal = Research.commission(
 				self, str(args.get("tech", "")), int(args.get("level", 0))

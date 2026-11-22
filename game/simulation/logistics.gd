@@ -48,6 +48,7 @@ const DISPATCH_ORDER: Array[String] = [
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
+const Crews = preload("res://simulation/crews.gd")
 const Copies = preload("res://simulation/copies.gd")
 const HUB_FOOD_DAYS: float = 3.0
 const HUNGRY_DAYS: float = 7.0
@@ -183,6 +184,10 @@ static func connect_road(
 	r.blocked_until = int(r.ready_day)
 	r.sent_today = 0.0
 	r.level = 1
+	r.ordered = int(sim.state.day)
+	# A land road is built by a crew from one of its towns (crews.gd); a sea link's docks are not.
+	if not is_sea(r) and not is_shuttle(r):
+		r.crew_built = true
 	sim.state.roads.append(r)
 	sim._log(
 		(
@@ -568,15 +573,28 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 		sim._log("%s ↔ %s 已有道路或航线，穿梭机航线停飞，不再收养护费。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
 		return
 	if WorldGen.road_building(r, day):
+		# A road a crew builds moves on only on a day a crew works at it (crews.gd).
+		if bool(r.get("crew_built", false)) and not Crews.road_worked(sim, r):
+			r.ready_day = int(r.ready_day) + 1
+			r.blocked_until = maxi(int(r.get("blocked_until", 0)), int(r.ready_day))
+			return
 		if int(r.ready_day) == day:
 			sim._log("线路建成：%s ↔ %s，开始通行。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
 		return
+	var upgrading: bool = r.has("upgrade_to") and int(r.get("paving_until", 0)) >= day
+	if upgrading and bool(r.get("upgrade_crew", false)) and not Crews.road_worked(sim, r):
+		r.paving_until = int(r.paving_until) + 1
 	if int(r.get("paving_until", 0)) == day:
 		_finish_level(sim, r)
 	sim._public_expense(float(r.get("upkeep", 0.0)), "road.upkeep", "external")
 	var rules: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
 	var chance: float = closure_chance(sim, r)
-	if chance <= 0.0 or WorldGen.road_blocked(r, int(sim.state.day)):
+	if WorldGen.road_blocked(r, day):
+		# A crew at a closed road clears one day more for each day it works there.
+		if Crews.road_repaired(sim, r):
+			r.blocked_until = maxi(day, int(r.blocked_until) - 1)
+		return
+	if chance <= 0.0:
 		return
 	if _roll(sim) < chance:
 		var low: int = int(rules.closure_days[0])
@@ -788,6 +806,8 @@ static func upgrade_road(sim: RefCounted, road: int = 0) -> String:
 		sim._consume(store, "parts", float(step.parts))
 	r.paving_until = int(sim.state.day) + int(step.build_days)
 	r.upgrade_to = int(step.level)
+	if not is_sea(r):
+		r.upgrade_crew = true
 	sim._log(
 		(
 			"%s ↔ %s 开始升级为%s，工期 %d 天；施工期间照常通行。"

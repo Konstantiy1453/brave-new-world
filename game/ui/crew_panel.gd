@@ -20,14 +20,18 @@ static func strip(g, b: Control, s: Dictionary) -> void:
 			here.append(team)
 	D.label(head, "工程队 · 本地 %d 支 · 全殖民地 %d 支" % [here.size(), view.teams.size()], 18, D.TEAL, false)
 	var rule: Dictionary = g.sim.pop_rules.get("crews", {})
+	var dearer: String = (
+		"殖民地每多一支工程队，培训和招募都贵 %.0f%%（前 %d 支不加价）"
+		% [float(rule.get("growth_per_crew", 0.0)) * 100.0, int(rule.get("free_crews", 0))]
+	)
 	var train: Button = D.button(
 		head,
 		(
 			"培训一支工程队 · ¥ %.0f · %d 天"
-			% [float(rule.get("train_cost", 0)), int(rule.get("train_days", 0))]
+			% [float(view.get("train_price", 0.0)), int(rule.get("train_days", 0))]
 		),
 		func(): g.act("crew_train", {"region": int(s.region)}),
-		"从本地职工中培训：人口不变，培训期间不能派工",
+		"从本地职工中培训：人口不变，培训期间不能派工。" + dearer,
 		"CrewTrain"
 	)
 	D.font_size(train, D.SMALL)
@@ -37,21 +41,54 @@ static func strip(g, b: Control, s: Dictionary) -> void:
 		(
 			"招募一支工程队 · ¥ %.0f · %d 天"
 			% [
-				g.sim.Population.campaign_price(g.sim, "crew"),
+				g.sim.Population.campaign_cost(g.sim, "crew", 1),
 				int(g.sim.pop_rules.recruitment.travel_days)
 			]
 		),
 		func(): g.act("recruit", {"region": region, "kind": "crew", "count": 1}),
-		"从殖民地外招募：抵达后人口加 1，要占一张床位",
+		"从殖民地外招募：抵达后人口加 1，要占一张床位。" + dearer,
 		"CrewRecruit"
 	)
 	D.font_size(hire, D.SMALL)
+	_orders(g, card, region, str(view.get("orders", {}).get(region, "oldest")))
 	for team: Dictionary in here:
 		_team_row(g, card, team)
 	var waiting: Array = view.waiting.get(int(s.region), [])
 	if not waiting.is_empty():
 		D.label(card, "等工程队开工（按开工顺序）：" + "、".join(PackedStringArray(waiting)), D.SMALL, D.GOLD)
-	D.label(card, "常设指令：先修本地缺水、缺电、缺粮的工程，手头的工程暂停、进度保留；再建标了「先建」的；其余按下单顺序", D.CAPTION, D.MUTED)
+	D.label(
+		card,
+		(
+			"总是先修本地缺水、缺电、缺粮的工程（手头的工程暂停、进度保留），再建标了「先建」的；"
+			+ "其余按上面的常设指令。陆路的修建和升级也要工程队，没有工程队的日子工期顺延；"
+			+ "工程队抢修落石封路，每天多清一天；实地勘察和钻探由最近据点的一支工程队带队。"
+		),
+		D.CAPTION,
+		D.MUTED
+	)
+
+
+## The town's standing order for its crews, one of three, the current one marked.
+static func _orders(g, parent: Control, region: int, current: String) -> void:
+	var line: HBoxContainer = D.row(parent)
+	D.label(line, "常设指令：", D.SMALL, D.INK, false)
+	var choices: Array = [
+		["oldest", "按下单顺序（落石先抢修）", "设施和道路按下单先后开工；封路先抢修"],
+		["roads", "道路与抢修优先", "先抢修封路、修路和升级道路，再建设施"],
+		["facilities", "设施优先", "先建设施，再抢修和修路"],
+	]
+	for choice: Array in choices:
+		var order: String = str(choice[0])
+		var chip: Button = D.button(
+			line,
+			("● " if order == current else "") + str(choice[1]),
+			func(): g.act("crew_order", {"site": region, "order": order}),
+			str(choice[2]),
+			"CrewOrder_%s" % order,
+			"chip"
+		)
+		D.font_size(chip, D.CAPTION)
+		chip.disabled = order == current
 
 
 static func _team_row(g, parent: Control, team: Dictionary) -> void:
@@ -59,9 +96,19 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 	var day: int = int(g.sim.state.day)
 	var text: String = "工程队 #%d · 空闲，下一项工程自动开工" % int(team.id)
 	match str(team.task):
-		"build":
+		"build", "road", "repair":
 			text = (
-				"工程队 #%d · 在建 %s，还要 %d 天"
+				"工程队 #%d · %s %s，还要 %d 天"
+				% [
+					int(team.id),
+					"在建" if str(team.task) == "build" else "在做",
+					str(team.get("project", "")),
+					int(team.get("days_left", 0))
+				]
+			)
+		"field":
+			text = (
+				"工程队 #%d · 带%s队在野外，%d 天后回来"
 				% [int(team.id), str(team.get("project", "")), int(team.get("days_left", 0))]
 			)
 		"train":
@@ -76,7 +123,7 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 				text += "（线路封闭，停在途中等待，与货运相同）"
 	var words: Label = D.label(line, text, D.SMALL, D.INK, false)
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if str(team.task) in ["train", "travel"]:
+	if str(team.task) in ["train", "travel", "field"]:
 		return
 	for other: Dictionary in g.sim.state.settlements:
 		var to: int = int(other.region)
@@ -107,7 +154,7 @@ static func _team_row(g, parent: Control, team: Dictionary) -> void:
 ## What sending this crew away delays: its project and the queue it leaves, and when it arrives.
 static func _send_delay(g, team: Dictionary, days: int) -> String:
 	var arrive: String = "%d 天后到达，接手那里排队的工程" % days
-	if str(team.task) != "build":
+	if not str(team.task) in ["build", "road", "repair"]:
 		return arrive
 	var others: int = 0
 	for other: Dictionary in g.sim.Crews.teams_at(g.sim, int(team.region)):
@@ -135,10 +182,10 @@ static func start_line(g, s: Dictionary, kind: String = "") -> String:
 		match str(team.task):
 			"":
 				idle += 1
-			"build":
+			"build", "road", "repair":
 				builders += 1
 				busy_left.append(int(team.get("days_left", 0)))
-			"train":
+			"train", "field":
 				busy_left.append(maxi(0, int(team.until) - int(g.sim.state.day)))
 	var urgent: bool = kind != "" and g.sim.Crews.fixes_shortage(g.sim, s, {"kind": kind})
 	var urgent_ahead: int = int(view.get("urgent", {}).get(int(s.region), 0))

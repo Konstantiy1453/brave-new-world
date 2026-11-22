@@ -1354,6 +1354,9 @@ static func _road_card(g, b, road: Dictionary):
 		D.label(
 			c, "在建 · %s 通车 · 还要 %d 天" % [Labels.short_date(int(road.ready_day)), left], 16, D.GOLD
 		)
+	var crew_line: String = _road_crew_line(g, road)
+	if crew_line != "":
+		D.label(c, crew_line, 15, D.MUTED)
 	if int(road.get("paving_until", 0)) > int(state.day):
 		D.label(
 			c,
@@ -1381,6 +1384,21 @@ static func _road_card(g, b, road: Dictionary):
 			words.append("%s %s" % [RES.get(good, good), Labels.t(float(moving[good]))])
 		D.label(c, "在途：" + "、".join(words), 15, D.MUTED)
 	_level_row(g, c, road)
+
+
+## Who works at a road that needs a crew (crews.gd): the crew on it, or that it waits for one and
+## its finish moves a day later for each day without; empty for a road that needs none today.
+static func _road_crew_line(g, road: Dictionary) -> String:
+	var work: Dictionary = g.sim.Crews.road_work(g.sim, road)
+	if work.is_empty():
+		return ""
+	var what: String = "抢修" if str(work.kind) == "repair" else "施工"
+	for team: Dictionary in g.sim.Crews.view(g.sim).teams:
+		if str(team.task) == str(work.kind) and int(team.target) == int(road.id):
+			return "工程队 #%d 正在%s，按现在的进度约 %d 天" % [int(team.id), what, int(work.remaining)]
+	if str(work.kind) == "repair":
+		return "没有工程队抢修：按原定日期自行恢复；派一支工程队可以快一倍"
+	return "等工程队：两端据点的工程队空出来才开工，没有工程队的日子工期顺延"
 
 
 ## The link's next level: what it costs, what it gives, what it waits for, and the order.

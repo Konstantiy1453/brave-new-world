@@ -366,6 +366,8 @@ static func build(sim: RefCounted, region: int, kind: String, plot: int = -1) ->
 	consume(sim, s, "parts", float(d.parts))
 	var building: Dictionary = new_building(sim, kind, int(d.days))
 	building.plot = chosen
+	# When it was ordered: crews take buildings and roads in that order (crews.gd).
+	building.ordered = int(sim.state.day)
 	# The mine road built with it, and the mine whose road it branches from (bay.gd).
 	if int(d.haul.days) > 0:
 		building.haul = d.haul.duplicate()
