@@ -136,7 +136,7 @@ static func preview(sim) -> Dictionary:
 						"resource": d.output,
 						"region": s.region,
 						"remaining":
-						float(r.deposits[d.output]) * float(sim.config.prices[d.output]),
+						float(r.deposits.get(d.output, 0.0)) * float(sim.config.prices[d.output]),
 						"rate": 0.0
 					}
 				streams[id].rate += rate

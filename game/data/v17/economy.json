@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "units": {
     "money": "account units",
     "goods": "hundreds of tonnes: every amount, rate and capacity of goods here is in 100 t; the interface shows tonnes (display.tonnes_per_unit)",
@@ -21,7 +21,10 @@
     "components": "电子元件",
     "alloy": "合金",
     "machinery": "精密机械",
-    "pharma": "药品"
+    "pharma": "药品",
+    "nickel": "镍矿",
+    "cobalt": "钴矿",
+    "superalloy": "高温合金"
   },
   "prices": {
     "ore": 8.0,
@@ -33,7 +36,10 @@
     "components": 110.0,
     "alloy": 50.0,
     "machinery": 250.0,
-    "pharma": 80.0
+    "pharma": 80.0,
+    "nickel": 25.0,
+    "cobalt": 50.0,
+    "superalloy": 160.0
   },
   "economy": {
     "wage": 1.5,
@@ -63,7 +69,9 @@
     "admin_settlement_growth": 0.15,
     "copy_surcharge": 0.025,
     "copy_surcharge_cap": 1.75,
-    "copy_surcharge_exempt_roles": ["housing"],
+    "copy_surcharge_exempt_roles": [
+      "housing"
+    ],
     "income_copy_factor": 0.85,
     "foodworks_free_copies": 6,
     "foodworks_copy_factor": 0.8,
@@ -72,7 +80,10 @@
     "cover_idle_days": 180,
     "admin_preview_residents": 100,
     "optional_reserve_days": 2.0,
-    "forecast_import_valued": ["materials", "parts"],
+    "forecast_import_valued": [
+      "materials",
+      "parts"
+    ],
     "mine_warning_days": 360,
     "mine_warning_share": 0.33,
     "money_sinks": {
@@ -140,14 +151,24 @@
     "haul_reach": 18.0,
     "haul_days_per_unit": 0.25,
     "haul_cost_per_unit": 40.0,
-    "sea_goods": ["food", "materials", "parts"],
+    "sea_goods": [
+      "food",
+      "materials",
+      "parts"
+    ],
     "sea_discount": 0.25,
     "signal_rich_chance": 0.6,
     "signal_rich_tonnes": 4000.0,
     "signal_poor_tonnes": 300.0,
     "survey_cost": 1500.0,
     "survey_days": 25,
-    "ship_call_days": 30
+    "ship_call_days": 30,
+    "signal_goods": [
+      "copper",
+      "crystal",
+      "cobalt"
+    ],
+    "seabed_landing": "the seabed mine's ore is landed at the town's working harbour; without one it waits offshore"
   },
   "buildings": {
     "habitat": {
@@ -1394,6 +1415,88 @@
       "description": "事件造成的物资损失 -30%；道路封闭的机会和事件封路的天数 -50%。",
       "megaproject": true,
       "requires_tech": "emergency_network"
+    },
+    "mine_nickel": {
+      "name": "镍矿场",
+      "category": "extraction",
+      "role": "mine",
+      "cost": 2900.0,
+      "materials": 32.0,
+      "parts": 8.0,
+      "days": 20,
+      "jobs": 10,
+      "power": 5.0,
+      "water": 3.0,
+      "maintenance": 5.0,
+      "description": "开采镍矿：镍矿带常在铁矿带里，品位不高但储量大。",
+      "output": "nickel",
+      "rate": 5.0,
+      "pollution": 0.12,
+      "requires_tech": "nickel_metallurgy",
+      "model": "mine_copper"
+    },
+    "mine_cobalt": {
+      "name": "钴矿场",
+      "category": "extraction",
+      "role": "mine",
+      "cost": 4300.0,
+      "materials": 40.0,
+      "parts": 12.0,
+      "days": 25,
+      "jobs": 10,
+      "power": 6.0,
+      "water": 4.0,
+      "maintenance": 7.0,
+      "description": "开采钴矿：钴很稀少，常和镍、铜伴生；深海结核里也有。",
+      "output": "cobalt",
+      "rate": 1.6,
+      "pollution": 0.12,
+      "requires_tech": "nickel_metallurgy",
+      "model": "mine_crystal"
+    },
+    "superalloy_works": {
+      "name": "高温合金厂",
+      "category": "industry",
+      "role": "factory",
+      "cost": 8500.0,
+      "materials": 80.0,
+      "parts": 20.0,
+      "days": 45,
+      "jobs": 10,
+      "power": 14.0,
+      "water": 5.0,
+      "maintenance": 10.0,
+      "description": "镍和钴炼成高温合金：涡轮、聚变装置和深井设备都离不开它，价格高。",
+      "inputs": {
+        "nickel": 2.0,
+        "cobalt": 0.5
+      },
+      "outputs": {
+        "superalloy": 1.0
+      },
+      "pollution": 0.6,
+      "requires_tech": "superalloys",
+      "model": "processor"
+    },
+    "seabed_mine": {
+      "name": "海底采矿平台",
+      "category": "extraction",
+      "role": "seabed",
+      "cost": 9000.0,
+      "materials": 90.0,
+      "parts": 40.0,
+      "days": 45,
+      "jobs": 12,
+      "power": 18.0,
+      "water": 0.0,
+      "maintenance": 18.0,
+      "rate": 6.0,
+      "plotless": true,
+      "needs_coast": true,
+      "unique_local": true,
+      "requires_tech": "seabed_mining",
+      "description": "开采码头外查明的近海富矿（铜、晶体或钴结核），矿石由驳船运回码头，再出口或加工。需要运转的小型码头卸货。",
+      "model": "harbor"
     }
   },
   "contract": {

@@ -816,9 +816,13 @@ func _audit_sites() -> Array:
 				not bool(plot.hidden)
 				and (int(plot.depth) == 0 or bool(reg.get("deep_known", false)))
 			):
-				known[plot.resource] += float(plot.reserves)
+				var good: String = str(plot.resource)
+				known[good] = float(known.get(good, 0.0)) + float(plot.reserves)
 		for good: String in known:
-			if absf(float(known[good]) - float(reg.deposits[good])) > 0.01:
+			if absf(float(known[good]) - float(reg.deposits.get(good, 0.0))) > 0.01:
+				errors.append("deposit total differs from plots")
+		for good: String in reg.deposits:
+			if not known.has(good) and absf(float(reg.deposits[good])) > 0.01:
 				errors.append("deposit total differs from plots")
 	for road: Dictionary in state.roads:
 		if settlement(int(road.a)).is_empty() or settlement(int(road.b)).is_empty():

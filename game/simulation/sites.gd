@@ -11,6 +11,9 @@ const SiteGen = preload("res://world/geo2/site_gen.gd")
 const Rules = preload("res://simulation/rules.gd")
 
 const GOODS: Array[String] = ["ore", "copper", "crystal"]
+## Every mined good, for what the colony knows and can build on; nickel and cobalt (1.10) occur only at
+## towns founded on picked ground.
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 const KIT_GOODS: Array[String] = ["materials", "parts", "food"]
 const PLOT_SPACING: float = 6.0
 const LEGACY_TOWN_OFFSET: float = 12.0
@@ -24,6 +27,8 @@ const MINE_KINDS: Dictionary = {
 	"mine_ore_auto": "ore",
 	"mine_copper_auto": "copper",
 	"mine_crystal_auto": "crystal",
+	"mine_nickel": "nickel",
+	"mine_cobalt": "cobalt",
 }
 const NAME_LIMIT: int = 16
 const FIRST_PRINTABLE: int = 32
@@ -87,7 +92,8 @@ static func _legacy_plots(reg: Dictionary, buildings: Array) -> Array:
 	var others: int = 0
 	for b: Dictionary in buildings:
 		if MINE_KINDS.has(b.kind):
-			mines[MINE_KINDS[b.kind]] += 1
+			var good: String = str(MINE_KINDS[b.kind])
+			mines[good] = int(mines.get(good, 0)) + 1
 		elif b.kind == "farm":
 			farms += 1
 		else:
@@ -243,7 +249,9 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 	var reg: Dictionary = sim.state.world.regions[region]
 	var s: Dictionary = sim.settlement(region)
 	var taken: Dictionary = _taken(s) if not s.is_empty() else {}
-	var counts: Dictionary = {"general": 0, "farm": 0, "ore": 0, "copper": 0, "crystal": 0}
+	var counts: Dictionary = {"general": 0, "farm": 0}
+	for good: String in MINED:
+		counts[good] = 0
 	for index: int in range(reg.plots.size()):
 		if taken.has(index):
 			continue
@@ -251,7 +259,7 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 		if plot.kind == "deposit":
 			if not bool(plot.hidden) and float(plot.reserves) > 0.0:
 				if int(plot.depth) == 0 or sim._has("deep_mining"):
-					counts[plot.resource] += 1
+					counts[plot.resource] = int(counts.get(plot.resource, 0)) + 1
 		else:
 			counts[plot.kind] += 1
 	return counts
@@ -313,11 +321,13 @@ static func view(sim: RefCounted, site: int) -> Dictionary:
 	var band: float = _band(sim, reg)
 	var deposits: Dictionary = {}
 	var grades: Dictionary = {}
-	var salt: int = 1
-	for good: String in GOODS:
+	for good: String in MINED:
+		# Nickel and cobalt only where the site lists them: towns on picked ground that know of some.
+		if not good in GOODS and not reg.deposits.has(good):
+			continue
+		var salt: int = 1 + MINED.find(good)
 		deposits[good] = _estimate(sim, reg, float(reg.deposits[good]), band, salt)
-		grades[good] = _estimate(sim, reg, float(reg.grade[good]), band * 0.5, salt + 10)
-		salt += 1
+		grades[good] = _estimate(sim, reg, float(reg.grade.get(good, 1.0)), band * 0.5, salt + 10)
 	var fertility: Dictionary = _estimate(sim, reg, float(reg.fertility), band * 0.5, 30)
 	return {
 		"id": site,
@@ -522,7 +532,7 @@ static func plot_choices(sim: RefCounted, site: int, building_kind: String) -> A
 static func start_score(sim: RefCounted, site: int) -> float:
 	var known: Dictionary = view(sim, site)
 	var value: float = 0.0
-	for good: String in GOODS:
+	for good: String in known.deposits:
 		value += (
 			float(known.deposits[good].mid)
 			* float(sim.config.prices[good])

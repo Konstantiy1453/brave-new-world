@@ -135,7 +135,7 @@ static func _place_signal(sim: RefCounted, region: int) -> void:
 		var rule: Dictionary = rules(sim)
 		var rich: bool = rng.randf() < float(rule.signal_rich_chance)
 		reg.offshore = {
-			"good": SIGNAL_GOODS[rng.randi_range(0, SIGNAL_GOODS.size() - 1)],
+			"good": _signal_goods(rule)[rng.randi_range(0, _signal_goods(rule).size() - 1)],
 			"rich": rich,
 			"tonnes":
 			roundf(
@@ -147,6 +147,20 @@ static func _place_signal(sim: RefCounted, region: int) -> void:
 			"surveyed": false,
 			"survey_until": -1
 		}
+
+
+static func _signal_goods(rule: Dictionary) -> Array:
+	return rule.get("signal_goods", SIGNAL_GOODS)
+
+
+## The survey boat's price and days: the offshore surveying technology halves both.
+static func survey_terms(sim: RefCounted) -> Dictionary:
+	var rule: Dictionary = rules(sim)
+	var share: float = clampf(1.0 - sim.Research.bonus(sim, "offshore_survey"), 0.2, 1.0)
+	return {
+		"cost": float(rule.survey_cost) * share,
+		"days": maxi(1, roundi(float(rule.survey_days) * share)),
+	}
 
 
 ## Sends a survey boat from the town's harbour to read the offshore signal: paid now, answered on
@@ -164,13 +178,48 @@ static func survey(sim: RefCounted, region: int) -> String:
 		return "测量船已经出海"
 	if not harbor_working(sim, s):
 		return "需要一座运转的小型码头"
-	var rule: Dictionary = rules(sim)
-	if float(sim.state.cash) < float(rule.survey_cost):
-		return "公共资金不足：需要 %.0f" % float(rule.survey_cost)
-	sim._transfer("public", "external", float(rule.survey_cost), "invest.survey", false, "offshore")
-	reading.survey_until = int(sim.state.day) + int(rule.survey_days)
-	sim._log("%s · 测量船出海，%d 天后带回近海信号的结果。" % [s.name, int(rule.survey_days)])
+	var terms: Dictionary = survey_terms(sim)
+	if float(sim.state.cash) < float(terms.cost):
+		return "公共资金不足：需要 %.0f" % float(terms.cost)
+	sim._transfer("public", "external", float(terms.cost), "invest.survey", false, "offshore")
+	reading.survey_until = int(sim.state.day) + int(terms.days)
+	sim._log("%s · 测量船出海，%d 天后带回近海信号的结果。" % [s.name, int(terms.days)])
 	return ""
+
+
+## Why a seabed mine cannot stand at this town: it needs the offshore signal surveyed and rich.
+static func seabed_refusal(sim: RefCounted, region: int) -> String:
+	var reading: Dictionary = offshore_signal(sim, region)
+	if reading.is_empty():
+		return "这里没有近海信号"
+	if not bool(reading.surveyed):
+		return "先派测量船查明码头外的近海信号"
+	if not bool(reading.rich):
+		return "近海信号只是一层沉积，没有可采的矿体"
+	if float(reading.tonnes) <= 0.0:
+		return "近海矿体已经采完"
+	return ""
+
+
+## A seabed mine's day (production.gd): it works the town's surveyed offshore deposit, and its
+## barges land the ore at the town's working harbour, a cargo recorded as it lands. Without a
+## working harbour nothing is landed. Returns the units landed.
+static func seabed_day(sim: RefCounted, s: Dictionary, b: Dictionary, share: float) -> float:
+	var reading: Dictionary = offshore_signal(sim, int(s.region))
+	if reading.is_empty() or not bool(reading.get("surveyed", false)) or not bool(reading.rich):
+		return 0.0
+	if not harbor_working(sim, s):
+		sim._short(s, Keys.SH_NO_HARBOUR, str(b.kind))
+		return 0.0
+	var spec: Dictionary = sim.config.buildings[str(b.kind)]
+	var good: String = str(reading.good)
+	var amount: float = minf(float(reading.tonnes), float(spec.rate) * share)
+	if amount <= 0.0:
+		return 0.0
+	reading.tonnes = float(reading.tonnes) - amount
+	sim.Production.produce(sim, s, good, amount, "海底采矿")
+	sim.Consignments.landed(sim, s, b, good, amount)
+	return amount
 
 
 ## Each day: a new coastal town gets its signal, and a survey boat back in port tells what it is.

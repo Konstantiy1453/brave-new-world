@@ -701,7 +701,7 @@ func _prospecting() -> void:
 	if spot.is_empty():
 		return
 	var chosen: String = ""
-	for resource: String in ["ore", "copper", "crystal"]:
+	for resource: String in ["ore", "copper", "crystal", "nickel", "cobalt"]:
 		check(
 			(
 				sim.act(

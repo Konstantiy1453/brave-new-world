@@ -12,8 +12,8 @@ const Keys = preload("res://simulation/keys.gd")
 const Bay = preload("res://simulation/bay.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 
-const MINED: Array[String] = ["ore", "copper", "crystal"]
-const VEHICLES: Dictionary = {"ore": "矿车", "ship": "货船"}
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
+const VEHICLES: Dictionary = {"ore": "矿车", "ship": "货船", "offshore": "驳船"}
 
 
 ## Saves from before the records: what the colony has evidently done already counts as announced
@@ -110,6 +110,27 @@ static func imported(
 	_by_sea(sim, s, "import", good, amount, value)
 
 
+## Ore a seabed mine's barges land at the town's harbour (bay.gd): a sea cargo, and the first
+## such landing is the colony's first offshore cargo.
+static func landed(
+	sim: RefCounted, s: Dictionary, mine: Dictionary, good: String, amount: float
+) -> void:
+	if amount <= 0.0:
+		return
+	ensure_state(sim.state)
+	var value: float = amount * float(sim.Market.price(sim, good))
+	_by_sea(sim, s, "landed", good, amount, value)
+	if sim.state.firsts.has("offshore"):
+		return
+	sim.state.firsts.offshore = _record(sim, s, mine, "landed", good, amount, value, "offshore")
+	sim._log(
+		(
+			"%s · 第一船海底矿石：驳船把 %.0f 吨%s运回码头，价值 ¥ %.0f，可以出口或加工。"
+			% [s.name, sim.tonnes(amount), _good_name(sim, good), value]
+		)
+	)
+
+
 ## Cargo through a working harbour goes by ship: the town keeps it as its latest sea cargo, and the
 ## first such cargo anywhere is the colony's first ship.
 static func _by_sea(
@@ -119,8 +140,9 @@ static func _by_sea(
 	if harbour.is_empty():
 		return
 	ensure_state(sim.state)
-	# Stage three's coastal trade counts what is sold abroad by sea, not the everyday imports.
-	if direction == "export":
+	# Stage three's coastal trade counts what is sold abroad by sea or landed from the seabed, not
+	# the everyday imports.
+	if direction in ["export", "landed"]:
 		OperatingRoutes.add(sim, "sea_cargo", amount)
 	s.sea_cargo = {
 		"day": int(sim.state.day),

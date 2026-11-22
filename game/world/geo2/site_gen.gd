@@ -21,6 +21,9 @@ const QUOTA_ORDER: Array[String] = [
 	"grassland",
 ]
 const GOODS: Array[String] = ["ore", "copper", "crystal"]
+## Every mined good a plot can hold. Generated sites carry only the first three; nickel and cobalt
+## (1.10) come from the planet's deposits at towns founded on picked ground.
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 const GOOD_VALUE: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const MAX_LATITUDE: float = 74.0
 const LOCAL_UNITS_PER_DEGREE: float = 4.0
@@ -513,7 +516,7 @@ static func _deposit(
 
 ## `deposits` holds the tonnage the colony knows about: shallow plots that are not hidden, and
 ## deep ones once deep mining is researched. Plots on one planetary deposit share its reserve, so it
-## counts once.
+## counts once. Iron, copper and crystal are always listed; a later metal only once it is known.
 static func refresh_deposits(site: Dictionary) -> void:
 	var totals: Dictionary = {"ore": 0.0, "copper": 0.0, "crystal": 0.0}
 	var deep_known: bool = bool(site.get("deep_known", false))
@@ -527,7 +530,8 @@ static func refresh_deposits(site: Dictionary) -> void:
 				continue
 			counted[shared] = true
 		if int(plot.depth) == 0 or deep_known:
-			totals[plot.resource] += float(plot.reserves)
+			var good: String = str(plot.resource)
+			totals[good] = float(totals.get(good, 0.0)) + float(plot.reserves)
 	site.deposits = totals
 
 
@@ -647,7 +651,7 @@ static func site_at(
 	var slots: Array = _slots(world, site, noise, world.plates, rules)
 	site.plots = _placed_plots(world, rules, site, slots, rng)
 	refresh_deposits(site)
-	for good: String in GOODS:
+	for good: String in MINED:
 		var grades: Array = []
 		for plot: Dictionary in site.plots:
 			if plot.kind == "deposit" and str(plot.resource) == good:
@@ -690,9 +694,21 @@ static func _placed_plots(
 	var limit: int = mini(int(rules.placement.max_deposit_plots), slots.size() - keep)
 	var per: Dictionary = {}
 	var taken: Dictionary = {}
+	# A deposit under the chosen point itself takes the free slot nearest the point, even where no
+	# slot lies on it (slots stand 1.5° apart, a vein can be narrower): a town founded on the signal
+	# the player sited it for reaches that deposit.
+	for hit: Dictionary in Geology.reaching(world, float(site.lat), float(site.lon), reach):
+		var nearest: int = _nearest_free(slots, taken)
+		if taken.size() >= limit or nearest < 0:
+			break
+		var under: String = str(hit.deposit.id)
+		per[under] = int(per.get(under, 0)) + 1
+		taken[nearest] = hit.deposit
 	for entry: Dictionary in reached:
 		if taken.size() >= limit:
 			break
+		if taken.has(int(entry.at)):
+			continue
 		var id: String = str(entry.deposit.id)
 		if int(per.get(id, 0)) >= int(rules.placement.plots_per_deposit):
 			continue
@@ -724,6 +740,21 @@ static func _placed_plots(
 	_farm_plots(site, rules, left, plots, rng)
 	_general_plots(site, rules, left, plots)
 	return plots
+
+
+## The slot nearest a site's centre that no deposit has taken, -1 when none is left.
+static func _nearest_free(slots: Array, taken: Dictionary) -> int:
+	var nearest: int = -1
+	var best: float = INF
+	for at: int in range(slots.size()):
+		if taken.has(at):
+			continue
+		var slot: Dictionary = slots[at]
+		var distance: float = float(slot.x) * float(slot.x) + float(slot.z) * float(slot.z)
+		if distance < best:
+			best = distance
+			nearest = at
+	return nearest
 
 
 ## What the ground at a coordinate is, for a player deciding where to settle. Reads the world only:

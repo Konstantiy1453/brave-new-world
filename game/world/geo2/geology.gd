@@ -67,7 +67,7 @@ static func orbital_signals(world: Dictionary, lat: float, lon: float, radius: f
 		var deposit: Dictionary = hit.deposit
 		if bool(deposit.hidden) or int(deposit.depth) > 0:
 			continue
-		var scale: float = float(rules.vein_reserve[deposit.resource][1])
+		var scale: float = float(rules.signal_scale[deposit.resource])
 		var near: float = 1.0 - clampf(float(hit.distance) / maxf(radius, 0.01), 0.0, 1.0)
 		strength[deposit.resource] = (
 			float(strength[deposit.resource]) + float(deposit.reserve) / scale * (0.4 + 0.6 * near)
@@ -191,7 +191,7 @@ static func _weighted_cells(world: Dictionary, resource: String, rules: Dictiona
 		var lat: float = 90.0 - (float(index / width) + 0.5) * 180.0 / height
 		if absf(lat) > float(rules.max_latitude):
 			continue
-		var weight: float = pow(float(cell.get(resource + "_potential", 0.0)), power)
+		var weight: float = pow(cell_potential(cell, resource, rules), power)
 		if weight <= 0.0:
 			continue
 		total += weight
@@ -328,4 +328,17 @@ static func _potential(world: Dictionary, resource: String, at: Vector2) -> floa
 	var height: int = int(world.grid_height)
 	var row: int = clampi(int((90.0 - at.x) / 180.0 * height), 0, height - 1)
 	var column: int = posmod(int((at.y + 180.0) / 360.0 * width), width)
-	return float(world.grid[row * width + column].get(resource + "_potential", 0.0))
+	return cell_potential(world.grid[row * width + column], resource, _rules())
+
+
+## How likely a resource is in a grid cell: its own potential, or, for a resource the grid has none
+## of (nickel, cobalt), a blend of the others (geology `potential_from`).
+static func cell_potential(cell: Dictionary, resource: String, rules: Dictionary) -> float:
+	var key: String = resource + "_potential"
+	if cell.has(key):
+		return float(cell[key])
+	var blend: Dictionary = rules.get("potential_from", {}).get(resource, {})
+	var total: float = 0.0
+	for other: String in blend:
+		total += float(cell.get(other + "_potential", 0.0)) * float(blend[other])
+	return total

@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "land_fraction": "share of the sphere's area",
     "deposits": "tonnes before the potential factor",
@@ -715,22 +715,30 @@
     "units": {
       "angles": "degrees of the planet",
       "reserve": "goods units (one unit is 100 t on the pages)",
-      "share": "fraction 0-1"
+      "share": "fraction 0-1",
+      "potential_from": "for a resource the grid has no potential of its own: weights on the grid's other potentials (nickel lies along iron belts, cobalt with copper and nickel)",
+      "signal_scale": "goods units of a deposit that reads as a full orbital signal at its centre: the largest vein, or for cobalt (pockets only) twice the largest pocket"
     },
     "resources": [
       "ore",
       "copper",
-      "crystal"
+      "crystal",
+      "nickel",
+      "cobalt"
     ],
     "veins": {
       "ore": 70,
       "copper": 56,
-      "crystal": 36
+      "crystal": 36,
+      "nickel": 30,
+      "cobalt": 0
     },
     "pockets": {
       "ore": 80,
       "copper": 68,
-      "crystal": 48
+      "crystal": 48,
+      "nickel": 40,
+      "cobalt": 36
     },
     "vein_reserve": {
       "ore": [
@@ -744,6 +752,10 @@
       "crystal": [
         2000.0,
         5500.0
+      ],
+      "nickel": [
+        2500.0,
+        7000.0
       ]
     },
     "pocket_reserve": {
@@ -758,7 +770,22 @@
       "crystal": [
         500.0,
         1500.0
+      ],
+      "nickel": [
+        700.0,
+        2000.0
+      ],
+      "cobalt": [
+        250.0,
+        900.0
       ]
+    },
+    "signal_scale": {
+      "ore": 14000.0,
+      "copper": 9000.0,
+      "crystal": 5500.0,
+      "nickel": 7000.0,
+      "cobalt": 1800.0
     },
     "vein_segments": [
       2,
@@ -786,7 +813,18 @@
     "hidden_share": 0.35,
     "potential_power": 2.2,
     "max_latitude": 74.0,
-    "slot_reach": 0.55
+    "slot_reach": 0.55,
+    "potential_from": {
+      "nickel": {
+        "ore": 0.7,
+        "crystal": 0.3
+      },
+      "cobalt": {
+        "copper": 0.5,
+        "ore": 0.3,
+        "crystal": 0.2
+      }
+    }
   },
   "planet_radius": {
     "min": 0.7,
@@ -794,20 +832,45 @@
     "default": 1.0,
     "step": 0.05,
     "earth_km": 6371.0,
-    "size_bands": [0.85, 1.15],
+    "size_bands": [
+      0.85,
+      1.15
+    ],
     "units": {
-      "min": "Earth radii", "max": "Earth radii", "default": "Earth radii", "step": "Earth radii",
+      "min": "Earth radii",
+      "max": "Earth radii",
+      "default": "Earth radii",
+      "step": "Earth radii",
       "earth_km": "km, Earth's mean radius",
       "size_bands": "Earth radii: below the first the small planet's site layout (fewer, sparser sites), at or above the second the large one's; the geography itself does not change with the radius"
     }
   },
   "prospecting": {
-    "orbital": {"cost": 400.0, "days": 3, "reach_km": 445.0, "offset_degrees": 1.5, "zone_degrees": 2.0},
-    "field": {"cost": 1800.0, "days": 20, "offset_degrees": 0.25, "zone_degrees": 0.5, "reach_km": 1200.0},
-    "drill": {"cost": 2600.0, "days": 15, "reach_km": 1200.0},
+    "orbital": {
+      "cost": 400.0,
+      "days": 3,
+      "reach_km": 445.0,
+      "offset_degrees": 1.5,
+      "zone_degrees": 2.0
+    },
+    "field": {
+      "cost": 1800.0,
+      "days": 20,
+      "offset_degrees": 0.25,
+      "zone_degrees": 0.5,
+      "reach_km": 1200.0
+    },
+    "drill": {
+      "cost": 2600.0,
+      "days": 15,
+      "reach_km": 1200.0
+    },
     "units": {
-      "cost": "account units", "days": "game days", "reach_km": "km: how far a reading takes in (orbital) or a team travels from a town (field, drill)",
-      "offset_degrees": "the most the anomaly's drawn centre lies from the deposit's", "zone_degrees": "the anomaly's drawn radius"
+      "cost": "account units",
+      "days": "game days",
+      "reach_km": "km: how far a reading takes in (orbital) or a team travels from a town (field, drill)",
+      "offset_degrees": "the most the anomaly's drawn centre lies from the deposit's",
+      "zone_degrees": "the anomaly's drawn radius"
     }
   },
   "placement": {

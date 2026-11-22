@@ -26,7 +26,10 @@ const RES = {
 	"components": "电子元件",
 	"alloy": "合金",
 	"machinery": "精密机械",
-	"pharma": "药品"
+	"pharma": "药品",
+	"nickel": "镍矿",
+	"cobalt": "钴矿",
+	"superalloy": "高温合金"
 }
 const CORE_GOODS: Array[String] = ["ore", "copper", "crystal", "food", "materials", "parts"]
 
@@ -535,7 +538,11 @@ static func _site_facts(_g, b, known: Dictionary):
 		16,
 		D.MUTED
 	)
-	for key in ["ore", "copper", "crystal"]:
+	for key: String in ["ore", "copper", "crystal", "nickel", "cobalt"]:
+		# Nickel and cobalt show only where the colony knows of some (towns on picked ground).
+		if not known.deposits.has(key) or float(known.deposits[key].high) <= 0.0:
+			if key in ["nickel", "cobalt"]:
+				continue
 		var row = D.row(b)
 		D.tinted_icon(row, key, 24, Labels.GOOD_COLORS.get(key, Color.WHITE))
 		D.label(
@@ -546,15 +553,14 @@ static func _site_facts(_g, b, known: Dictionary):
 			false
 		)
 	var plots: Dictionary = known.plots
-	D.label(
-		b,
-		(
-			"空闲地块：建设 %d · 农田 %d · 铁 %d · 铜 %d · 晶体 %d"
-			% [plots.general, plots.farm, plots.ore, plots.copper, plots.crystal]
-		),
-		15,
-		D.MUTED
+	var free_text: String = (
+		"空闲地块：建设 %d · 农田 %d · 铁 %d · 铜 %d · 晶体 %d"
+		% [plots.general, plots.farm, plots.ore, plots.copper, plots.crystal]
 	)
+	for metal: Array in [["nickel", "镍"], ["cobalt", "钴"]]:
+		if int(plots.get(metal[0], 0)) > 0:
+			free_text += " · %s %d" % [metal[1], int(plots[metal[0]])]
+	D.label(b, free_text, 15, D.MUTED)
 	var notes: PackedStringArray = []
 	if bool(known.coast):
 		notes.append("沿海")
@@ -1169,6 +1175,13 @@ static func _sinks_table(g, b) -> void:
 			cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
+static func _all_zero(row: Array) -> bool:
+	for amount: Variant in row:
+		if absf(float(amount)) > 0.0001:
+			return false
+	return true
+
+
 static func _goods_table(b, goods: Dictionary):
 	var c = D.card(b)
 	D.label(c, "近 30 日物资流向（吨）：产出 / 消耗 / 出口 / 进口 / 陆海运输", 17, D.TEAL)
@@ -1177,6 +1190,8 @@ static func _goods_table(b, goods: Dictionary):
 		D.label(table, heading, 15, D.MUTED, false)
 	for good: String in RES:
 		var row: Array = goods.get(good, [0.0, 0.0, 0.0, 0.0, 0.0])
+		if good in ["nickel", "cobalt", "superalloy"] and _all_zero(row):
+			continue
 		var name = D.label(table, str(RES[good]), 15, D.INK, false)
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		for amount: Variant in row:

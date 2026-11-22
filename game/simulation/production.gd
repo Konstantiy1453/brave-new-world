@@ -24,7 +24,12 @@ const POLLUTED_ROLES: Array[String] = [
 ]
 const RATIONED_ROLES: Array[String] = ["mine", "farm", "indoor_farm", "factory"]
 const EVENT_KINDS: Dictionary = {
-	"mine": "mine", "harvest": "mine", "farm": "farm", "indoor_farm": "farm", "factory": "processor"
+	"mine": "mine",
+	"harvest": "mine",
+	"seabed": "mine",
+	"farm": "farm",
+	"indoor_farm": "farm",
+	"factory": "processor"
 }
 
 
@@ -273,6 +278,10 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 				return "这块地已被占用"
 	if d.has("requires_tech") and not sim._has(str(d.requires_tech)):
 		return "需要技术：" + str(sim.config.techs[d.requires_tech].name)
+	if str(d.get("role", "")) == "seabed":
+		var offshore: String = Bay.seabed_refusal(sim, region)
+		if offshore != "":
+			return offshore
 	if bool(d.get("megaproject", false)):
 		for place: Dictionary in sim.state.settlements:
 			for existing: Dictionary in place.buildings:
@@ -619,7 +628,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					# A planetary deposit: every town on it sees the same reserve left.
 					Placement.share(sim, seam)
 				elif int(seam.depth) == 0 or bool(reg.get("deep_known", false)):
-					reg.deposits[resource] = maxf(0.0, float(reg.deposits[resource]) - amount)
+					reg.deposits[resource] = maxf(
+						0.0, float(reg.deposits.get(resource, 0.0)) - amount
+					)
 				produce(sim, s, resource, amount, "矿产开采")
 				if not sim.state.settlements.is_empty() and s != sim.state.settlements[0]:
 					OperatingRoutes.add(sim, "remote_mined", amount)
@@ -633,6 +644,9 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 						float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
 					)
 					produce(sim, s, good, made, "矿产开采")
+			"seabed":
+				# The surveyed offshore deposit, landed at the town's harbour (bay.gd).
+				Bay.seabed_day(sim, s, b, eff * field_bonus)
 			"indoor_farm":
 				var grown: float = minf(
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),

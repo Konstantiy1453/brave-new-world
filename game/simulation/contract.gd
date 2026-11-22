@@ -11,7 +11,7 @@ const Research = preload("res://simulation/research.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
-const MINING_GOODS: Array[String] = ["ore", "copper", "crystal"]
+const MINING_GOODS: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 
 
 static func ensure_state(state: Dictionary) -> void:

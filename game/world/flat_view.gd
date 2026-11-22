@@ -25,12 +25,23 @@ const SHIP_DAYS: float = 3.0
 ## Where in its call a ship is on the day of its town's latest sea cargo: alongside the quay.
 const SHIP_BERTH_PHASE: float = 0.45
 const SHIP_LIGHT: Color = Color("d6f1ff")
+## The ship light against a cargo dot: its size and its glow. At the berth it lies this share of its
+## line out from the quay, so it reads beside the quay's lamps instead of summing with them into
+## one white spot (the 1.10.1 night captures).
+const SHIP_LIGHT_SIZE: float = 0.7
+const SHIP_LIGHT_GLOW: float = 0.55
+const SHIP_BERTH_OFFSET: float = 0.18
 ## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
 const GROUND_CURSOR_DEGREES: float = 1.2
 const GROUND_CURSOR_COLOR: Color = Color("f4fbff")
-## Prospecting anomalies by resource: iron rust, copper green, crystal violet.
+## Prospecting anomalies by resource: iron rust, copper green, crystal violet, nickel pale sage,
+## cobalt deep blue.
 const ANOMALY_COLORS: Dictionary = {
-	"ore": Color("d9895a"), "copper": Color("4fc3a1"), "crystal": Color("b493e8")
+	"ore": Color("d9895a"),
+	"copper": Color("4fc3a1"),
+	"crystal": Color("b493e8"),
+	"nickel": Color("c2d6b0"),
+	"cobalt": Color("6f86e8"),
 }
 
 ## Cargo markers placed every frame along their route, between the daily updates.
@@ -521,14 +532,15 @@ func _ship_movers(flat: bool) -> Array:
 		var light := _sphere(
 			holder,
 			ends[0],
-			CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE,
-			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW),
+			(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * SHIP_LIGHT_SIZE,
+			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW * SHIP_LIGHT_GLOW),
 			8,
 			4
 		)
 		var cargo_day: float = float(s.get("sea_cargo", {}).get("day", float(region) * 0.37))
 		var phase: float = SHIP_BERTH_PHASE * SHIP_DAYS - cargo_day
-		found.append({"node": light, "from": ends[0], "to": ends[1], "phase": phase})
+		var berth: Vector3 = ends[1].lerp(ends[0], SHIP_BERTH_OFFSET)
+		found.append({"node": light, "from": ends[0], "to": berth, "phase": phase})
 	return found
 
 

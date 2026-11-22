@@ -15,13 +15,19 @@ const RESOURCE_NAMES: Dictionary = {
 	"alloy": "合金",
 	"machinery": "精密机械",
 	"pharma": "药品",
+	"nickel": "镍矿",
+	"cobalt": "钴矿",
+	"superalloy": "高温合金",
 }
 ## Goods that need telling apart at a glance, in the colours their deposits have on the maps:
-## iron rust, copper brass, crystal blue. Other goods keep the interface's ink.
+## iron rust, copper brass, crystal blue; nickel a pale green-grey, cobalt a deep blue. Other goods
+## keep the interface's ink.
 const GOOD_COLORS: Dictionary = {
 	"ore": Color("d4764f"),
 	"copper": Color("e6b34a"),
 	"crystal": Color("74b8f2"),
+	"nickel": Color("a9c3a4"),
+	"cobalt": Color("6f86e8"),
 	"food": Color("9dcd6c"),
 }
 ## Money sinks on the economy page, in display order.
@@ -381,6 +387,8 @@ static func shortage(config: Dictionary, entry: Dictionary) -> String:
 			return "无本地货运站；依赖陆路补给"
 		Keys.SH_PORT_FULL:
 			return "港口吞吐不足：货物运不出去，补给也进不来"
+		Keys.SH_NO_HARBOUR:
+			return "海底采矿平台的矿石没有码头卸货：需要运转的小型码头"
 		Keys.SH_STARVING:
 			return "食品供给不足 · 已持续 %s 天" % detail
 		Keys.SH_HOUSING:
@@ -432,6 +440,8 @@ static func fix(entry: Dictionary) -> Dictionary:
 			return {"text": "处理", "page": "build", "category": "extraction"}
 		Keys.SH_NO_PORT, Keys.SH_PORT_FULL:
 			return {"text": "处理", "page": "build", "category": "utilities", "kind": "port"}
+		Keys.SH_NO_HARBOUR:
+			return {"text": "处理", "page": "build", "kind": "harbor"}
 		Keys.SH_JOBS_WORKERS, Keys.SH_JOBS_SPECIALISTS:
 			return {"text": "处理", "page": "population"}
 		Keys.SH_POLLUTION:

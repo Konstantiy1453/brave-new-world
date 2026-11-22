@@ -14,7 +14,9 @@ const Geology = preload("res://world/geo2/geology.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 
 const STAGES: Array[String] = ["orbital", "field", "drilled"]
-const NAMES: Dictionary = {"ore": "铁矿", "copper": "铜矿", "crystal": "工业晶体"}
+const NAMES: Dictionary = {
+	"ore": "铁矿", "copper": "铜矿", "crystal": "工业晶体", "nickel": "镍矿", "cobalt": "钴矿"
+}
 
 
 static func ensure_state(state: Dictionary) -> void:

@@ -88,6 +88,8 @@ const PLOT_COLORS: Dictionary = {
 	"ore": Color("ac7755"),
 	"copper": Color("ba9c57"),
 	"crystal": Color("7ba0bd"),
+	"nickel": Color("98a892"),
+	"cobalt": Color("5f70b0"),
 }
 const LEGACY_SLOTS: Array[Vector2] = [
 	Vector2(-3, -3),
@@ -445,8 +447,9 @@ func _build_colony() -> void:
 	var buildings: Array = settlement.get("buildings", [])
 	for i in range(buildings.size()):
 		var b: Dictionary = buildings[i]
-		# The harbour stands at the shore: `_build_harbor` draws it with its quay.
-		if str(roles.get(str(b.kind), {}).get("role", "")) == "harbor":
+		# The harbour stands at the shore: `_build_harbor` draws it with its quay. A seabed platform
+		# stands offshore, beyond the district: its barges' cargo makes the harbour's ship call.
+		if str(roles.get(str(b.kind), {}).get("role", "")) in ["harbor", "seabed"]:
 			continue
 		var slot: Vector2 = _building_spot(i, b, offset)
 		var reach: Dictionary = _access(slot) if lanes and int(b.get("plot", -1)) >= 0 else {}

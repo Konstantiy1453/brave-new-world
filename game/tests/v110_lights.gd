@@ -381,9 +381,18 @@ func _harbour_views(sim: RefCounted, map: Node3D, coast: int) -> void:
 	if map.globe_ships.is_empty():
 		return
 	var line: Array = map.ship_line(coast)
-	var berth: Vector3 = Geo.unit_point(line[1].x, line[1].y) * 3.05
+	var quay: Vector3 = Geo.unit_point(line[1].x, line[1].y) * 3.05
+	var offing: Vector3 = Geo.unit_point(line[0].x, line[0].y) * 3.05
+	var berth: Vector3 = quay.lerp(offing, map.SHIP_BERTH_OFFSET)
 	var ship: Dictionary = map.globe_ships[0]
-	check(Vector3(ship.to).distance_to(berth) < 0.0001, "berthing where the district's ship berths")
+	check(
+		Vector3(ship.to).distance_to(berth) < 0.0001,
+		"berthing on the district's ship line, moored just out from the quay's lamps"
+	)
+	check(
+		float(map.SHIP_LIGHT_SIZE) < 1.0 and float(map.SHIP_LIGHT_GLOW) < 1.0,
+		"smaller and dimmer than a cargo dot, so it does not sum with the lamps into a white spot"
+	)
 	var worst: float = 0.0
 	var at_berth: bool = false
 	var away: bool = false

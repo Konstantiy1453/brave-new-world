@@ -126,6 +126,12 @@
       "construction": "machine_works_construction",
       "model": "machine_works"
     },
+    "mine_cobalt": {
+      "construction": "mine_crystal_construction",
+      "model": "mine_crystal",
+      "ore": "cobalt",
+      "stand_in": "no cobalt mine is modelled; the crystal mine stands in, its ore in cobalt's colour"
+    },
     "mine_copper": {
       "construction": "mine_copper_construction",
       "model": "mine_copper",
@@ -153,6 +159,12 @@
       "construction": "mine_crystal_heavy_construction",
       "model": "mine_crystal_heavy",
       "ore": "crystal"
+    },
+    "mine_nickel": {
+      "construction": "mine_ore_construction",
+      "model": "mine_ore",
+      "ore": "nickel",
+      "stand_in": "no nickel mine is modelled; the iron mine stands in, its ore in nickel's colour"
     },
     "mine_ore": {
       "construction": "mine_ore_construction",
@@ -208,6 +220,10 @@
       "construction": "sea_copper_construction",
       "model": "sea_copper"
     },
+    "seabed_mine": {
+      "model": "harbor",
+      "stand_in": "the seabed platform stands offshore, beyond the district, and is not drawn there; the harbour stands in for its icon"
+    },
     "service": {
       "model": "commerce",
       "scale": 0.8,
@@ -221,6 +237,12 @@
     "smelter": {
       "construction": "smelter_construction",
       "model": "smelter"
+    },
+    "superalloy_works": {
+      "construction": "smelter_construction",
+      "model": "smelter",
+      "shell": "d6d0c4",
+      "stand_in": "no superalloy works is modelled; the smelter stands in, in a paler shell"
     },
     "tailings_plant": {
       "construction": "tailings_plant_construction",

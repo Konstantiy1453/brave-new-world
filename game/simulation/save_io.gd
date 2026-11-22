@@ -177,6 +177,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 static func validate(sim: RefCounted, candidate: Variant) -> String:
 	if not candidate is Dictionary:
 		return "存档状态无效"
+	fill_goods(candidate)
 	var error: String = shape(candidate, _state_shape(sim), "state")
 	if error != "":
 		return error
@@ -482,6 +483,25 @@ static func _validate_roads(candidate: Dictionary, site_count: int) -> String:
 			if pair.size() != 2:
 				return "运输坐标无效"
 	return ""
+
+
+## Goods newer than a save (nickel, cobalt and superalloy in 1.10): every stock and every goods
+## ledger gets them at nought, so the save keeps its shape and its sums. A save that has them is
+## left as it is, byte for byte.
+static func fill_goods(candidate: Dictionary) -> void:
+	var books: Array = []
+	for s: Variant in candidate.get("settlements", []):
+		if s is Dictionary:
+			for field: String in ["stock", "stock_delta"]:
+				if s.get(field) is Dictionary:
+					books.append(s[field])
+	for field: String in ["resource_sources", "resource_sinks"]:
+		if candidate.get(field) is Dictionary:
+			books.append(candidate[field])
+	for book: Dictionary in books:
+		for key: String in Keys.RESOURCES:
+			if not book.has(key):
+				book[key] = 0.0
 
 
 static func _building_shape() -> Dictionary:

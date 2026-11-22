@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "cost": "research points",
     "funding": "money per day at ten research teams",
@@ -2033,7 +2033,10 @@
       "cost": 1600.0,
       "funding": 46.0,
       "weight": 3.0,
-      "requires": ["climate", "biosphere_seeding"],
+      "requires": [
+        "climate",
+        "biosphere_seeding"
+      ],
       "minimum_staff": 3,
       "description": "解锁巨型工程行星改造计划：三期工程让全星球更温和、更湿润、更肥沃。",
       "effects": {}
@@ -2046,7 +2049,9 @@
       "cost": 1000.0,
       "funding": 32.0,
       "weight": 4.0,
-      "requires": ["capital_planning"],
+      "requires": [
+        "capital_planning"
+      ],
       "minimum_staff": 3,
       "description": "解锁巨型工程首府新区：建在首府，最多 5 级，每级加床位、吸引力并减少行政开支。",
       "effects": {}
@@ -2059,7 +2064,10 @@
       "cost": 1600.0,
       "funding": 46.0,
       "weight": 3.0,
-      "requires": ["lift_port", "commerce_law"],
+      "requires": [
+        "lift_port",
+        "commerce_law"
+      ],
       "minimum_staff": 3,
       "description": "解锁巨型工程星际交易所：所有出口市场的容量 +50%。",
       "effects": {}
@@ -2072,7 +2080,9 @@
       "cost": 1000.0,
       "funding": 32.0,
       "weight": 4.0,
-      "requires": ["lift_port"],
+      "requires": [
+        "lift_port"
+      ],
       "minimum_staff": 3,
       "description": "解锁巨型工程轨道船坞：远征和海运更便宜，船更快。",
       "effects": {}
@@ -2085,7 +2095,9 @@
       "cost": 1000.0,
       "funding": 32.0,
       "weight": 4.0,
-      "requires": ["civic_planning"],
+      "requires": [
+        "civic_planning"
+      ],
       "minimum_staff": 3,
       "description": "解锁巨型工程行星应急网：事件损失和道路封闭减少。",
       "effects": {}
@@ -2138,6 +2150,70 @@
       "effects": {
         "sea_capacity": 0.4
       }
+    },
+    "offshore_survey": {
+      "name": "近海勘测",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 2,
+      "cost": 340.0,
+      "funding": 14.0,
+      "weight": 6.0,
+      "requires": [
+        "cargo_handling"
+      ],
+      "minimum_staff": 3,
+      "description": "测量船的近海勘察费用和时间减半，并查明近海矿体的品位；之后可以研究海底采矿。",
+      "effects": {
+        "offshore_survey": 0.5
+      }
+    },
+    "seabed_mining": {
+      "name": "海底采矿",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 3,
+      "cost": 620.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "offshore_survey",
+        "deep_mining"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁海底采矿平台：在码头外查明的近海富矿上开采，矿石由驳船运回码头，出口或加工。",
+      "effects": {}
+    },
+    "nickel_metallurgy": {
+      "name": "镍钴冶金",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 2,
+      "cost": 340.0,
+      "funding": 14.0,
+      "weight": 7.0,
+      "requires": [
+        "survey"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁镍矿场和钴矿场：镍矿带常在铁矿带里；钴更稀少，常和镍、铜伴生，深海结核里也有。",
+      "effects": {}
+    },
+    "superalloys": {
+      "name": "高温合金",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 3,
+      "cost": 620.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "nickel_metallurgy",
+        "alloy_smelting"
+      ],
+      "minimum_staff": 3,
+      "description": "解锁高温合金厂：两份镍加半份钴炼成一份高温合金，价格是合金的三倍多。",
+      "effects": {}
     }
   },
   "always_dealt": [

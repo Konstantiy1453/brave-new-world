@@ -16,7 +16,7 @@ const Contract = preload("res://simulation/contract.gd")
 
 ## Stored coordinates keep four decimals of a degree (a few metres on any planet in the game).
 const PRECISION: float = 10000.0
-const RESOURCES: Array[String] = ["ore", "copper", "crystal"]
+const RESOURCES: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 
 
 static func ensure_state(state: Dictionary) -> void:

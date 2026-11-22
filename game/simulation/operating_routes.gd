@@ -13,7 +13,7 @@ extends RefCounted
 ## windows in `state.contract.route_windows`.
 
 const KEYS: Array[String] = ["food_moved", "remote_mined", "sea_cargo"]
-const MINED: Array[String] = ["ore", "copper", "crystal"]
+const MINED: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
 
 
 static func ensure_state(state: Dictionary) -> void:

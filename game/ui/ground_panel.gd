@@ -9,7 +9,9 @@ const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
 
-const SIGNAL_NAMES: Dictionary = {"ore": "铁", "copper": "铜", "crystal": "工业晶体"}
+const SIGNAL_NAMES: Dictionary = {
+	"ore": "铁", "copper": "铜", "crystal": "工业晶体", "nickel": "镍", "cobalt": "钴"
+}
 ## The ground cover the maps draw (plates.gd `biome_at`).
 const COVER_NAMES: Dictionary = {
 	"forest": "森林",

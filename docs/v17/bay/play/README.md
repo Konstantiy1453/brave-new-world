@@ -46,9 +46,17 @@ The clips `delivery/v17/bay-night-play-ship-arrival.mp4` (the district's ship sa
 `delivery/v17/bay-night-play-globe-zoom.mp4` (the globe from its default distance down to the town)
 use the day-75 state.
 
+**Fixed since (2026-11-22):** the ship at the berth sat on the quay's lamps and saturated to a white
+dot, larger than the lamps (globe 15 pixels at full white in a 5 × 4 spot, flat map 64 pixels in a
+9 × 9 spot). The ship light on both maps is now 0.7 of a cargo dot and glows at 0.55 of its
+brightness, and at the berth it lies 18% of its line out from the quay. Re-captured the same way
+(seed 260129, day 75): no pixel at full white on the globe, two isolated ones on the flat map, and
+the ship reads as its own light beside the quay's lamps (`ship_berth_x6.webp`, before and after
+enlarged six times; `play_harbour_globe.webp` and `play_harbour_flat.webp` are the new frames).
+First home → first cargo now changes 646 pixels on the globe (255 by 16 levels or more) and 1,071 on
+the flat map (437). Label: source project, screenshot viewed.
+
 **Seen and not fixed:**
-- The ship at the berth sits on the quay's lamps and saturates to a white dot about 8 px across on
-  the globe and the flat map, larger than the lamps it sits on.
 - The landing camp's warm lights lie about 1.5° west of the facilities, as the district places them.
 
 Human playtest: NOT_RUN. Looking at these on a real GPU on Windows: not done.

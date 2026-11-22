@@ -12,7 +12,10 @@ const RESOURCES: Array[String] = [
 	"components",
 	"alloy",
 	"machinery",
-	"pharma"
+	"pharma",
+	"nickel",
+	"cobalt",
+	"superalloy"
 ]
 const SITE_RESIDENTIAL: String = "residential"
 const SITE_FRONTIER: String = "frontier"
@@ -49,6 +52,7 @@ const SH_DEPLETED: String = "depleted"
 const SH_PROCESSOR_INPUT: String = "processor_input"
 const SH_NO_PORT: String = "no_port"
 const SH_PORT_FULL: String = "port_full"
+const SH_NO_HARBOUR: String = "no_harbour"
 const SH_STARVING: String = "starving"
 const SH_HOUSING: String = "housing"
 const SH_POLLUTION: String = "pollution"

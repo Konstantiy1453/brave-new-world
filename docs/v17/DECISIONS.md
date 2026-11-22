@@ -1080,3 +1080,32 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Newcomers ride a bus in the district from the landing pads to the newest home people live in,
   while the town has had arrivals in the last 7 days (the daily stats), so the vehicle and the lit
   windows it goes to are the same arrival · a shuttle landing per arrival (no model yet).
+- Nickel and cobalt are planetary deposits like the others (geography.json `geology`): nickel in
+  veins along the iron belts (large, low grade), cobalt in rarer pockets near nickel and copper;
+  cells without a potential of their own take a weighted blend (`potential_from`). Their mines need
+  nickel-cobalt metallurgy; a superalloy works (two nickel, half a cobalt → one superalloy at ¥160)
+  is their industrial use · cobalt as a by-product of copper mines (no plot of its own to decide on).
+- The offshore chain: offshore surveying (tier 2) halves the survey boat's price and days; seabed
+  mining (tier 3, after deep mining) allows one seabed platform per town on a surveyed rich offshore
+  deposit; its barges land the ore at the town's working harbour as a recorded cargo (`landed`,
+  `firsts.offshore`), counted as stage three's coastal trade, sold or processed like mined ore;
+  without a working harbour nothing is landed and the town says why · ore piling up offshore.
+- Cobalt joins copper and crystal as an offshore signal good (cobalt-rich nodules) ·
+  nickel offshore.
+- A deposit that reaches the very point a town is founded on takes the free slot nearest the centre
+  (plots stand 1.5° apart and a vein can be narrower): founding on the signal one sited for always
+  reaches it · leaving it to the slots, which missed nickel-v0 when founded on its axis.
+- Generated sites keep listing only iron, copper and crystal in `deposits`; a later metal appears
+  in a town's totals once it is known there, and saves are filled with zero stock of goods they
+  lack (`fill_goods`) before validation, so 1.10.0 saves load · a schema bump for three goods.
+- The new buildings wear older models until they have their own (models.json `stand_in`): the iron
+  mine for nickel and the crystal mine for cobalt, each with its ore in the metal's colour; the
+  smelter in a paler shell for the superalloy works. The seabed platform stands offshore beyond the
+  district and is not drawn there; its barges' cargo makes the harbour's ship call · a platform
+  model at sea in the district.
+- An orbital reading scales each resource by its own `signal_scale` (geography.json): the largest
+  vein for iron, copper, crystal and nickel as before, twice the largest pocket for cobalt, which
+  has no veins · reading cobalt against nickel's veins.
+- The ship light on the globe and the flat map is 0.7 of a cargo dot at 0.55 of its glow, and at the
+  berth lies 18% of its line out from the quay: it read as a white spot summed with the quay's
+  lamps · dimming the quay's lamps.

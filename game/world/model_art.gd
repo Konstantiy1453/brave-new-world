@@ -29,7 +29,9 @@ const SLOT_FINISH: Dictionary = {
 	"ore": [0.15, 0.85],
 	"water": [0.2, 0.12],
 }
-const ORE_COLORS: Dictionary = {"ore": "ac7755", "copper": "ba9c57", "crystal": "7ba0bd"}
+const ORE_COLORS: Dictionary = {
+	"ore": "ac7755", "copper": "ba9c57", "crystal": "7ba0bd", "nickel": "98a892", "cobalt": "5f70b0"
+}
 
 static var _registry: Dictionary = {}
 static var _meshes: Dictionary = {}

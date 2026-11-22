@@ -16,7 +16,18 @@ const Routes = preload("res://world/routes.gd")
 const Market = preload("res://simulation/market.gd")
 ## Port capacity goes to the most valuable tonne first.
 const EXPORT_ORDER: Array[String] = [
-	"machinery", "components", "pharma", "alloy", "parts", "crystal", "copper", "materials", "ore"
+	"machinery",
+	"superalloy",
+	"components",
+	"pharma",
+	"alloy",
+	"parts",
+	"cobalt",
+	"crystal",
+	"nickel",
+	"copper",
+	"materials",
+	"ore"
 ]
 ## Construction stock first: its need is small and stops, while food can fill a road for weeks.
 const DISPATCH_ORDER: Array[String] = [
@@ -27,9 +38,12 @@ const DISPATCH_ORDER: Array[String] = [
 	"components",
 	"pharma",
 	"alloy",
+	"superalloy",
 	"ore",
 	"copper",
-	"crystal"
+	"crystal",
+	"nickel",
+	"cobalt"
 ]
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
