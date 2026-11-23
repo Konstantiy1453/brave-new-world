@@ -3,6 +3,7 @@ extends RefCounted
 ## Each run deals itself a deck: some definitions are simply not in it. A definition can open again
 ## after its cooldown. Notices never pause; decisions pause when they are critical or the player
 ## asks for every decision to pause. Money scales with recent income.
+const Names = preload("res://simulation/names.gd")
 const PRODUCTION_KINDS: Array[String] = ["mine", "farm", "processor"]
 const EFFECT_KINDS: Array[String] = [
 	"water",
@@ -1390,7 +1391,7 @@ static func view(sim) -> Dictionary:
 			"instance_id": inst.instance_id,
 			"id": inst.definition_id,
 			"title": n.get("title", "事件"),
-			"text": n.get("text", ""),
+			"text": Names.fill(sim, str(n.get("text", ""))),
 			"node": inst.node,
 			"status": inst.status,
 			"deadline": inst.deadline,

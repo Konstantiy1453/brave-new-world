@@ -13,7 +13,9 @@ extends SceneTree
 ##   by population.json `morale`, 50 with nobody landed, and the services budget raises it;
 ## - a new game gets CC-NN from its seed, a 1.10 save gets the same on load, and both survive a save;
 ## - the HUD pair shows the letter (the number on hover) and 民心, and each half opens its page;
-## - the sound cues stub hears a letter and a stamp, and takes only note at the first look.
+## - the sound cues stub hears a letter and a stamp, and takes only note at the first look;
+## - event text names the project by {code} and the colony by {capital} and nothing else; the event
+##   view fills both, and the ten events reworded in the company's register keep their mechanics.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -27,9 +29,23 @@ const LettersView = preload("res://ui/letters_view.gd")
 const Gauge = preload("res://ui/distrust_gauge.gd")
 const Cues = preload("res://ui/cues.gd")
 const Labels = preload("res://ui/labels.gd")
+const Events = preload("res://simulation/events_v2.gd")
 const SEED: int = 20261029
 const OLD_SAVE: String = "res://../docs/v17/placement/save_files/after-1.10.1.save"
 const LETTER_FIELDS: Array[String] = ["department", "subject", "cc", "body", "note"]
+## The ten events whose wording follows the company's register (1.11 B).
+const REWORDED: Array[String] = [
+	"company_audit",
+	"vp_visit",
+	"new_tax_letter",
+	"ledger_hole",
+	"second_ship",
+	"industry",
+	"price_window",
+	"investor_offer",
+	"supply_delay",
+	"nw_d_empty_seat",
+]
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -69,6 +85,7 @@ func run() -> void:
 	_code()
 	_gauge()
 	_cues()
+	_event_voice()
 	print(
 		"V111_CONTRACT_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)]
 	)
@@ -468,3 +485,45 @@ func _cues() -> void:
 	var loaded: RefCounted = _colony()
 	Company.transition(loaded, "warning", 0, "warning")
 	check(cues.observe(loaded).is_empty(), "another game is only noted")
+
+
+func _event_voice() -> void:
+	var defs: Dictionary = Events.definitions().definitions
+	var unknown: Array = []
+	var placeholder := RegEx.create_from_string("\\{[^}]*\\}")
+	for id: String in defs:
+		for key: String in defs[id].nodes:
+			var node: Dictionary = defs[id].nodes[key]
+			for found: RegExMatch in placeholder.search_all(str(node.text)):
+				if not found.get_string() in ["{code}", "{capital}"]:
+					unknown.append("%s/%s %s" % [id, key, found.get_string()])
+			if str(node.title).contains("{"):
+				unknown.append("%s/%s title" % [id, key])
+	check(unknown.is_empty(), "event text names only {code} and {capital}: %s" % str(unknown))
+	var departments: Array = Rules.read("letters").departments.values()
+	var voiced: int = 0
+	var quiet: Array = []
+	for id: String in REWORDED:
+		var words: String = ""
+		for key: String in defs[id].nodes:
+			words += str(defs[id].nodes[key].text)
+		var company: bool = words.contains("公司")
+		for department: String in departments:
+			company = company or words.contains(department)
+		if not company:
+			quiet.append(id)
+		voiced += 1 if words.contains("{code}") else 0
+	check(quiet.is_empty(), "each reworded event lets the company speak: %s" % str(quiet))
+	check(voiced >= 8, "and most name the project by its code: %d of 10" % voiced)
+	var sim: RefCounted = _colony()
+	sim.state.settlements[0].name = "望潮"
+	Events._open(sim, "company_audit", 0)
+	var shown: String = ""
+	for row: Dictionary in Events.view(sim).pending:
+		if str(row.id) == "company_audit":
+			shown = str(row.text)
+	check(
+		shown.contains(str(sim.state.contract.code) + " 项目") and shown.contains("望潮的财务室"),
+		"the event view fills the code and the capital's name"
+	)
+	check(shown != "" and not shown.contains("{"), "and leaves no placeholder")
