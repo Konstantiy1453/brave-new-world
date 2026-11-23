@@ -8,6 +8,7 @@ extends RefCounted
 const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
 const Keys = preload("res://simulation/keys.gd")
+const Features = preload("res://simulation/features.gd")
 
 const SIGNAL_NAMES: Dictionary = {
 	"ore": "铁", "copper": "铜", "crystal": "工业晶体", "nickel": "镍", "cobalt": "钴"
@@ -115,6 +116,8 @@ static func _water_words(report: Dictionary) -> String:
 static func _signal_words(signals: Dictionary) -> String:
 	var words: PackedStringArray = []
 	for good: String in SIGNAL_NAMES:
+		if Features.resource_frozen(good):
+			continue
 		var strength: float = float(signals.get(good, 0.0))
 		var word: String = "无"
 		if strength >= 0.6:
@@ -285,6 +288,8 @@ static func _prospecting_lines(g, b: Control, report: Dictionary) -> void:
 	var here: Array = sim.Prospecting.anomalies_at(sim, lat, lon)
 	D.label(b, "勘探（每次选一种矿产）", 14, D.TEAL)
 	for resource: String in SIGNAL_NAMES:
+		if Features.resource_frozen(resource):
+			continue
 		var line: HBoxContainer = D.row(b)
 		var known: Dictionary = {}
 		for entry: Dictionary in here:

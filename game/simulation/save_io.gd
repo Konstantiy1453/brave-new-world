@@ -14,11 +14,11 @@ const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
 const SaveMigration = preload("res://simulation/save_migration.gd")
-const SCHEMA: int = 6
-## 1.7 (3), 1.8 (4) and 1.9 (5) saves: same format, older rules. Newer systems arrive through
-## ensure_systems on load, the log says so, and the original file is left as it was.
-const OLD_SCHEMAS: Dictionary = {3: "1.7", 4: "1.8", 5: "1.9"}
-const CURRENT_VERSION: String = "1.10"
+const SCHEMA: int = 7
+## 1.7 (3), 1.8 (4), 1.9 (5) and 1.10 (6) saves: same format, older rules. Newer systems arrive
+## through ensure_systems on load, the log says so, and the original file is left as it was.
+const OLD_SCHEMAS: Dictionary = {3: "1.7", 4: "1.8", 5: "1.9", 6: "1.10"}
+const CURRENT_VERSION: String = "1.11"
 const MAGIC: String = "CCS3"
 const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"

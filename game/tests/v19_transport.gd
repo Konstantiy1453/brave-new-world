@@ -62,6 +62,8 @@ func step(sim: RefCounted, days: int) -> void:
 
 
 func run() -> void:
+	# Shuttle lines are frozen in 1.11 (features.gd); this suite keeps their code tested.
+	Rules.read("progression").features.shuttles = true
 	_docks()
 	_roads()
 	_older_saves()

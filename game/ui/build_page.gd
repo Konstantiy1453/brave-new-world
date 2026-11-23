@@ -4,6 +4,7 @@ extends RefCounted
 const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
 const CrewPanel = preload("res://ui/crew_panel.gd")
+const Features = preload("res://simulation/features.gd")
 ## Each facility at work in its setting, baked from its model (tests/art/bake_facility_views.gd).
 const FACILITY_VIEWS: String = "res://assets/art/facilities/"
 const RES: Dictionary = Labels.RESOURCE_NAMES
@@ -58,7 +59,7 @@ static func _open_kinds(g, s: Dictionary) -> Array[String]:
 	for category: String in Labels.BUILD_CATEGORIES:
 		for key: String in g.sim.config.buildings:
 			var spec: Dictionary = g.sim.config.buildings[key]
-			if str(spec.get("category", "")) != category:
+			if str(spec.get("category", "")) != category or Features.building_frozen(key):
 				continue
 			if (
 				spec.has("requires_tech")

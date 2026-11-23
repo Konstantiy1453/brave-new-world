@@ -12,6 +12,8 @@ extends SceneTree
 ##   for by immigration, departures, births and people moved between towns.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const Features = preload("res://simulation/features.gd")
+const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Crews = preload("res://simulation/crews.gd")
@@ -555,6 +557,8 @@ func _water_lesson() -> void:
 ## The radius slider: the seed's ground at any radius; every distance, travel day and route cost
 ## follows the radius; an orbital reading covers a fixed ground distance; saves keep the radius.
 func _radius() -> void:
+	# The slider is frozen in 1.11 (features.gd); its code stays tested with the flag on.
+	Rules.read("progression").features.radius_slider = true
 	var worlds: Dictionary = {}
 	for radius: float in [1.0, 1.1, 0.7]:
 		var sim: RefCounted = Sim.new()
@@ -608,6 +612,7 @@ func _radius() -> void:
 	var again: RefCounted = Sim.new()
 	check(again.load_game(path) == "", "and loads")
 	check(is_equal_approx(float(again.geo.radius_km), 7008.1), "with its radius")
+	Rules.read("progression").features.radius_slider = false
 
 
 ## Stage three: any one operating route, not 600 people; 600 people is an achievement paid once.
@@ -695,13 +700,23 @@ func _prospecting() -> void:
 	var reach: float = float(rules.field.reach_km) / (deg_to_rad(1.0) * float(sim.geo.radius_km))
 	var spot: Dictionary = {}
 	for hit: Dictionary in Geology.reaching(sim.geo, home.lat, home.lon, reach * 0.8):
-		if spot.is_empty() and not bool(hit.deposit.hidden):
+		if (
+			spot.is_empty()
+			and not bool(hit.deposit.hidden)
+			and not Features.resource_frozen(str(hit.deposit.resource))
+		):
 			spot = hit.deposit
 	check(not spot.is_empty(), "a visible deposit within a team's reach of the town")
 	if spot.is_empty():
 		return
 	var chosen: String = ""
 	for resource: String in ["ore", "copper", "crystal", "nickel", "cobalt"]:
+		if Features.resource_frozen(resource):
+			check(
+				sim.act("prospect_observe", {"resource": resource, "lat": 0.0, "lon": 0.0}) != "",
+				"%s is frozen in 1.11: no observation of it" % resource
+			)
+			continue
 		check(
 			(
 				sim.act(

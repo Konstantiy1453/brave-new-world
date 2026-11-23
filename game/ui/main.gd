@@ -14,6 +14,7 @@ const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const RadiusSlider = preload("res://ui/radius_slider.gd")
+const Features = preload("res://simulation/features.gd")
 const FirstNotices = preload("res://ui/first_notices.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
@@ -23,6 +24,8 @@ const MAX_DAYS_PER_FRAME: int = 3
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SAVE_MANUAL: String = "user://manual.save"
 const SAVE_AUTO: String = "user://autosave.save"
+const V110_SAVE_MANUAL: String = "/ColonyCharter/v110/manual.save"
+const V110_SAVE_AUTO: String = "/ColonyCharter/v110/autosave.save"
 const V19_SAVE_MANUAL: String = "/ColonyCharter/v19/manual.save"
 const V19_SAVE_AUTO: String = "/ColonyCharter/v19/autosave.save"
 const V18_SAVE_MANUAL: String = "/ColonyCharter/v18/manual.save"
@@ -1398,6 +1401,9 @@ func show_menu():
 	radius_slider = RadiusSlider.add(
 		v, "RadiusSlider", radius, not tutorial_on, func(value: float): menu_radius = value
 	)
+	# Frozen in 1.11: new games are on the default radius and the slider is hidden.
+	if not Features.on(Features.RADIUS_SLIDER):
+		radius_slider.get_parent().visible = false
 	planet_preview = D.label(v, "", 16, D.GOLD)
 	_show_planet_preview()
 	D.label(v, "开局合作方案", 15, D.TEAL)
@@ -1485,10 +1491,12 @@ func old_save_path(relative: String) -> String:
 	return OS.get_environment("APPDATA") + relative
 
 
-## The newer of the manual and automatic saves; a 1.9, 1.8, 1.7 or 1.6 save if this version has none
-## yet. Older versions' files are only read: saving writes to this version's own folder.
+## The newer of the manual and automatic saves; a 1.10, 1.9, 1.8, 1.7 or 1.6 save if this version
+## has none yet. Older versions' files are only read: saving writes to this version's own folder.
 func _latest_save() -> String:
 	var best: String = _newest_of([SAVE_MANUAL, SAVE_AUTO])
+	if best == "":
+		best = _newest_of([old_save_path(V110_SAVE_MANUAL), old_save_path(V110_SAVE_AUTO)])
 	if best == "":
 		best = _newest_of([old_save_path(V19_SAVE_MANUAL), old_save_path(V19_SAVE_AUTO)])
 	if best == "":

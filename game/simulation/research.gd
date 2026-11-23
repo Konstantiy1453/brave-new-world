@@ -7,6 +7,7 @@ extends RefCounted
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Features = preload("res://simulation/features.gd")
 const PREVIEW_STAFF: Array[int] = [5, 10, 20]
 const MAX_RNG: int = 2147483647
 
@@ -101,7 +102,7 @@ static func _eligible(r: Dictionary, category: String, skip: Array) -> Array:
 		var t: Dictionary = techs[key]
 		if str(t.category) != category or r.completed.has(key) or skip.has(key):
 			continue
-		if bool(t.get("gift", false)):
+		if bool(t.get("gift", false)) or Features.tech_frozen(key):
 			continue
 		var open: bool = true
 		for need: String in t.requires:
@@ -157,6 +158,8 @@ static func add_lead(sim: RefCounted, tech: String) -> bool:
 	var t: Dictionary = sim.config.techs.get(tech, {})
 	var r: Dictionary = sim.state.research
 	if t.is_empty() or r.completed.has(tech) or bool(t.get("gift", false)):
+		return false
+	if Features.tech_frozen(tech):
 		return false
 	for need: String in t.requires:
 		if not r.completed.has(need):
@@ -482,6 +485,9 @@ static func commission(sim: RefCounted, tech: String, level: int) -> String:
 		return "委托研究未开放"
 	if level < 0 or level >= rules.speedup.size():
 		return "委托级别无效"
+	# Frozen in 1.11: a commission already running in a save keeps running; none can start.
+	if level > 0 and not Features.on(Features.RESEARCH_COMMISSIONS):
+		return "委托研究在本版本中暂停开放"
 	if not r.projects.has(tech) or r.completed.has(tech):
 		return "只能委托正在进行的课题"
 	if level > 0 and int(r.projects[tech].staff) <= 0:
@@ -724,6 +730,8 @@ static func tree(sim: RefCounted) -> Array:
 	ensure(sim)
 	var rows: Array = []
 	for key: String in sim.config.techs:
+		if Features.tech_frozen(key) and not sim.state.research.completed.has(key):
+			continue
 		rows.append(_row(sim, key))
 	return rows
 

@@ -13,6 +13,7 @@ extends SceneTree
 ##   options that send a team say when it reports back.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Events = preload("res://simulation/events_v2.gd")
 const Production = preload("res://simulation/production.gd")
@@ -40,6 +41,8 @@ func check(ok: bool, label: String) -> void:
 
 
 func run() -> void:
+	# Commissions are frozen in 1.11 (features.gd); this suite keeps their code tested.
+	Rules.read("progression").features.research_commissions = true
 	Events.definitions().definitions[PROBE_ID] = _pump_probe()
 	_identity()
 	_unrelated_demolition()

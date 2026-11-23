@@ -13,6 +13,7 @@ extends RefCounted
 const Geology = preload("res://world/geo2/geology.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Crews = preload("res://simulation/crews.gd")
+const Features = preload("res://simulation/features.gd")
 
 const STAGES: Array[String] = ["orbital", "field", "drilled"]
 const NAMES: Dictionary = {
@@ -116,7 +117,7 @@ static func quote(sim: RefCounted, step: String, lat: float, lon: float, id: int
 
 ## An orbital observation of `resource` at a point: reported after its days.
 static func observe(sim: RefCounted, resource: String, lat: float, lon: float) -> String:
-	if not resource in NAMES:
+	if not resource in NAMES or Features.resource_frozen(resource):
 		return "未知资源"
 	var q: Dictionary = quote(sim, "orbital", lat, lon)
 	if str(q.refusal) != "":

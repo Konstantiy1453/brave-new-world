@@ -49,6 +49,7 @@ const EventsV2 = preload("res://simulation/events_v2.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
 const Crews = preload("res://simulation/crews.gd")
+const Features = preload("res://simulation/features.gd")
 const Copies = preload("res://simulation/copies.gd")
 const HUB_FOOD_DAYS: float = 3.0
 const HUNGRY_DAYS: float = 7.0
@@ -115,7 +116,9 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 		if variant == "sea":
 			found.cost = float(found.cost) * maxf(0.3, 1.0 + Research.bonus(sim, "sea_route_cost"))
 	var refusal: String = ""
-	if not found.reachable:
+	if Features.road_frozen(variant):
+		refusal = "这种线路在本版本中暂停开放"
+	elif not found.reachable:
 		refusal = str(found.get("reason", "不可达"))
 	elif sim.settlement(a).is_empty() or sim.settlement(b).is_empty():
 		refusal = "两端都要是已建立的据点"

@@ -7,6 +7,7 @@ extends RefCounted
 ## Numbers are in data/v17/geography.json `geology`.
 
 const Rules = preload("res://simulation/rules.gd")
+const Features = preload("res://simulation/features.gd")
 
 ## Worlds kept in memory, by seed, generator version and size.
 const CACHE_LIMIT: int = 4
@@ -66,6 +67,8 @@ static func orbital_signals(world: Dictionary, lat: float, lon: float, radius: f
 	for hit: Dictionary in reaching(world, lat, lon, radius):
 		var deposit: Dictionary = hit.deposit
 		if bool(deposit.hidden) or int(deposit.depth) > 0:
+			continue
+		if Features.resource_frozen(str(deposit.resource)):
 			continue
 		var scale: float = float(rules.signal_scale[deposit.resource])
 		var near: float = 1.0 - clampf(float(hit.distance) / maxf(radius, 0.01), 0.0, 1.0)

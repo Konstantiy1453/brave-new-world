@@ -9,6 +9,7 @@ extends RefCounted
 ##   the seed: a survey from a working harbour tells whether it is rich, for later development.
 ## Every number is in economy.json `bay`; the harbour is the building `harbor`.
 
+const Features = preload("res://simulation/features.gd")
 const Keys = preload("res://simulation/keys.gd")
 
 ## Days of imports a harbour's forecast looks back over.
@@ -150,7 +151,11 @@ static func _place_signal(sim: RefCounted, region: int) -> void:
 
 
 static func _signal_goods(rule: Dictionary) -> Array:
-	return rule.get("signal_goods", SIGNAL_GOODS)
+	var goods: Array = []
+	for good: String in rule.get("signal_goods", SIGNAL_GOODS):
+		if not Features.resource_frozen(good):
+			goods.append(good)
+	return goods
 
 
 ## The survey boat's price and days: the offshore surveying technology halves both.

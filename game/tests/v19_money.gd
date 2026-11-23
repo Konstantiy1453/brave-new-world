@@ -4,6 +4,7 @@ extends SceneTree
 ## services budget with its costs, effects, refusal to run into debt and its place in saves.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Copies = preload("res://simulation/copies.gd")
 const Population = preload("res://simulation/population.gd")
@@ -59,6 +60,9 @@ func drain(sim: RefCounted) -> void:
 
 
 func run() -> void:
+	# Shuttle lines and commissions are frozen in 1.11 (features.gd); this suite keeps their code tested.
+	Rules.read("progression").features.shuttles = true
+	Rules.read("progression").features.research_commissions = true
 	_copies()
 	_fixed_incomes()
 	_administration()

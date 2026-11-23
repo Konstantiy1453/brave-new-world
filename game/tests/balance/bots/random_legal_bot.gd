@@ -2,6 +2,8 @@ extends "res://tests/balance/bots/bot.gd"
 ## Random affordable legal actions, for crash and audit fuzzing.
 ## Illegal picks simply return an error from Sim.act(), which is itself under test.
 
+const Features = preload("res://simulation/features.gd")
+
 
 func on_day() -> void:
 	if today() == 1:
@@ -21,7 +23,10 @@ func _random_action() -> void:
 	var region: int = int(place.region)
 	match rng.randi_range(0, 9):
 		0, 1, 2, 3:
-			var kinds: Array = sim.config.buildings.keys()
+			var kinds: Array = []
+			for kind: String in sim.config.buildings:
+				if not Features.building_frozen(kind):
+					kinds.append(kind)
 			act("build", {"region": region, "kind": kinds[rng.randi_range(0, kinds.size() - 1)]})
 		4:
 			var count: int = sim.state.world.regions.size()

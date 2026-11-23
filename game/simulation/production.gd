@@ -1,6 +1,7 @@
 extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
+const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -259,6 +260,8 @@ static func build_refusal(sim: RefCounted, region: int, kind: String, plot: int 
 		return "请先建立据点"
 	if s.arrival > 0:
 		return "远征队尚在途中，请等待抵达"
+	if Features.building_frozen(kind):
+		return "这项设施在本版本中暂停开放"
 	if not sim.config.buildings.has(kind):
 		return "无此设施"
 	var reg: Dictionary = sim.state.world.regions[region]

@@ -9,6 +9,7 @@ extends SceneTree
 ##   cargo, which the town then sells; without a harbour it lands nothing and says so.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Geology = preload("res://world/geo2/geology.gd")
@@ -32,6 +33,9 @@ func check(ok: bool, label: String) -> void:
 
 
 func run() -> void:
+	# These features are frozen in 1.11 (features.gd); this suite keeps their code tested.
+	Rules.read("progression").features.metals = true
+	Rules.read("progression").features.seabed = true
 	_deposits()
 	_nickel_town()
 	_superalloy()

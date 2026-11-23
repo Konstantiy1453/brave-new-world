@@ -1150,3 +1150,20 @@ factories, so the game's cycle and the payback bands stay as they are.
   buildings, the prices of existing goods and the market scales did not change between 3e3ab15 and
   591f011; the medians move with how the balanced bot grows the five colonies (four new technologies
   in the deck, dearer crews, roads that wait for crews) · widening the bands.
+
+## 1.11 (the contractor, branch v17-charter)
+
+- Frozen features (A) are read through `simulation/features.gd` from the shared rule cache, so the
+  simulation, the site generator, the interface and the bots get one answer; a flag missing from
+  the data counts as open. What each flag freezes (buildings, techs, resources, road kinds) is listed
+  in `progression.json` `features.content` · a hard-coded list.
+- Metals frozen: the planet keeps its nickel and cobalt deposits (world generation and its hashes
+  unchanged); orbit does not read them, a newly founded town takes no plots on them, prospecting
+  refuses them and an offshore signal is never cobalt. Saves that hold nickel plots or mines keep
+  running them · regenerating towns without them.
+- Commissions frozen: one already running in a save keeps running and can still be stopped (level
+  0); none can start. The radius slider frozen: any asked radius becomes the default 1.0 and the
+  slider row is hidden. The research tree hides frozen techs unless a save already finished them.
+- Suites written for frozen features (v110_metals, v19_money, v19_transport, v110_fixes, the radius
+  part of v110_audit) switch their own flag on in their process, so the frozen code stays tested;
+  `v111_freeze` tests the frozen defaults · deleting those checks.

@@ -3,6 +3,7 @@ extends "res://tests/balance/bots/bot.gd"
 ## order food, water and power, labour, housing; keep a cash cushion; then invest in the best
 ## affordable option. The balanced, rush and research-first bots only change the parameters.
 
+const Features = preload("res://simulation/features.gd")
 const INVEST_ROLES: Array[String] = ["mine", "harvest", "factory", "income", "commerce"]
 const EXTRACTION_ROLES: Array[String] = ["mine", "harvest"]
 const MEGAPROJECTS: Array[String] = ["university", "climate_regulator", "lift_port"]
@@ -674,7 +675,7 @@ func _connect_settlements(reserve: float) -> void:
 	for site: Variant in _unconnected():
 		var link: Dictionary = _best_link(int(site))
 		# A shuttle carries a little at once while the road is saved for and built.
-		if uses_shuttle and not link.is_empty():
+		if uses_shuttle and Features.on(Features.SHUTTLES) and not link.is_empty():
 			_shuttle_to(int(link.from), int(site), reserve)
 		# Food and materials wait on this road: it comes before any cushion.
 		if not link.is_empty() and float(sim.state.cash) >= float(link.cost) + reserve * 0.1:
@@ -751,7 +752,7 @@ func _kinds_with_roles(roles: Array[String], place: Dictionary) -> Array:
 	var kinds: Array = []
 	for kind: String in sim.config.buildings:
 		var spec: Dictionary = sim.config.buildings[kind]
-		if not str(spec.role) in roles:
+		if not str(spec.role) in roles or Features.building_frozen(kind):
 			continue
 		if spec.has("requires_tech") and not sim._has(str(spec.requires_tech)):
 			continue
@@ -1514,6 +1515,8 @@ func _hall_town() -> int:
 ## Commissions on what the charter needs next (or on every running project), by cash cover.
 func _commissions() -> void:
 	if not uses_commissions or today() % COMMISSION_REVIEW_PERIOD != 0:
+		return
+	if not Features.on(Features.RESEARCH_COMMISSIONS):
 		return
 	var cover: float = cash_cover()
 	var level: int = 0

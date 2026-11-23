@@ -7,6 +7,7 @@ extends RefCounted
 
 const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
+const Features = preload("res://simulation/features.gd")
 ## Each direction's line icon (assets/icons/research_<category>.svg).
 const ICON_PREFIX: String = "research_"
 
@@ -235,6 +236,8 @@ static func _unlocks(g, c, tech: String, names: Array) -> void:
 static func _commission_switch(g, c, row: Dictionary) -> void:
 	var quotes: Array = row.get("commission_quotes", [])
 	if quotes.is_empty():
+		return
+	if not Features.on(Features.RESEARCH_COMMISSIONS) and int(row.get("commission", 0)) <= 0:
 		return
 	D.label(c, "外部实验室委托", D.CAPTION, D.MUTED, false)
 	var line = D.flow(c)

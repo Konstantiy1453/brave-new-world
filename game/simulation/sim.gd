@@ -23,6 +23,7 @@ const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
+const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
 const Consignments = preload("res://simulation/consignments.gd")
@@ -74,6 +75,9 @@ func new_game(
 	if not config.openings.has(advantage):
 		advantage = "capital"
 	var planet: Dictionary = progression_geo().planet_radius
+	# The radius slider is frozen in 1.11: a new game is on the default radius.
+	if radius > 0.0 and not Features.on(Features.RADIUS_SLIDER):
+		radius = float(planet.default)
 	if radius > 0.0:
 		radius = clampf(radius, float(planet.min), float(planet.max))
 		var bands: Array = planet.size_bands

@@ -3,14 +3,18 @@
 Single-player colony management game. Godot 4.5.1, GDScript, GL Compatibility, Windows x64.
 Deterministic fixed-step simulation, audited ledgers, Chinese UI, offline and free.
 
-The current job is version 1.10, the bay first (branch `v17-bay`): the user's brief of 2026-11-19 (free siting,
-geology and prospecting, mobile crews, a nightscape made from the game's state, people and growth, stories),
-built from one playable bay outwards. Its plan is
-`docs/superpowers/plans/2026-11-19-v110-bay-first-instructions.md`. 1.9 (the moving map, the 3ds Max models,
-the money balance) is the base it builds on. Read these before doing anything:
+The current job is version 1.11.0, the contractor (branch `v17-charter`, from `v17-bay`): the player is an
+outsourced contractor bound by a bet-on contract (对赌协议) with the colonisation company. Phases A–J: freezes,
+the contract as a document with the company's voice and two meters, six origins, the annual ship and ratchet
+report, Annex VII and three endings, weather that matters, lights at two scales, merged technologies, a news
+line, then one rebalance and the release. Its plan is
+`docs/superpowers/plans/2026-11-23-v111-contractor-instructions.md`. 1.10 (the bay, free placement, crews) is
+the base it builds on; frozen features stay behind `progression.json` `features` flags (`simulation/features.gd`).
+Read these before doing anything:
 
-1. `docs/v17/PROGRESS.md` — the 1.10 section first, then 1.9: what is done, in progress and next. **Update it before stopping.**
-2. `docs/superpowers/plans/2026-11-01-v19-money-and-models-instructions.md` — the 1.9 plan (money, models, bar).
+1. `docs/v17/PROGRESS.md` — the 1.11 section first, then 1.10: what is done, in progress and next. **Update it before stopping.**
+2. `docs/superpowers/plans/2026-11-23-v111-contractor-instructions.md` — the 1.11 plan; each phase ends with
+   suites green, a harness run in BALANCE.md, PROGRESS and DECISIONS updated, and a tag `v111-<letter>`.
 3. `docs/v17/V18_BRIEF.md` — the 1.8 request and acceptance bar; every row still holds.
 4. `docs/v17/DECISIONS.md` — judgment calls already made. Add one line per new call.
 5. On the user's Windows PC: `docs/superpowers/plans/2026-11-08-v19-windows-verification-instructions.md` — the
@@ -35,9 +39,9 @@ Background: `docs/superpowers/plans/2026-10-31-v17-improvement-instructions.md` 
 
 `%APPDATA%\ColonyCharter\v16` (player saves), `build\v16`, `delivery\` (except `delivery\v17`), `versions\`,
 `docs\v16\`, existing files under `evidence\` (write only to `evidence\v17`), `tools\godot-4.5.1\`,
-and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.10 keeps its own saves (schema 6) in `%APPDATA%\ColonyCharter\v110`
-and only reads the user's 1.9, 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v19`, `\v18` and `\v17`; never write
-there either.
+and the `1.6.0 baseline` commit / `v1.6.0` tag. 1.11 keeps its own saves (schema 7) in `%APPDATA%\ColonyCharter\v111`
+and only reads the user's 1.10, 1.9, 1.8 and 1.7 saves in `%APPDATA%\ColonyCharter\v110`, `\v19`, `\v18` and `\v17`
+(upgrading them on load); never write there either.
 
 `art_reserve/` belongs to a separate 3ds Max modelling task. Do not touch it and do not stage it. The models reach
 the game only through `game/tests/art/convert_models.gd` (recipes in `game/tests/art/model_recipes.json`), which
@@ -90,8 +94,8 @@ Do not set `$env:APPDATA` in the shell that runs an export: Godot looks for expo
 
 ## Working rules (from the brief, §2)
 
-- Commit in small steps on branch `v17`: `v17: <area>: <what>`. Each phase ends with suites green, a harness
-  run recorded in `BALANCE.md`, `PROGRESS.md` updated, and a tag `v17-phaseN`.
+- Commit in small steps on the working branch (now `v17-charter`): `v17: <area>: <what>`. Each phase ends with
+  suites green, a harness run recorded in `BALANCE.md`, `PROGRESS.md` updated, and a tag (`v111-<letter>` in 1.11).
 - A process that exits 0 while its log has `SCRIPT ERROR` or failed checks is a failure.
 - Label evidence: automated test · balance harness · source-project window · exported EXE · screenshot viewed ·
   human playtest. Human playtests are NOT_RUN unless the user reports one. Report misses against the bar plainly.

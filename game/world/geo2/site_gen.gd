@@ -7,6 +7,7 @@ const Geology = preload("res://world/geo2/geology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Routes = preload("res://world/routes.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Features = preload("res://simulation/features.gd")
 
 ## Rarest first, so the common archetypes cannot take every good spot before them.
 const QUOTA_ORDER: Array[String] = [
@@ -684,8 +685,9 @@ static func _placed_plots(
 			float(site.lon) + float(slot.x) / LOCAL_UNITS_PER_DEGREE,
 			reach
 		)
-		if not hits.is_empty():
-			reached.append({"at": at, "deposit": hits[0].deposit})
+		var usable: Array = _usable(hits)
+		if not usable.is_empty():
+			reached.append({"at": at, "deposit": usable[0].deposit})
 	for i: int in range(reached.size() - 1, 0, -1):
 		var j: int = rng.randi_range(0, i)
 		var swap: Dictionary = reached[i]
@@ -697,7 +699,9 @@ static func _placed_plots(
 	# A deposit under the chosen point itself takes the free slot nearest the point, even where no
 	# slot lies on it (slots stand 1.5° apart, a vein can be narrower): a town founded on the signal
 	# the player sited it for reaches that deposit.
-	for hit: Dictionary in Geology.reaching(world, float(site.lat), float(site.lon), reach):
+	for hit: Dictionary in _usable(
+		Geology.reaching(world, float(site.lat), float(site.lon), reach)
+	):
 		var nearest: int = _nearest_free(slots, taken)
 		if taken.size() >= limit or nearest < 0:
 			break
@@ -740,6 +744,16 @@ static func _placed_plots(
 	_farm_plots(site, rules, left, plots, rng)
 	_general_plots(site, rules, left, plots)
 	return plots
+
+
+## The deposits a town can take plots on: those of resources not frozen (features.gd); frozen ones
+## stay in the world, unseen.
+static func _usable(hits: Array) -> Array:
+	var usable: Array = []
+	for hit: Dictionary in hits:
+		if not Features.resource_frozen(str(hit.deposit.resource)):
+			usable.append(hit)
+	return usable
 
 
 ## The slot nearest a site's centre that no deposit has taken, -1 when none is left.
