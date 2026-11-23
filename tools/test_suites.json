@@ -35,6 +35,7 @@
     {"name": "v111_annual", "script": "res://tests/v111_annual.gd", "success": "V111_ANNUAL_RESULT checks=\\d+ failures=0"},
     {"name": "v111_endings", "script": "res://tests/v111_endings.gd", "success": "V111_ENDINGS_RESULT checks=\\d+ failures=0"},
     {"name": "v111_weather", "script": "res://tests/v111_weather.gd", "success": "V111_WEATHER_RESULT checks=\\d+ failures=0"},
+    {"name": "v111_news", "script": "res://tests/v111_news.gd", "success": "V111_NEWS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

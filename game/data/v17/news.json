@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "units": "news line (1.11 I), interface only: nothing here changes the simulation. seconds_per_line is how long a line stays on screen while the clock runs (it stops while an event panel is open); per kind, priority (higher first), cooldown_days of game time before the kind runs again, tag shown before the line, voice (company or colony, as the writing guide); weather_horizon days a forecast looks ahead along a system's path; echo_days, report_days and milestone_days how long after the fact an echo, a filed report or a stage milestone is news; populations the town sizes worth a line; price_move the fall below the reference price that makes a market line (a share, lines rounded to price_step); share_index start points and points per report line by outcome; rumour_before_stage: Annex VII rumours run before this contract stage; other_codes the range of other projects' code numbers in flavour lines. Templates fill {name} from state; {code} and {capital} as in letters",
+  "seconds_per_line": 14.0,
+  "weather_horizon": 30,
+  "echo_days": 20,
+  "report_days": 45,
+  "milestone_days": 30,
+  "populations": [100, 250, 500, 1000, 2000, 4000],
+  "price_move": 0.15,
+  "price_step": 0.05,
+  "share_index": {
+    "start": 100.0,
+    "points": {"missed": -4.0, "waived": 0.0, "met": 1.5, "exceed": 3.0}
+  },
+  "rumour_before_stage": 4,
+  "other_codes": [11, 98],
+  "kinds": {
+    "weather": {"priority": 90, "cooldown_days": 2, "tag": "气象", "voice": "colony"},
+    "stage": {"priority": 85, "cooldown_days": 3, "tag": "公告", "voice": "company"},
+    "report": {"priority": 80, "cooldown_days": 5, "tag": "公司公报", "voice": "company"},
+    "population": {"priority": 70, "cooldown_days": 6, "tag": "殖民地", "voice": "colony"},
+    "echo": {"priority": 60, "cooldown_days": 3, "tag": "殖民地", "voice": "colony"},
+    "market": {"priority": 40, "cooldown_days": 15, "tag": "市场", "voice": "company"},
+    "rumour": {"priority": 25, "cooldown_days": 35, "tag": "传闻", "voice": "colony"},
+    "company_flavour": {"priority": 10, "cooldown_days": 9, "tag": "公司公报", "voice": "company"},
+    "colony_flavour": {"priority": 10, "cooldown_days": 7, "tag": "殖民地", "voice": "colony"}
+  },
+  "templates": {
+    "weather": [
+      "{kind_name}正向{town}移动，预计 {days} 日内抵达。",
+      "{town}一带的天空变了颜色：{kind_name}约 {days} 日后到。"
+    ],
+    "weather_covered": [
+      "{town}的气象站记录到{kind_name}，预计 {days} 日内抵达。",
+      "气象站的读数在{town}的值班室里传了一圈：{kind_name}，{days} 日内到。"
+    ],
+    "stage": [
+      "本公司确认：{code} 项目第 {stage} 阶段已通过验收，验收单已归档。",
+      "运营部通报：{code} 项目第 {stage} 阶段验收完毕，后续条款自验收之日起适用。"
+    ],
+    "report": [
+      "{code} 项目第 {year} 年度报告已归档：矿业{mining}，农业{farming}。本公司股价指数报 {index}。",
+      "财务部公告：第 {year} 年度报告随船归档，矿业{mining}、农业{farming}；本公司股价指数 {index}。"
+    ],
+    "population": [
+      "{town}的常住人口过了 {count} 人，食堂又添了一排桌子。",
+      "{town}今天的人口登记表翻过了 {count} 这一行。"
+    ],
+    "echo": [
+      "{town}：「{title}」一事告一段落——{ending}。",
+      "{town}的人还在说「{title}」，结果是：{ending}。"
+    ],
+    "market": [
+      "本公司外运结算：{good}收购价低于基准 {pct}%。",
+      "市场部周报：{good}到岸价比基准低 {pct}%，本部建议关注库存去向。"
+    ],
+    "rumour": [
+      "工地上有人说，合同里那份封着的附件七，开封时总部会专门派船。",
+      "仓库的老职工说，他见过附件七的封条，上面盖了三个章。",
+      "有人在酒馆里打赌：附件七里写的东西，和这颗星球的地底有关。也有人说和地底无关。",
+      "联络人在通话里提到附件七时停顿了一下，然后换了话题。"
+    ],
+    "company_flavour": [
+      "本公司公报：CC-{other} 项目完成首船外运，运营部向全体承包方致意。",
+      "合规部提示：各项目对外发言须使用公司统一口径。本提示不针对任何项目。",
+      "公关部消息：本公司年度宣传片已在总部大厅循环播放，片中未出现任何具体项目。",
+      "本公司公报：CC-{other} 项目因阶段延期进入整改期。本公报仅供知悉。",
+      "财务部通知：差旅报销单须附原件，扫描件无效。",
+      "本公司公报：承包方满意度调查已结束，结果将择期公布。"
+    ],
+    "colony_flavour": [
+      "{capital}的孩子们在空地上画了一张星图，把母星画得很小。",
+      "{capital}的夜班说，今晚的风里有股铁锈味。",
+      "{capital}的食堂换了新菜单，第一天就有人抱怨盐放多了。",
+      "有人在{capital}的广场上种了一棵树，每天都有人去看它有没有长。",
+      "{capital}的广播站开始在晚上放母星的老歌。",
+      "{capital}的修理铺门口贴了一张纸：工具借出请登记。"
+    ]
+  }
+}

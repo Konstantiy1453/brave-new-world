@@ -1322,3 +1322,26 @@ factories, so the game's cycle and the payback bands stay as they are.
   colony, and stay when clouds are off. The cosmetic storms remain only for a game with weather off.
   The cloud shell gains domain warping, a thin faster upper layer, a stronger warm terminator and
   town light on the clouds' undersides at night. Frame times are for the Windows check.
+- Seen in the first capture (`docs/v17/weather/`): a warned ring, lit and glowing, washed out to
+  white in daylight, so rings are unshaded; a young storm heading for a town was a faint smudge, so
+  a system's clouds reach 2.5 times its strike radius and a warned system is drawn at no less than
+  60% strength. Both are drawing only.
+- The weather page opens from the storm notice and from the force majeure clause on the contract
+  page (a link under 第 N 条 不可抗力), not from the navigation: the plan limits HUD changes.
+- The news line (I) lives in `ui/news_line.gd` with its templates and numbers in `news.json`. It
+  reads the state and never writes it; what it has shown and its cooldowns live in the node, are
+  not saved, and its generator is seeded by the seed and the day. A new or loaded game starts with
+  what is already true (town sizes, stages, reports, closed events) marked as shown.
+- Kinds by priority: weather 90 (systems in the state warned for a town and still coming, the days
+  counted along the system's path within its remaining life), stage 85, report 80 (with a company
+  share index from the report outcomes: 100, then -4 a missed line, +1.5 met, +3 exceeded, 0
+  waived), town size 70 (100 to 4,000 people), echo 60 (an event closed within 20 days, once, with
+  its ending), market 40 (a good at least 15% below the reference price, in 5% steps), Annex VII
+  rumours 25 (before stage four and while sealed; never the variant), flavour 10 (company
+  bulletins about other projects, CC-11 to CC-98 and never the colony's own; colony life that names
+  no facility, so it cannot contradict one). Cooldowns 2 to 35 game days.
+- "Waiting for a decision" is an event instance pending or deferred. A line whose subject is that
+  story (the weather that opened it, an echo of the same story) is skipped until it is decided.
+- The line holds its text and its time while the events page is open or a decision holds the
+  clock; otherwise a line stays 14 seconds of running time. It sits in the 20-pixel strip under the
+  task bar until the interface pass; 底部新闻 in the settings turns it off (settings.cfg).

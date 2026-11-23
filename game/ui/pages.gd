@@ -1544,6 +1544,13 @@ static func settings(g, b):
 	D.button(
 		b, "打开面板时暂停：开（关闭后恢复原速度）" if g.panel_pause else "打开面板时暂停：关（面板打开时时间继续）", g.toggle_panel_pause
 	)
+	D.button(
+		b,
+		"底部新闻：开" if g.news.shown() else "底部新闻：关",
+		func(): g.news.toggle(g),
+		"屏幕底部的一行新闻：公司公报、气象、殖民地见闻；只读当前局面，不影响经营",
+		"NewsToggle"
+	)
 	D.label(b, "地图画面", 20)
 	var visuals = D.row(b)
 	for entry: Array in [

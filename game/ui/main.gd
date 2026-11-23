@@ -21,6 +21,7 @@ const FirstNotices = preload("res://ui/first_notices.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
+const NewsLine = preload("res://ui/news_line.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 ## The difficulty option's entries, in order.
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
@@ -91,6 +92,7 @@ var sidebar_actions: VBoxContainer
 var top_stats: GridContainer
 var top_cells: Dictionary = {}
 var gauge: PanelContainer
+var news: PanelContainer = NewsLine.new()
 var cues: RefCounted = Cues.new()
 var column_panel: PanelContainer
 var column_box: VBoxContainer
@@ -394,6 +396,7 @@ func build_shell():
 	map_hint = D.label(ui, "球面总览  ·  右键旋转  ·  滚轮缩放", 14, D.MUTED, false)
 	map_hint.name = "MapHint"
 	map_hint.position = Vector2(COLUMN_LEFT + COLUMN_WIDTH + 10, 96)
+	ui.add_child(news)
 	_build_gauge()
 	_build_column()
 	refresh()
@@ -480,6 +483,7 @@ func _process(delta):
 	_watch_research()
 	_watch_events()
 	_watch_firsts()
+	news.step(self, delta)
 
 
 ## A technology finished since the last frame gets a notice; a new or loaded game only sets the
