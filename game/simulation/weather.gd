@@ -205,6 +205,7 @@ static func _warn(sim: RefCounted, system: Dictionary) -> void:
 			var at: Vector2 = ahead(system, float(step))
 			if arc(at.x, at.y, here.x, here.y) <= float(system.radius):
 				system.warned[key] = int(sim.state.day)
+				_count(sim, "warned_total")
 				sim._log(
 					(
 						"气象预警：%s预计 %d 日内影响%s。"
@@ -242,10 +243,16 @@ static func _strike(sim: RefCounted, system: Dictionary) -> void:
 				}
 			)
 		)
+		_count(sim, "struck_total")
 		while sim.state.weather.strikes.size() > int(rules().get("strikes_kept", 40)):
 			sim.state.weather.strikes.pop_front()
 		sim._log("%s抵达%s。" % [str(rule.name), str(s.name)])
 		sim.EventsV2.trigger(sim, str(rule.event), int(s.region))
+
+
+## Running totals for the harness (1.11 J): warnings given, strikes, preparations paid.
+static func _count(sim: RefCounted, key: String) -> void:
+	sim.state.weather[key] = int(sim.state.weather.get(key, 0)) + 1
 
 
 ## Pays to prepare a warned town for a system on its way: what it loses when it comes is cut.
@@ -266,6 +273,7 @@ static func prepare(sim: RefCounted, system_id: int, region: int) -> String:
 			return "防灾准备需要 ¥%.0f" % cost
 		sim._public_expense(cost, PREPARE, "external")
 		system.prepared[str(region)] = int(sim.state.day)
+		_count(sim, "prepared_total")
 		sim._log("%s做好了防灾准备。" % str(s.name))
 		return ""
 	return "没有这个天气系统"

@@ -1365,3 +1365,17 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The flat map leaves the main navigation (two views: globe and district). It opens from the panel
   of picked ground, where founding and prospecting happen (在平铺地图上选址与勘探 / 回到球面总览),
   and a founding made there returns to the globe. `navigate("flat")` stays for tests and captures.
+- J's measures in the harness: a weather row (systems born a year, strikes per settlement-year,
+  goods lost to the weather, the share of warnings followed by a preparation, claims accepted of
+  those made; the weather keeps running totals of warnings, strikes and preparations for it), a
+  lights row (the capital's light stage by year), and a pace row.
+- "A meaningful decision" (the pace row, `tests/balance/pace.gd`): an accepted action that commits
+  money, people or ground or changes the colony's course: building, upgrading, demolishing,
+  founding, roads and links, an enterprise, starting a research topic (the first allocation to it,
+  not re-staffing), reshuffling the offers, research contracts and commissions, crews, recruitment,
+  the wage, an event choice other than deferring, the annual report, the Annex VII answer, weather
+  preparation and claims, the buyout, autonomy and the career transfer. Stock targets are not. The
+  row reports the longest stretch between the landing, such decisions and the run's last day, for
+  the balanced bot on normal. It measures what the bot found worth doing, the nearest a bot comes to
+  "had nothing to decide"; the annual ship's cadence in real minutes comes from the data
+  (seconds_per_day and the speeds).

@@ -4,6 +4,7 @@ extends RefCounted
 const STATUS_PASS: String = "PASS"
 const STATUS_MISS: String = "MISS"
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Rules = preload("res://simulation/rules.gd")
 const SITE_BANDS: Array = [[14, 20], [20, 30], [28, 40]]
 const STATUS_NONE: String = "NOT_MEASURED"
 ## A measurement with no target: shown in the table, counted neither as met nor as missed.
@@ -147,6 +148,9 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_money_rows(rows, runs)
 	_cash_rows(rows, runs)
 	_event_rows(rows, runs)
+	_weather_row(rows, runs)
+	_lights_row(rows, runs)
+	_pace_row(rows, runs)
 	_no_control_row(rows, extras)
 	_audit_row(rows, runs, extras)
 	return rows
@@ -724,6 +728,109 @@ static func _sinks_row(rows: Array, group: Array) -> void:
 		"balanced, normal: median a year in years 3-7 (no target)",
 		", ".join(parts) if not parts.is_empty() else "nothing recorded",
 		STATUS_INFO if not group.is_empty() else STATUS_NONE
+	)
+
+
+## The weather (1.11 F, measured in J): per run of the balanced bot on normal, systems born a
+## year, strikes per settlement-year, goods lost to the weather, the share of warnings that led to
+## preparation, and force majeure claims accepted of those made. No target.
+static func _weather_row(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var per_year: Array = []
+	var hits: Array = []
+	var lost: Array = []
+	var acted: Array = []
+	var claims: int = 0
+	var accepted: int = 0
+	for run: Dictionary in group:
+		var w: Dictionary = run.get("weather", {})
+		if w.is_empty():
+			continue
+		per_year.append(float(w.systems) / maxf(1.0, float(run.final_day) / 360.0))
+		hits.append(float(w.strikes) / maxf(0.1, float(w.settlement_years)))
+		lost.append(float(w.lost))
+		if int(w.warned) > 0:
+			acted.append(float(w.prepared) / float(w.warned))
+		claims += int(w.claims)
+		accepted += int(w.accepted)
+	_row(
+		rows,
+		"Weather",
+		"balanced, normal: systems a year, hits per town-year, goods lost, warnings acted on, claims accepted (no target)",
+		(
+			(
+				(
+					"%.1f systems a year; %.2f hits per town-year; %.0f goods lost; "
+					+ "%.0f%% of warnings prepared for; %d of %d claims accepted"
+				)
+				% [
+					median(per_year),
+					median(hits),
+					median(lost),
+					median(acted) * 100.0,
+					accepted,
+					claims
+				]
+			)
+			if not per_year.is_empty()
+			else "not measured"
+		),
+		STATUS_INFO if not per_year.is_empty() else STATUS_NONE
+	)
+
+
+## The capital's light stage by year (1.11 G, light_record.gd), the median of the balanced bot on
+## normal. The capital's size in pixels at the default distance waits for the concept sheet.
+static func _lights_row(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var stages: Array = Rules.read("progression").get("lights", {}).get("stages", [])
+	var parts: PackedStringArray = []
+	for year: int in range(1, 11):
+		var values: Array = []
+		for run: Dictionary in group:
+			var by_year: Dictionary = run.get("light_stage", {})
+			if by_year.has(str(year)):
+				values.append(float(by_year[str(year)]))
+		if values.is_empty():
+			continue
+		var index: int = clampi(int(round(median(values))), 0, maxi(0, stages.size() - 1))
+		var name: String = str(stages[index].name) if not stages.is_empty() else str(index)
+		parts.append("y%d %s" % [year, name])
+	_row(
+		rows,
+		"Lights",
+		"balanced, normal: the capital's light stage by year (no target)",
+		", ".join(parts) if not parts.is_empty() else "not measured",
+		STATUS_INFO if not parts.is_empty() else STATUS_NONE
+	)
+
+
+## The pace (1.11 J): the balanced bot's longest stretch without a meaningful decision
+## (tests/balance/pace.gd), and the annual ship's cadence in real minutes at each game speed.
+static func _pace_row(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var quiet: Array = field(group, "quiet_days")
+	var time: Dictionary = Rules.read("progression").time
+	var year_seconds: float = 360.0 * float(time.get("seconds_per_day", 5.0))
+	var cadence: PackedStringArray = []
+	for speed: float in [1.0, float(time.fast_multiplier), float(time.very_fast_multiplier)]:
+		cadence.append("%.0f min at %d×" % [year_seconds / speed / 60.0, int(speed)])
+	var longest: float = 0.0
+	for value: Variant in quiet:
+		longest = maxf(longest, float(value))
+	_row(
+		rows,
+		"Pace",
+		"balanced, normal: the longest stretch without a meaningful decision; a ship every year (no target)",
+		(
+			(
+				"median %.0f days, longest %.0f; the ship every %s"
+				% [median(quiet), longest, ", ".join(cadence)]
+			)
+			if not quiet.is_empty()
+			else "not measured; the ship every %s" % ", ".join(cadence)
+		),
+		STATUS_INFO if not quiet.is_empty() else STATUS_NONE
 	)
 
 

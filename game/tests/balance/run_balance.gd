@@ -13,6 +13,7 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Metrics = preload("res://tests/balance/metrics.gd")
 const Summary = preload("res://tests/balance/summary.gd")
+const Pace = preload("res://tests/balance/pace.gd")
 const BOTS: Dictionary = {
 	"rush": preload("res://tests/balance/bots/rush_bot.gd"),
 	"balanced": preload("res://tests/balance/bots/balanced_bot.gd"),
@@ -298,6 +299,7 @@ func _run_case(case_info: Dictionary, keep_bot: bool) -> Dictionary:
 		if sim.state.status == "failed" or bot.finished():
 			break
 	var record: Dictionary = metrics.finish(sim)
+	record["quiet_days"] = Pace.longest_quiet(bot.actions, int(sim.state.day))
 	if keep_bot:
 		record["_actions"] = bot.actions
 		record["_state_bytes"] = var_to_bytes(sim.state)

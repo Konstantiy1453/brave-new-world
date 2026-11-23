@@ -3,6 +3,7 @@ extends RefCounted
 
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Research = preload("res://simulation/research.gd")
+const LightRecord = preload("res://simulation/light_record.gd")
 const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
 const RESEARCH_WINDOW_FIRST_DAY: int = 360
 const RESEARCH_WINDOW_LAST_DAY: int = 1440
@@ -30,6 +31,8 @@ var _opened_at: Dictionary = {}
 var _expense_days: Array[float] = []
 var _expense_today: float = 0.0
 var _expense_day: int = -1
+## Settlements counted every day, for the weather's hits per settlement-year (1.11 J).
+var _settlement_days: int = 0
 
 
 func begin(case_info: Dictionary, sim: RefCounted) -> void:
@@ -73,6 +76,7 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"year_invested": [],
 				"cash_at": {},
 				"annual": {},
+				"light_stage": {},
 			}
 		)
 	)
@@ -82,6 +86,9 @@ func sample(sim: RefCounted) -> void:
 	var state: Dictionary = sim.state
 	var day: int = int(state.day)
 	record.min_cash = minf(float(record.min_cash), float(state.cash))
+	_settlement_days += state.settlements.size()
+	if day > 0 and day % YEAR_DAYS == 0 and not state.settlements.is_empty():
+		record.light_stage[str(day / YEAR_DAYS)] = LightRecord.stage_of(sim, state.settlements[0])
 	_scan_ledger(state, day)
 	_scan_events(sim)
 	_scan_company(state)
@@ -138,11 +145,35 @@ func finish(sim: RefCounted) -> Dictionary:
 	}
 	record.ending = state.get("ending", {}).duplicate()
 	record.shuttle_lines = _shuttle_lines(sim)
+	record.weather = _weather(state)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
 		record.reinvested_share = _reinvested / _operating_surplus
 	return record
+
+
+## The weather of the run (1.11 F, measured in J): systems born, warnings and the preparations
+## they led to, strikes, force majeure claims and those accepted, goods lost to the weather, and
+## settlement-years for the hits per town.
+func _weather(state: Dictionary) -> Dictionary:
+	var w: Dictionary = state.get("weather", {})
+	var accepted: int = 0
+	for row: Dictionary in w.get("claims", []):
+		accepted += 1 if bool(row.get("accepted", false)) else 0
+	var lost: float = 0.0
+	for good: String in w.get("lost", {}):
+		lost += float(w.lost[good])
+	return {
+		"systems": maxi(0, int(w.get("next_id", 1)) - 1),
+		"warned": int(w.get("warned_total", 0)),
+		"prepared": int(w.get("prepared_total", 0)),
+		"strikes": int(w.get("struck_total", 0)),
+		"claims": w.get("claims", []).size(),
+		"accepted": accepted,
+		"lost": lost,
+		"settlement_years": float(_settlement_days) / YEAR_DAYS,
+	}
 
 
 ## The annual reports of the run (1.11 D): how many, missed and exceeded lines, money paid and
