@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "calendar": "30日/月，360日/年",
   "units": {
     "money": "公共资金",
@@ -11,7 +11,11 @@
     "tech_gift": "a gift technology (techs.json gift: true) handed over when the option is chosen; it cannot be researched",
     "land_road": "condition: a finished road (not a sea link or shuttle line) at the place",
     "sea_link": "condition: a finished pair of cargo docks (sea link) at the place",
-    "lacks_tech": "condition: the colony does not have this technology yet"
+    "lacks_tech": "condition: the colony does not have this technology yet",
+    "gap_node": "the node an audit story starts at while the annual report has an open gap (1.11 D)",
+    "report_exposure": "the option settles an open annual-report gap: a fine of gap x export price x fine_factor, more distrust, gap closed (1.11 D)",
+    "ship_delay": "days the company's annual ship, and its report, arrive later (1.11 D)",
+    "amendment": "an option that signs a contract amendment (1.11 D): deadline_shift days on the current stage, company_share points on the company's share after the award, kpi_scale on next year's targets, add_clause / remove_clause ids; amendment names it"
   },
   "sampling": {
     "interval_days": 20,
@@ -907,6 +911,27 @@
           ],
           "default": "decline",
           "deadline_days": 18
+        },
+        "amendment": {
+          "title": "随船而来的长期供货条款",
+          "text": "【运营部 · 补充协议（草案）】{code} 项目：鉴于贵方此前的交付记录，本公司拟与贵方签订长期供货补充协议：下一年度报告的指标按协议上调；作为对价，当前阶段的验收期限相应顺延。请于本函期限内签署或退回。抄送：财务部、合规部。\n草案夹在年度船的货单里送到{capital}。加工班长看了一眼，说更高的指标意味着明年每一班都要多出一车货；调度员却在顺延的期限那一行画了圈，那是工程队盼了半年的余量。\n签了，明年的报表更难看；不签，今年的期限照旧。没有哪一页写着哪一种更划算。",
+          "choices": [
+            {
+              "id": "sign",
+              "label": "签署长期供货补充协议",
+              "kpi_scale": 1.15,
+              "deadline_shift": 60,
+              "amendment": "长期供货条款",
+              "ending": "签署供货补充协议"
+            },
+            {
+              "id": "decline",
+              "label": "退回草案",
+              "ending": "退回供货补充协议"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 30
         }
       },
       "kind": "decision",
@@ -1274,6 +1299,34 @@
           ],
           "default": "market",
           "deadline_days": 24
+        },
+        "amendment": {
+          "title": "随船而来的结算溢价条款",
+          "text": "【财务部 · 补充协议（草案）】{code} 项目：本公司拟在一年内按高于常规的价格结算贵方出口；作为对价，贵方获授总督资格后，本公司的经营分成相应提高。请于本函期限内签署或退回。抄送：运营部。本草案不保证贵方届时有货可出。\n{capital}的财务人员把两笔账放在一起算：眼前一年的溢价是看得见的现金，授权以后多交的分成却要算到很多年以后。有人说，能不能拿到总督资格还不一定；也有人说，正因为不一定，才不该把以后的钱先卖掉。",
+          "choices": [
+            {
+              "id": "sign",
+              "label": "签署结算溢价条款",
+              "company_share": 3,
+              "effects": [
+                {
+                  "kind": "export_price",
+                  "factor": 1.08,
+                  "duration_days": 360,
+                  "maintenance": 0
+                }
+              ],
+              "amendment": "结算溢价条款",
+              "ending": "签署溢价补充协议"
+            },
+            {
+              "id": "decline",
+              "label": "退回草案",
+              "ending": "退回溢价补充协议"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 30
         }
       }
     },
@@ -1764,6 +1817,27 @@
           ],
           "default": "decline",
           "deadline_days": 24
+        },
+        "amendment": {
+          "title": "随船而来的特许经营条款",
+          "text": "【合规部 · 补充协议（草案）】{code} 项目：一家公司关联的投资方拟取得{capital}生活服务的特许经营权，并向贵方一次性支付特许费；作为对价，合同中的有条件援助条款予以删除，此后贵方不再申请本公司援助。请于本函期限内签署或退回。抄送：财务部、运营部。\n特许费是一笔实在的钱。可援助条款是合同里唯一一条写着公司会伸手的条款，删掉它，下一次缺粮或欠款的时候，就只能靠自己。货站主管把那一条用铅笔圈了起来，没有说话。",
+          "choices": [
+            {
+              "id": "sign",
+              "label": "签署特许经营条款",
+              "remove_clause": "aid",
+              "reward": 4000,
+              "amendment": "特许经营条款",
+              "ending": "签署特许补充协议"
+            },
+            {
+              "id": "decline",
+              "label": "退回草案",
+              "ending": "退回特许补充协议"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 30
         }
       }
     },
@@ -1888,7 +1962,8 @@
                   "maintenance": 0
                 }
               ],
-              "ending": "货站拥堵"
+              "ending": "货站拥堵",
+              "ship_delay": 20
             }
           ],
           "default": "wait",
@@ -1929,8 +2004,23 @@
           ],
           "default": "ignore",
           "deadline_days": 24
+        },
+        "gap": {
+          "title": "抽查对上了年度报告",
+          "text": "【合规部 · 稽核结论】{code} 项目：经抽查，贵方年度报告所报数字与实际产量不符，差额已核实。依合同约定，本部按差额与出口价格计收罚款，并将本次结论记入履约档案；年度指标按贵方所报数字维持不变。抄送：财务部、运营部。\n{capital}的财务室没有人说话。那张找不到的收据早已不重要了，审计员带来的是航运记录和过磅单，一页一页对着年度报告念数字。报出去的超额曾经换来奖金和一封措辞客气的回执；现在同一个数字成了罚单上的乘数。\n老采购员把报表合上，说当初没有人逼我们多报。审计员点点头，在结论页最后一行写下：差额清零，指标不变。",
+          "choices": [
+            {
+              "id": "accept_finding",
+              "label": "接受稽核结论",
+              "report_exposure": true,
+              "ending": "差额被查实"
+            }
+          ],
+          "default": "accept_finding",
+          "deadline_days": 18
         }
-      }
+      },
+      "gap_node": "gap"
     },
     "nw_a_last_return": {
       "version": 1,
@@ -5641,8 +5731,23 @@
           ],
           "default": "honest",
           "deadline_days": 24
+        },
+        "gap": {
+          "title": "副总裁带来的那张产量表",
+          "text": "副总裁这次没有要求藏起裸露的管线。随行人员在第一站就摊开一张产量表，左边是{capital}交上去的年度报告，右边是港口与过磅站的原始记录，两列数字在最后一行分开。\n【公关部 · 视察纪要】{code} 项目：视察期间发现年度报告与原始记录存在差额。依合同约定，差额按出口价格计收罚款，年度指标维持不变。纪要抄送合规部、财务部。\n总工程师岑岳陪着走完了全程。副总裁临上船前只说了一句：数字报高了不要紧，要紧的是明年还得照着这个数字交。",
+          "choices": [
+            {
+              "id": "accept_finding",
+              "label": "接受视察结论",
+              "report_exposure": true,
+              "ending": "视察查实差额"
+            }
+          ],
+          "default": "accept_finding",
+          "deadline_days": 18
         }
-      }
+      },
+      "gap_node": "gap"
     },
     "new_tax_letter": {
       "version": 1,
@@ -5699,6 +5804,27 @@
           ],
           "default": "defer_claim",
           "deadline_days": 24
+        },
+        "amendment": {
+          "title": "随船而来的关税豁免条款",
+          "text": "【财务部 · 补充协议（草案）】{code} 项目：本公司拟一次性返还贵方部分已缴关税，并对后续进口设备适用豁免；作为对价，贵方获授总督资格后，本公司的经营分成相应提高。请于本函期限内签署或退回。抄送：合规部。\n法务助理蒋宁把草案翻到最后一页，那里没有签名栏以外的空白。返还的钱今天就能到账，多交的分成却要等授权以后才开始算。她说这像是用未来的工资换今天的房租；会计说，今天的房租也是要交的。",
+          "choices": [
+            {
+              "id": "sign",
+              "label": "签署关税豁免条款",
+              "company_share": 2,
+              "reward": 3000,
+              "amendment": "关税豁免条款",
+              "ending": "签署关税补充协议"
+            },
+            {
+              "id": "decline",
+              "label": "退回草案",
+              "ending": "退回关税补充协议"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 30
         }
       }
     },
@@ -7357,8 +7483,23 @@
           ],
           "default": "dismiss",
           "deadline_days": 18
+        },
+        "gap": {
+          "title": "两本账对不上的那一页",
+          "text": "会计蒋宁这次查的不是老何的签名，而是我们自己交上去的年度报告。过磅单上的数字和报告里的数字之间，隔着一个谁都记得、谁都没写下来的差额：那一年为了拿到超额奖金，矿业一栏多报了。\n【合规部 · 线索处理结果】{code} 项目：经核实，贵方年度报告存在差额。本部依合同计收罚款，差额清零；已核定的年度指标不予下调。本结果抄送财务部，并归入贵方履约档案。\n蒋宁把那页报告和罚单订在一起，放进标着{capital}的档案盒。她说，账一旦对上，就再也不用记两套数字了。",
+          "choices": [
+            {
+              "id": "accept_finding",
+              "label": "认缴罚款并更正报告",
+              "report_exposure": true,
+              "ending": "账面差额清零"
+            }
+          ],
+          "default": "accept_finding",
+          "deadline_days": 18
         }
-      }
+      },
+      "gap_node": "gap"
     },
     "second_ship": {
       "version": 1,
@@ -7462,6 +7603,28 @@
           ],
           "default": "redirect",
           "deadline_days": 18
+        },
+        "amendment": {
+          "title": "随船而来的移民接收条款",
+          "text": "【运营部 · 补充协议（草案）】{code} 项目：本公司拟将部分移民的安置纳入贵方合同：贵方即时接收一批随船到达的移民，并在合同中增加移民接收条款；作为对价，当前阶段的验收期限相应顺延。请于本函期限内签署或退回。抄送：财务部、公关部。\n舷梯边已经站了一排拎着行李的人，他们的名字印在草案的附件里。航务员丁澄数了数{capital}的空床位，又数了一遍。接收他们，工地上会多出一批人手，宿舍会更挤；退回草案，他们会被送往下一个愿意签字的地方。",
+          "choices": [
+            {
+              "id": "sign",
+              "label": "签署移民接收条款",
+              "admit_workers": 20,
+              "deadline_shift": 90,
+              "add_clause": "resettlement_quota",
+              "amendment": "移民接收条款",
+              "ending": "签署移民补充协议"
+            },
+            {
+              "id": "decline",
+              "label": "退回草案",
+              "ending": "退回移民补充协议"
+            }
+          ],
+          "default": "decline",
+          "deadline_days": 30
         }
       }
     },

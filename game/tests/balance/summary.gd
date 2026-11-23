@@ -139,6 +139,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_floor_row(rows, runs)
 	_award_rows(rows, runs)
 	_opening_row(rows, runs)
+	_report_row(rows, runs)
 	_failure_rows(rows, runs)
 	_population_rows(rows, runs)
 	_research_rows(rows, runs)
@@ -223,6 +224,70 @@ static func _opening_row(rows: Array, runs: Array) -> void:
 		"%s; best %s; without rush %s" % [", ".join(labels), str(best), str(best_of_styles)],
 		_verdict(ok and varied)
 	)
+
+
+## The annual report (1.11 D): inflating every line should pay more in years 1-2 and cost more by
+## years 4-5 than reporting the truth (balanced bot against the inflating bot, capital, normal).
+static func _report_row(rows: Array, runs: Array) -> void:
+	var honest: Array = select(runs, "balanced", "normal", "capital")
+	var inflated: Array = select(runs, "inflating", "normal", "capital")
+	if honest.is_empty() or inflated.is_empty():
+		_row(rows, "Annual report", "inflating pays early, costs later", "not run", STATUS_NONE)
+		return
+	var early: Array = [median(_cash_at(honest, 720)), median(_cash_at(inflated, 720))]
+	var awards: Array = [median(field(honest, "award_day")), median(field(inflated, "award_day"))]
+	var failed: Array = [_failed(honest), _failed(inflated)]
+	var reviews: Array = [_reviews(honest), _reviews(inflated)]
+	var fines: float = 0.0
+	for run: Dictionary in inflated:
+		fines += float(run.get("annual", {}).get("fines", 0.0))
+	var later: bool = (
+		float(awards[1]) > float(awards[0])
+		or int(failed[1]) > int(failed[0])
+		or int(reviews[1]) > int(reviews[0])
+	)
+	_row(
+		rows,
+		"Annual report",
+		"inflating: more cash by day 720, worse outcome by years 4-5",
+		(
+			"cash d720 %.0f honest / %.0f inflating; award %.0f / %.0f; failed %d / %d; reviews %d / %d; fines %.0f"
+			% [
+				early[0],
+				early[1],
+				awards[0],
+				awards[1],
+				failed[0],
+				failed[1],
+				reviews[0],
+				reviews[1],
+				fines
+			]
+		),
+		_verdict(float(early[1]) > float(early[0]) and later)
+	)
+
+
+static func _cash_at(runs: Array, day: int) -> Array:
+	var values: Array = []
+	for run: Dictionary in runs:
+		if run.get("cash_at", {}).has(str(day)):
+			values.append(float(run.cash_at[str(day)]))
+	return values
+
+
+static func _failed(runs: Array) -> int:
+	var count: int = 0
+	for run: Dictionary in runs:
+		count += 1 if float(run.get("failure_day", -1)) >= 0.0 else 0
+	return count
+
+
+static func _reviews(runs: Array) -> int:
+	var count: int = 0
+	for run: Dictionary in runs:
+		count += 1 if "review" in run.get("company_stages", []) else 0
+	return count
 
 
 ## The bot with the earliest median award among those that reach it in most runs.

@@ -24,6 +24,7 @@ const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Origins = preload("res://simulation/origins.gd")
+const AnnualReport = preload("res://simulation/annual_report.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -171,6 +172,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Consignments.ensure_state(target)
 	Prospecting.ensure_state(target)
 	Company.ensure_state(target)
+	AnnualReport.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -295,6 +297,8 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Crews.choose_next(self, _site_arg(args), int(args.get("uid", -1)))
 		"crew_order":
 			refusal = Crews.set_order(self, _site_arg(args), str(args.get("order", "")))
+		"annual_report":
+			refusal = AnnualReport.sign_report(self, args)
 		"research_commission":
 			refusal = Research.commission(
 				self, str(args.get("tech", "")), int(args.get("level", 0))
@@ -379,9 +383,7 @@ func tick() -> void:
 	Pollution.daily(self)
 	_event_tick()
 	if state.status == "success" and state.day > state.success_day:
-		var tax: float = (
-			maxf(0.0, float(state.operating_net)) * float(config.contract.company_tax_rate)
-		)
+		var tax: float = maxf(0.0, float(state.operating_net)) * Contract.company_rate(self)
 		if tax > 0:
 			_public_expense(tax, "governor.share", "external")
 			state.company_tax_total += tax
@@ -390,6 +392,7 @@ func tick() -> void:
 		for key: String in KEYS:
 			s.stock_delta[key] = float(s.stock[key]) - float(stocks[str(s.region)][key])
 	Contract.daily(self)
+	AnnualReport.daily(self)
 	Company.tick(self)
 	state.operating_history.append(
 		{
@@ -758,6 +761,7 @@ func audit() -> Array:
 	errors.append_array(_audit_sites())
 	errors.append_array(Crews.audit(state))
 	errors.append_array(Consignments.audit(state))
+	errors.append_array(AnnualReport.audit(self))
 	errors.append_array(Prospecting.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")

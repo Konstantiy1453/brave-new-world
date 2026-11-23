@@ -24,6 +24,7 @@ const BOTS: Dictionary = {
 	"housing_first": preload("res://tests/balance/bots/housing_first_bot.gd"),
 	"mining": preload("res://tests/balance/bots/mining_bot.gd"),
 	"coastal": preload("res://tests/balance/bots/coastal_bot.gd"),
+	"inflating": preload("res://tests/balance/bots/inflating_bot.gd"),
 }
 ## Each new origin (1.11 C) also runs with the bot that plays it as it is meant to be played.
 const ORIGIN_BOTS: Dictionary = {
@@ -133,7 +134,9 @@ func run() -> void:
 			shards_lost += 1
 			loaded = {}
 		extras = loaded
-	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
+	# A run in chunks reports the whole pipeline's time (`--wall_clock`), not the merge's own.
+	var seconds: float = (Time.get_ticks_msec() - started) / 1000.0
+	_publish(runs, extras, float(options.get("wall_clock", seconds)))
 
 
 ## The checks that need none of the runs. With `--extras_in` they are read from that file instead.
@@ -230,6 +233,20 @@ func _build_cases() -> Array:
 							}
 						)
 					)
+		# The annual report's inflating policy (1.11 D), beside the honest balanced bot.
+		for seed_value: int in seed_pool:
+			(
+				cases
+				. append(
+					{
+						"bot": "inflating",
+						"seed": seed_value,
+						"opening": WINDFALL_OPENING,
+						"difficulty": "normal",
+						"days": days,
+					}
+				)
+			)
 		for seed_value: int in seed_pool:
 			(
 				cases

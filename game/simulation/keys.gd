@@ -59,6 +59,11 @@ const SH_POLLUTION: String = "pollution"
 
 const SOURCE_PROCESSING: String = "processing"
 const SOURCE_IMPORT: String = "import"
+## Where produced goods come from, for the annual report's tallies (1.11 D).
+const SOURCE_MINING: String = "mining"
+const SOURCE_FARMING: String = "farming"
+const SOURCE_CATCH: String = "catch"
+const SOURCE_SEABED: String = "seabed"
 
 ## Cash cover bands (`Sim.cover_view`): money running short, ordinary, or sitting idle.
 const COVER_SHORT: String = "short"

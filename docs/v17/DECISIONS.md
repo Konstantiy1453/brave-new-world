@@ -1167,3 +1167,98 @@ factories, so the game's cycle and the payback bands stay as they are.
 - Suites written for frozen features (v110_metals, v19_money, v19_transport, v110_fixes, the radius
   part of v110_audit) switch their own flag on in their process, so the frozen code stays tested;
   `v111_freeze` tests the frozen defaults · deleting those checks.
+- 公司评级 bands: A below `company.rating_a_below` (20), B below the review threshold (40), C below
+  the intervention threshold (70), D above. A reading of distrust only; no rule reads the letter.
+- 民心: settlement appeal 0.0 reads 0 and 2.0 reads 100 (`population.json` `morale`), so the base
+  appeal 1.0 reads 50. Towns still in transit and empty towns are left out; with nobody landed it is
+  50. Measured: 20 on landing day (no spare beds, no jobs yet), 40-77 over four years of balanced
+  bot play on seeds 260129 and 42 · a range fitted to observed values.
+- The company code is CC-NN with NN = 1 + the world seed mod 99 (`contract.json` `document`). Two
+  colonies can share a code: it is a name, not an id, and nothing reads it.
+- The company's stage letters became template kinds in `letters.json` (warning, review,
+  intervention, recovery_stable, recovery_solved, normal, aid_signed); `reason` keeps the subject
+  for older readers; a kind without a template still makes a letter of its one line.
+- Old one-line letters get the structured fields before validation on both load paths: schema 3-6
+  through `ensure_systems`, the schema 2 JSON path in `load_legacy` (its validation runs first).
+- The contract page keeps the stage goals and their shortcuts under the current milestone · a page
+  of clauses only, which would lose the colony's to-do list.
+- The review clause states the process as it runs: a warning letter at the difficulty's warning
+  level, review at the review threshold, intervention when the review window ends with risk still
+  there, takeover when the intervention window does. The intervention threshold is a rating band and
+  a gauge mark, not a trigger · the plan's shorthand "intervention threshold".
+- Event text may hold `{code}` and `{capital}` only, filled where events are viewed
+  (`simulation/names.gd`); titles hold none · placeholders in titles, which history and notices
+  would also have to fill.
+- The ten reworded events changed wording only (ids, nodes, choices and effects checked identical by
+  script). The company speaks through its documents quoted in the scene (【部门 · 文件名】, CC line);
+  rule numbers typed into prose were removed where they repeated data (second_ship's 60 days in a
+  title, industry's 240 days); narrative numbers stay.
+- Sound cues are played by the interface: `cues.gd` `observe` compares the newest letter, the
+  accepted stages and the ending with its last look, and only takes note at the first look at a
+  game · cues called from the simulation, which must not call the interface.
+- The meter pair keeps the day's change and the stage countdown under the letter; a click on 民心
+  opens the population page, where the services budget is.
+- The harness extras (determinism, labour lever, no control) run as their own process beside the
+  chunks (`--extras_out`, then `--merge ... --extras_in`): about an hour per quick harness on four
+  cores instead of 87 minutes · tooling only.
+- `v19_payback` misses the smelter in year 4 after the freeze (352 days against 120-300; it was
+  461 on 3e3ab15, 372 on faa0f97, in band on 591f011): towns no longer take metal plots and events
+  skip frozen content, so the five colonies grow differently. Kept as a known miss for J's
+  rebalance · widening the band.
+- Origins (C) keep the opening ids saves store (`capital`, `workers`, `science`) with new names
+  (标准承包, 工程承包, 科研托管). Gains, costs and rule are text templates filled from the entry
+  (`{cash}`, `{rule:key}`, `{effect:key}`, `{cut:key}`, `{years:key}`, `{tech:key}`), so no number is
+  typed; the old `description` stays for older readers.
+- 科研托管 has no research-speed bonus (`science_opening_rate` removed, as the plan says); halved
+  research funding is kept as one of today's gains and moved into the origin's rules. Its
+  research-contract technology is granted at landing (logged; that category's offers are redrawn).
+- 工程承包's wage floor refuses a lower wage (no clamping); a new game starts at the floor. An old
+  save whose wage is below it keeps that wage until changed, so it plays on unchanged.
+- 移民安置: the 60 extra residents are 40 workers and 20 children; the landing camp's 60 beds stay,
+  so beds are short by design. Cash and materials are 0.7 of the standard contract; food +30% for
+  the extra mouths. The subsidy is ¥20 a month per resident with a bed and a job, for 1,440 days;
+  per town the employed up to its beds. A test colony had 7 such residents on day 30 · a subsidy
+  on every resident, which would pay for the crowding it is meant to cure.
+- 矿权抵押's tribute is in goods units by stage (600-3,000, i.e. 60,000-300,000 t a year); C records
+  and shows it, D collects it.
+- 群岛开发: the `offshore_survey` effect is +0.5 (the survey's price and days halve, as the plan's
+  "−0.5" means); `road_cost` +0.5; a new key `orbital_freight` (+0.25) raises the price of goods
+  bought by orbit, i.e. where no working harbour carries that good. The coastal rule refuses inland
+  ground on both ways of founding (region and map point).
+- `favours` names the stage-three route an origin suits (cards, contract) but changes no rule in
+  1.11 · lowering that route's targets for the origin.
+- The effects cache (`Research.bonus`) is keyed by the origin too and reset on load: a loaded game
+  with as many technologies as the one before it read the old game's effects (found while testing).
+- Harness: rush, balanced and research_first run all six origins; passive and sloppy only the three
+  older ones (they measure failure); each new origin also runs with its own bot (`housing_first`,
+  `mining`, `coastal`, subclasses of balanced with one knob each). 87 quick cases instead of 51.
+- 1.11-A against crews-d24c660 is a material change, explained, not fixed: the balanced bot's
+  median award moved from day 2674 (8/9 awarded) to 2854 (6/9), science openings 300-550 days later
+  for every bot. On the three runs that newly fail (balanced capital 20261029, workers 260129 and
+  20261029, all taken over at stage five's last date), switching research commissions back on
+  awards all three (days 2854, 2999, 2586); switching metals and seabed back on awards two of three.
+  The bots bought stage five's research with commissions. Left for J's rebalance · unfreezing.
+- The annual report's gap (D) is filled from production: when the ship arrives, the year's
+  production first makes good the open gap, and only the rest counts as the year's actual. The plan
+  says "the surplus of actual over reported fills the gap first"; with 如实/报达标/报超额 nothing is
+  ever reported below the actual, so read literally it would never fill · a gap that only an
+  exposure closes.
+- The ship comes on the landing anniversary (day 0 in practice: a colony lands before its first
+  day); a 1.10 save gets its first ship on its next anniversary and targets from its stage.
+  supply_delay's waiting option holds the ship 20 days; the next ship keeps the anniversary.
+- A report left unsigned for `report_days` (30) goes as it is (如实), marked automatic.
+- Rewards are booked outside operating income (`annual.reward`, like `contract.reward`); fines are
+  public expenses (`annual.fine`); the tribute leaves the capital's ore as a resource sink.
+- Amendments: the ship may bring one from the second year (chance 0.5, from the seed and year),
+  opening one of five stories at its new `amendment` node; the audit stories open at their new
+  `gap` node while a gap is open. Nodes are added, ids and versions kept, so saves with these
+  stories open still load. A signed amendment changes the contract for good: stage deadline,
+  company share after the award (`Contract.company_rate`), next year's targets, a clause added or
+  one removed (removing `aid` refuses company aid from then on).
+- New event option keys (`ship_delay`, `report_exposure`, `deadline_shift`, `company_share`,
+  `kpi_scale`, `add_clause`, `remove_clause`, `amendment`) are applied in one place,
+  `AnnualReport.apply_terms`, called from the events engine.
+- Production sources became ids (`mining`, `farming`, `catch`, `seabed`) instead of Chinese words,
+  so the tallies compare identifiers, not display strings.
+- The company ship's light comes down over the capital from four days before it is due, on the
+  globe, the flat map and the district, and stays while the report waits.

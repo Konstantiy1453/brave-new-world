@@ -34,6 +34,11 @@ const SHIP_LIGHT: Color = Color("d6f1ff")
 const SHIP_LIGHT_SIZE: float = 0.7
 const SHIP_LIGHT_GLOW: float = 0.55
 const SHIP_BERTH_OFFSET: float = 0.18
+## The company's annual ship (1.11 D): it comes down over the capital in the days before it is due
+## and stays on the ground while the year's report waits for a signature.
+const COMPANY_SHIP_DESCENT_DAYS: float = 4.0
+const COMPANY_SHIP_LIGHT: Color = Color("fff1c2")
+const COMPANY_SHIP_SIZE: float = 1.6
 ## The picked ground's cursor on both maps (1.10 free placement): its ring's radius in degrees.
 const GROUND_CURSOR_DEGREES: float = 1.2
 const GROUND_CURSOR_COLOR: Color = Color("f4fbff")
@@ -561,7 +566,47 @@ func _ship_movers(flat: bool) -> Array:
 		var phase: float = SHIP_BERTH_PHASE * SHIP_DAYS - cargo_day
 		var berth: Vector3 = ends[1].lerp(ends[0], SHIP_BERTH_OFFSET)
 		found.append({"node": light, "from": ends[0], "to": berth, "phase": phase})
+	var company: Dictionary = _company_ship(flat, holder)
+	if not company.is_empty():
+		found.append(company)
 	return found
+
+
+## The company ship's light over the capital, while it is coming down or waiting on the ground;
+## empty at any other time. Its descent is placed from the game clock by `place_ships`.
+func _company_ship(flat: bool, holder: Node3D) -> Dictionary:
+	var annual: Dictionary = state.get("annual", {})
+	var towns: Array = state.get("settlements", [])
+	if annual.is_empty() or towns.is_empty() or int(annual.get("next_ship", -1)) < 0:
+		return {}
+	var pending: Dictionary = annual.get("pending", {})
+	var due: float = float(pending.get("day", annual.next_ship))
+	if pending.is_empty() and due - float(state.get("day", 0)) > COMPANY_SHIP_DESCENT_DAYS:
+		return {}
+	var region: int = int(towns[0].get("region", -1))
+	if region < 0 or region >= world.get("regions", []).size():
+		return {}
+	var ll: Vector2 = _coordinate_in(world.regions[region], 0.0, 0.0)
+	var ground: Vector3 = Geo.unit_point(ll.x, ll.y) * 3.06
+	var high: Vector3 = Geo.unit_point(ll.x, ll.y) * 4.4
+	if flat:
+		ground = _flat_point(ll.x, ll.y) + Vector3(0, 0, .06)
+		high = ground + Vector3(0, 0, 2.4)
+	var light := _sphere(
+		holder,
+		high,
+		(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * SHIP_LIGHT_SIZE * COMPANY_SHIP_SIZE,
+		_mat("company_ship", COMPANY_SHIP_LIGHT, 0, 1, CARGO_GLOW * SHIP_LIGHT_GLOW * 1.6),
+		8,
+		4
+	)
+	light.name = "CompanyShip"
+	return {
+		"node": light,
+		"from": high,
+		"to": ground,
+		"descent": [due - COMPANY_SHIP_DESCENT_DAYS, due],
+	}
 
 
 ## Each ship light where its call has got to: in from the offing over the first third of its
@@ -573,6 +618,13 @@ func place_ships(ships: Array, fraction: float) -> void:
 		if not is_instance_valid(entry.node):
 			continue
 		var node: Node3D = entry.node
+		if entry.has("descent"):
+			var span: Array = entry.descent
+			var length: float = maxf(0.01, float(span[1]) - float(span[0]))
+			var down: float = clampf((day - float(span[0])) / length, 0.0, 1.0)
+			node.visible = true
+			node.position = entry.from.lerp(entry.to, smoothstep(0.0, 1.0, down))
+			continue
 		var phase: float = fposmod(day + float(entry.phase), SHIP_DAYS) / SHIP_DAYS
 		var from: Vector3 = entry.from
 		var to: Vector3 = entry.to

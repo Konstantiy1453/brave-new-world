@@ -471,7 +471,13 @@ static func manage(g, b):
 			row,
 			"Target_" + key,
 			0,
-			maxf(10000, g.sim._target(s, key)) * scale,
+			(
+				maxf(
+					float(g.sim.progression.production.get("max_stock_target", 10000.0)),
+					g.sim._target(s, key)
+				)
+				* scale
+			),
 			0.000001 * scale,
 			g.sim._target(s, key) * scale
 		)

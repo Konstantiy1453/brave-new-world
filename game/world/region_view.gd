@@ -127,6 +127,8 @@ var plot_marks_on: bool = false
 var bridge_runs: Array = []
 ## The cargo ship of a coastal town: where it sails from and to, and how far it is in its cycle.
 var ship: Node3D
+## The company's annual ship over the capital's district (1.11 D): [light, from, to] or empty.
+var company_ship: Array = []
 var ship_route: Array = []
 ## [{"craft": Node3D, "pad": Vector3, "away": Vector3, "clock": float}]
 var shuttle_flights: Array = []
@@ -538,8 +540,52 @@ func _build_colony() -> void:
 	_finish_roads()
 	_build_bridges()
 	_build_harbor(settlement)
+	_build_company_ship(settlement, offset)
 	_build_light_pools(pools)
 	_build_traffic(stops, offset, int(settlement.get("region", 0)))
+
+
+## In the capital's district, the company's annual ship: a light high over the landing ground,
+## brought down by `lower_company_ship` in the days before the ship is due (planet views alike).
+func _build_company_ship(settlement: Dictionary, offset: float) -> void:
+	company_ship = []
+	var towns: Array = state.get("settlements", [])
+	if settlement.is_empty() or towns.is_empty() or towns[0] != settlement:
+		return
+	var ground: Vector3 = Vector3(offset, _ground(offset, 0.0) + 0.9, 0.0)
+	var high: Vector3 = ground + Vector3(0.0, 9.0, 0.0)
+	var light: MeshInstance3D = _sphere(
+		buildings_root,
+		high,
+		0.32,
+		_mat("company_ship_district", Color("fff1c2"), .1, .3, 2.4),
+		10,
+		6
+	)
+	light.name = "CompanyShipDistrict"
+	var glow := OmniLight3D.new()
+	glow.light_color = Color("fff1c2")
+	glow.light_energy = 1.6
+	glow.omni_range = 6.0
+	light.add_child(glow)
+	company_ship = [light, high, ground]
+	lower_company_ship(0.0)
+
+
+## The district's company ship where the clock has it: hidden until four days before the ship is
+## due, coming down, on the ground while the report waits, gone once it is signed.
+func lower_company_ship(fraction: float) -> void:
+	if company_ship.is_empty() or not is_instance_valid(company_ship[0]):
+		return
+	var annual: Dictionary = state.get("annual", {})
+	var pending: Dictionary = annual.get("pending", {})
+	var due: float = float(pending.get("day", annual.get("next_ship", -1)))
+	var day: float = float(state.get("day", 0)) + fraction
+	var light: Node3D = company_ship[0]
+	light.visible = due >= 0.0 and (not pending.is_empty() or due - day <= 4.0)
+	if light.visible:
+		var down: float = clampf((day - (due - 4.0)) / 4.0, 0.0, 1.0)
+		light.position = Vector3(company_ship[1]).lerp(company_ship[2], smoothstep(0.0, 1.0, down))
 
 
 ## The landing camp's living pods, their windows lit while anyone lives in them (light_field.gd).

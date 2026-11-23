@@ -169,7 +169,7 @@ static func preview(sim) -> Dictionary:
 		remaining += float(stream.remaining)
 	var nonmining: float = minf(maxf(0.0, income - mining), sustainable_capacity + 8.0)
 	# Represent recurring taxes separately; observed expenses already include old governor tax.
-	var base_rate: float = float(sim.config.contract.company_tax_rate)
+	var base_rate: float = sim.Contract.company_rate(sim)
 	var tax_in_sample: float = 0.0
 	var first_day: int = (
 		int(history[history.size() - count].day) if count > 0 else int(sim.state.day) + 1

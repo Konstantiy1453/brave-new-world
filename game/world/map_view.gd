@@ -244,6 +244,16 @@ func _transport_signature() -> String:
 	for place: Dictionary in state.get("settlements", []):
 		quays.append(LightField.quay_working(state, place, economy.buildings))
 		quays.append(Consignments.ship_calling(state, place, calls))
+	# The company's annual ship: coming down, waiting for the report, gone (1.11 D).
+	var annual: Dictionary = state.get("annual", {})
+	var due: int = int(annual.get("next_ship", -1)) - int(state.get("day", 0))
+	quays.append(
+		[
+			not annual.get("pending", {}).is_empty(),
+			due >= 0 and due <= int(COMPANY_SHIP_DESCENT_DAYS),
+			int(annual.get("next_ship", -1))
+		]
+	)
 	return "%s|%s|%s" % [str(roads), str(moving), str(quays)]
 
 
@@ -610,6 +620,7 @@ func _animate_region(delta: float) -> void:
 	if sky.running:
 		_sail(delta * sky.rate)
 		_fly(delta * sky.rate)
+	lower_company_ship(sky.day_fraction)
 	var night: float = region_night if day_night_enabled else 0.0
 	if mats.has("glass_on"):
 		mats["glass_on"].emission_energy_multiplier = night * 0.85

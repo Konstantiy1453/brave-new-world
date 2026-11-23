@@ -129,6 +129,8 @@ static func accept(sim, offer: String, region: int = -1) -> String:
 	var cfg: Dictionary = sim.progression.company
 	if not cfg.offers.has(offer):
 		return "无此援助方案"
+	if "aid" in sim.state.contract.get("removed_clauses", []):
+		return "补充协议已删除有条件援助条款，公司不再提供援助"
 	if c.stage == "normal":
 		return "公司援助在关注预警后开放；可先贸易、调拨或收缩"
 	if c.claimed.has(offer):

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": {
     "letters": "company letters by kind (1.11): department, subject, the departments copied in, body and an optional handwritten note from the liaison; {placeholders} are filled from the rule files and the state when the letter is written",
     "departments": "sender and copy departments: id to the name shown"
@@ -14,51 +14,92 @@
     "warning": {
       "department": "compliance",
       "subject": "关于 {code} 项目履约风险的提示函",
-      "cc": ["operations", "finance"],
+      "cc": [
+        "operations",
+        "finance"
+      ],
       "body": "经本部例行复核，{code} 项目近期出现持续履约风险，现予书面提示。请贵方自收函之日起自查，并视需要采取贸易调拨、企业复业或治理措施；如需有条件援助，可依合同申请。本函不构成处罚，但将存档备查。",
       "note": "别被“不构成处罚”几个字骗了，合规部的提示函一般是写给审计看的。先把账面稳住。"
     },
     "review": {
       "department": "compliance",
       "subject": "{code} 项目整改通知",
-      "cc": ["operations", "finance", "pr"],
+      "cc": [
+        "operations",
+        "finance",
+        "pr"
+      ],
       "body": "鉴于不信任已达到合同约定的整改线 {review_threshold}，{code} 项目即日起进入整改期，期限 {review_days} 日，至第 {deadline_day} 日止。整改期内请贵方解决当前的经济与社会原因。整改期不因任何阶段期限提前结束或延后。本邮件由系统发出，请勿回复。",
       "note": "总部开会时有人提到了你们，语气不太好。整改期还有时间，但别指望他们提醒你第二次。"
     },
     "intervention": {
       "department": "operations",
       "subject": "关于对 {code} 项目实施介入的决定",
-      "cc": ["compliance", "finance", "pr"],
+      "cc": [
+        "compliance",
+        "finance",
+        "pr"
+      ],
       "body": "整改期届满，项目风险仍未解除。依合同约定，本公司自即日起对 {code} 项目实施介入，期限 {intervention_days} 日，至第 {deadline_day} 日止。介入期内贵方仍可接受尚未使用的援助并履行义务；期满风险仍在的，本公司将接管项目。特此通知。",
       "note": "这是最后一道门了。接管的文件已经放在法务部的抽屉里，我亲眼看见的。"
     },
     "recovery_stable": {
       "department": "compliance",
       "subject": "{code} 项目整改情况确认函",
-      "cc": ["operations"],
+      "cc": [
+        "operations"
+      ],
       "body": "经复核，{code} 项目整改措施已稳定执行，本公司决定停止升级处理。不信任将随持续稳定逐日回落，请保持。本确认函不影响此前已存档的记录。",
       "note": "做得好。走廊里有人说了句“那个项目居然救回来了”，在总部这算夸奖。"
     },
     "recovery_solved": {
       "department": "compliance",
       "subject": "关于 {code} 项目风险解除的通知",
-      "cc": ["operations"],
+      "cc": [
+        "operations"
+      ],
       "body": "经复核，此前提示的 {code} 项目履约风险已解除。请继续保持稳定经营，本部将在后续例行复核中恢复评价。",
       "note": ""
     },
     "normal": {
       "department": "operations",
       "subject": "{code} 项目恢复正常经营状态",
-      "cc": ["compliance", "finance"],
+      "cc": [
+        "compliance",
+        "finance"
+      ],
       "body": "依据持续稳定的记录，{code} 项目自即日起恢复正常经营状态，相关提示与整改记录一并归档。感谢贵方配合，并请留意后续阶段的期限。",
       "note": ""
     },
     "aid_signed": {
       "department": "finance",
       "subject": "{code} 项目有条件援助协议（{aid_name}）",
-      "cc": ["operations", "compliance"],
+      "cc": [
+        "operations",
+        "compliance"
+      ],
       "body": "贵方申请的「{aid_name}」已签署，物资将于 {arrival_days} 日后抵达。依协议，贵方须偿还 {repayment}，并在正经营结余中追加 {surcharge_pct}% 的分成，直至还清。每类援助限用一次。",
       "note": "财务部对这类协议的利息一向很满意。能早还就早还。"
+    },
+    "annual_receipt": {
+      "department": "operations",
+      "subject": "{code} 项目第 {year} 年度报告回执",
+      "cc": [
+        "finance",
+        "compliance"
+      ],
+      "body": "贵方第 {year} 年度报告已收悉。矿业：{mining_outcome}；农业：{farming_outcome}。本年度应付奖励 ¥{reward} 已随船拨付。依合同约定，下一年度指标调整为：矿业 {mining_target} 吨，农业 {farming_target} 吨。本回执由系统生成，指标调整无需贵方确认。",
+      "note": "数字报得越漂亮，明年的表格就越难填。财务部从来不会忘记去年的数字。"
+    },
+    "report_exposure": {
+      "department": "compliance",
+      "subject": "关于 {code} 项目年度报告差额的处理决定",
+      "cc": [
+        "finance",
+        "operations"
+      ],
+      "body": "经核实，贵方年度报告所报数字高于实际产量。依合同约定，本部按差额与出口价格计收罚款 ¥{fine}，差额即日清零；已核定的年度指标不予下调。本决定已归入贵方履约档案，不影响贵方继续申请合同项下的其他事项。",
+      "note": "总部里没人在意那几吨矿，他们在意的是档案里多了一页。下一份报告，报你真能交出来的数。"
     }
   }
 }

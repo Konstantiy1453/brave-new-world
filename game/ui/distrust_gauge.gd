@@ -9,6 +9,7 @@ extends PanelContainer
 const D = preload("res://ui/design.gd")
 const Company = preload("res://simulation/company.gd")
 const Population = preload("res://simulation/population.gd")
+const AnnualReport = preload("res://simulation/annual_report.gd")
 const STAGE_NAMES: Dictionary = {
 	"normal": "正常",
 	"warning": "关注",
@@ -32,6 +33,8 @@ var morale_label: Label
 var morale_bar: ProgressBar
 var rating: String = ""
 var morale: float = -1.0
+var ship_box: VBoxContainer
+var ship_label: Label
 
 
 func setup(owner_game: Node) -> void:
@@ -59,6 +62,15 @@ func setup(owner_game: Node) -> void:
 	morale_label = _centered(D.label(morale_box, "50", 22, D.INK, false))
 	morale_label.name = "MoraleValue"
 	morale_bar = D.progress(morale_box, 0.5, D.TEAL, 6)
+	# The days to the company's annual ship (1.11 D); a click opens the annual report.
+	D.rule(column)
+	ship_box = D.col(column)
+	ship_box.name = "ShipDays"
+	ship_box.mouse_filter = Control.MOUSE_FILTER_STOP
+	ship_box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ship_box.gui_input.connect(_ship_input)
+	_centered(D.label(ship_box, "公司船", 13, D.MUTED, false))
+	ship_label = _centered(D.label(ship_box, "", 16, D.INK, false))
 	custom_minimum_size.x = 68
 
 
@@ -70,6 +82,11 @@ func _centered(caption: Label) -> Label:
 func _gui_input(event: InputEvent) -> void:
 	if _clicked(event):
 		game.open_page("company")
+
+
+func _ship_input(event: InputEvent) -> void:
+	if _clicked(event):
+		game.open_page("annual_report")
 
 
 func _morale_input(event: InputEvent) -> void:
@@ -108,6 +125,7 @@ func show_pair(sim: RefCounted) -> void:
 	)
 	tooltip_text = _explain(sim, company, value, words)
 	var mood: float = Population.morale(sim)
+	_show_ship(sim)
 	if not is_equal_approx(mood, morale):
 		morale = mood
 		morale_label.text = "%.0f" % mood
@@ -149,4 +167,16 @@ func _explain_morale(sim: RefCounted, mood: float) -> String:
 				"点击查看人口与移民页。",
 			]
 		)
+	)
+
+
+func _show_ship(sim: RefCounted) -> void:
+	var pending: bool = not sim.state.get("annual", {}).get("pending", {}).is_empty()
+	var days: int = AnnualReport.days_to_ship(sim)
+	var text: String = "待签" if pending else ("—" if days < 0 else "%d日" % days)
+	if ship_label.text != text:
+		ship_label.text = text
+		ship_label.add_theme_color_override("font_color", D.GOLD if pending else D.INK)
+	ship_box.tooltip_text = (
+		"公司年度船已到，年度报告待签署。点击打开。" if pending else "距下一艘公司年度船抵达还有 %d 日；船到时提交年度报告。点击查看。" % maxi(0, days)
 	)

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Facility staffing, utilities, output and construction.
 
+const AnnualReport = preload("res://simulation/annual_report.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
@@ -611,7 +612,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 			"harbor":
 				s.port_capacity += float(d.capacity) * eff
 				var catch: float = float(d.get("fish", 0.0)) * eff
-				produce(sim, s, "food", catch, "近海捕捞")
+				produce(sim, s, "food", catch, Keys.SOURCE_CATCH)
 				sim.state.contract.today_food = float(sim.state.contract.today_food) + catch
 			"port":
 				s.port_capacity += (
@@ -643,7 +644,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					reg.deposits[resource] = maxf(
 						0.0, float(reg.deposits.get(resource, 0.0)) - amount
 					)
-				produce(sim, s, resource, amount, "矿产开采")
+				produce(sim, s, resource, amount, Keys.SOURCE_MINING)
 				if not sim.state.settlements.is_empty() and s != sim.state.settlements[0]:
 					OperatingRoutes.add(sim, "remote_mined", amount)
 				if amount <= 0.001:
@@ -655,7 +656,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					var made: float = (
 						float(d.outputs[good]) * eff * field_bonus * _good_bonus(sim, good)
 					)
-					produce(sim, s, good, made, "矿产开采")
+					produce(sim, s, good, made, Keys.SOURCE_MINING)
 			"seabed":
 				# The surveyed offshore deposit, landed at the town's harbour (bay.gd).
 				Bay.seabed_day(sim, s, b, eff * field_bonus)
@@ -664,7 +665,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 					maxf(0, target(sim, s, "food") - float(s.stock.food)),
 					float(d.rate) * eff * field_bonus * (1.0 + Research.bonus(sim, "hydro_output"))
 				)
-				produce(sim, s, "food", grown, "农业生产")
+				produce(sim, s, "food", grown, Keys.SOURCE_FARMING)
 				sim.state.contract.today_food = float(sim.state.contract.today_food) + grown
 				if grown <= 0:
 					b.status = Keys.B_TARGET_FULL
@@ -690,7 +691,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 						* output_factor(sim, b)
 					)
 				)
-				produce(sim, s, "food", amount, "农业生产")
+				produce(sim, s, "food", amount, Keys.SOURCE_FARMING)
 				sim.state.contract.today_food = float(sim.state.contract.today_food) + amount
 				if amount <= 0:
 					b.status = Keys.B_TARGET_FULL
@@ -917,6 +918,7 @@ static func produce(
 		Stats.IMPORTED if _source == Keys.SOURCE_IMPORT else Stats.PRODUCED,
 		amount
 	)
+	AnnualReport.tally(sim, resource, amount, _source)
 	if _source == Keys.SOURCE_PROCESSING:
 		if not s.has("exportable"):
 			s.exportable = {"materials": 0.0, "parts": 0.0}
@@ -953,8 +955,9 @@ static func set_stock_target(sim: RefCounted, args: Dictionary) -> String:
 	var target: float = float(args.get("target", 0))
 	if s.is_empty() or not resource in Keys.RESOURCES:
 		return "请选择有效据点与物资"
-	if not is_finite(target) or target < 0 or target > 10000:
-		return "目标库存应在 0—10000 之间"
+	var most: float = float(sim.progression.production.get("max_stock_target", 10000.0))
+	if not is_finite(target) or target < 0 or target > most:
+		return "目标库存应在 0—%.0f 之间" % most
 	if not s.has("targets"):
 		s.targets = {}
 	s.targets[resource] = target

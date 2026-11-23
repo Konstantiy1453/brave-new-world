@@ -973,7 +973,10 @@ func refresh():
 	)
 	date_label.tooltip_text = "登陆第 %d 日 · 生涯第 %d 日" % [state.day, state.career.global_day]
 	gauge.show_pair(sim)
-	cues.observe(sim)
+	if Cues.SHIP in cues.observe(sim):
+		var report: Dictionary = sim.state.annual.pending
+		var lines: Array[String] = ["第 %d 年度报告待签署：如实、报达标或报超额。" % int(report.year)]
+		_post_notice("ShipNotice", D.NEUTRAL, "◆ 公司年度船抵达", "年度报告", lines, "annual_report", 20.0)
 	var steps = ["立足 → 分工 → 网络 → 自立 → 首府：一步步把据点变成能自立的殖民地，赢得总督资格"]
 	var hint = "在地图上选一个地点，右侧卡片告诉你它适合做什么。"
 	if state.status != "planning":
@@ -1354,6 +1357,7 @@ func open_page(page: String):
 		"guide": "专员行动指南"
 	}
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
+	titles.annual_report = "年度报告 / 公司年度船"
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
 	_mark_nav()

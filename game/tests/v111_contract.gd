@@ -240,8 +240,19 @@ func _letters() -> void:
 	for line: Variant in sim.state.log:
 		logged = logged or str(line).contains("公司来信 · %s：" % str(letter.department))
 	check(logged, "its arrival is logged")
+	# What the callers of each letter give: aid terms, the annual receipt (1.11 D), the exposure.
 	var values: Dictionary = {
-		"aid_name": "测试援助", "arrival_days": 2, "repayment": "100", "surcharge_pct": "8"
+		"aid_name": "测试援助",
+		"arrival_days": 2,
+		"repayment": "100",
+		"surcharge_pct": "8",
+		"year": 2,
+		"mining_outcome": "达标",
+		"farming_outcome": "超额",
+		"reward": "1500",
+		"mining_target": "1000",
+		"farming_target": "800",
+		"fine": "900",
 	}
 	var clean: bool = true
 	for kind: String in book.letters:

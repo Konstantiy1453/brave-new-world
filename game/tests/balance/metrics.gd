@@ -71,6 +71,8 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"services_max": 0,
 				"year_surplus": [],
 				"year_invested": [],
+				"cash_at": {},
+				"annual": {},
 			}
 		)
 	)
@@ -96,6 +98,7 @@ func sample(sim: RefCounted) -> void:
 	record.stage_days = state.contract.completed.duplicate()
 	if POPULATION_CHECKPOINTS.has(day):
 		record.population[str(day)] = _population(state)
+		record.cash_at[str(day)] = float(state.cash)
 	if POLLUTION_CHECK_DAYS.has(day):
 		record.pollution_penalty[str(day)] = sim.Pollution.penalty(sim)
 	record.largest_distrust_rise = maxf(
@@ -127,12 +130,37 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.opened_events = state.get("events_v2", {}).get("seen", []).duplicate()
 	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
 	record.great_works = _great_works(sim)
+	record.annual = _annual(state)
 	record.shuttle_lines = _shuttle_lines(sim)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:
 		record.reinvested_share = _reinvested / _operating_surplus
 	return record
+
+
+## The annual reports of the run (1.11 D): how many, missed and exceeded lines, money paid and
+## fined, ore given as tribute, and the gap left open.
+func _annual(state: Dictionary) -> Dictionary:
+	var annual: Dictionary = state.get("annual", {})
+	var summary: Dictionary = {
+		"reports": 0, "missed": 0, "exceeded": 0, "rewards": 0.0, "fines": 0.0, "tribute": 0.0
+	}
+	if annual.is_empty():
+		return summary
+	for entry: Dictionary in annual.history:
+		summary.reports += 1
+		for result: Variant in entry.outcomes.values():
+			summary.missed += 1 if str(result) == "missed" else 0
+			summary.exceeded += 1 if str(result) == "exceed" else 0
+	summary.rewards = float(annual.rewards_paid)
+	summary.fines = float(annual.fines_paid)
+	summary.tribute = float(annual.tribute_delivered)
+	var gap: float = 0.0
+	for value: Variant in annual.gap.values():
+		gap += float(value)
+	summary.gap = gap
+	return summary
 
 
 ## Finished great works at the end of the run, by kind, with their level.

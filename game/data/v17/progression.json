@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -7,6 +7,7 @@
     "money": "account units",
     "staff": "persons",
     "stock": "tonnes",
+    "max_stock_target": "the largest stock target a player can set, in goods units (100 t); 1.11 D raised it from 10,000 so a mining pledge can hold its tribute",
     "commission": "speedup: extra points a day per point of the team's own rate, by level; price: money per point by tier 1-5, times 1 + crowding per other running commission",
     "event_towns": "recent_days: days after a town's last event before it is fully eligible again; recent_floor: its weight the day after one; focus_bonus: extra weight per building of the kind the story is about, up to focus_cap buildings"
   },
@@ -108,6 +109,7 @@
     "breached_rate": 0.45
   },
   "production": {
+    "max_stock_target": 100000.0,
     "target_days": 30,
     "food_min_target": 320.0,
     "cleanup_cost": 5000.0,
@@ -170,5 +172,43 @@
         "roads": ["shuttle"]
       }
     }
+  },
+  "annual_report": {
+    "units": "the annual ship and ratchet report (1.11 D): base_targets in goods units (100 t) a year by contract stage, calibrated from the harness (balanced bot, normal, median production in that stage-year x 0.9); exceed_factor a multiple of the target; miss_distrust, exceed_trust and exposure_distrust in distrust points; met_reward and exceed_reward in money at the reference income (scaled like event money); ratchet_growth a factor by origin; audit_k scales an audit story's draw weight by gap / target; fine_factor multiplies gap x export price; report_days to sign before the report goes as it is; amendment_chance per ship from amendment_from_year",
+    "base_targets": {
+      "mining": [
+        13620.0,
+        37150.0,
+        88190.0,
+        134930.0,
+        160720.0
+      ],
+      "farming": [
+        280.0,
+        10700.0,
+        27560.0,
+        54920.0,
+        120380.0
+      ]
+    },
+    "exceed_factor": 1.2,
+    "miss_distrust": 6.0,
+    "met_reward": 1500.0,
+    "exceed_reward": 3600.0,
+    "exceed_trust": 3.0,
+    "ratchet_growth": {
+      "capital": 1.05,
+      "workers": 1.1,
+      "science": 1.1,
+      "resettlement": 1.1,
+      "mining_pledge": 1.1,
+      "archipelago": 1.1
+    },
+    "audit_k": 3.0,
+    "fine_factor": 1.5,
+    "exposure_distrust": 10.0,
+    "report_days": 30,
+    "amendment_chance": 0.5,
+    "amendment_from_year": 2
   }
 }

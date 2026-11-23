@@ -41,15 +41,17 @@ static func clauses(sim: RefCounted) -> Array:
 	var values: Dictionary = clause_values(sim)
 	var out: Array = []
 	var document: Dictionary = sim.contract_rules.get("document", {})
+	var removed: Array = sim.state.contract.get("removed_clauses", [])
 	for clause: Dictionary in document.get("clauses", []):
+		var gone: bool = str(clause.id) in removed
 		(
 			out
 			. append(
 				{
 					"id": str(clause.id),
 					"number": out.size() + 1,
-					"title": str(clause.title),
-					"text": fill(str(clause.text), values),
+					"title": str(clause.title) + ("（已由补充协议删除）" if gone else ""),
+					"text": "本条已删除。" if gone else fill(str(clause.text), values),
 				}
 			)
 		)
@@ -69,7 +71,47 @@ static func clauses(sim: RefCounted) -> Array:
 				}
 			)
 		)
+	for id: Variant in sim.state.contract.get("added_clauses", []):
+		var added: Dictionary = document.get("amendment_clauses", {}).get(str(id), {})
+		if not added.is_empty():
+			(
+				out
+				. append(
+					{
+						"id": str(id),
+						"number": out.size() + 1,
+						"title": str(added.title),
+						"text": fill(str(added.text), values),
+					}
+				)
+			)
 	return out
+
+
+## What a signed amendment changed, in words, from its terms (contract.gd `amend`).
+static func amendment_terms(sim: RefCounted, record: Dictionary) -> String:
+	var document: Dictionary = sim.contract_rules.get("document", {})
+	var parts: PackedStringArray = []
+	if record.has("deadline_shift"):
+		parts.append(
+			"第 %d 阶段验收期限顺延 %d 日" % [int(record.get("stage", 1)), int(record.deadline_shift)]
+		)
+	if record.has("company_share"):
+		parts.append("授权后公司经营分成提高 %s 个百分点" % _number(float(record.company_share)))
+	if record.has("kpi_scale"):
+		parts.append("下一年度报告指标 ×%s" % _number(float(record.kpi_scale)))
+	if record.has("add_clause"):
+		var added: Dictionary = document.get("amendment_clauses", {}).get(
+			str(record.add_clause), {}
+		)
+		parts.append("增加条款「%s」" % str(added.get("title", record.add_clause)))
+	if record.has("remove_clause"):
+		var title: String = str(record.remove_clause)
+		for clause: Dictionary in document.get("clauses", []):
+			if str(clause.id) == title:
+				title = str(clause.title)
+		parts.append("删除条款「%s」" % title)
+	return "；".join(parts) + "。"
 
 
 ## The colony's contract type as signed: its entry, with the advance as the difficulty scales it.
@@ -260,7 +302,7 @@ static func _route_lines(g, card: Control) -> void:
 		)
 
 
-## Signed amendments (补充协议 N), added by the annual report from 1.11 D.
+## Signed amendments (补充协议 N), brought by the annual ship (1.11 D).
 static func _amendments(g, b) -> void:
 	D.heading(b, "补充协议")
 	var signed: Array = g.sim.state.contract.get("amendments", [])
@@ -283,7 +325,7 @@ static func _amendments(g, b) -> void:
 			18,
 			D.GOLD
 		)
-		D.label(card, str(amendment.get("text", "")), 16)
+		D.label(card, amendment_terms(g.sim, amendment), 16)
 
 
 ## Annex VII, sealed until stage four is accepted (opened in 1.11 E).

@@ -3,6 +3,7 @@ extends "res://tests/balance/bots/bot.gd"
 ## order food, water and power, labour, housing; keep a cash cushion; then invest in the best
 ## affordable option. The balanced, rush and research-first bots only change the parameters.
 
+const ContractPlay = preload("res://tests/balance/bots/contract_play.gd")
 const Features = preload("res://simulation/features.gd")
 const INVEST_ROLES: Array[String] = ["mine", "harvest", "factory", "income", "commerce"]
 const EXTRACTION_ROLES: Array[String] = ["mine", "harvest"]
@@ -147,6 +148,10 @@ var uses_shuttle: bool = false
 ## Origin play (1.11): the share of beds kept free, a factor on a mine's payback when choosing what
 ## to build (below 1 prefers mines), and a factor on a coastal site's score for the next town.
 var housing_slack: float = 0.08
+## The annual report (1.11 D): how every line is reported ("honest", "met" or "exceed"), and how
+## many days before a mining pledge's ship the capital starts keeping its ore for the tribute.
+var report_policy: String = "honest"
+var tribute_lead_days: int = 120
 var mine_payback_factor: float = 1.0
 var coast_bonus: float = 1.0
 var clean_air: bool = true
@@ -182,6 +187,7 @@ func on_day() -> void:
 	answer_events()
 	if sim.state.settlements.is_empty():
 		return
+	_annual_report()
 	if today() % DECISION_PERIOD != 0 and today() > DECISION_PERIOD:
 		return
 	home = int(sim.state.settlements[0].region)
@@ -217,6 +223,11 @@ func on_day() -> void:
 	_commissions()
 	_seek_late_work_tech()
 	_career_transfer()
+
+
+## The annual report and the mining pledge's tribute (contract_play.gd).
+func _annual_report() -> void:
+	ContractPlay.annual_report(self)
 
 
 ## Crews (1.10): orders wait for an engineering crew. An idle crew goes to a linked town whose
@@ -262,31 +273,9 @@ func _send_idle_crew(view: Dictionary, region: int) -> bool:
 	return false
 
 
-## Lands on the start that looks richest from orbit, among those with a farming partner in reach;
-## under a coastal-only contract (群岛开发), among the coastal sites of those pairs, else on the
-## richest coastal site the contract accepts.
+## Lands on the start that looks richest from orbit (contract_play.gd).
 func _land() -> void:
-	var best: float = -1.0
-	var coastal: bool = sim.Origins.coastal_first(sim)
-	for pair: Array in sim.geo.get("playability", {}).get("pairs", [[0, 1]]):
-		for site: int in [int(pair[0]), int(pair[1])] if coastal else [int(pair[0])]:
-			if coastal and sim.settle_refusal(site) != "":
-				continue
-			var score: float = sim.Sites.start_score(sim, site)
-			if score > best:
-				best = score
-				home = site
-	if coastal and best < 0.0:
-		for reg: Dictionary in sim.state.world.regions:
-			if sim.settle_refusal(int(reg.id)) != "":
-				continue
-			var score: float = sim.Sites.start_score(sim, int(reg.id))
-			if score > best:
-				best = score
-				home = int(reg.id)
-	act("settle", {"site": home})
-	act("build", {"site": home, "kind": "mine_ore"})
-	act("build", {"site": home, "kind": "mine_copper"})
+	ContractPlay.land(self)
 
 
 func answer_events() -> void:

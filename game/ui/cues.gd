@@ -34,13 +34,18 @@ func observe(sim: RefCounted) -> Array[String]:
 		played.append(STAMP)
 	if str(now[ENDING]) != "" and str(now[ENDING]) != str(_seen.get(ENDING, "")):
 		played.append(ENDING)
+	if str(now[SHIP]) != "" and str(now[SHIP]) != str(_seen.get(SHIP, "")):
+		played.append(SHIP)
+	if int(now[SIGNATURE]) > int(_seen.get(SIGNATURE, 0)):
+		played.append(SIGNATURE)
 	_seen = now
 	for id: String in played:
 		play(id)
 	return played
 
 
-## What the cues watch: the newest letter, how many stages are accepted, and how the game ended.
+## What the cues watch: the newest letter, how many stages are accepted, how the game ended, the
+## annual report waiting for a signature, and how many reports and amendments are signed.
 static func marks(state: Dictionary) -> Dictionary:
 	var letters: Array = state.get("company", {}).get("letters", [])
 	var newest: String = ""
@@ -50,8 +55,15 @@ static func marks(state: Dictionary) -> Dictionary:
 			"%d|%d|%s" % [letters.size(), int(last.get("day", 0)), str(last.get("subject", ""))]
 		)
 	var status: String = str(state.get("status", ""))
+	var annual: Dictionary = state.get("annual", {})
+	var pending: Dictionary = annual.get("pending", {})
+	var signed: int = (
+		annual.get("history", []).size() + state.get("contract", {}).get("amendments", []).size()
+	)
 	return {
 		LETTER: newest,
 		STAMP: state.get("contract", {}).get("completed", {}).size(),
 		ENDING: status if status in ["success", "failed"] else "",
+		SHIP: "" if pending.is_empty() else str(pending.get("year", "")),
+		SIGNATURE: signed,
 	}

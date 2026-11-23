@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "units": {
     "openings": "contract types (1.11 origins), by the opening ids saves store in state.advantage: landing cash, people and goods (goods in 百吨); story, gains and costs as text with {placeholders} filled from the entry ({cash} {workers} {residents} {materials} ..., {rule:key}, {effect:key} as a percentage, {cut:key} as a reduction, {years:key} for a rule in days, {tech:key}); effects: permanent modifiers on the effect keys techs use (a third source in Research.bonus); rules: the parameters of the origin's unique rule (wage_floor as a multiple of base wages, crews at landing, research_funding and contract_income as factors, subsidy_per_resident in money a month for subsidy_days, tribute in goods units a year by stage, coastal_first); clauses: ids of contract.json document.origin_clauses; favours: a stage-three route id or empty",
     "money": "account units",
@@ -255,13 +255,7 @@
         "mine_output": 0.2
       },
       "rules": {
-        "tribute": [
-          600.0,
-          1200.0,
-          1800.0,
-          2400.0,
-          3000.0
-        ]
+        "tribute": [2000.0, 5600.0, 13200.0, 20200.0, 24100.0]
       },
       "favours": "mining_network"
     },

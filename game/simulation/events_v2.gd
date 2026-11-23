@@ -4,6 +4,7 @@ extends RefCounted
 ## after its cooldown. Notices never pause; decisions pause when they are critical or the player
 ## asks for every decision to pause. Money scales with recent income.
 const Names = preload("res://simulation/names.gd")
+const AnnualReport = preload("res://simulation/annual_report.gd")
 const PRODUCTION_KINDS: Array[String] = ["mine", "farm", "processor"]
 const EFFECT_KINDS: Array[String] = [
 	"water",
@@ -323,19 +324,21 @@ static func _reward(sim, option: Dictionary) -> float:
 	return float(option.get("reward", 0.0)) * money_scale(sim)
 
 
-## Opens a definition because something just happened, if its cooldown allows.
-static func trigger(sim, id: String, region: int) -> void:
+## Opens a definition because something just happened, if its cooldown allows; at `node` when
+## it has one (the annual ship's amendments, 1.11). True when it opened.
+static func trigger(sim, id: String, region: int, node: String = "start") -> bool:
 	if not sim.state.has("events_v2") or sim.settlement(region).is_empty():
-		return
+		return false
 	if not definitions().definitions.has(id):
-		return
+		return false
 	if _open_now(sim, id) or not _cooled(sim, id):
-		return
-	_open(sim, id, region)
+		return false
+	_open(sim, id, region, node)
 	_sync_legacy(sim)
+	return true
 
 
-static func _open(sim, definition_id: String, region: int) -> Dictionary:
+static func _open(sim, definition_id: String, region: int, node: String = "start") -> Dictionary:
 	var e: Dictionary = sim.state.events_v2
 	var d: Dictionary = definitions().definitions[definition_id]
 	var id: String = "%s:e%d" % [str(sim.state.world.seed), int(e.next_id)]
@@ -361,7 +364,7 @@ static func _open(sim, definition_id: String, region: int) -> Dictionary:
 		e.seen.append(definition_id)
 	e.last_opened[definition_id] = int(sim.state.day)
 	_prune(e)
-	_enter(sim, inst, "start")
+	_enter(sim, inst, AnnualReport.start_node(sim, d, node))
 	if d.category == "incident":
 		e.last_negative = int(sim.state.day)
 	return inst
@@ -725,6 +728,7 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 		)
 	if option.has("pollution"):
 		sim.Pollution.add_points(sim, float(option.pollution))
+	AnnualReport.apply_terms(sim, option)
 	if option.has("research_lead"):
 		sim.Research.add_lead(sim, str(option.research_lead))
 	if option.has("tech_gift"):
@@ -924,9 +928,10 @@ static func tick(sim) -> void:
 			for s in sim.state.settlements:
 				if _matches(sim, s, d.conditions):
 					places.append(int(s.region))
+			var weight: float = float(d.weight) * AnnualReport.audit_weight(sim, id)
 			if not places.is_empty():
-				candidates.append({"id": id, "places": places, "weight": float(d.weight)})
-				total += float(d.weight)
+				candidates.append({"id": id, "places": places, "weight": weight})
+				total += weight
 		if total > 0:
 			var roll: float = _rng(e) * total
 			for c in candidates:

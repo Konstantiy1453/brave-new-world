@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -157,7 +157,8 @@
     "units": {
       "code": "the colony's company code CC-NN: NN = 1 + the world seed modulo code_modulus",
       "clauses": "standard clauses in order; {placeholders} are filled from the rule files when the page is drawn",
-      "origin_clauses": "the clause each origin adds (economy.json openings.<id>.clauses), filled like the origin's own text"
+      "origin_clauses": "the clause each origin adds (economy.json openings.<id>.clauses), filled like the origin's own text",
+      "amendment_clauses": "clauses an amendment adds (an event option's add_clause, 1.11 D)"
     },
     "title": "{code} 项目殖民开发承包合同（对赌协议）",
     "code_modulus": 99,
@@ -227,6 +228,12 @@
       "origin_coastal": {
         "title": "合同类型：群岛开发",
         "text": "本合同为群岛开发合同，乙方取得沿海开发权。乙方的首个据点须建于海岸；甲方不承担内陆道路的额外造价。"
+      }
+    },
+    "amendment_clauses": {
+      "resettlement_quota": {
+        "title": "移民接收配额",
+        "text": "乙方同意在合同期内接收甲方随年度船安排的移民，并为其提供床位与工作；甲方相应顺延乙方当前阶段的验收期限。"
       }
     }
   }

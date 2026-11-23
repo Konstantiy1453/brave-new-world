@@ -810,6 +810,7 @@ static func settle(
 		# Initial child cohorts age after 8 simulated years, adults are aggregate groups.
 		s.cohorts.append({"count": children, "mature_day": 2880})
 		Origins.land(sim)
+		sim.AnnualReport.land(sim)
 	else:
 		s.arrival = int(road.days)
 		for kind in ["power", "water"]:

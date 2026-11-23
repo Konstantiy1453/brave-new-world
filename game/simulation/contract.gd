@@ -24,6 +24,7 @@ static func ensure_state(state: Dictionary) -> void:
 		# The company code (1.11): saves from before it get the one their seed gives.
 		if not state.contract.has("code"):
 			state.contract.code = code_for(state)
+		_ensure_amendments(state.contract)
 		return
 	var finished: bool = state.get("status", "") == "success"
 	state.contract = {
@@ -41,7 +42,19 @@ static func ensure_state(state: Dictionary) -> void:
 		"milestones": [],
 		"code": code_for(state),
 	}
+	_ensure_amendments(state.contract)
 	OperatingRoutes.ensure_state(state)
+
+
+## Amendments signed on the annual ship (1.11 D) and what they changed for good.
+static func _ensure_amendments(contract: Dictionary) -> void:
+	for key: String in ["amendments", "added_clauses", "removed_clauses"]:
+		if not contract.has(key):
+			contract[key] = []
+	if not contract.has("deadline_shifts"):
+		contract.deadline_shifts = {}
+	if not contract.has("company_share_points"):
+		contract.company_share_points = 0.0
 
 
 static func _difficulty_scale(sim: RefCounted) -> float:
@@ -58,7 +71,42 @@ static func goal_target(sim: RefCounted, stage: int, key: String) -> float:
 
 
 static func deadline(sim: RefCounted, stage: int) -> int:
-	return int(sim.contract_rules.deadlines[sim.state.get("difficulty", "normal")][stage - 1])
+	var shift: int = int(sim.state.contract.get("deadline_shifts", {}).get(str(stage), 0))
+	return (
+		int(sim.contract_rules.deadlines[sim.state.get("difficulty", "normal")][stage - 1]) + shift
+	)
+
+
+## The company's share of the operating surplus after the award, with signed amendments.
+static func company_rate(sim: RefCounted) -> float:
+	var points: float = float(sim.state.contract.get("company_share_points", 0.0))
+	return clampf(float(sim.config.contract.company_tax_rate) + points / 100.0, 0.0, 1.0)
+
+
+## Records a signed amendment and applies what changes the contract for good: `deadline_shift`
+## days on the current stage, `company_share` points on the company's share after the award, and
+## clause ids added or removed (contract.json `document.amendment_clauses`). `kpi_scale` is the
+## annual report's (annual_report.gd).
+static func amend(sim: RefCounted, terms: Dictionary, title: String) -> void:
+	var contract: Dictionary = sim.state.contract
+	_ensure_amendments(contract)
+	var stage: int = clampi(int(contract.stage), 1, STAGE_COUNT)
+	if terms.has("deadline_shift"):
+		contract.deadline_shifts[str(stage)] = (
+			int(contract.deadline_shifts.get(str(stage), 0)) + int(terms.deadline_shift)
+		)
+	if terms.has("company_share"):
+		contract.company_share_points = (
+			float(contract.company_share_points) + float(terms.company_share)
+		)
+	if terms.has("add_clause") and not str(terms.add_clause) in contract.added_clauses:
+		contract.added_clauses.append(str(terms.add_clause))
+	if terms.has("remove_clause") and not str(terms.remove_clause) in contract.removed_clauses:
+		contract.removed_clauses.append(str(terms.remove_clause))
+	var record: Dictionary = {"day": int(sim.state.day), "stage": stage, "title": title}
+	record.merge(terms, true)
+	contract.amendments.append(record)
+	sim._log("补充协议 %d 签署：%s" % [contract.amendments.size(), title])
 
 
 ## True while the current stage is past its soft deadline.

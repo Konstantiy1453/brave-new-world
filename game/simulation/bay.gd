@@ -222,7 +222,7 @@ static func seabed_day(sim: RefCounted, s: Dictionary, b: Dictionary, share: flo
 	if amount <= 0.0:
 		return 0.0
 	reading.tonnes = float(reading.tonnes) - amount
-	sim.Production.produce(sim, s, good, amount, "海底采矿")
+	sim.Production.produce(sim, s, good, amount, Keys.SOURCE_SEABED)
 	sim.Consignments.landed(sim, s, b, good, amount)
 	return amount
 
