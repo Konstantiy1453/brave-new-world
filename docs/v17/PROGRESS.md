@@ -1,4 +1,36 @@
-# Colony Charter 1.10 — Progress (the bay first, started 2026-11-19)
+# Colony Charter — Progress
+
+## 1.11.0 — the contractor (branch `v17-charter`, started 2026-11-23)
+
+The plan is `docs/superpowers/plans/2026-11-23-v111-contractor-instructions.md`: the player is an
+outsourced contractor bound by a bet-on contract with the colonisation company. Branch `v17-charter`
+from `v17-bay` `0697fe2`. Evidence labels as in `CLAUDE.md`; everything runs in the Linux cloud
+container. Human playtests NOT_RUN.
+
+| Phase | What | State |
+|---|---|---|
+| A. Freezes | version 1.11.0, schema 7 reading 1.10 saves from `v110`, user dir `v111`; `progression.json` `features` (metals, seabed, shuttles, radius_slider, research_commissions), all off, read through `simulation/features.gd` by rules, world generation, interface and bots | **done** (`ec86efc`, `40ecc44`, tag `v111-A` on `3429c06`); suite `v111_freeze`; suites 53/56 on `ec86efc` (the two test fixes in `40ecc44` then pass; `v19_payback` is the known miss below); harness `1.11-A` |
+| B. The contract and the company's voice | the contract as a document (`contract_page.gd`: 第 N 条 from `contract.json` `document`, stage stamps, amendments, sealed Annex VII); structured letters (`letters.json`, `letters_view.gd`); 公司评级 + 民心 in the gauge's slot; CC-NN code; `cues.gd`; the company's register in ten events and the writing guide | **done** (`031e52e`, `4546737`); suite `v111_contract` (65 checks) |
+| C. Six origins | `economy.json` `openings` as contract types with story, gains, costs, unique rule, effects (third `Research.bonus` source) and favoured route; `origins.gd`; origin cards on the new-game screen; the origin's clause in the contract; bots `housing_first`, `mining`, `coastal`; the harness runs all six | in progress; suite `v111_origins` (55 checks) |
+| D. Annual ship and ratchet report | | next |
+| E. Annex VII and three endings | | |
+| F-I. Weather, lights, technologies, news | G waits for the user's light concept sheet | |
+| J. Rebalance and release | | |
+
+**Harness `1.11-A`** (quick, 51 runs, 47 minutes with the extras beside the chunks): 0 audit
+errors, determinism 3/3; 18 targets met, 4 missed (openings, sloppy on hard, services budget, labour
+lever). Against `crews-d24c660` the freezes are a material change: the balanced bot's median award
+moved from day 2674 (8/9 awarded) to 2854 (6/9), and science openings award 300-550 days later.
+Replaying the three runs that newly fail: research commissions back on awards all three, metals
+and seabed back on two of three. The bots bought stage five's research. Left for J.
+
+**Known misses carried forward.** The freeze's later awards above (J). `v19_payback`: the smelter
+in year 4 (352 days against 120-300) after the freeze moved the colonies (DECISIONS.md); left for J.
+The Windows checks of the run kit (`docs/v17/WINDOWS_RUN_KIT.md`) wait for the user.
+
+---
+
+# 1.10 — Progress (the bay first, started 2026-11-19)
 
 The user's brief of 2026-11-19 covers free siting, geology per resource and prospecting, mobile engineering crews,
 a nightscape built from the game's own state, people and growth, and stories. The plan, in phases, is
