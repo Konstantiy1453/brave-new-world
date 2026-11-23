@@ -147,7 +147,11 @@ func _identity() -> void:
 		JSON.stringify(copy.settlement(0).buildings) == JSON.stringify(home.buildings),
 		"with the same uids"
 	)
-	check(int(copy.state.schema) == SaveIo.SCHEMA and SaveIo.SCHEMA == 6, "as schema 6")
+	# Building uids arrived with schema 6; later schemas keep them.
+	check(
+		int(copy.state.schema) == SaveIo.SCHEMA and SaveIo.SCHEMA >= 6,
+		"as schema %d (6 or later)" % SaveIo.SCHEMA
+	)
 
 
 ## The preview's case: a story's pump finishes on time while an older mine is pulled down.

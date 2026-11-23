@@ -15,6 +15,7 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Geology = preload("res://world/geo2/geology.gd")
+const Features = preload("res://simulation/features.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const SEED: int = 20261029
 
@@ -273,7 +274,11 @@ func _field_work() -> void:
 		if not spot.is_empty():
 			break
 		for hit: Dictionary in Geology.reaching(sim.geo, reg.lat, reg.lon, reach * 0.8):
-			if spot.is_empty() and not bool(hit.deposit.hidden):
+			if (
+				spot.is_empty()
+				and not bool(hit.deposit.hidden)
+				and not Features.resource_frozen(str(hit.deposit.resource))
+			):
 				spot = hit.deposit
 				region = int(reg.id)
 	check(not spot.is_empty(), "a visible deposit in a field team's reach of a site")
