@@ -6,6 +6,8 @@ extends SceneTree
 ## runs every K-th case from the k-th and saves its runs (the checkpoint; `--progress=<file>` gets
 ## a line per finished case), then `--merge=<file>,<file>,...` runs the extras (determinism, labour
 ## lever, no pollution control) and publishes from the saved runs.
+## The extras need none of the runs (1.11): `--extras_out=<file>` computes them alone and saves them,
+## beside the chunks, and `--merge=... --extras_in=<file>` publishes with the saved extras.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -80,6 +82,9 @@ func run() -> void:
 		_run_shard(cases)
 		return
 	var started: int = Time.get_ticks_msec()
+	if options.has("extras_out"):
+		_save_extras(str(options.extras_out))
+		return
 	var runs: Array = []
 	if options.has("merge"):
 		for path: String in str(options.merge).split(","):
@@ -104,6 +109,23 @@ func run() -> void:
 		)
 		quit(0 if shards_lost == 0 else 1)
 		return
+	var extras: Dictionary = _extras()
+	if options.has("extras_in"):
+		var loaded: Variant = JSON.parse_string(
+			FileAccess.get_file_as_string(str(options.extras_in))
+		)
+		if not loaded is Dictionary:
+			print("BALANCE_ERROR extras file unreadable: " + str(options.extras_in))
+			shards_lost += 1
+			loaded = {}
+		extras = loaded
+	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
+
+
+## The checks that need none of the runs. With `--extras_in` they are read from that file instead.
+func _extras() -> Dictionary:
+	if options.has("extras_in"):
+		return {}
 	var extras: Dictionary = {
 		"determinism": _determinism_check(),
 		"labour_lever": _labour_lever(),
@@ -111,7 +133,15 @@ func run() -> void:
 	}
 	if options.mode == "full":
 		extras.geography = _geography()
-	_publish(runs, extras, (Time.get_ticks_msec() - started) / 1000.0)
+	return extras
+
+
+func _save_extras(path: String) -> void:
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(_extras()))
+	file.close()
+	print("BALANCE_EXTRAS saved %s" % path)
+	quit(0)
 
 
 func _parse_options() -> Dictionary:
