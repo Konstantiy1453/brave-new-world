@@ -277,12 +277,21 @@ func _coach(scene: Node) -> void:
 
 func _column(scene: Node) -> void:
 	scene.close_modal()
-	scene.navigate("flat")
+	scene.navigate("region")
 	check(
-		scene.nav_buttons.flat.get_meta(D.META_SKIN) == "neutral|row_on", "the map view is marked"
+		scene.nav_buttons.region.get_meta(D.META_SKIN) == "neutral|row_on", "the map view is marked"
 	)
 	scene.navigate("planet")
 	check(scene.nav_buttons.planet.get_meta(D.META_SKIN) == "neutral|row_on", "and follows it")
+	scene.navigate("flat")
+	check(
+		(
+			not scene.nav_buttons.has("flat")
+			and scene.nav_buttons.planet.get_meta(D.META_SKIN) == "neutral|row_on"
+		),
+		"the flat map has no button of its own and belongs to the globe (1.11 G)"
+	)
+	scene.navigate("planet")
 	scene.column_open = true
 	scene.refresh_sidebar()
 	check(

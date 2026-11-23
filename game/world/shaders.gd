@@ -439,6 +439,8 @@ uniform float season = 0.0;
 uniform float relief = 1.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
+// The per-plot lights' share (light_field.gd); the night time-lapse turns them off (1.11 G).
+uniform float plot_lights = 1.0;
 uniform float halo_warm = 2.2;
 uniform float halo_cold = 1.6;
 varying vec3 local_point;
@@ -516,6 +518,13 @@ void fragment() {
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
 	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * halo_warm);
 	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * halo_cold);
+	glow *= plot_lights;
+	// The planet-scale town forms (TOWN_LIGHTS_GLSL); only the night time-lapse fills them (1.11 G).
+	if (town_count > 0) {
+		float pixel = max(length(ddx_uv * vec2(360.0, 180.0)), length(ddy_uv * vec2(360.0, 180.0)));
+		vec2 forms = town_lights(lat, degrees(atan(n.x, n.z)), pixel);
+		glow += vec3(1.0, 0.7, 0.36) * forms.x * 1.8 + vec3(0.72, 0.86, 1.0) * forms.y * 1.5;
+	}
 	ALBEDO = color + glow * dark;
 }
 """

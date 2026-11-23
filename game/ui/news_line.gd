@@ -66,6 +66,10 @@ func _ready() -> void:
 func step(g: Node, delta: float) -> void:
 	if not is_inside_tree():
 		return
+	var ui: Variant = g.get("ui")
+	if ui is Control and (ui as Control).has_node("Timelapse"):
+		visible = false
+		return
 	var sim: RefCounted = g.sim
 	if not is_same(sim.state, watched):
 		watched = sim.state

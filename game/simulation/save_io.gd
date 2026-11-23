@@ -6,6 +6,7 @@ extends RefCounted
 ## regenerated from the seed and checked against the stored world hash.
 
 const Weather = preload("res://simulation/weather.gd")
+const LightRecord = preload("res://simulation/light_record.gd")
 const Annex = preload("res://simulation/annex.gd")
 const AnnualReport = preload("res://simulation/annual_report.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -127,9 +128,12 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 	var candidate: Variant = bytes_to_var(payload.decompress(raw_size, FileAccess.COMPRESSION_ZSTD))
 	if candidate is Dictionary:
 		_upgrade_old_schema(sim, candidate)
-		# Crews arrived within schema 6: a save from before them gets them. Only them: the other
-		# systems' upgrades run for older schemas, so a current save reloads byte for byte.
+		# Crews arrived within schema 6, weather and the light record within schema 7: a save from
+		# before them gets them. Only them: the other systems' upgrades run for older schemas, so a
+		# current save reloads byte for byte.
 		sim.Crews.ensure_state(candidate)
+		Weather.ensure_state(candidate)
+		LightRecord.ensure_state(candidate)
 	var error: String = validate(sim, candidate)
 	if error != "":
 		return error
@@ -254,7 +258,7 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 		or not sim.progression.difficulty.has(candidate.difficulty)
 	):
 		return "难度配置无效"
-	for validator: Variant in [Research, Company, AnnualReport, Annex, Weather]:
+	for validator: Variant in [Research, Company, AnnualReport, Annex, Weather, LightRecord]:
 		error = validator.validate(sim, candidate)
 		if error != "":
 			return error

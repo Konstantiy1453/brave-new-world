@@ -88,6 +88,11 @@ const HQ_AO: Vector3 = Vector3(1.2, 1.6, 1.5)
 const HQ_GLOW: Vector3 = Vector3(0.4, 0.0, 1.6)
 const HQ_SHADOW_BLUR: float = 1.3
 
+const Timelapse = preload("res://world/timelapse.gd")
+## The globe's default distance, where the time-lapse watches the colony from.
+const TIMELAPSE_DISTANCE: float = 10.3
+## The night time-lapse (1.11 G): {snapshots, seconds, elapsed, day, capital}; empty when none plays.
+var timelapse: Dictionary = {}
 var environment: Environment
 var fill_light: DirectionalLight3D
 var star_field: MultiMeshInstance3D
@@ -594,6 +599,8 @@ func _process(delta: float) -> void:
 		_track_focus()
 		if sky.hold <= 0.0:
 			focus_site = -1
+	if not timelapse.is_empty():
+		_step_timelapse(delta)
 	_update_camera(1.0 - exp(-delta * 9.0))
 	_apply_sky()
 	if mode == "region" and surface != null and surface.visible:
@@ -688,7 +695,10 @@ func _apply_sky() -> void:
 	var sun: Vector3 = sky.sun_local()
 	if not day_night_enabled:
 		sun = _shoulder_sun()
-	var night_value: float = 1.0 if day_night_enabled else 0.0
+	if not timelapse.is_empty():
+		# Night over the capital for the whole time-lapse.
+		sun = -Geo.unit_point(float(timelapse.capital.lat), float(timelapse.capital.lon))
+	var night_value: float = 1.0 if day_night_enabled or not timelapse.is_empty() else 0.0
 	var storms: Array[Vector4] = sky.storm_vectors()
 	var radii: PackedFloat32Array = sky.storm_radii()
 	var season: float = sky.season() if day_night_enabled else 0.0
@@ -698,7 +708,7 @@ func _apply_sky() -> void:
 		globe_shader.set_shader_parameter("season", season)
 		globe_shader.set_shader_parameter("day_night", night_value)
 	if cloud_shell != null and is_instance_valid(cloud_shell):
-		cloud_shell.visible = weather_enabled
+		cloud_shell.visible = weather_enabled and timelapse.is_empty()
 	if flat_shader != null:
 		flat_shader.set_shader_parameter("cloud_opacity", 0.22 if weather_enabled else 0.0)
 	for material: ShaderMaterial in [cloud_shader, flat_shader]:
@@ -1077,6 +1087,67 @@ func _follow_weather() -> void:
 		weather_root.add_child(ring)
 		weather_markers.append({"node": ring, "system": system})
 	_place_weather_markers()
+
+
+## Plays the colony's light record (light_record.gd) on the globe at night over `seconds`, from
+## the landing to the last snapshot, watched from the default distance over the capital.
+func play_timelapse(snapshots: Array, seconds: float) -> void:
+	if snapshots.is_empty() or snapshots.back().towns.is_empty() or planet == null:
+		return
+	var capital: Dictionary = snapshots.back().towns[0]
+	timelapse = {
+		"snapshots": snapshots,
+		"seconds": maxf(1.0, seconds),
+		"elapsed": 0.0,
+		"day": float(snapshots[0].day),
+		"capital": capital,
+	}
+	show_planet()
+	focus_region(int(capital.region))
+	planet_distance = TIMELAPSE_DISTANCE
+	for root: Variant in [marker_root, weather_root, transport_root]:
+		if root is Node3D and is_instance_valid(root):
+			(root as Node3D).visible = false
+
+
+func stop_timelapse() -> void:
+	if timelapse.is_empty():
+		return
+	timelapse = {}
+	town_lights = NightLights.town_uniforms()
+	_apply_town_lights(globe_shader)
+	if globe_shader != null:
+		globe_shader.set_shader_parameter("plot_lights", 1.0)
+	for root: Variant in [marker_root, weather_root]:
+		if root is Node3D and is_instance_valid(root):
+			(root as Node3D).visible = true
+	set_route_overlay(routes_shown)
+
+
+## 0 to 1 through the time-lapse; -1 when none plays.
+func timelapse_progress() -> float:
+	if timelapse.is_empty():
+		return -1.0
+	return clampf(float(timelapse.elapsed) / float(timelapse.seconds), 0.0, 1.0)
+
+
+## The game day the time-lapse shows.
+func timelapse_day() -> int:
+	return int(timelapse.get("day", 0.0))
+
+
+func _step_timelapse(delta: float) -> void:
+	timelapse.elapsed = float(timelapse.elapsed) + delta
+	var snapshots: Array = timelapse.snapshots
+	var day: float = lerpf(
+		float(snapshots[0].day), float(snapshots.back().day), timelapse_progress()
+	)
+	timelapse.day = day
+	town_lights = Timelapse.uniforms(Timelapse.towns_on(snapshots, day))
+	_apply_town_lights(globe_shader)
+	if globe_shader != null:
+		globe_shader.set_shader_parameter("plot_lights", 0.0)
+	sky.hold_spin()
 
 
 ## Unshaded: a lit, glowing ring washes out to white in daylight and the red of a warning is lost.

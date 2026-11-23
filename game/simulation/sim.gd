@@ -28,6 +28,7 @@ const AnnualReport = preload("res://simulation/annual_report.gd")
 const Annex = preload("res://simulation/annex.gd")
 const Endings = preload("res://simulation/endings.gd")
 const Weather = preload("res://simulation/weather.gd")
+const LightRecord = preload("res://simulation/light_record.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -179,6 +180,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Annex.ensure_state(target)
 	Endings.ensure_state(target)
 	Weather.ensure_state(target)
+	LightRecord.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -397,6 +399,7 @@ func tick() -> void:
 	Prospecting.daily(self)
 	Bay.daily(self)
 	Weather.daily(self)
+	LightRecord.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
 	_public_expense(Crews.wages(self), "crew.wages", "residents")
@@ -788,6 +791,7 @@ func audit() -> Array:
 	errors.append_array(Consignments.audit(state))
 	errors.append_array(AnnualReport.audit(self))
 	errors.append_array(Weather.audit(self))
+	errors.append_array(LightRecord.audit(self))
 	errors.append_array(Prospecting.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")

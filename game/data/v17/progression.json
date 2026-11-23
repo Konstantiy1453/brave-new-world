@@ -174,6 +174,19 @@
       }
     }
   },
+  "lights": {
+    "units": "the colony's lights over time (1.11 G): a snapshot every snapshot_days of game time; a town's light stage is the highest whose population (people) and facilities (finished buildings other than homes) it both has; names as on the user's concept sheet 沿海与内陆的灯光形态; timelapse_seconds the night time-lapse at an ending, in real seconds",
+    "snapshot_days": 90,
+    "snapshots_kept": 64,
+    "timelapse_seconds": 20.0,
+    "stages": [
+      {"id": "landing", "name": "着陆点", "population": 0, "facilities": 0},
+      {"id": "first_homes", "name": "首批住区", "population": 50, "facilities": 4},
+      {"id": "town", "name": "小镇", "population": 200, "facilities": 12},
+      {"id": "regional_centre", "name": "区域中心", "population": 600, "facilities": 25},
+      {"id": "capital", "name": "星球首府", "population": 1500, "facilities": 45}
+    ]
+  },
   "annual_report": {
     "units": "the annual ship and ratchet report (1.11 D): base_targets in goods units (100 t) a year by contract stage, calibrated from the harness (balanced bot, normal, median production in that stage-year x 0.9); exceed_factor a multiple of the target; miss_distrust, exceed_trust and exposure_distrust in distrust points; met_reward and exceed_reward in money at the reference income (scaled like event money); ratchet_growth a factor by origin; audit_k scales an audit story's draw weight by gap / target; fine_factor multiplies gap x export price; report_days to sign before the report goes as it is; amendment_chance per ship from amendment_from_year",
     "base_targets": {

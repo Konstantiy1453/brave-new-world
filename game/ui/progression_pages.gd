@@ -1,4 +1,5 @@
 extends RefCounted
+const TimelapseView = preload("res://ui/timelapse_view.gd")
 const D = preload("res://ui/design.gd")
 const Career = preload("res://simulation/career.gd")
 const Labels = preload("res://ui/labels.gd")
@@ -309,6 +310,16 @@ static func career(g, b):
 	Career.ensure(g.sim)
 	var c: Dictionary = g.sim.state.career
 	D.label(b, "连续生涯 / 旧星代管与新远征", 25, D.TEAL)
+	if not g.sim.state.get("lights", {}).get("snapshots", []).is_empty():
+		D.button(
+			b,
+			"回放殖民地夜景（从着陆到今天）",
+			func():
+				g.close_modal()
+				TimelapseView.play(g),
+			"关闭页面，在球面上回放每个季度记录的灯光",
+			"TimelapseReplay"
+		)
 	D.label(
 		b,
 		(

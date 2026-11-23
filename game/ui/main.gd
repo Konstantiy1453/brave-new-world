@@ -22,6 +22,7 @@ const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Graphics = preload("res://ui/graphics.gd")
 const NewsLine = preload("res://ui/news_line.gd")
+const TimelapseView = preload("res://ui/timelapse_view.gd")
 const MAX_DAYS_PER_FRAME: int = 3
 ## The difficulty option's entries, in order.
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
@@ -309,7 +310,6 @@ func build_shell():
 	D.label(v, "指 挥 中 枢", D.CAPTION, D.MUTED, false)
 	for entry in [
 		["球面总览", "planet"],
-		["平铺地图", "flat"],
 		["星球档案", "world"],
 		["地区建设", "region"],
 		["设施清单", "buildings"],
@@ -924,6 +924,9 @@ func confirm_site_name(_typed: String = ""):
 		error = act("settle", {"site": naming_site, "name": edit.text, "kind": naming_kind})
 	if error == "":
 		close_modal()
+		# The flat map is a tool for siting (1.11 G): once founded, back to the globe.
+		if map_mode == "flat":
+			navigate("planet")
 		refresh_sidebar()
 
 
@@ -979,7 +982,7 @@ func refresh():
 	gauge.show_pair(sim)
 	var heard: Array[String] = cues.observe(sim)
 	if Cues.ENDING in heard:
-		open_page("settlement")
+		TimelapseView.play(self, func(): open_page("settlement"))
 	if Cues.STORM in heard:
 		var warning: Array[String] = [Cues.newest_warning(sim)]
 		_post_notice("StormNotice", D.NEUTRAL, "◆ 气象预警", "天气", warning, "weather", 16.0)
@@ -1327,7 +1330,8 @@ func page_variant(page: String) -> String:
 
 ## The left navigation marks the open page, or the map view when no page is open.
 func _mark_nav() -> void:
-	var active: String = map_mode
+	# The flat map is a tool of the globe view (1.11 G): it has no button of its own.
+	var active: String = "planet" if map_mode == "flat" else map_mode
 	if local_view:
 		active = "region"
 	if is_instance_valid(overlay) and nav_buttons.has(current_page):

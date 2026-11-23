@@ -203,6 +203,16 @@ static func actions(g, b: Control) -> void:
 	found.disabled = str(report.refusal) != ""
 	var back: Button = D.button(line, "取消选择", func(): g.clear_ground(), "", "ClearGround")
 	D.font_size(back, 14)
+	# The flat map is a tool for siting and prospecting (1.11 G): it opens from here and returns.
+	var flat: bool = str(g.map_mode) == "flat"
+	var view_button: Button = D.button(
+		b,
+		"回到球面总览" if flat else "在平铺地图上选址与勘探",
+		func(): g.navigate("planet" if flat else "flat"),
+		"" if flat else "整颗星球展开成一张平面图，便于比较地点；建立据点后自动回到球面",
+		"GroundFlatMap"
+	)
+	D.font_size(view_button, 14)
 
 
 ## The naming dialog's lines for a settlement founded on picked ground.

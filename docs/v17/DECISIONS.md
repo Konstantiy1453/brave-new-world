@@ -1345,3 +1345,23 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The line holds its text and its time while the events page is open or a decision holds the
   clock; otherwise a line stays 14 seconds of running time. It sits in the 20-pixel strip under the
   task bar until the interface pass; 底部新闻 in the settings turns it off (settings.cfg).
+- G without the light concept sheet (asked for on 2026-11-23): the record, the time-lapse and the
+  flat map's new place are built; the planet-scale forms in ordinary play, their crossfade with the
+  per-plot lights and the five-stage captures wait for the sheet.
+- The light record (`light_record.gd`, `progression.json` `lights`): a snapshot on the first day
+  with a settlement and every 90 days, 64 kept (16 years). Per founded settlement: where it stands,
+  its light stage, people, facilities (finished buildings other than homes), coast, frontier, and
+  the towns its finished roads reach. Stages, people / facilities both needed: 着陆点 0/0, 首批住区
+  50/4, 小镇 200/12, 区域中心 600/25, 星球首府 1500/45, a first guess for J to check against the
+  harness's towns. `audit()` holds the record in order; saves validate it; a save from before 1.11
+  starts its record on the day it loads (there is nothing earlier to replay).
+- Until the sheet arrives the time-lapse draws the 1.9 town forms (a bright core, a lit street grid,
+  arms and suburbs, from a few numbers per town), which the globe shader still carried unused: an
+  existing look, not a new one; the sheet's stages replace them. Homes are not in the record, so the
+  built-up area counts one home for 40 people. During playback the per-plot lights are off, the sun
+  is held opposite the capital, and clouds, markers, routes and the interface are hidden.
+- The time-lapse runs at every ending before the settlement statement (20 seconds, a skip button)
+  and from the career page (回放殖民地夜景). The game clock stops while it plays.
+- The flat map leaves the main navigation (two views: globe and district). It opens from the panel
+  of picked ground, where founding and prospecting happen (在平铺地图上选址与勘探 / 回到球面总览),
+  and a founding made there returns to the globe. `navigate("flat")` stays for tests and captures.

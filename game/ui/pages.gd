@@ -777,13 +777,6 @@ static func world_info(g, b):
 			g.close_modal()
 			g.navigate("planet")
 	)
-	D.button(
-		views,
-		"平铺地图",
-		func():
-			g.close_modal()
-			g.navigate("flat")
-	)
 
 
 ## The contract as a document (1.11), in its own script.
