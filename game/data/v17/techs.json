@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "cost": "research points",
     "funding": "money per day at ten research teams",
@@ -44,6 +44,38 @@
   "reshuffle_cost": 600.0,
   "reshuffle_tier_cost": 300.0,
   "techs": {
+    "disaster_engineering": {
+      "name": "防灾工程",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 2,
+      "cost": 340.0,
+      "funding": 14.0,
+      "weight": 8.0,
+      "requires": [
+        "weather_forecasting"
+      ],
+      "minimum_staff": 3,
+      "description": "天气灾害造成的物资损失 -30%。",
+      "effects": {
+        "weather_losses": -0.3
+      }
+    },
+    "weather_forecasting": {
+      "name": "天气预报",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 1,
+      "cost": 160.0,
+      "funding": 8.0,
+      "weight": 10.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "天气预警提前 2 日。",
+      "effects": {
+        "weather_warning": 2.0
+      }
+    },
     "survey": {
       "name": "精细勘探",
       "category": "industry",

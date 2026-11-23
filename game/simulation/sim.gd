@@ -27,6 +27,7 @@ const Origins = preload("res://simulation/origins.gd")
 const AnnualReport = preload("res://simulation/annual_report.gd")
 const Annex = preload("res://simulation/annex.gd")
 const Endings = preload("res://simulation/endings.gd")
+const Weather = preload("res://simulation/weather.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -177,6 +178,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	AnnualReport.ensure_state(target)
 	Annex.ensure_state(target)
 	Endings.ensure_state(target)
+	Weather.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -311,6 +313,12 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Annex.disclose(self)
 		"buyout":
 			refusal = Endings.buy_out(self)
+		"weather_prepare":
+			refusal = Weather.prepare(
+				self, int(args.get("system", -1)), int(args.get("region", args.get("site", -1)))
+			)
+		"force_majeure":
+			refusal = Weather.claim(self, int(args.get("region", args.get("site", -1))))
 		"declare_autonomy":
 			refusal = Endings.declare_autonomy(self)
 		"research_commission":
@@ -388,6 +396,7 @@ func tick() -> void:
 	Sites.daily(self)
 	Prospecting.daily(self)
 	Bay.daily(self)
+	Weather.daily(self)
 	Market.daily(self)
 	_public_expense(_admin_cost(), "admin", "external")
 	_public_expense(Crews.wages(self), "crew.wages", "residents")
@@ -778,6 +787,7 @@ func audit() -> Array:
 	errors.append_array(Crews.audit(state))
 	errors.append_array(Consignments.audit(state))
 	errors.append_array(AnnualReport.audit(self))
+	errors.append_array(Weather.audit(self))
 	errors.append_array(Prospecting.audit(state))
 	if float(state.pollution.load) < 0.0:
 		errors.append("negative pollution")

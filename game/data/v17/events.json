@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "calendar": "30日/月，360日/年",
   "units": {
     "money": "公共资金",
@@ -10763,6 +10763,93 @@
           ],
           "default": "recover",
           "deadline_days": 30
+        }
+      }
+    },
+    "cyclone_landfall": {
+      "version": 1,
+      "type": "short",
+      "category": "incident",
+      "kind": "decision",
+      "critical": false,
+      "cooldown_days": 180,
+      "weight": 2,
+      "conditions": {
+        "min_day": 200,
+        "coast": true
+      },
+      "nodes": {
+        "start": {
+          "title": "气旋登陆前的十二个小时",
+          "text": "气象值班员把卫星云图投在调度室的墙上：一团旋转的云带已经越过外海，风眼正对着{capital}的海湾。港务长把能停的船都拖进了内港，码头上的集装箱却还摞着三层，最上面那层装的是下个月要出口的货。\n加固仓库和码头需要工程队连夜作业，还得先付一笔材料和加班费用；把低洼区的人疏散到高处的营地，生产会停上几天，但不会有人被困在水里。什么都不做，钱和工时都省下来，剩下的交给风和运气。\n风从傍晚开始变大。值班员没有再报数字，只把那张云图留在墙上，云带边缘已经能看见第一道闪电。",
+          "choices": [
+            {
+              "id": "secure",
+              "label": "连夜加固码头与仓库",
+              "pay": 1800,
+              "lose_goods": {
+                "materials": 10
+              },
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.8,
+                  "duration_days": 15,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "风过之后"
+            },
+            {
+              "id": "evacuate",
+              "label": "疏散低洼区，停工避风",
+              "lose_goods": {
+                "materials": 25,
+                "parts": 6
+              },
+              "effects": [
+                {
+                  "kind": "all",
+                  "factor": 0.7,
+                  "duration_days": 7,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "port",
+                  "factor": 0.6,
+                  "duration_days": 20,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "人都在"
+            },
+            {
+              "id": "wait",
+              "label": "照常作业，等风过去",
+              "lose_goods": {
+                "materials": 60,
+                "parts": 15,
+                "food": 40
+              },
+              "effects": [
+                {
+                  "kind": "port",
+                  "factor": 0.4,
+                  "duration_days": 30,
+                  "maintenance": 0
+                },
+                {
+                  "kind": "appeal",
+                  "factor": 0.9,
+                  "duration_days": 60,
+                  "maintenance": 0
+                }
+              ],
+              "ending": "风暴过境"
+            }
+          ],
+          "default": "wait",
+          "deadline_days": 3
         }
       }
     }

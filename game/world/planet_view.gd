@@ -252,6 +252,8 @@ func _build_clouds() -> void:
 	cloud_shader = ShaderMaterial.new()
 	cloud_shader.shader = Shaders.shader("clouds")
 	cloud_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
+	# The towns' light on the clouds' undersides at night (1.11 F).
+	cloud_shader.set_shader_parameter("lights", _night_lights_texture())
 	cloud_shader.set_shader_parameter("coverage", _cloud_coverage())
 	cloud_shell = _sphere(planet, Vector3.ZERO, 3.026, cloud_shader, 128, 64)
 	cloud_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

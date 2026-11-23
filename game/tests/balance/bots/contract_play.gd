@@ -31,6 +31,34 @@ static func land(bot: RefCounted) -> void:
 	bot.act("build", {"site": bot.home, "kind": "mine_copper"})
 
 
+## The weather (1.11 F): a warned town is prepared when the money is there three times over, and
+## a disaster is claimed as force majeure once (a claim without evidence is simply refused).
+static func _weather(bot: RefCounted) -> void:
+	var sim: RefCounted = bot.sim
+	var w: Dictionary = sim.state.get("weather", {})
+	if w.is_empty():
+		return
+	var cost: float = sim.Weather.prepare_cost(sim)
+	for system: Dictionary in w.systems:
+		for key: Variant in system.warned:
+			if system.prepared.has(str(key)) or system.struck.has(str(key)):
+				continue
+			if float(sim.state.cash) >= cost * 3.0:
+				bot.act("weather_prepare", {"system": int(system.id), "region": int(str(key))})
+	var claim_days: int = int(sim.Weather.rules().get("claim_days", 15))
+	for strike: Dictionary in w.strikes:
+		if int(sim.state.day) - int(strike.day) > claim_days:
+			continue
+		var filed: bool = false
+		for row: Dictionary in w.claims:
+			filed = (
+				filed
+				or (int(row.system) == int(strike.system) and int(row.region) == int(strike.region))
+			)
+		if not filed:
+			bot.act("force_majeure", {"region": int(strike.region)})
+
+
 ## After the award, the ending the bot aims for, once it is within reach.
 static func _ending(bot: RefCounted) -> void:
 	var sim: RefCounted = bot.sim
@@ -52,6 +80,7 @@ static func annual_report(bot: RefCounted) -> void:
 	if sim.Annex.waiting(sim):
 		bot.act("annex_answer", {"answer": bot.annex_answer})
 	_ending(bot)
+	_weather(bot)
 	var annual: Dictionary = sim.state.get("annual", {})
 	if annual.is_empty():
 		return

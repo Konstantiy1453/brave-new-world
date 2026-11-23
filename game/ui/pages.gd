@@ -14,6 +14,7 @@ const GroundPanel = preload("res://ui/ground_panel.gd")
 const ContractPage = preload("res://ui/contract_page.gd")
 const AnnualReportPage = preload("res://ui/annual_report_page.gd")
 const SettlementPage = preload("res://ui/settlement_page.gd")
+const WeatherPage = preload("res://ui/weather_page.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -664,6 +665,8 @@ static func populate(g, b, page):
 			AnnualReportPage.page(g, b)
 		"settlement":
 			SettlementPage.page(g, b)
+		"weather":
+			WeatherPage.page(g, b)
 	var feedback = D.label(b, "", 16, D.GOLD)
 	feedback.name = "Feedback"
 
@@ -1546,7 +1549,12 @@ static func settings(g, b):
 	for entry: Array in [
 		["spin", "行星自转", g.visual_spin, "球面总览中行星缓慢自转；拖动或点选地点时会停下"],
 		["day_night", "昼夜与灯光", g.visual_day_night, "太阳照亮一半星球，入夜后城市与公路亮灯；地区视图随当地时间明暗"],
-		["weather", "云层与天气", g.visual_weather, "云层随风带移动，热带风暴生成与消散，地区地面有云影；关闭后不画云，显卡较弱时可关"],
+		[
+			"weather",
+			"云层与天气",
+			g.visual_weather,
+			"云层随风带移动，天气系统在云中旋转，地区地面有云影；关闭后不画云，天气系统的圆圈标记照常显示，显卡较弱时可关"
+		],
 		["routes", "运输网络", g.visual_routes, "在球面和平面图上画出全部线路；关闭后夜里只看得见出城处和路口的灯、路上行驶的货运"],
 	]:
 		var key: String = str(entry[0])

@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "units": {
     "land_fraction": "share of the sphere's area",
     "deposits": "tonnes before the potential factor",
@@ -891,5 +891,152 @@
     "max_deposit_plots": 14,
     "plots_per_deposit": 3,
     "expansion_cells": 16
+  },
+  "weather": {
+    "units": "weather systems (1.11 F): chance a day that one of the kind is born somewhere in its zone (lat in degrees from the equator; temperature in °C; arid and flood as the grid's 0-1 risks; surface ocean, land or coast), radius in degrees of arc, speed in degrees a day, life in days, heading in degrees clockwise from north (poleward: toward or away from the pole in the southern hemisphere), the story it opens when it reaches a town, the days a force majeure claim adds and the report line it waives; warning_days before a strike (doubled under a weather station within station_range_degrees); prepare_cost money at the reference income (scaled like event money); loss_days after a strike in which a town's event losses count as the weather's (cut by disaster engineering, and to prepared_losses of them in a prepared town); claim_days to file force majeure; strikes_kept the strikes remembered",
+    "warning_days": 3,
+    "station_range_degrees": 12.0,
+    "prepare_cost": 900.0,
+    "prepared_losses": 0.5,
+    "loss_days": 15,
+    "claim_days": 15,
+    "strikes_kept": 40,
+    "genesis_tries": 24,
+    "kinds": {
+      "cyclone": {
+        "name": "热带气旋",
+        "event": "cyclone_landfall",
+        "chance": 0.08,
+        "zone": {
+          "surface": "ocean",
+          "lat_min": 8.0,
+          "lat_max": 30.0,
+          "min_temperature": 22.0
+        },
+        "radius": [
+          3.0,
+          6.0
+        ],
+        "speed": [
+          2.0,
+          4.5
+        ],
+        "life": [
+          8,
+          16
+        ],
+        "heading": 300.0,
+        "spread": 30.0,
+        "poleward": "toward",
+        "disaster_days": 20,
+        "report_line": "farming"
+      },
+      "dust": {
+        "name": "沙尘暴",
+        "event": "dust_storm",
+        "chance": 0.06,
+        "zone": {
+          "surface": "land",
+          "lat_max": 50.0,
+          "min_arid": 0.5,
+          "inland": true
+        },
+        "radius": [
+          3.0,
+          7.0
+        ],
+        "speed": [
+          1.5,
+          4.0
+        ],
+        "life": [
+          4,
+          9
+        ],
+        "heading": 90.0,
+        "spread": 90.0,
+        "disaster_days": 10,
+        "report_line": "mining"
+      },
+      "cold_wave": {
+        "name": "寒潮",
+        "event": "cold_snap",
+        "chance": 0.05,
+        "zone": {
+          "surface": "land",
+          "lat_min": 30.0,
+          "lat_max": 80.0,
+          "max_temperature": 6.0
+        },
+        "radius": [
+          5.0,
+          10.0
+        ],
+        "speed": [
+          2.0,
+          5.0
+        ],
+        "life": [
+          6,
+          12
+        ],
+        "heading": 180.0,
+        "spread": 40.0,
+        "poleward": "away",
+        "disaster_days": 15,
+        "report_line": "farming"
+      },
+      "heavy_rain": {
+        "name": "暴雨",
+        "event": "flood_season",
+        "chance": 0.07,
+        "zone": {
+          "surface": "land",
+          "lat_max": 60.0,
+          "min_flood": 0.3
+        },
+        "radius": [
+          2.5,
+          5.0
+        ],
+        "speed": [
+          0.8,
+          2.5
+        ],
+        "life": [
+          4,
+          8
+        ],
+        "heading": 90.0,
+        "spread": 120.0,
+        "disaster_days": 15,
+        "report_line": "farming"
+      },
+      "fog": {
+        "name": "海雾",
+        "event": "sea_fog",
+        "chance": 0.06,
+        "zone": {
+          "surface": "coast",
+          "lat_max": 70.0
+        },
+        "radius": [
+          1.5,
+          3.0
+        ],
+        "speed": [
+          0.3,
+          1.2
+        ],
+        "life": [
+          3,
+          6
+        ],
+        "heading": 0.0,
+        "spread": 180.0,
+        "disaster_days": 5,
+        "report_line": "mining"
+      }
+    }
   }
 }

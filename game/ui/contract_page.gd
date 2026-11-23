@@ -25,6 +25,8 @@ static func page(g, b) -> void:
 		var card: VBoxContainer = D.card(b, "card_quiet")
 		D.label(card, "第 %d 条　%s" % [int(clause.number), str(clause.title)], 19, D.GOLD)
 		D.label(card, str(clause.text), 16)
+		if str(clause.id) == "force_majeure":
+			D.button(card, "天气、预警与不可抗力申请  →", func(): g.open_page("weather"))
 	D.heading(b, "阶段验收")
 	var view: Dictionary = g.sim.contract_view()
 	for stage: Dictionary in view.stages:
@@ -154,6 +156,7 @@ static func clause_values(sim: RefCounted) -> Dictionary:
 		"review_days": "%d" % int(doc.review_days),
 		"intervention_days": "%d" % int(doc.intervention_days),
 		"player_share": "%.0f" % (float(doc.player_share) * 100.0),
+		"claim_days": "%d" % int(sim.Weather.rules().get("claim_days", 15)),
 	}
 
 

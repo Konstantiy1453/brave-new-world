@@ -1,5 +1,6 @@
 {
   "kinds": {
+    "weather_station": {"model": "field_station"},
     "apartment": {
       "model": "apartment"
     },

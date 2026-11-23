@@ -190,6 +190,7 @@ func sync_state(data: Dictionary) -> void:
 	if lights_now != lights_signature:
 		lights_signature = lights_now
 		_update_night_lights()
+	_follow_weather()
 	if mode == "region" and not region_busy:
 		var new_signature := _building_signature()
 		if new_signature != signature:
@@ -600,6 +601,7 @@ func _process(delta: float) -> void:
 	elif mode == "planet":
 		_place_movers(globe_movers, sky.day_fraction)
 		place_ships(globe_ships, sky.day_fraction)
+		_place_weather_markers()
 	elif mode == "flat":
 		_place_movers(flat_movers, sky.day_fraction)
 		place_ships(flat_ships, sky.day_fraction)
@@ -1031,3 +1033,63 @@ func _exit_tree() -> void:
 	# Thread workers must finish before their script owner is destroyed.
 	for worker in atlas_job.get("workers", []):
 		worker.wait_to_finish()
+
+
+## The simulation's weather (1.11 F): the clouds draw its systems (visual_clock.gd `follow`), and
+## a ring marks each one on the globe, red when it is heading for one of the colony's towns. The
+## rings stay with the clouds switched off.
+func _follow_weather() -> void:
+	var systems: Array = state.get("weather", {}).get("systems", [])
+	# Worlds from before the climate grid keep the cosmetic storms (weather.gd `active`).
+	sky.follow(systems, Weather.on() and world.has("grid_width"))
+	var key: PackedStringArray = []
+	for system: Dictionary in systems:
+		key.append("%d:%d:%d" % [int(system.id), int(system.age), system.get("warned", {}).size()])
+	var now: String = ",".join(key)
+	if now == weather_signature:
+		return
+	weather_signature = now
+	if weather_root == null or not is_instance_valid(weather_root):
+		if planet == null or not is_instance_valid(planet):
+			return
+		weather_root = Node3D.new()
+		weather_root.name = "WeatherMarkers"
+		planet.add_child(weather_root)
+	for child: Node in weather_root.get_children():
+		weather_root.remove_child(child)
+		child.queue_free()
+	weather_markers.clear()
+	for system: Dictionary in systems:
+		var warned: bool = not system.get("warned", {}).is_empty()
+		var color: Color = WEATHER_COLORS.get(str(system.kind), Color("c8c8c8"))
+		if warned:
+			color = Color("e46f68")
+		var ring := MeshInstance3D.new()
+		var mesh := TorusMesh.new()
+		var size: float = deg_to_rad(float(system.radius)) * 3.0
+		mesh.inner_radius = size * 0.92
+		mesh.outer_radius = size
+		mesh.rings = 32
+		mesh.ring_segments = 4
+		ring.mesh = mesh
+		ring.material_override = _mat("weather_" + str(system.kind) + str(warned), color, 0, 1, 1.4)
+		ring.name = "Weather_%d" % int(system.id)
+		weather_root.add_child(ring)
+		weather_markers.append({"node": ring, "system": system})
+	_place_weather_markers()
+
+
+func _place_weather_markers() -> void:
+	for entry: Dictionary in weather_markers:
+		var node: Node3D = entry.node
+		if not is_instance_valid(node):
+			continue
+		var at: Vector2 = Weather.ahead(entry.system, sky.day_fraction)
+		var normal: Vector3 = Geo.unit_point(at.x, at.y)
+		var side: Vector3 = normal.cross(Vector3.UP)
+		if side.length() < 0.01:
+			side = Vector3.RIGHT
+		side = side.normalized()
+		node.transform = Transform3D(
+			Basis(side, normal, side.cross(normal).normalized()), normal * 3.07
+		)

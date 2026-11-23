@@ -19,6 +19,14 @@ const CARGO_GLOW: float = 1.2
 const EVENT_MARK: String = "  ·  通讯"
 const NightLights = preload("res://world/night_lights.gd")
 const LightField = preload("res://world/light_field.gd")
+const Weather = preload("res://simulation/weather.gd")
+const WEATHER_COLORS: Dictionary = {
+	"cyclone": Color("d8b16a"),
+	"dust": Color("c9a24f"),
+	"cold_wave": Color("a6d4f2"),
+	"heavy_rain": Color("62a0c5"),
+	"fog": Color("c8c8c8"),
+}
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
 static var atlas_cache: Dictionary = {}
@@ -89,6 +97,10 @@ var mats: Dictionary = {}
 var signature: String = ""
 var marker_signature: String = ""
 var transport_signature: String = ""
+## The weather's markers on the globe (1.11 F): what they show, their holder, [{node, system}].
+var weather_signature: String = ""
+var weather_root: Node3D
+var weather_markers: Array = []
 var selection_ring: MeshInstance3D
 var region_ground: float = 0.0
 var label_font: Font

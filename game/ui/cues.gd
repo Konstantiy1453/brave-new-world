@@ -38,6 +38,8 @@ func observe(sim: RefCounted) -> Array[String]:
 		played.append(SHIP)
 	if int(now[SIGNATURE]) > int(_seen.get(SIGNATURE, 0)):
 		played.append(SIGNATURE)
+	if str(now[STORM]) != "" and str(now[STORM]) != str(_seen.get(STORM, "")):
+		played.append(STORM)
 	_seen = now
 	for id: String in played:
 		play(id)
@@ -71,4 +73,32 @@ static func marks(state: Dictionary) -> Dictionary:
 		),
 		SHIP: "" if pending.is_empty() else str(pending.get("year", "")),
 		SIGNATURE: signed,
+		STORM: _warning_mark(state),
 	}
+
+
+## The newest weather warning for a town (1.11 F): system id, town and day, or "".
+static func _warning_mark(state: Dictionary) -> String:
+	var mark: String = ""
+	var latest: int = -1
+	for system: Dictionary in state.get("weather", {}).get("systems", []):
+		for key: Variant in system.get("warned", {}):
+			var day: int = int(system.warned[key])
+			if day > latest or (day == latest and mark < "%d|%s" % [int(system.id), str(key)]):
+				latest = day
+				mark = "%d|%s" % [int(system.id), str(key)]
+	return "" if latest < 0 else "%s|%d" % [mark, latest]
+
+
+## The newest warning in words, for the notice.
+static func newest_warning(sim: RefCounted) -> String:
+	var mark: String = _warning_mark(sim.state)
+	if mark == "":
+		return ""
+	var parts: PackedStringArray = mark.split("|")
+	for system: Dictionary in sim.state.weather.systems:
+		if int(system.id) == int(parts[0]):
+			var rule: Dictionary = sim.Weather.rules().kinds[system.kind]
+			var town: Dictionary = sim.settlement(int(parts[1]))
+			return "%s正在逼近%s：可在天气页做防灾准备。" % [str(rule.name), str(town.get("name", ""))]
+	return ""

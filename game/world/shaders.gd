@@ -236,6 +236,12 @@ float cloud_density(vec3 p, float t) {
 		float k = max(0.0, 1.0 - d / (storm_radius[i] * 1.6));
 		q = normalize(turn_about(q, storms[i].xyz, storms[i].w * k * k * 1.6));
 	}
+	// Domain warping (1.11 F): the noise is read through a slowly drifting noise of its own, so
+	// the bands break into curls instead of stretched blobs.
+	vec3 w = q * 0.9 + vec3(t * 0.0004, 0.0, 0.0);
+	vec3 warp = vec3(texture(noise3d, w).r, texture(noise3d, w + vec3(0.37, 0.11, 0.53)).r,
+		texture(noise3d, w + vec3(0.71, 0.29, 0.17)).r) - 0.5;
+	q = normalize(q + warp * 0.07);
 	float lat = asin(clamp(q.y, -1.0, 1.0));
 	float period = 90.0;
 	float phase0 = fract(t / period);
@@ -252,7 +258,10 @@ float cloud_density(vec3 p, float t) {
 		+ 0.04 * exp(-(a - 55.0) * (a - 55.0) / 200.0);
 	float threshold = mix(0.6, 0.52, coverage) - band;
 	float body = smoothstep(threshold, threshold + 0.1, n);
-	return max(body, storm * (0.65 + 0.7 * (n - 0.5)));
+	// A second, thin and higher layer that runs ahead of the first on faster winds (1.11 F).
+	vec3 h = turn_y(q, wind * 2.4 * t) * vec3(3.1, 5.4, 3.1) + vec3(0.19, t * 0.002, 0.61);
+	float high = smoothstep(0.6, 0.74, cloud_fbm(h)) * 0.42;
+	return max(max(body, high), storm * (0.65 + 0.7 * (n - 0.5)));
 }
 """
 
@@ -522,8 +531,11 @@ uniform sampler3D noise3d : filter_linear, repeat_enable;
 uniform vec3 sun_local = vec3(0.6, 0.3, 0.7);
 uniform float day_night = 1.0;
 uniform float opacity = 0.88;
+uniform sampler2D lights : filter_linear_mipmap, repeat_enable;
+uniform float night_lights = 1.0;
 varying vec3 local_point;
 """
+		+ LOOKUP_GLSL
 		+ CLOUDS_GLSL
 		+ """
 void vertex() {
@@ -537,8 +549,13 @@ void fragment() {
 	float day = mix(1.0, smoothstep(-0.16, 0.2, facing), day_night);
 	vec3 color = mix(vec3(0.035, 0.045, 0.07), vec3(0.93, 0.95, 0.98), day);
 	color *= 0.86 + 0.14 * (1.0 - density);
-	float twilight = exp(-facing * facing / 0.01) * day_night;
-	color = mix(color, vec3(1.0, 0.56, 0.3), twilight * 0.25);
+	// A warm edge along the terminator, and on the night side the towns' light on the clouds'
+	// undersides (1.11 F).
+	float twilight = exp(-facing * facing / 0.006) * day_night;
+	color = mix(color, vec3(1.0, 0.52, 0.26), twilight * 0.42);
+	vec2 town = texture(lights, sphere_uv(p), 3.0).rg;
+	float below = (town.r + town.g * 0.6) * (1.0 - day) * night_lights;
+	color += vec3(1.0, 0.72, 0.4) * below * 0.55;
 	ALBEDO = color;
 	ALPHA = density * opacity * mix(0.6, 1.0, day);
 }

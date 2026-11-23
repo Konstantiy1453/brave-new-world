@@ -275,12 +275,16 @@ static func sign_report(sim: RefCounted, choices: Dictionary, automatic: bool = 
 		entry.tiers[line] = tier
 		entry.reported[line] = value
 		entry.outcomes[line] = result
+		if result == MISSED and line in a.get("waivers", []):
+			# Force majeure (1.11 F): a weather disaster's year is not held against this line.
+			result = "waived"
+			entry.outcomes[line] = result
 		if result == MISSED:
 			entry.distrust = float(entry.distrust) + float(rule.get("miss_distrust", 0.0))
 		elif result == EXCEED:
 			entry.reward = float(entry.reward) + float(rule.get("exceed_reward", 0.0)) * scale
 			entry.distrust = float(entry.distrust) - float(rule.get("exceed_trust", 0.0))
-		else:
+		elif result == MET:
 			entry.reward = float(entry.reward) + float(rule.get("met_reward", 0.0)) * scale
 		a.gap[line] = maxf(0.0, float(a.gap[line]) + value - actual)
 		entry.gap[line] = float(a.gap[line])
@@ -294,6 +298,7 @@ static func sign_report(sim: RefCounted, choices: Dictionary, automatic: bool = 
 	c.distrust = clampf(float(c.distrust) + float(entry.distrust), 0.0, 100.0)
 	a.targets = entry.next_targets.duplicate()
 	a.kpi_scale = 1.0
+	a.waivers = []
 	a.history.append(entry)
 	a.pending = {}
 	sim.Company.letter(sim, "annual_receipt", _receipt_values(sim, entry))
@@ -332,8 +337,11 @@ static func gap_open(sim: RefCounted) -> bool:
 	return false
 
 
-## A story's weight factor: the audits while the books are open, the stories tied to Annex VII.
+## A story's weight factor: the audits while the books are open, the stories tied to Annex VII;
+## 0 for the weather's own stories while weather is on (the weather opens them, 1.11 F).
 static func story_weight(sim: RefCounted, id: String) -> float:
+	if sim.Weather.active(sim) and id in sim.Weather.stories():
+		return 0.0
 	return audit_weight(sim, id) * sim.Annex.event_weight(sim, id)
 
 

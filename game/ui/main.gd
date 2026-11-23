@@ -976,6 +976,9 @@ func refresh():
 	var heard: Array[String] = cues.observe(sim)
 	if Cues.ENDING in heard:
 		open_page("settlement")
+	if Cues.STORM in heard:
+		var warning: Array[String] = [Cues.newest_warning(sim)]
+		_post_notice("StormNotice", D.NEUTRAL, "◆ 气象预警", "天气", warning, "weather", 16.0)
 	if Cues.SHIP in heard:
 		var report: Dictionary = sim.state.annual.pending
 		var lines: Array[String] = ["第 %d 年度报告待签署：如实、报达标或报超额。" % int(report.year)]
@@ -1362,6 +1365,7 @@ func open_page(page: String):
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
 	titles.annual_report = "年度报告 / 公司年度船"
 	titles.settlement = "结算单 / 合同结局"
+	titles.weather = "天气 / 预警与防灾"
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
 	_mark_nav()

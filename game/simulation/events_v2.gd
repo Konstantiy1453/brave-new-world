@@ -715,11 +715,8 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 		s.workers = int(s.workers) - trained
 		s.scientists = int(s.scientists) + trained
 		sim._reconcile_jobs(s)
-	# The planetary emergency network (1.9) cuts what an event takes and how long it closes roads.
-	var kept: float = maxf(0.0, 1.0 + sim.Research.bonus(sim, "event_losses"))
-	for good: String in option.get("lose_goods", {}):
-		var lost: float = float(option.lose_goods[good]) * kept
-		sim._consume(s, good, minf(lost, float(s.stock[good])))
+	# The emergency network (1.9) and, after a strike, the weather's cuts (weather.gd).
+	sim.Weather.take_losses(sim, s, option.get("lose_goods", {}))
 	if option.has("set_wage"):
 		sim.state.policy.wage = float(option.set_wage)
 	if option.has("distrust"):
@@ -929,7 +926,7 @@ static func tick(sim) -> void:
 				if _matches(sim, s, d.conditions):
 					places.append(int(s.region))
 			var weight: float = float(d.weight) * AnnualReport.story_weight(sim, id)
-			if not places.is_empty():
+			if not places.is_empty() and weight > 0.0:
 				candidates.append({"id": id, "places": places, "weight": weight})
 				total += weight
 		if total > 0:

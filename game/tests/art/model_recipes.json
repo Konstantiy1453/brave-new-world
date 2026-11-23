@@ -168,6 +168,7 @@
     "vehicle_bus": {"source": "CC_VEHICLE_BUS_HP_v002", "pack": "v1109", "state": "accepted", "scale": 0.11, "vertical": 1.0, "target": 1600, "min_part_m": 0.25, "seat": true}
   },
   "kinds": {
+    "weather_station": {"model": "field_station"},
     "habitat": {"model": "habitat", "construction": "habitat_construction"},
     "apartment": {"model": "apartment"},
     "arcology": {"model": "arcology"},

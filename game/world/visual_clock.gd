@@ -1,9 +1,12 @@
 extends RefCounted
 ## Visual time for the map: the planet's spin, the sun and its seasons, the wind that moves the
-## clouds and the storms that cross them. Cosmetic only: nothing here reaches the simulation, so
-## saves and replays stay byte-identical at any speed, and every number has its own RNG.
+## clouds and the storms that cross them. Nothing here reaches the simulation, so saves and
+## replays stay byte-identical at any speed. Since 1.11 F the storms drawn are the simulation's
+## weather systems (`follow`), only smoothed between days; the cosmetic storms with their own RNG
+## remain for a game whose weather is off.
 
 ## One turn of the planet takes this many seconds at 1×.
+const Weather = preload("res://simulation/weather.gd")
 const SPIN_PERIOD_S: float = 240.0
 ## How fast visual time runs while the game is paused, and at each game speed.
 const IDLE_RATE: float = 0.3
@@ -35,6 +38,10 @@ var day: int = 0
 var day_fraction: float = 0.0
 var sun_yaw: float = SUN_LEAD_RADIANS
 var storms: Array = []
+## Weather systems from the simulation (1.11 F), set once a day by the view; while the simulation's
+## weather is on they are the storms drawn, moved smoothly between days, and the cosmetic ones rest.
+var systems: Array = []
+var systems_on: bool = false
 var _rng := RandomNumberGenerator.new()
 
 
@@ -108,11 +115,44 @@ func sun_local() -> Vector3:
 	return sun_world().rotated(Vector3.UP, -spin)
 
 
+## What the simulation's weather holds today (1.11 F).
+func follow(state_systems: Array, on: bool) -> void:
+	systems = state_systems
+	systems_on = on
+
+
+## The storms drawn now: the simulation's systems where they have got to part-way through the
+## day (cyclones swirl hardest), or the cosmetic ones while the simulation has no weather.
+func _drawn() -> Array:
+	if not systems_on:
+		return storms
+	var out: Array = []
+	for system: Dictionary in systems:
+		var at: Vector2 = Weather.ahead(system, day_fraction)
+		var power: float = 1.0 if str(system.kind) == "cyclone" else 0.45
+		(
+			out
+			. append(
+				{
+					"lat": at.x,
+					"lon": at.y,
+					"age": float(system.age) + day_fraction,
+					"life": float(system.life),
+					"radius": deg_to_rad(float(system.radius)),
+					"power": power,
+				}
+			)
+		)
+		if out.size() >= STORM_COUNT:
+			break
+	return out
+
+
 ## Storms as shader uniforms: centre on the unit sphere (planet frame) and signed strength.
 ## Positive turns anticlockwise seen from above: northern cyclones; southern ones are negative.
 func storm_vectors() -> Array[Vector4]:
 	var out: Array[Vector4] = []
-	for storm: Dictionary in storms:
+	for storm: Dictionary in _drawn():
 		var life: float = maxf(float(storm.life), 1.0)
 		var grow: float = sin(PI * clampf(float(storm.age) / life, 0.0, 1.0))
 		var lat: float = deg_to_rad(float(storm.lat))
@@ -127,7 +167,7 @@ func storm_vectors() -> Array[Vector4]:
 
 func storm_radii() -> PackedFloat32Array:
 	var out := PackedFloat32Array()
-	for storm: Dictionary in storms:
+	for storm: Dictionary in _drawn():
 		out.append(float(storm.radius))
 	while out.size() < STORM_COUNT:
 		out.append(0.2)

@@ -1287,3 +1287,38 @@ factories, so the game's cycle and the payback bands stay as they are.
   the award it offers the buyout and autonomy. The lights time-lapse waits for G.
 - Bots: balanced complies; rush manoeuvres; research_first discloses; the windfall bot aims for the
   buyout. The harness reports variants, answers and endings as an INFO row.
+- Weather (F) lives in `simulation/weather.gd` with its numbers in `geography.json` `weather`, behind
+  the flag `progression.json` `features.weather` (on). Five kinds: cyclones over ocean 8-30° with
+  water above 22 °C (heading west-north-west, poleward), dust over arid interiors, cold waves over
+  land 30-80° below 6 °C (heading equatorward), heavy rain over flood-prone land, fog on coasts.
+  Each day each kind may be born once, from a roll seeded by seed, day and kind (24 tries to land in
+  its zone); systems move once a day along a heading at a speed, for a life in days. Same seed and
+  day, same weather, at any game speed.
+- A system reaching a town (its centre within its radius) opens the kind's story through
+  `EventsV2.trigger` (cyclone_landfall, new; dust_storm; cold_snap; flood_season; sea_fog); those
+  five leave the random draw while weather is on (their weight factor is 0). Cooldowns still apply,
+  so a second system soon after strikes without a second story.
+- Warnings: base 3 days, doubled by a weather station within 12° of arc, +2 with 天气预报. Preparing a
+  warned town costs ¥900 at the reference income (scaled like event money) and halves what the next
+  disaster there takes; 防灾工程 cuts weather losses by 30%. "The weather's losses" are what any
+  event takes from a town within `loss_days` (15) of a strike there: the strike's own story nearly
+  always, since weather stories leave the draw; a random event landing in those days counts too,
+  which is simpler than tying losses to one event instance. Losses elsewhere stay whole (an earlier
+  draft let 防灾工程 cut every event's losses). One helper (`Weather.take_losses`) applies the 1.9
+  emergency network's cut and these, consumes through the ledger, and writes the weather's share on
+  the strike and in `weather.lost`.
+- `audit()` covers the weather: systems (known kind, unique id below `next_id`, on the planet, age
+  within life), strikes (known kind, not in the future), claims (once per strike and town, within
+  `claim_days`), accepted claims' days within the contract's deadline shifts, each strike's losses
+  within the total, and the total within the ledger's sinks per good.
+- Force majeure is a standard clause. A claim within 15 days is accepted with a station's record or
+  a logged warning; it moves the current stage's deadline by the kind's disaster days (5-20) and
+  waives that year's miss on the kind's report line (farming for cyclones, cold and rain; mining for
+  dust and fog). A waived line pays no reward and adds no distrust.
+- The weather station (气象站, ¥1,200, no technology) looks like the field station until it has a
+  model of its own.
+- The globe's clouds draw the state's systems (three at most, cyclones swirling hardest), smoothed
+  between days by the visual clock; rings mark every system and turn red for one heading at the
+  colony, and stay when clouds are off. The cosmetic storms remain only for a game with weather off.
+  The cloud shell gains domain warping, a thin faster upper layer, a stronger warm terminator and
+  town light on the clouds' undersides at night. Frame times are for the Windows check.

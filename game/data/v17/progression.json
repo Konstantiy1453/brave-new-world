@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 9,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -149,6 +149,7 @@
     "event_load_per_point": 40.0
   },
   "features": {
+    "weather": true,
     "units": {
       "flags": "false freezes a feature (1.11): its code, data and tests stay; its content is hidden from the interface, never drawn by events, never chosen by bots, and nothing new of its kind can be started; a save that already holds some keeps running it",
       "content": "what each flag freezes: building kinds, technologies, resources and road kinds"
