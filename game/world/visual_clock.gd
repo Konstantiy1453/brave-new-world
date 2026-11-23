@@ -19,6 +19,10 @@ const SUN_LEAD_RADIANS: float = 0.8
 const AXIAL_TILT_DEGREES: float = 18.0
 const YEAR_DAYS: float = 360.0
 const STORM_COUNT: int = 3
+## A system's clouds reach well past the radius where it strikes (its ring on the globe).
+const STORM_REACH: float = 2.5
+## A system heading for a town is drawn at least this strong, however young it is.
+const WARNED_STRENGTH: float = 0.6
 const STORM_LIFE_S: Vector2 = Vector2(110.0, 240.0)
 const STORM_RADIUS: Vector2 = Vector2(0.11, 0.19)
 
@@ -138,8 +142,9 @@ func _drawn() -> Array:
 					"lon": at.y,
 					"age": float(system.age) + day_fraction,
 					"life": float(system.life),
-					"radius": deg_to_rad(float(system.radius)),
+					"radius": deg_to_rad(float(system.radius)) * STORM_REACH,
 					"power": power,
+					"least": WARNED_STRENGTH if not system.get("warned", {}).is_empty() else 0.0,
 				}
 			)
 		)
@@ -155,6 +160,7 @@ func storm_vectors() -> Array[Vector4]:
 	for storm: Dictionary in _drawn():
 		var life: float = maxf(float(storm.life), 1.0)
 		var grow: float = sin(PI * clampf(float(storm.age) / life, 0.0, 1.0))
+		grow = maxf(grow, float(storm.get("least", 0.0)))
 		var lat: float = deg_to_rad(float(storm.lat))
 		var lon: float = deg_to_rad(float(storm.lon))
 		var centre := Vector3(cos(lat) * sin(lon), sin(lat), cos(lat) * cos(lon))

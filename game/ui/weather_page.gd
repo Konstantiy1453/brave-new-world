@@ -12,7 +12,6 @@ const Weather = preload("res://simulation/weather.gd")
 static func page(g, b) -> void:
 	var sim: RefCounted = g.sim
 	var rules: Dictionary = Weather.rules()
-	D.label(b, "天气 / 预警与防灾", 24, D.TEAL)
 	if not Weather.active(sim):
 		D.label(b, "这局游戏的天气只是外观，不影响经营。", 17, D.MUTED)
 		return
@@ -48,7 +47,7 @@ static func _coming(g, b) -> void:
 			D.label(
 				card,
 				(
-					"%s 正在逼近%s（%s 发出预警）"
+					"%s正在逼近%s（%s发出预警）"
 					% [name, str(town.name), Labels.short_date(int(system.warned[key]))]
 				),
 				18,

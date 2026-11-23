@@ -1072,11 +1072,21 @@ func _follow_weather() -> void:
 		mesh.rings = 32
 		mesh.ring_segments = 4
 		ring.mesh = mesh
-		ring.material_override = _mat("weather_" + str(system.kind) + str(warned), color, 0, 1, 1.4)
+		ring.material_override = _ring_material("weather_%s_%s" % [str(system.kind), warned], color)
 		ring.name = "Weather_%d" % int(system.id)
 		weather_root.add_child(ring)
 		weather_markers.append({"node": ring, "system": system})
 	_place_weather_markers()
+
+
+## Unshaded: a lit, glowing ring washes out to white in daylight and the red of a warning is lost.
+func _ring_material(key: String, color: Color) -> StandardMaterial3D:
+	if not mats.has(key):
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = color
+		mats[key] = m
+	return mats[key]
 
 
 func _place_weather_markers() -> void:
