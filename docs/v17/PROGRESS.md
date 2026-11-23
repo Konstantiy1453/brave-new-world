@@ -35,6 +35,8 @@ Tags stay local: the session's proxy refuses tag pushes; the tag-to-commit map i
 
 **Known misses carried forward.** The freeze's later awards above (J). `v19_payback`: the smelter
 in year 4 (352 days against 120-300) after the freeze moved the colonies (DECISIONS.md); left for J.
+On the merged tree (H, `95975a3`-`b4c7c5e`) the smelter is 317 days and the ore mine on day 2160
+pays back in 62 days against 70-150: merged effects reach the colonies sooner; also for J.
 The Windows checks of the run kit (`docs/v17/WINDOWS_RUN_KIT.md`) wait for the user.
 
 ---
