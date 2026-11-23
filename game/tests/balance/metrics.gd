@@ -79,6 +79,7 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"annual": {},
 				"light_stage": {},
 				"stage3_routes": [],
+				"research_days": {},
 			}
 		)
 	)
@@ -89,6 +90,12 @@ func sample(sim: RefCounted) -> void:
 	var day: int = int(state.day)
 	record.min_cash = minf(float(record.min_cash), float(state.cash))
 	_settlement_days += state.settlements.size()
+	var working: Dictionary = {}
+	for key: Variant in state.research.get("projects", {}):
+		if int(state.research.projects[key].get("effective", 0)) > 0:
+			working[str(sim.config.techs.get(str(key), {}).get("category", "?"))] = true
+	for category: String in working:
+		record.research_days[category] = int(record.research_days.get(category, 0)) + 1
 	if day > 0 and day % YEAR_DAYS == 0 and not state.settlements.is_empty():
 		record.light_stage[str(day / YEAR_DAYS)] = LightRecord.stage_of(sim, state.settlements[0])
 	_scan_ledger(state, day)

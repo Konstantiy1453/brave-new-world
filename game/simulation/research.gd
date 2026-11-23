@@ -136,6 +136,19 @@ static func convert_merged(state: Dictionary) -> void:
 			if not hand.has(id) and not kept.has(id):
 				hand.append(id)
 		r.offers[category] = hand
+	# A converted project stays on the table, so a team can take it up again (allocate asks for
+	# the card), once its prerequisites are done; the hand may hold one card more until it deals.
+	for whole: String in touched:
+		if kept.has(whole) or not projects.has(whole) or not r.has("offers"):
+			continue
+		var ready: bool = true
+		for need: Variant in techs[whole].get("requires", []):
+			ready = ready and kept.has(str(need))
+		var category: String = str(techs[whole].category)
+		var held: Array = r.offers.get(category, [])
+		if ready and not held.has(whole):
+			held.push_front(whole)
+			r.offers[category] = held
 
 
 static func ensure(sim: RefCounted) -> void:

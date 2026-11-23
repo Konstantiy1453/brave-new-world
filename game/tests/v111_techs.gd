@@ -229,6 +229,13 @@ func _migration() -> void:
 		r.offers.industry == ["industry_1_merged", "survey"],
 		"offers name the merged technology once: %s" % str(r.offers.industry)
 	)
+	check(
+		r.offers.construction.has("construction_1_merged"),
+		"a converted project's card is on the table: %s" % str(r.offers.construction)
+	)
+	check(
+		Research.allocate(sim, "construction_1_merged", 4) == "", "so a team can take it up again"
+	)
 	sim.tech_effects_count = -1
 	check(
 		is_equal_approx(

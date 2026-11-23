@@ -11,13 +11,15 @@ const Market = preload("res://simulation/market.gd")
 const Contract = preload("res://simulation/contract.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Rules = preload("res://simulation/rules.gd")
+const Features = preload("res://simulation/features.gd")
 const SaveMigration = preload("res://simulation/save_migration.gd")
 
 const LAB_LEVEL_TWO_SEATS: int = 20
 const LAB_LEVEL_TWO_PROJECTS: int = 3
-const MIN_POOL: int = 100
+## The plan's floor after the 1.11 H merge (136 to 85): technologies that only add effects merged.
+const MIN_POOL: int = 55
 const MIN_NEW_BUILDINGS: int = 30
-const MIN_CATEGORY_POOL: int = 20
+const MIN_CATEGORY_POOL: int = 15
 const V171_BUILDINGS: Array[String] = [
 	"climate_regulator",
 	"clinic",
@@ -122,7 +124,10 @@ func _curve() -> void:
 func _pool() -> void:
 	var rules: Dictionary = Rules.read("techs")
 	var techs: Dictionary = rules.techs
-	check(techs.size() >= MIN_POOL, "the pool holds at least a hundred technologies")
+	check(
+		techs.size() >= MIN_POOL,
+		"the pool holds at least %d technologies after the merge: %d" % [MIN_POOL, techs.size()]
+	)
 	check(rules.categories.size() in [3, 4], "three or four research categories")
 	var per_category: Dictionary = {}
 	var sound: bool = true
@@ -196,7 +201,15 @@ func _cards() -> void:
 	var good: bool = true
 	for category: String in rules.categories:
 		var hand: Array = r.offers[category]
-		good = good and hand.size() == int(rules.offers)
+		# The merged tree opens some categories with fewer cards than a hand holds (1.11 H).
+		var open: int = 0
+		for key: String in rules.techs:
+			var tech: Dictionary = rules.techs[key]
+			if str(tech.category) != category or not tech.requires.is_empty():
+				continue
+			if not bool(tech.get("gift", false)) and not Features.tech_frozen(key):
+				open += 1
+		good = good and hand.size() == mini(int(rules.offers), open)
 		for key: String in hand:
 			good = good and str(rules.techs[key].category) == category
 			good = good and rules.techs[key].requires.is_empty()

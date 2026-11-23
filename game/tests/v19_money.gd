@@ -682,7 +682,8 @@ func _great_works() -> void:
 			"%s is a great work unlocked in tier 4-5" % kind
 		)
 		check(kind in Megaprojects.KINDS, "%s counts toward the great works milestone" % kind)
-	check(sim.config.techs.size() >= 100, "the pool keeps at least 100 technologies")
+	# 1.11 H merged the technologies that only add effects (136 to 85); the plan's floor is 55.
+	check(sim.config.techs.size() >= 55, "the pool keeps at least 55 technologies after the merge")
 	sim.state.research.completed.append("capital_district")
 	fund(sim, 1.0e6)
 	var refusal: String = Production.build_refusal(sim, region, "capital_district")

@@ -295,7 +295,7 @@ func _bug12_export_filters() -> void:
 		"data/acceptance_*",
 		"data/v16/*",
 		"data/v17/acceptance_*",
-		"ui/capture_suite*.gd",
+		"ui/capture_*.gd",
 		"tests/*"
 	]:
 		check(exclude.contains(pattern), "export excludes " + pattern)

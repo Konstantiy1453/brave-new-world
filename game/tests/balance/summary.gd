@@ -153,6 +153,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_weather_row(rows, runs)
 	_lights_row(rows, runs)
 	_pace_row(rows, runs)
+	_research_days_row(rows, runs)
 	_no_control_row(rows, extras)
 	_audit_row(rows, runs, extras)
 	return rows
@@ -837,6 +838,27 @@ static func _lights_row(rows: Array, runs: Array) -> void:
 		rows,
 		"Lights",
 		"balanced, normal: the capital's light stage by year (no target)",
+		", ".join(parts) if not parts.is_empty() else "not measured",
+		STATUS_INFO if not parts.is_empty() else STATUS_NONE
+	)
+
+
+## Research by direction (1.11 H, measured in J): the days a run had a team at work in each
+## direction, median of the balanced bot on normal. Before the merge: DECISIONS.md.
+static func _research_days_row(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var parts: PackedStringArray = []
+	for category: String in ["industry", "agriculture", "construction", "society"]:
+		var days: Array = []
+		for run: Dictionary in group:
+			if run.has("research_days"):
+				days.append(float(run.research_days.get(category, 0)))
+		if not days.is_empty():
+			parts.append("%s %.0f" % [category, median(days)])
+	_row(
+		rows,
+		"Research days",
+		"balanced, normal: days with a team at work, per direction (no target)",
 		", ".join(parts) if not parts.is_empty() else "not measured",
 		STATUS_INFO if not parts.is_empty() else STATUS_NONE
 	)

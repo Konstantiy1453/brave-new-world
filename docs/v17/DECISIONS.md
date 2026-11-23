@@ -1406,3 +1406,14 @@ factories, so the game's cycle and the payback bands stay as they are.
   `tests/balance/calibrate_techs.gd`: the balanced bot on the three classic contracts and the quick
   seeds, before the merge for the days its counts (5, 14, 24, 40) were reached, after it with the
   goals off for the day each tier count is reached.
+- After the merge, industry and agriculture open with two cards instead of three: tier one holds
+  only their starter card and the merged technology. The hand deals what is open, so the first
+  choice in those directions is narrower until the first card is done · adding a card to fill it.
+- A merged technology needs every part's prerequisites (with merged parts pointed at their merged
+  technology), so a merged tier-3 or tier-4 technology comes later than its earliest part did; the
+  tier goals are calibrated on the merged tree, so the stages keep their days.
+- A converted save's partly finished merged technology goes back into its direction's hand (a team
+  can only take up a card on the table), once its prerequisites are done; the hand may hold one card
+  over three until it next deals.
+- `v17_research`'s pool checks follow the merge: at least 55 technologies (the plan's floor), at
+  least 15 per direction, and a starting hand of three or as many as are open.
