@@ -15,12 +15,16 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Weather = preload("res://simulation/weather.gd")
+const Research = preload("res://simulation/research.gd")
 const AnnualReport = preload("res://simulation/annual_report.gd")
 const Contract = preload("res://simulation/contract.gd")
 const SiteGen = preload("res://world/geo2/site_gen.gd")
 const Clock = preload("res://world/visual_clock.gd")
 const WeatherPage = preload("res://ui/weather_page.gd")
 const SEED: int = 20261029
+## 天气预报 and 防灾工程, merged into their tier's technology in 1.11 H.
+var forecasting: String = Research.current_id("weather_forecasting")
+var engineering: String = Research.current_id("disaster_engineering")
 
 var checks: int = 0
 var failures: Array[String] = []
@@ -187,8 +191,8 @@ func _warning_days() -> void:
 		Weather.covered(sim, town) and Weather.warning_days(sim, town) == base * 2,
 		"doubled under a weather station"
 	)
-	sim.state.research.completed.append("weather_forecasting")
-	var more: int = int(sim.config.techs.weather_forecasting.effects.weather_warning)
+	sim.state.research.completed.append(forecasting)
+	var more: int = int(sim.config.techs[forecasting].effects.weather_warning)
 	check(
 		Weather.warning_days(sim, town) == base * 2 + more,
 		"and %d more with weather forecasting" % more
@@ -222,7 +226,7 @@ func _prepare() -> void:
 			% (Weather.kept(sim, town) * 100.0)
 		)
 	)
-	sim.state.research.completed.append("disaster_engineering")
+	sim.state.research.completed.append(engineering)
 	sim.tech_effects_count = -1
 	check(
 		Weather.kept(sim, town) < float(Weather.rules().prepared_losses),
@@ -233,14 +237,14 @@ func _prepare() -> void:
 func _losses() -> void:
 	var sim: RefCounted = _colony()
 	var town: Dictionary = sim.state.settlements[0]
-	sim.state.research.completed.append("disaster_engineering")
+	sim.state.research.completed.append(engineering)
 	sim.tech_effects_count = -1
 	check(is_equal_approx(Weather.kept(sim, town), 1.0), "away from the weather, losses stay whole")
 	_aimed(sim, "heavy_rain", 1.0)
 	_tick(sim)
 	var strike: Dictionary = Weather.recent_strike(sim, town)
 	check(not strike.is_empty(), "a strike is on the town's record")
-	var share: float = 1.0 + float(sim.config.techs.disaster_engineering.effects.weather_losses)
+	var share: float = 1.0 + float(sim.config.techs[engineering].effects.weather_losses)
 	check(
 		is_equal_approx(Weather.kept(sim, town), share),
 		"after it disaster engineering cuts the losses to %.0f%%" % (share * 100.0)

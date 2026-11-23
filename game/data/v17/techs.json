@@ -6,7 +6,11 @@
     "effects": "fractions added to the matching bonus; negative lowers it",
     "weight": "relative chance of being drawn as a card",
     "always_dealt": "what the charter cannot be finished without: on the table as soon as it can be started",
-    "gift": "true: never dealt or researched; only an event hands it over (weight 0, cost shown for reference only). Not counted towards the charter's technology goals"
+    "gift": "true: never dealt or researched; only an event hands it over (weight 0, cost shown for reference only). Not counted towards the charter's technology goals",
+    "merged": "1.11 H: a technology merged into another, old id -> new id; saves, events and bots read old ids through it",
+    "merge_cost_factor": "a merged technology costs the sum of its parts x this; its funding is their cost-weighted funding",
+    "merged_from": "the technologies a merged one replaced, in the order merged",
+    "part_costs": "the research points each merged part cost: a save that finished some parts keeps them as progress"
   },
   "categories": {
     "industry": {
@@ -44,38 +48,6 @@
   "reshuffle_cost": 600.0,
   "reshuffle_tier_cost": 300.0,
   "techs": {
-    "disaster_engineering": {
-      "name": "防灾工程",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "weather_forecasting"
-      ],
-      "minimum_staff": 3,
-      "description": "天气灾害造成的物资损失 -30%。",
-      "effects": {
-        "weather_losses": -0.3
-      }
-    },
-    "weather_forecasting": {
-      "name": "天气预报",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "天气预警提前 2 日。",
-      "effects": {
-        "weather_warning": 2.0
-      }
-    },
     "survey": {
       "name": "精细勘探",
       "category": "industry",
@@ -89,82 +61,6 @@
       "description": "矿山日产 +20%；揭示已勘察地点的真实矿量与品位。",
       "effects": {
         "mine_output": 0.2
-      }
-    },
-    "drill_bits": {
-      "name": "碳化钨钻头",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "矿山日产 +10%。钻头寿命翻倍，换班不再等配件。",
-      "effects": {
-        "mine_output": 0.1
-      }
-    },
-    "ore_sorting": {
-      "name": "矿石分选线",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "铁矿日产 +15%：废石在出坑前就被挑出去了。",
-      "effects": {
-        "ore_output": 0.15
-      }
-    },
-    "copper_leach": {
-      "name": "铜矿堆浸",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "铜矿日产 +15%。",
-      "effects": {
-        "copper_output": 0.15
-      }
-    },
-    "crystal_cutting": {
-      "name": "晶体定向切割",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "晶体日产 +15%。",
-      "effects": {
-        "crystal_output": 0.15
-      }
-    },
-    "mine_safety": {
-      "name": "矿山安全规程",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "矿山维护费 -10%，吸引力 +0.02。",
-      "effects": {
-        "mine_upkeep": -0.1,
-        "appeal": 0.02
       }
     },
     "processing": {
@@ -193,7 +89,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "ore_sorting"
+        "industry_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁尾矿回收站：不消耗矿床，从旧矿渣里再榨一遍。",
@@ -238,7 +134,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "drill_bits"
+        "industry_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁边疆据点的重型矿场和矿井。",
@@ -292,59 +188,6 @@
       "description": "解锁合金冶炼厂：铁和铜变成更值钱的合金。",
       "effects": {}
     },
-    "lean_line": {
-      "name": "精益产线",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "processing"
-      ],
-      "minimum_staff": 3,
-      "description": "所有工厂产量 +15%。",
-      "effects": {
-        "factory_output": 0.15
-      }
-    },
-    "smelter_heat": {
-      "name": "余热回收",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "processing"
-      ],
-      "minimum_staff": 3,
-      "description": "工厂用电和污染都少一点：用电 -8%，排放 -8%。",
-      "effects": {
-        "power_use": -0.08,
-        "pollution": -0.08
-      }
-    },
-    "ore_trains": {
-      "name": "矿区窄轨",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "mine_safety"
-      ],
-      "minimum_staff": 3,
-      "description": "矿山日产 +10%，矿山维护费再 -10%。",
-      "effects": {
-        "mine_output": 0.1,
-        "mine_upkeep": -0.1
-      }
-    },
     "automation": {
       "name": "自动化产线",
       "category": "industry",
@@ -389,7 +232,7 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "copper_leach",
+        "industry_1_merged",
         "alloy_smelting"
       ],
       "minimum_staff": 3,
@@ -405,7 +248,7 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "crystal_cutting",
+        "industry_1_merged",
         "electronics"
       ],
       "minimum_staff": 3,
@@ -428,166 +271,6 @@
       "description": "解锁精密机械厂：合金和元件变成最贵的出口货。",
       "effects": {}
     },
-    "metal_cycle": {
-      "name": "冶金闭环",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "alloy_smelting"
-      ],
-      "minimum_staff": 3,
-      "description": "合金产量 +20%，排放 -15%。",
-      "effects": {
-        "alloy_output": 0.2,
-        "pollution": -0.15
-      }
-    },
-    "mine_robots": {
-      "name": "矿用机器人",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "heavy_machinery"
-      ],
-      "minimum_staff": 3,
-      "description": "矿场岗位 -15%，矿山日产 +10%。",
-      "effects": {
-        "mine_jobs": -0.15,
-        "mine_output": 0.1
-      }
-    },
-    "frontier_logistics": {
-      "name": "边疆补给体系",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "heavy_machinery"
-      ],
-      "minimum_staff": 3,
-      "description": "边疆据点产量 +10%。",
-      "effects": {
-        "frontier_output": 0.1
-      }
-    },
-    "deep_core": {
-      "name": "深部矿脉工程",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "deep_mining",
-        "mine_robots"
-      ],
-      "minimum_staff": 3,
-      "description": "矿山日产 +25%。",
-      "effects": {
-        "mine_output": 0.25
-      }
-    },
-    "crystal_resonance": {
-      "name": "晶体谐振提取",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "crystal_growth"
-      ],
-      "minimum_staff": 3,
-      "description": "晶体日产 +40%。",
-      "effects": {
-        "crystal_output": 0.4
-      }
-    },
-    "smart_factory": {
-      "name": "智能工厂",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "automation"
-      ],
-      "minimum_staff": 3,
-      "description": "工厂岗位 -25%，工厂产量 +20%。",
-      "effects": {
-        "factory_jobs": -0.25,
-        "factory_output": 0.2
-      }
-    },
-    "clean_process": {
-      "name": "清洁工艺",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "metal_cycle"
-      ],
-      "minimum_staff": 3,
-      "description": "排放 -25%。",
-      "effects": {
-        "pollution": -0.25
-      }
-    },
-    "nano_fabrication": {
-      "name": "纳米制造",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 5,
-      "cost": 1600.0,
-      "funding": 46.0,
-      "weight": 3.0,
-      "requires": [
-        "smart_factory",
-        "crystal_resonance"
-      ],
-      "minimum_staff": 3,
-      "description": "所有工厂产量再 +30%。",
-      "effects": {
-        "factory_output": 0.3
-      }
-    },
-    "total_automation": {
-      "name": "全域自动化",
-      "category": "industry",
-      "branch": "industry",
-      "tier": 5,
-      "cost": 1600.0,
-      "funding": 46.0,
-      "weight": 3.0,
-      "requires": [
-        "smart_factory",
-        "deep_core"
-      ],
-      "minimum_staff": 3,
-      "description": "矿场和工厂岗位再 -20%。",
-      "effects": {
-        "mine_jobs": -0.2,
-        "factory_jobs": -0.2
-      }
-    },
     "adaptation": {
       "name": "作物适配与食品加工",
       "category": "agriculture",
@@ -601,98 +284,6 @@
       "description": "可在寒冷和干旱地点耕作；解锁食品出口加工坊。",
       "effects": {}
     },
-    "irrigation": {
-      "name": "闭环灌溉",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "农场用水 -30%，产量 +20%。",
-      "effects": {
-        "farm_water": -0.3,
-        "farm_output": 0.2
-      }
-    },
-    "soil_microbes": {
-      "name": "土壤微生物",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "农场产量 +10%：这颗星球的土第一次有了菌群。",
-      "effects": {
-        "farm_output": 0.1
-      }
-    },
-    "pest_control": {
-      "name": "病虫害综合防治",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "农场产量 +8%。",
-      "effects": {
-        "farm_output": 0.08
-      }
-    },
-    "cold_chain": {
-      "name": "冷链仓储",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "每人每天少浪费一点：食品消耗 -5%。",
-      "effects": {
-        "food_need": -0.05
-      }
-    },
-    "rain_capture": {
-      "name": "雨水回收",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "供水 +10%。",
-      "effects": {
-        "water_output": 0.1
-      }
-    },
-    "seed_bank": {
-      "name": "种质库",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "农场产量 +5%，吸引力 +0.02。",
-      "effects": {
-        "farm_output": 0.05,
-        "appeal": 0.02
-      }
-    },
     "hydroponics": {
       "name": "水培温室",
       "category": "agriculture",
@@ -702,7 +293,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "irrigation"
+        "agriculture_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁水培温室：产量不受土壤影响，但耗电很高。",
@@ -717,7 +308,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "soil_microbes"
+        "agriculture_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁边疆据点的大田农业站。",
@@ -732,7 +323,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "seed_bank"
+        "agriculture_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁沿海边疆据点的近海养殖场。",
@@ -762,7 +353,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "rain_capture"
+        "agriculture_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁深层水井：地表没水的地方也能打出水来。",
@@ -777,80 +368,11 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "rain_capture"
+        "agriculture_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁海水淡化厂。",
       "effects": {}
-    },
-    "crop_rotation": {
-      "name": "轮作制度",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "soil_microbes"
-      ],
-      "minimum_staff": 3,
-      "description": "农场产量 +12%。",
-      "effects": {
-        "farm_output": 0.12
-      }
-    },
-    "food_export": {
-      "name": "食品精深加工",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "adaptation"
-      ],
-      "minimum_staff": 3,
-      "description": "食品加工坊收入 +25%。",
-      "effects": {
-        "foodworks": 0.25
-      }
-    },
-    "water_recycling": {
-      "name": "中水回用",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "rain_capture"
-      ],
-      "minimum_staff": 3,
-      "description": "用水 -15%。",
-      "effects": {
-        "water_use": -0.15
-      }
-    },
-    "grain_reserve": {
-      "name": "战略粮储",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "cold_chain"
-      ],
-      "minimum_staff": 3,
-      "description": "食品消耗再 -5%，吸引力 +0.03。",
-      "effects": {
-        "food_need": -0.05,
-        "appeal": 0.03
-      }
     },
     "vertical_farming": {
       "name": "垂直农业",
@@ -866,41 +388,6 @@
       "minimum_staff": 3,
       "description": "解锁居住据点的垂直农场。",
       "effects": {}
-    },
-    "genetic_crops": {
-      "name": "基因作物",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "crop_rotation"
-      ],
-      "minimum_staff": 3,
-      "description": "农场产量 +25%。",
-      "effects": {
-        "farm_output": 0.25
-      }
-    },
-    "closed_ecology": {
-      "name": "闭环生态",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "water_recycling"
-      ],
-      "minimum_staff": 3,
-      "description": "用水 -20%，星球吸收污染能力 +30%。",
-      "effects": {
-        "water_use": -0.2,
-        "absorption": 0.3
-      }
     },
     "atmospheric_harvest": {
       "name": "大气集水",
@@ -926,45 +413,11 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "genetic_crops"
+        "agriculture_3_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁居住据点的生物制药厂：粮食变成药品。",
       "effects": {}
-    },
-    "indoor_lighting": {
-      "name": "光谱照明",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "hydroponics"
-      ],
-      "minimum_staff": 3,
-      "description": "室内农业产量 +30%。",
-      "effects": {
-        "hydro_output": 0.3
-      }
-    },
-    "marine_ranching": {
-      "name": "海洋牧场",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "aquaculture"
-      ],
-      "minimum_staff": 3,
-      "description": "室内和近海农业产量 +20%。",
-      "effects": {
-        "hydro_output": 0.2
-      }
     },
     "synthetic_protein": {
       "name": "合成蛋白",
@@ -975,8 +428,7 @@
       "funding": 32.0,
       "weight": 4.0,
       "requires": [
-        "genetic_crops",
-        "indoor_lighting"
+        "agriculture_3_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁居住据点的合成蛋白厂。",
@@ -991,46 +443,12 @@
       "funding": 32.0,
       "weight": 4.0,
       "requires": [
-        "closed_ecology",
+        "agriculture_3_merged",
         "efficiency"
       ],
       "minimum_staff": 3,
       "description": "解锁巨型工程：气候调节站。",
       "effects": {}
-    },
-    "soil_engineering": {
-      "name": "土壤工程",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "genetic_crops"
-      ],
-      "minimum_staff": 3,
-      "description": "农场产量 +30%。",
-      "effects": {
-        "farm_output": 0.3
-      }
-    },
-    "biosphere_seeding": {
-      "name": "生物圈播种",
-      "category": "agriculture",
-      "branch": "agriculture",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "closed_ecology"
-      ],
-      "minimum_staff": 3,
-      "description": "星球吸收污染能力 +50%。",
-      "effects": {
-        "absorption": 0.5
-      }
     },
     "ecopoiesis": {
       "name": "生态创生",
@@ -1041,8 +459,7 @@
       "funding": 46.0,
       "weight": 3.0,
       "requires": [
-        "biosphere_seeding",
-        "soil_engineering"
+        "agriculture_4_merged"
       ],
       "minimum_staff": 3,
       "description": "农场产量 +30%，星球吸收污染能力再 +100%。",
@@ -1067,36 +484,6 @@
         "transport_fee": -0.2
       }
     },
-    "prefab_modules": {
-      "name": "预制模块",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "建设速度 +10%。",
-      "effects": {
-        "build_speed": 0.1
-      }
-    },
-    "road_crews": {
-      "name": "筑路机械队",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "修路速度 +20%。",
-      "effects": {
-        "road_build": 0.2
-      }
-    },
     "wind_power": {
       "name": "风力发电",
       "category": "construction",
@@ -1109,53 +496,6 @@
       "minimum_staff": 3,
       "description": "解锁风电场。",
       "effects": {}
-    },
-    "survey_drones": {
-      "name": "测绘无人机",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "路线投资 -10%，勘察费用 -20%。",
-      "effects": {
-        "road_cost": -0.1,
-        "survey_cost": -0.2
-      }
-    },
-    "cargo_handling": {
-      "name": "码头装卸",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "港口吞吐 +15%。",
-      "effects": {
-        "port_capacity": 0.15
-      }
-    },
-    "insulation": {
-      "name": "保温材料",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "用电 -5%，建设费用 -3%。",
-      "effects": {
-        "power_use": -0.05,
-        "build_cost": -0.03
-      }
     },
     "paved_roads": {
       "name": "铺装道路",
@@ -1181,7 +521,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "cargo_handling"
+        "construction_1_merged"
       ],
       "minimum_staff": 3,
       "description": "航线运力 +50%，航速 +20%；解锁码头扩建「大型货运码头」。",
@@ -1199,7 +539,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "prefab_modules"
+        "construction_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁居住据点的公寓楼。",
@@ -1214,7 +554,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "prefab_modules"
+        "construction_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁边疆据点的宿舍楼。",
@@ -1235,23 +575,6 @@
       "description": "解锁地热电站。",
       "effects": {}
     },
-    "grid_storage": {
-      "name": "电网储能",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "wind_power"
-      ],
-      "minimum_staff": 3,
-      "description": "发电 +15%。",
-      "effects": {
-        "power_output": 0.15
-      }
-    },
     "freight_yards": {
       "name": "物流枢纽",
       "category": "construction",
@@ -1267,24 +590,6 @@
       "description": "解锁区域物流中心。",
       "effects": {}
     },
-    "printed_buildings": {
-      "name": "3D 打印建筑",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "prefab_modules"
-      ],
-      "minimum_staff": 3,
-      "description": "建设速度 +15%，建设费用 -5%。",
-      "effects": {
-        "build_speed": 0.15,
-        "build_cost": -0.05
-      }
-    },
     "road_machines": {
       "name": "连续摊铺机",
       "category": "construction",
@@ -1294,30 +599,13 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "road_crews"
+        "construction_1_merged"
       ],
       "minimum_staff": 3,
       "description": "修路速度 +30%，路线投资 -10%；解锁道路升级「四车道干线」（铺装之后）。",
       "effects": {
         "road_build": 0.3,
         "road_cost": -0.1
-      }
-    },
-    "container_ports": {
-      "name": "集装箱码头",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "cargo_handling"
-      ],
-      "minimum_staff": 3,
-      "description": "港口吞吐 +25%。",
-      "effects": {
-        "port_capacity": 0.25
       }
     },
     "fission_power": {
@@ -1329,7 +617,7 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "grid_storage"
+        "construction_2_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁裂变电站。",
@@ -1351,95 +639,6 @@
       "description": "解锁巨型工程：轨道升降港。",
       "effects": {}
     },
-    "heavy_rail": {
-      "name": "重载铁路",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "paved_roads"
-      ],
-      "minimum_staff": 3,
-      "description": "陆路运力 +30%，单程时间 -20%。",
-      "effects": {
-        "road_capacity": 0.3,
-        "road_speed": 0.2
-      }
-    },
-    "modular_fabs": {
-      "name": "模块化工厂",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "printed_buildings"
-      ],
-      "minimum_staff": 3,
-      "description": "建设费用 -10%，建设速度 +10%。",
-      "effects": {
-        "build_cost": -0.1,
-        "build_speed": 0.1
-      }
-    },
-    "cargo_airships": {
-      "name": "货运飞艇",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "shipping"
-      ],
-      "minimum_staff": 3,
-      "description": "航速 +30%，航线运力 +30%。",
-      "effects": {
-        "sea_speed": 0.3,
-        "sea_capacity": 0.3
-      }
-    },
-    "smart_grid": {
-      "name": "智能电网",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "grid_storage"
-      ],
-      "minimum_staff": 3,
-      "description": "用电 -15%。",
-      "effects": {
-        "power_use": -0.15
-      }
-    },
-    "tunnel_boring": {
-      "name": "隧道掘进",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "road_machines"
-      ],
-      "minimum_staff": 3,
-      "description": "修路速度 +30%，封路风险更低。",
-      "effects": {
-        "road_build": 0.3,
-        "closure": -0.3
-      }
-    },
     "arcology_design": {
       "name": "穹顶城设计",
       "category": "construction",
@@ -1450,63 +649,11 @@
       "weight": 4.0,
       "requires": [
         "apartments",
-        "modular_fabs"
+        "construction_3_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁居住据点的生态穹顶城。",
       "effects": {}
-    },
-    "megastructures": {
-      "name": "巨型结构工程",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "modular_fabs"
-      ],
-      "minimum_staff": 3,
-      "description": "巨型工程工期 -25%，费用 -15%。",
-      "effects": {
-        "great_speed": 0.25,
-        "great_cost": -0.15
-      }
-    },
-    "superconductors": {
-      "name": "超导输电",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "smart_grid"
-      ],
-      "minimum_staff": 3,
-      "description": "发电再 +25%。",
-      "effects": {
-        "power_output": 0.25
-      }
-    },
-    "rapid_construction": {
-      "name": "快速施工体系",
-      "category": "construction",
-      "branch": "construction",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "modular_fabs"
-      ],
-      "minimum_staff": 3,
-      "description": "建设速度再 +25%。",
-      "effects": {
-        "build_speed": 0.25
-      }
     },
     "fusion_power": {
       "name": "聚变发电",
@@ -1518,7 +665,7 @@
       "weight": 3.0,
       "requires": [
         "fission_power",
-        "superconductors"
+        "construction_4_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁聚变电站。",
@@ -1533,8 +680,7 @@
       "funding": 46.0,
       "weight": 3.0,
       "requires": [
-        "heavy_rail",
-        "tunnel_boring"
+        "construction_3_merged"
       ],
       "minimum_staff": 3,
       "description": "陆路运力和单程时间再改善 30%。",
@@ -1571,21 +717,6 @@
         "training_speed": 1.0
       }
     },
-    "community_admin": {
-      "name": "社区治理",
-      "category": "society",
-      "branch": "society",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "行政费 -15%。",
-      "effects": {
-        "admin": -0.15
-      }
-    },
     "green_spaces": {
       "name": "公共绿地",
       "category": "society",
@@ -1598,53 +729,6 @@
       "minimum_staff": 3,
       "description": "解锁生态公园。",
       "effects": {}
-    },
-    "labour_law": {
-      "name": "劳动保障",
-      "category": "society",
-      "branch": "society",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "吸引力 +0.05，离开更少。",
-      "effects": {
-        "appeal": 0.05,
-        "departure": 0.25
-      }
-    },
-    "recruit_agency": {
-      "name": "招募代理",
-      "category": "society",
-      "branch": "society",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "招募价格 -20%，自发移民 +10%。",
-      "effects": {
-        "recruit_price": -0.2,
-        "immigration": 0.1
-      }
-    },
-    "field_notes": {
-      "name": "科学考察制度",
-      "category": "society",
-      "branch": "society",
-      "tier": 1,
-      "cost": 160.0,
-      "funding": 8.0,
-      "weight": 10.0,
-      "requires": [],
-      "minimum_staff": 3,
-      "description": "科研速度 +5%。",
-      "effects": {
-        "research_speed": 0.05
-      }
     },
     "research_network": {
       "name": "学术网络",
@@ -1661,24 +745,6 @@
       "description": "解锁研究所二级（20 席、3 项目）和科研委托。",
       "effects": {}
     },
-    "remediation": {
-      "name": "环境治理",
-      "category": "society",
-      "branch": "society",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "medicine"
-      ],
-      "minimum_staff": 3,
-      "description": "星球吸收污染能力 +50%，治理费用 -50%。",
-      "effects": {
-        "absorption": 0.5,
-        "cleanup_cost": -0.5
-      }
-    },
     "school_system": {
       "name": "基础教育体系",
       "category": "society",
@@ -1694,24 +760,6 @@
       "description": "解锁中等学校。",
       "effects": {}
     },
-    "public_health": {
-      "name": "公共卫生",
-      "category": "society",
-      "branch": "society",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "medicine"
-      ],
-      "minimum_staff": 3,
-      "description": "出生 +30%，吸引力 +0.05。",
-      "effects": {
-        "births": 0.3,
-        "appeal": 0.05
-      }
-    },
     "commerce_law": {
       "name": "商业法",
       "category": "society",
@@ -1721,7 +769,7 @@
       "funding": 14.0,
       "weight": 8.0,
       "requires": [
-        "community_admin"
+        "society_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁商业街区：居民的钱终于有地方花了。",
@@ -1741,58 +789,6 @@
       "minimum_staff": 3,
       "description": "解锁文化中心。",
       "effects": {}
-    },
-    "trade_office": {
-      "name": "贸易代办处",
-      "category": "society",
-      "branch": "society",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "community_admin"
-      ],
-      "minimum_staff": 3,
-      "description": "出口市场更深：价格下跌更慢 +30%。",
-      "effects": {
-        "market_depth": 0.3
-      }
-    },
-    "settlement_law": {
-      "name": "据点法",
-      "category": "society",
-      "branch": "society",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "community_admin"
-      ],
-      "minimum_staff": 3,
-      "description": "远征费用 -25%。",
-      "effects": {
-        "expedition_cost": -0.25
-      }
-    },
-    "lab_automation": {
-      "name": "实验室自动化",
-      "category": "society",
-      "branch": "society",
-      "tier": 2,
-      "cost": 340.0,
-      "funding": 14.0,
-      "weight": 8.0,
-      "requires": [
-        "education"
-      ],
-      "minimum_staff": 3,
-      "description": "科研速度 +10%，每个类别多一张候选课题。",
-      "effects": {
-        "research_speed": 0.1,
-        "offers": 1.0
-      }
     },
     "scrubbing": {
       "name": "烟气净化",
@@ -1833,7 +829,7 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "public_health"
+        "society_2_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁综合医院。",
@@ -1848,63 +844,11 @@
       "funding": 22.0,
       "weight": 6.0,
       "requires": [
-        "community_admin"
+        "society_1_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁市政中心。",
       "effects": {}
-    },
-    "immigration_office": {
-      "name": "移民局",
-      "category": "society",
-      "branch": "society",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "recruit_agency"
-      ],
-      "minimum_staff": 3,
-      "description": "自发移民 +20%。",
-      "effects": {
-        "immigration": 0.2
-      }
-    },
-    "trade_fleet": {
-      "name": "商船队",
-      "category": "society",
-      "branch": "society",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "trade_office"
-      ],
-      "minimum_staff": 3,
-      "description": "出口价格 +5%，市场更深 +30%。",
-      "effects": {
-        "export_price": 0.05,
-        "market_depth": 0.3
-      }
-    },
-    "scientific_method": {
-      "name": "同行评议",
-      "category": "society",
-      "branch": "society",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "research_network"
-      ],
-      "minimum_staff": 3,
-      "description": "科研速度 +15%。",
-      "effects": {
-        "research_speed": 0.15
-      }
     },
     "research_institutes": {
       "name": "研究院制度",
@@ -1920,23 +864,6 @@
       "minimum_staff": 3,
       "description": "解锁研究院：20 席、3 个实验台。",
       "effects": {}
-    },
-    "emission_standards": {
-      "name": "排放标准",
-      "category": "society",
-      "branch": "society",
-      "tier": 3,
-      "cost": 620.0,
-      "funding": 22.0,
-      "weight": 6.0,
-      "requires": [
-        "scrubbing"
-      ],
-      "minimum_staff": 3,
-      "description": "排放 -20%。",
-      "effects": {
-        "pollution": -0.2
-      }
     },
     "data_services": {
       "name": "数据服务",
@@ -1969,94 +896,6 @@
       "description": "解锁巨型工程：行星议会大厦。总督资格的最后一块拼图。",
       "effects": {}
     },
-    "sociology": {
-      "name": "殖民社会学",
-      "category": "society",
-      "branch": "society",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "civic_planning"
-      ],
-      "minimum_staff": 3,
-      "description": "吸引力 +0.1，离开更少。",
-      "effects": {
-        "appeal": 0.1,
-        "departure": 0.25
-      }
-    },
-    "planetary_market": {
-      "name": "行星市场",
-      "category": "society",
-      "branch": "society",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "trade_fleet"
-      ],
-      "minimum_staff": 3,
-      "description": "出口价格再 +5%，市场更深 +40%。",
-      "effects": {
-        "export_price": 0.05,
-        "market_depth": 0.4
-      }
-    },
-    "deep_research": {
-      "name": "基础科学中心",
-      "category": "society",
-      "branch": "society",
-      "tier": 4,
-      "cost": 1000.0,
-      "funding": 32.0,
-      "weight": 4.0,
-      "requires": [
-        "scientific_method"
-      ],
-      "minimum_staff": 3,
-      "description": "科研速度 +20%。",
-      "effects": {
-        "research_speed": 0.2
-      }
-    },
-    "charter_of_rights": {
-      "name": "行星宪章",
-      "category": "society",
-      "branch": "society",
-      "tier": 5,
-      "cost": 1600.0,
-      "funding": 46.0,
-      "weight": 3.0,
-      "requires": [
-        "sociology"
-      ],
-      "minimum_staff": 3,
-      "description": "吸引力 +0.15，自发移民 +20%。",
-      "effects": {
-        "appeal": 0.15,
-        "immigration": 0.2
-      }
-    },
-    "unified_science": {
-      "name": "统一科学",
-      "category": "society",
-      "branch": "society",
-      "tier": 5,
-      "cost": 1600.0,
-      "funding": 46.0,
-      "weight": 3.0,
-      "requires": [
-        "deep_research"
-      ],
-      "minimum_staff": 3,
-      "description": "科研速度再 +30%。",
-      "effects": {
-        "research_speed": 0.3
-      }
-    },
     "terraforming": {
       "name": "行星改造",
       "category": "agriculture",
@@ -2067,7 +906,7 @@
       "weight": 3.0,
       "requires": [
         "climate",
-        "biosphere_seeding"
+        "agriculture_4_merged"
       ],
       "minimum_staff": 3,
       "description": "解锁巨型工程行星改造计划：三期工程让全星球更温和、更湿润、更肥沃。",
@@ -2192,7 +1031,7 @@
       "funding": 14.0,
       "weight": 6.0,
       "requires": [
-        "cargo_handling"
+        "construction_1_merged"
       ],
       "minimum_staff": 3,
       "description": "测量船的近海勘察费用和时间减半，并查明近海矿体的品位；之后可以研究海底采矿。",
@@ -2246,11 +1085,685 @@
       "minimum_staff": 3,
       "description": "解锁高温合金厂：两份镍加半份钴炼成一份高温合金，价格是合金的三倍多。",
       "effects": {}
+    },
+    "agriculture_1_merged": {
+      "name": "垦殖基础",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 1,
+      "cost": 896.0,
+      "funding": 8.0,
+      "weight": 10.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "合并了「天气预报」「闭环灌溉」「土壤微生物」「病虫害综合防治」「冷链仓储」「雨水回收」「种质库」：天气预警提前 2 日。农场用水 -30%，产量 +20%。农场产量 +10%：这颗星球的土第一次有了菌群。农场产量 +8%。每人每天少浪费一点：食品消耗 -5%。供水 +10%。农场产量 +5%，吸引力 +0.02。",
+      "effects": {
+        "weather_warning": 2.0,
+        "farm_water": -0.3,
+        "farm_output": 0.43,
+        "food_need": -0.05,
+        "water_output": 0.1,
+        "appeal": 0.02
+      },
+      "merged_from": [
+        "weather_forecasting",
+        "irrigation",
+        "soil_microbes",
+        "pest_control",
+        "cold_chain",
+        "rain_capture",
+        "seed_bank"
+      ],
+      "part_costs": {
+        "weather_forecasting": 160.0,
+        "irrigation": 160.0,
+        "soil_microbes": 160.0,
+        "pest_control": 160.0,
+        "cold_chain": 160.0,
+        "rain_capture": 160.0,
+        "seed_bank": 160.0
+      }
+    },
+    "agriculture_2_merged": {
+      "name": "农业增产",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 2,
+      "cost": 1088.0,
+      "funding": 14.0,
+      "weight": 8.0,
+      "requires": [
+        "agriculture_1_merged",
+        "adaptation"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「轮作制度」「食品精深加工」「中水回用」「战略粮储」：农场产量 +12%。食品加工坊收入 +25%。用水 -15%。食品消耗再 -5%，吸引力 +0.03。",
+      "effects": {
+        "farm_output": 0.12,
+        "foodworks": 0.25,
+        "water_use": -0.15,
+        "food_need": -0.05,
+        "appeal": 0.03
+      },
+      "merged_from": [
+        "crop_rotation",
+        "food_export",
+        "water_recycling",
+        "grain_reserve"
+      ],
+      "part_costs": {
+        "crop_rotation": 340.0,
+        "food_export": 340.0,
+        "water_recycling": 340.0,
+        "grain_reserve": 340.0
+      }
+    },
+    "agriculture_3_merged": {
+      "name": "高效农业",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 3,
+      "cost": 1984.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "agriculture_2_merged",
+        "hydroponics",
+        "aquaculture"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「基因作物」「闭环生态」「光谱照明」「海洋牧场」：农场产量 +25%。用水 -20%，星球吸收污染能力 +30%。室内农业产量 +30%。室内和近海农业产量 +20%。",
+      "effects": {
+        "farm_output": 0.25,
+        "water_use": -0.2,
+        "absorption": 0.3,
+        "hydro_output": 0.5
+      },
+      "merged_from": [
+        "genetic_crops",
+        "closed_ecology",
+        "indoor_lighting",
+        "marine_ranching"
+      ],
+      "part_costs": {
+        "genetic_crops": 620.0,
+        "closed_ecology": 620.0,
+        "indoor_lighting": 620.0,
+        "marine_ranching": 620.0
+      }
+    },
+    "agriculture_4_merged": {
+      "name": "生态工程",
+      "category": "agriculture",
+      "branch": "agriculture",
+      "tier": 4,
+      "cost": 1600.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": [
+        "agriculture_3_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「土壤工程」「生物圈播种」：农场产量 +30%。星球吸收污染能力 +50%。",
+      "effects": {
+        "farm_output": 0.3,
+        "absorption": 0.5
+      },
+      "merged_from": [
+        "soil_engineering",
+        "biosphere_seeding"
+      ],
+      "part_costs": {
+        "soil_engineering": 1000.0,
+        "biosphere_seeding": 1000.0
+      }
+    },
+    "construction_1_merged": {
+      "name": "建设基础",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 1,
+      "cost": 640.0,
+      "funding": 8.0,
+      "weight": 10.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "合并了「预制模块」「筑路机械队」「测绘无人机」「码头装卸」「保温材料」：建设速度 +10%。修路速度 +20%。路线投资 -10%，勘察费用 -20%。港口吞吐 +15%。用电 -5%，建设费用 -3%。",
+      "effects": {
+        "build_speed": 0.1,
+        "road_build": 0.2,
+        "road_cost": -0.1,
+        "survey_cost": -0.2,
+        "port_capacity": 0.15,
+        "power_use": -0.05,
+        "build_cost": -0.03
+      },
+      "merged_from": [
+        "prefab_modules",
+        "road_crews",
+        "survey_drones",
+        "cargo_handling",
+        "insulation"
+      ],
+      "part_costs": {
+        "prefab_modules": 160.0,
+        "road_crews": 160.0,
+        "survey_drones": 160.0,
+        "cargo_handling": 160.0,
+        "insulation": 160.0
+      }
+    },
+    "construction_2_merged": {
+      "name": "工程管理",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 2,
+      "cost": 1088.0,
+      "funding": 14.0,
+      "weight": 8.0,
+      "requires": [
+        "agriculture_1_merged",
+        "wind_power",
+        "construction_1_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「防灾工程」「电网储能」「3D 打印建筑」「集装箱码头」：天气灾害造成的物资损失 -30%。发电 +15%。建设速度 +15%，建设费用 -5%。港口吞吐 +25%。",
+      "effects": {
+        "weather_losses": -0.3,
+        "power_output": 0.15,
+        "build_speed": 0.15,
+        "build_cost": -0.05,
+        "port_capacity": 0.25
+      },
+      "merged_from": [
+        "disaster_engineering",
+        "grid_storage",
+        "printed_buildings",
+        "container_ports"
+      ],
+      "part_costs": {
+        "disaster_engineering": 340.0,
+        "grid_storage": 340.0,
+        "printed_buildings": 340.0,
+        "container_ports": 340.0
+      }
+    },
+    "construction_3_merged": {
+      "name": "大型工程",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 3,
+      "cost": 2480.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "paved_roads",
+        "construction_2_merged",
+        "shipping",
+        "road_machines"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「重载铁路」「模块化工厂」「货运飞艇」「智能电网」「隧道掘进」：陆路运力 +30%，单程时间 -20%。建设费用 -10%，建设速度 +10%。航速 +30%，航线运力 +30%。用电 -15%。修路速度 +30%，封路风险更低。",
+      "effects": {
+        "road_capacity": 0.3,
+        "road_speed": 0.2,
+        "build_cost": -0.1,
+        "build_speed": 0.1,
+        "sea_speed": 0.3,
+        "sea_capacity": 0.3,
+        "power_use": -0.15,
+        "road_build": 0.3,
+        "closure": -0.3
+      },
+      "merged_from": [
+        "heavy_rail",
+        "modular_fabs",
+        "cargo_airships",
+        "smart_grid",
+        "tunnel_boring"
+      ],
+      "part_costs": {
+        "heavy_rail": 620.0,
+        "modular_fabs": 620.0,
+        "cargo_airships": 620.0,
+        "smart_grid": 620.0,
+        "tunnel_boring": 620.0
+      }
+    },
+    "construction_4_merged": {
+      "name": "超级结构",
+      "category": "construction",
+      "branch": "construction",
+      "tier": 4,
+      "cost": 2400.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": [
+        "construction_3_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「巨型结构工程」「超导输电」「快速施工体系」：巨型工程工期 -25%，费用 -15%。发电再 +25%。建设速度再 +25%。",
+      "effects": {
+        "great_speed": 0.25,
+        "great_cost": -0.15,
+        "power_output": 0.25,
+        "build_speed": 0.25
+      },
+      "merged_from": [
+        "megastructures",
+        "superconductors",
+        "rapid_construction"
+      ],
+      "part_costs": {
+        "megastructures": 1000.0,
+        "superconductors": 1000.0,
+        "rapid_construction": 1000.0
+      }
+    },
+    "industry_1_merged": {
+      "name": "采选基础",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 1,
+      "cost": 640.0,
+      "funding": 8.0,
+      "weight": 10.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "合并了「碳化钨钻头」「矿石分选线」「铜矿堆浸」「晶体定向切割」「矿山安全规程」：矿山日产 +10%。钻头寿命翻倍，换班不再等配件。铁矿日产 +15%：废石在出坑前就被挑出去了。铜矿日产 +15%。晶体日产 +15%。矿山维护费 -10%，吸引力 +0.02。",
+      "effects": {
+        "mine_output": 0.1,
+        "ore_output": 0.15,
+        "copper_output": 0.15,
+        "crystal_output": 0.15,
+        "mine_upkeep": -0.1,
+        "appeal": 0.02
+      },
+      "merged_from": [
+        "drill_bits",
+        "ore_sorting",
+        "copper_leach",
+        "crystal_cutting",
+        "mine_safety"
+      ],
+      "part_costs": {
+        "drill_bits": 160.0,
+        "ore_sorting": 160.0,
+        "copper_leach": 160.0,
+        "crystal_cutting": 160.0,
+        "mine_safety": 160.0
+      }
+    },
+    "industry_2_merged": {
+      "name": "工业增效",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 2,
+      "cost": 816.0,
+      "funding": 14.0,
+      "weight": 8.0,
+      "requires": [
+        "processing",
+        "industry_1_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「精益产线」「余热回收」「矿区窄轨」：所有工厂产量 +15%。工厂用电和污染都少一点：用电 -8%，排放 -8%。矿山日产 +10%，矿山维护费再 -10%。",
+      "effects": {
+        "factory_output": 0.15,
+        "power_use": -0.08,
+        "pollution": -0.08,
+        "mine_output": 0.1,
+        "mine_upkeep": -0.1
+      },
+      "merged_from": [
+        "lean_line",
+        "smelter_heat",
+        "ore_trains"
+      ],
+      "part_costs": {
+        "lean_line": 340.0,
+        "smelter_heat": 340.0,
+        "ore_trains": 340.0
+      }
+    },
+    "industry_3_merged": {
+      "name": "工业升级",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 3,
+      "cost": 1488.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "alloy_smelting",
+        "heavy_machinery"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「冶金闭环」「矿用机器人」「边疆补给体系」：合金产量 +20%，排放 -15%。矿场岗位 -15%，矿山日产 +10%。边疆据点产量 +10%。",
+      "effects": {
+        "alloy_output": 0.2,
+        "pollution": -0.15,
+        "mine_jobs": -0.15,
+        "mine_output": 0.1,
+        "frontier_output": 0.1
+      },
+      "merged_from": [
+        "metal_cycle",
+        "mine_robots",
+        "frontier_logistics"
+      ],
+      "part_costs": {
+        "metal_cycle": 620.0,
+        "mine_robots": 620.0,
+        "frontier_logistics": 620.0
+      }
+    },
+    "industry_4_merged": {
+      "name": "先进制造",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 4,
+      "cost": 3200.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": [
+        "deep_mining",
+        "industry_3_merged",
+        "crystal_growth",
+        "automation"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「深部矿脉工程」「晶体谐振提取」「智能工厂」「清洁工艺」：矿山日产 +25%。晶体日产 +40%。工厂岗位 -25%，工厂产量 +20%。排放 -25%。",
+      "effects": {
+        "mine_output": 0.25,
+        "crystal_output": 0.4,
+        "factory_jobs": -0.25,
+        "factory_output": 0.2,
+        "pollution": -0.25
+      },
+      "merged_from": [
+        "deep_core",
+        "crystal_resonance",
+        "smart_factory",
+        "clean_process"
+      ],
+      "part_costs": {
+        "deep_core": 1000.0,
+        "crystal_resonance": 1000.0,
+        "smart_factory": 1000.0,
+        "clean_process": 1000.0
+      }
+    },
+    "industry_5_merged": {
+      "name": "全面自动化",
+      "category": "industry",
+      "branch": "industry",
+      "tier": 5,
+      "cost": 2560.0,
+      "funding": 46.0,
+      "weight": 3.0,
+      "requires": [
+        "industry_4_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「纳米制造」「全域自动化」：所有工厂产量再 +30%。矿场和工厂岗位再 -20%。",
+      "effects": {
+        "factory_output": 0.3,
+        "mine_jobs": -0.2,
+        "factory_jobs": -0.2
+      },
+      "merged_from": [
+        "nano_fabrication",
+        "total_automation"
+      ],
+      "part_costs": {
+        "nano_fabrication": 1600.0,
+        "total_automation": 1600.0
+      }
+    },
+    "society_1_merged": {
+      "name": "社区治理",
+      "category": "society",
+      "branch": "society",
+      "tier": 1,
+      "cost": 512.0,
+      "funding": 8.0,
+      "weight": 10.0,
+      "requires": [],
+      "minimum_staff": 3,
+      "description": "合并了「社区治理」「劳动保障」「招募代理」「科学考察制度」：行政费 -15%。吸引力 +0.05，离开更少。招募价格 -20%，自发移民 +10%。科研速度 +5%。",
+      "effects": {
+        "admin": -0.15,
+        "appeal": 0.05,
+        "departure": 0.25,
+        "recruit_price": -0.2,
+        "immigration": 0.1,
+        "research_speed": 0.05
+      },
+      "merged_from": [
+        "community_admin",
+        "labour_law",
+        "recruit_agency",
+        "field_notes"
+      ],
+      "part_costs": {
+        "community_admin": 160.0,
+        "labour_law": 160.0,
+        "recruit_agency": 160.0,
+        "field_notes": 160.0
+      }
+    },
+    "society_2_merged": {
+      "name": "公共事务",
+      "category": "society",
+      "branch": "society",
+      "tier": 2,
+      "cost": 1360.0,
+      "funding": 14.0,
+      "weight": 8.0,
+      "requires": [
+        "medicine",
+        "society_1_merged",
+        "education"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「环境治理」「公共卫生」「贸易代办处」「据点法」「实验室自动化」：星球吸收污染能力 +50%，治理费用 -50%。出生 +30%，吸引力 +0.05。出口市场更深：价格下跌更慢 +30%。远征费用 -25%。科研速度 +10%，每个类别多一张候选课题。",
+      "effects": {
+        "absorption": 0.5,
+        "cleanup_cost": -0.5,
+        "births": 0.3,
+        "appeal": 0.05,
+        "market_depth": 0.3,
+        "expedition_cost": -0.25,
+        "research_speed": 0.1,
+        "offers": 1.0
+      },
+      "merged_from": [
+        "remediation",
+        "public_health",
+        "trade_office",
+        "settlement_law",
+        "lab_automation"
+      ],
+      "part_costs": {
+        "remediation": 340.0,
+        "public_health": 340.0,
+        "trade_office": 340.0,
+        "settlement_law": 340.0,
+        "lab_automation": 340.0
+      }
+    },
+    "society_3_merged": {
+      "name": "社会发展",
+      "category": "society",
+      "branch": "society",
+      "tier": 3,
+      "cost": 1984.0,
+      "funding": 22.0,
+      "weight": 6.0,
+      "requires": [
+        "society_1_merged",
+        "society_2_merged",
+        "research_network",
+        "scrubbing"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「移民局」「商船队」「同行评议」「排放标准」：自发移民 +20%。出口价格 +5%，市场更深 +30%。科研速度 +15%。排放 -20%。",
+      "effects": {
+        "immigration": 0.2,
+        "export_price": 0.05,
+        "market_depth": 0.3,
+        "research_speed": 0.15,
+        "pollution": -0.2
+      },
+      "merged_from": [
+        "immigration_office",
+        "trade_fleet",
+        "scientific_method",
+        "emission_standards"
+      ],
+      "part_costs": {
+        "immigration_office": 620.0,
+        "trade_fleet": 620.0,
+        "scientific_method": 620.0,
+        "emission_standards": 620.0
+      }
+    },
+    "society_4_merged": {
+      "name": "社会科学",
+      "category": "society",
+      "branch": "society",
+      "tier": 4,
+      "cost": 2400.0,
+      "funding": 32.0,
+      "weight": 4.0,
+      "requires": [
+        "civic_planning",
+        "society_3_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「殖民社会学」「行星市场」「基础科学中心」：吸引力 +0.1，离开更少。出口价格再 +5%，市场更深 +40%。科研速度 +20%。",
+      "effects": {
+        "appeal": 0.1,
+        "departure": 0.25,
+        "export_price": 0.05,
+        "market_depth": 0.4,
+        "research_speed": 0.2
+      },
+      "merged_from": [
+        "sociology",
+        "planetary_market",
+        "deep_research"
+      ],
+      "part_costs": {
+        "sociology": 1000.0,
+        "planetary_market": 1000.0,
+        "deep_research": 1000.0
+      }
+    },
+    "society_5_merged": {
+      "name": "未来社会",
+      "category": "society",
+      "branch": "society",
+      "tier": 5,
+      "cost": 2560.0,
+      "funding": 46.0,
+      "weight": 3.0,
+      "requires": [
+        "society_4_merged"
+      ],
+      "minimum_staff": 3,
+      "description": "合并了「行星宪章」「统一科学」：吸引力 +0.15，自发移民 +20%。科研速度再 +30%。",
+      "effects": {
+        "appeal": 0.15,
+        "immigration": 0.2,
+        "research_speed": 0.3
+      },
+      "merged_from": [
+        "charter_of_rights",
+        "unified_science"
+      ],
+      "part_costs": {
+        "charter_of_rights": 1600.0,
+        "unified_science": 1600.0
+      }
     }
   },
   "always_dealt": [
-    "community_admin",
+    "society_1_merged",
     "civic_planning",
     "capital_planning"
-  ]
+  ],
+  "merged": {
+    "weather_forecasting": "agriculture_1_merged",
+    "irrigation": "agriculture_1_merged",
+    "soil_microbes": "agriculture_1_merged",
+    "pest_control": "agriculture_1_merged",
+    "cold_chain": "agriculture_1_merged",
+    "rain_capture": "agriculture_1_merged",
+    "seed_bank": "agriculture_1_merged",
+    "crop_rotation": "agriculture_2_merged",
+    "food_export": "agriculture_2_merged",
+    "water_recycling": "agriculture_2_merged",
+    "grain_reserve": "agriculture_2_merged",
+    "genetic_crops": "agriculture_3_merged",
+    "closed_ecology": "agriculture_3_merged",
+    "indoor_lighting": "agriculture_3_merged",
+    "marine_ranching": "agriculture_3_merged",
+    "soil_engineering": "agriculture_4_merged",
+    "biosphere_seeding": "agriculture_4_merged",
+    "prefab_modules": "construction_1_merged",
+    "road_crews": "construction_1_merged",
+    "survey_drones": "construction_1_merged",
+    "cargo_handling": "construction_1_merged",
+    "insulation": "construction_1_merged",
+    "disaster_engineering": "construction_2_merged",
+    "grid_storage": "construction_2_merged",
+    "printed_buildings": "construction_2_merged",
+    "container_ports": "construction_2_merged",
+    "heavy_rail": "construction_3_merged",
+    "modular_fabs": "construction_3_merged",
+    "cargo_airships": "construction_3_merged",
+    "smart_grid": "construction_3_merged",
+    "tunnel_boring": "construction_3_merged",
+    "megastructures": "construction_4_merged",
+    "superconductors": "construction_4_merged",
+    "rapid_construction": "construction_4_merged",
+    "drill_bits": "industry_1_merged",
+    "ore_sorting": "industry_1_merged",
+    "copper_leach": "industry_1_merged",
+    "crystal_cutting": "industry_1_merged",
+    "mine_safety": "industry_1_merged",
+    "lean_line": "industry_2_merged",
+    "smelter_heat": "industry_2_merged",
+    "ore_trains": "industry_2_merged",
+    "metal_cycle": "industry_3_merged",
+    "mine_robots": "industry_3_merged",
+    "frontier_logistics": "industry_3_merged",
+    "deep_core": "industry_4_merged",
+    "crystal_resonance": "industry_4_merged",
+    "smart_factory": "industry_4_merged",
+    "clean_process": "industry_4_merged",
+    "nano_fabrication": "industry_5_merged",
+    "total_automation": "industry_5_merged",
+    "community_admin": "society_1_merged",
+    "labour_law": "society_1_merged",
+    "recruit_agency": "society_1_merged",
+    "field_notes": "society_1_merged",
+    "remediation": "society_2_merged",
+    "public_health": "society_2_merged",
+    "trade_office": "society_2_merged",
+    "settlement_law": "society_2_merged",
+    "lab_automation": "society_2_merged",
+    "immigration_office": "society_3_merged",
+    "trade_fleet": "society_3_merged",
+    "scientific_method": "society_3_merged",
+    "emission_standards": "society_3_merged",
+    "sociology": "society_4_merged",
+    "planetary_market": "society_4_merged",
+    "deep_research": "society_4_merged",
+    "charter_of_rights": "society_5_merged",
+    "unified_science": "society_5_merged"
+  },
+  "merge_cost_factor": 0.8
 }

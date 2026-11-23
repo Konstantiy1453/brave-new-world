@@ -994,7 +994,7 @@
                 }
               ],
               "ending": "值班簿归档",
-              "research_lead": "field_notes"
+              "research_lead": "society_1_merged"
             },
             {
               "id": "sample",
@@ -1041,7 +1041,7 @@
               "goods_cost": {
                 "materials": 8
               },
-              "research_lead": "ore_sorting"
+              "research_lead": "industry_1_merged"
             },
             {
               "id": "decline",
@@ -1184,7 +1184,7 @@
               "id": "publish",
               "label": "清理并公开失效区间",
               "pay": 1500,
-              "research_lead": "mine_safety",
+              "research_lead": "industry_1_merged",
               "effects": [
                 {
                   "kind": "mine",
@@ -2347,7 +2347,7 @@
               "id": "stop",
               "label": "公开观测，停止工程化",
               "ending": "地层热潮记录",
-              "research_lead": "field_notes"
+              "research_lead": "society_1_merged"
             }
           ],
           "default": "stop",
@@ -2377,7 +2377,7 @@
               "id": "stop",
               "label": "只保留自然观测",
               "ending": "热潮观测公开",
-              "research_lead": "field_notes"
+              "research_lead": "society_1_merged"
             }
           ],
           "default": "stop",
@@ -2470,7 +2470,7 @@
                   "maintenance": 0
                 }
               ],
-              "research_lead": "field_notes"
+              "research_lead": "society_1_merged"
             }
           ],
           "default": "stop",
@@ -2495,7 +2495,7 @@
                   "maintenance": 15
                 }
               ],
-              "research_lead": "grid_storage",
+              "research_lead": "construction_2_merged",
               "ending": "热潮运行规程"
             },
             {
@@ -2510,7 +2510,7 @@
                   "maintenance": 0
                 }
               ],
-              "research_lead": "smart_grid",
+              "research_lead": "construction_3_merged",
               "ending": "行星热潮研究"
             },
             {
@@ -2525,7 +2525,7 @@
                   "maintenance": 0
                 }
               ],
-              "research_lead": "field_notes",
+              "research_lead": "society_1_merged",
               "ending": "热潮数据公用"
             },
             {

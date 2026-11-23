@@ -3,6 +3,8 @@ extends RefCounted
 ## Missing a soft deadline feeds the company process, never instant failure.
 
 const Rules = preload("res://simulation/rules.gd")
+## A goal counting finished technologies at a tier or above: techs_tier_<n> (1.11 H).
+const TIER_GOAL: String = "techs_tier_"
 const STREAK_WINDOW: int = 7
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -229,6 +231,8 @@ static func _review_blocks_award(sim: RefCounted) -> bool:
 
 ## Current value of one goal, in the units of its target.
 static func goal_value(sim: RefCounted, key: String) -> float:
+	if key.begins_with(TIER_GOAL):
+		return Research.researched_from_tier(sim.state, int(key.trim_prefix(TIER_GOAL)))
 	match key:
 		"settlements":
 			return sim.state.settlements.size()
@@ -405,6 +409,9 @@ static func _check_milestones(sim: RefCounted) -> void:
 				reached = Megaprojects.count(sim) >= int(milestone.target)
 			"technologies":
 				reached = Research.researched(sim.state) >= int(milestone.target)
+			"techs_tier":
+				var count: int = Research.researched_from_tier(sim.state, int(milestone.tier))
+				reached = count >= int(milestone.target)
 		if reached:
 			contract.milestones.append(milestone.id)
 			sim.state.career.balance = float(sim.state.career.balance) + float(milestone.reward)

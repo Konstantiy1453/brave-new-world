@@ -1379,3 +1379,30 @@ factories, so the game's cycle and the payback bands stay as they are.
   the balanced bot on normal. It measures what the bot found worth doing, the nearest a bot comes to
   "had nothing to decide"; the annual ship's cadence in real minutes comes from the data
   (seconds_per_day and the speeds).
+- The technology merge (H) cannot reach the plan's 55-65 under its own rules: merging only the
+  technologies that add effects, unlock nothing and are required by nothing gives 125; merging also
+  those that only other technologies require, with each requirement pointed at the merged one,
+  gives 85; 55-65 needs technologies that unlock buildings merged too, against the plan's "keep
+  every technology that unlocks a building, upgrade or rule". Asked the user (2026-11-23); until an
+  answer, the middle reading (85, 79 researchable) is built. The grouping is the only part that
+  differs between the readings (`tools/tech_merge.py`).
+- What the merge keeps: a technology named by any rule file but events.json, or by game code but
+  the 1.6 save migration (it unlocks something); gifts; frozen ones; any without effects. The rest
+  merge within category and tier: 69 into 18 (two tiers had one each and stay). Names are new
+  (垦殖基础, 工程管理 ...); the description lists the parts.
+- A merged technology costs the sum of its parts x 0.8 (`merge_cost_factor`); its funding is the
+  parts' funding weighted by cost, so a research point costs what it did; draw weight and minimum
+  staff are the parts' largest. Effects add per key: the totals over the tree are unchanged
+  (`v111_techs` holds them to the totals before the merge).
+- `techs.json` `merged` maps old ids to new ones; `merged_from` and `part_costs` sit on each merged
+  technology. Saves convert on every load path (old schemas through `ensure_state`, current saves
+  beside the crews' and weather's upgrades, 1.6 saves through validation that accepts merged ids):
+  finished when all parts were, otherwise the finished parts' points (their old costs) plus any
+  running part's work become progress, short of finishing; teams move with the project; offers
+  name it once. Events' `research_lead` ids were rewritten in the data; bots read their plans
+  through `Research.current_id`.
+- The contract's technology goals become tier milestones, `techs_tier_<n>`: technologies finished
+  at tier n or above, gifts left out (`Contract.TIER_GOAL`). Calibrated with
+  `tests/balance/calibrate_techs.gd`: the balanced bot on the three classic contracts and the quick
+  seeds, before the merge for the days its counts (5, 14, 24, 40) were reached, after it with the
+  goals off for the day each tier count is reached.

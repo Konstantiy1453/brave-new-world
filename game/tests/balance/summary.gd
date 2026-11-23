@@ -28,7 +28,8 @@ const PASSIVE_REVIEW_DAY: Array[int] = [150, 400]
 const PASSIVE_FAILURE_DAY: Array[int] = [400, 900]
 const POPULATION_AT_720: int = 300
 const POPULATION_AT_1440: int = 800
-const MIN_TECHS_BALANCED: int = 40
+## 40 of 130 researchable technologies before the 1.11 H merge; the same share of the 79 now.
+const MIN_TECHS_BALANCED: int = 24
 const SCIENTIST_SHARE: Array[float] = [0.10, 0.20]
 const REINVEST_SHARE: float = 0.60
 const INCOME_GROWTH: float = 2.5
@@ -140,6 +141,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_floor_row(rows, runs)
 	_award_rows(rows, runs)
 	_opening_row(rows, runs)
+	_origin_detail_row(rows, runs)
 	_report_row(rows, runs)
 	_endings_row(rows, runs)
 	_failure_rows(rows, runs)
@@ -233,6 +235,41 @@ static func _opening_row(rows: Array, runs: Array) -> void:
 
 ## The annual report (1.11 D): inflating every line should pay more in years 1-2 and cost more by
 ## years 4-5 than reporting the truth (balanced bot against the inflating bot, capital, normal).
+## The origins' other measures (1.11 C, measured in J): the day of the first export by truck or
+## ship and the operating routes standing when stage three was accepted, balanced bot on normal.
+static func _origin_detail_row(rows: Array, runs: Array) -> void:
+	var parts: PackedStringArray = []
+	for opening: String in ORIGINS:
+		var group: Array = select(runs, "balanced", "normal", opening)
+		if group.is_empty():
+			continue
+		var firsts: Array = []
+		var routes: Dictionary = {}
+		for run: Dictionary in group:
+			var days: Array = []
+			for kind: String in ["ore", "ship"]:
+				var day: int = int(run.get("firsts", {}).get(kind, -1))
+				if day >= 0:
+					days.append(day)
+			if not days.is_empty():
+				firsts.append(float(days.min()))
+			for route: Variant in run.get("stage3_routes", []):
+				routes[str(route)] = int(routes.get(str(route), 0)) + 1
+		parts.append(
+			(
+				"%s first export day %s, stage 3 by %s"
+				% [opening, "%.0f" % median(firsts) if not firsts.is_empty() else "-", str(routes)]
+			)
+		)
+	_row(
+		rows,
+		"Origins, routes",
+		"balanced, normal: first export day; routes standing at stage three (no target)",
+		"; ".join(parts) if not parts.is_empty() else "not measured",
+		STATUS_INFO if not parts.is_empty() else STATUS_NONE
+	)
+
+
 static func _report_row(rows: Array, runs: Array) -> void:
 	var honest: Array = select(runs, "balanced", "normal", "capital")
 	var inflated: Array = select(runs, "inflating", "normal", "capital")
@@ -425,7 +462,7 @@ static func _research_rows(rows: Array, runs: Array) -> void:
 	_row(
 		rows,
 		"Research, balanced",
-		">= 40 techs; every category; research teams 10-20%",
+		">= %d techs; every category; research teams 10-20%%" % MIN_TECHS_BALANCED,
 		"%.0f techs; %.0f categories; %.0f%%" % [techs, categories, share * 100.0],
 		_verdict(ok, not group.is_empty())
 	)

@@ -4,6 +4,7 @@ extends RefCounted
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Research = preload("res://simulation/research.gd")
 const LightRecord = preload("res://simulation/light_record.gd")
+const OperatingRoutes = preload("res://simulation/operating_routes.gd")
 const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
 const RESEARCH_WINDOW_FIRST_DAY: int = 360
 const RESEARCH_WINDOW_LAST_DAY: int = 1440
@@ -77,6 +78,7 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"cash_at": {},
 				"annual": {},
 				"light_stage": {},
+				"stage3_routes": [],
 			}
 		)
 	)
@@ -103,6 +105,12 @@ func sample(sim: RefCounted) -> void:
 		if record.audit_errors.size() < 5:
 			record.audit_errors.append({"day": day, "issues": issues})
 	record.stage_days = state.contract.completed.duplicate()
+	if state.contract.completed.has("3") and record.stage3_routes.is_empty():
+		for row: Dictionary in OperatingRoutes.view(sim):
+			if bool(row.ok):
+				record.stage3_routes.append(str(row.id))
+		if record.stage3_routes.is_empty():
+			record.stage3_routes.append("none")
 	if POPULATION_CHECKPOINTS.has(day):
 		record.population[str(day)] = _population(state)
 		record.cash_at[str(day)] = float(state.cash)
@@ -146,6 +154,9 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.ending = state.get("ending", {}).duplicate()
 	record.shuttle_lines = _shuttle_lines(sim)
 	record.weather = _weather(state)
+	record.firsts = {}
+	for kind: String in state.get("firsts", {}):
+		record.firsts[kind] = int(state.firsts[kind].get("day", -1))
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense
 	if _operating_surplus > 0.0:

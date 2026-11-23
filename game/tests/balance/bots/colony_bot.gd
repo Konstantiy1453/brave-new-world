@@ -500,12 +500,15 @@ func _card_value(row: Dictionary) -> float:
 	var value: float = float(row.unlocks.size()) * 3.0
 	value += float(sim.config.techs[id].effects.size())
 	value -= float(row.cost) / 300.0
-	var rank: int = tech_order.find(id)
+	var rank: int = tech_rank(tech_order, id)
 	if rank >= 0:
 		value += 12.0 + float(tech_order.size() - rank) * 0.5
 	if _hall_chain().has(id):
 		value += 25.0 if int(sim.state.contract.stage) >= 3 else 6.0
-	if _out_of_farm_land() and id in ["adaptation", "irrigation", "hydroponics", "aquaculture"]:
+	if (
+		_out_of_farm_land()
+		and tech_rank(["adaptation", "irrigation", "hydroponics", "aquaculture"], id) >= 0
+	):
 		value += 30.0
 	if _mines_running_out() and id in ["survey", "deep_mining", "prospecting", "tailings_recovery"]:
 		value += 30.0

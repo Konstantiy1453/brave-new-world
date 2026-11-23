@@ -3,6 +3,7 @@ extends RefCounted
 ## State is read for decisions and never written.
 
 const EventsV2 = preload("res://simulation/events_v2.gd")
+const Research = preload("res://simulation/research.gd")
 
 var sim: RefCounted
 var seed_value: int = 0
@@ -34,6 +35,15 @@ func act(action: String, args: Dictionary = {}) -> String:
 
 func today() -> int:
 	return int(sim.state.day) + 1
+
+
+## A technology's place in a bot's plan, read through the 1.11 H merge: an old id in the plan
+## stands for the technology that replaced it (the first mention counts). -1 when not in it.
+func tech_rank(order: Array[String], id: String) -> int:
+	for index: int in range(order.size()):
+		if Research.current_id(order[index]) == id:
+			return index
+	return -1
 
 
 ## Takes the first enabled non-deferring option of every pending event.

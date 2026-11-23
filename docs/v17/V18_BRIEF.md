@@ -62,9 +62,9 @@ Balance harness on fixed seeds, standard difficulty and medians unless stated. Y
 | Failure | Passive bot: review by day 150-400, takeover by day 400-900. Sloppy bot: review on every difficulty, takeover on hard |
 | Population | Meets the final goal at award; at least 300 by year 2 and 800 by year 4 |
 | Labour lever | Wage 1.0× to 1.3× changes 360-day immigration by at least 20% |
-| Research | Balanced: at least 40 technologies by award, every category used, research teams 10-20% of adults at award |
+| Research | Balanced: at least 24 technologies by award, every category used, research teams 10-20% of adults at award (1.11 H: 40 of 130 researchable before the merge, the same share of the 79 after it) |
 | Research-first | More technologies than balanced at award, award inside the standard band |
-| Technology pool | At least 100 technologies in 4 categories; at least 30 new buildings; offers differ between seeds |
+| Technology pool | At least 100 technologies in 4 categories; at least 30 new buildings; offers differ between seeds (1.11 H, the user's decision of 2026-11-22: technologies that only add effects merged within category and tier, 136 to 85, 79 researchable, every effect total kept; the buildings and offers rows stand) |
 | Money | Reinvests at least 60% of operating surplus; income at year 6 at least 2.5× year 2 |
 | Export mix | No good above 60% of export revenue after year 2 |
 | Pollution | Output penalty under 2% through year 3 for balanced; never a company risk source; a no-control run reaches at least 15% by year 8 |

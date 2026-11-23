@@ -191,6 +191,13 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 static func goal(row: Dictionary) -> Dictionary:
 	var value: float = float(row.value)
 	var target: float = float(row.target)
+	if str(row.key).begins_with("techs_tier_"):
+		var tier: int = int(str(row.key).trim_prefix("techs_tier_"))
+		return {
+			"text": "%d 级及以上的技术 %d / %d" % [tier, value, target],
+			"hint": "先完成低级技术解锁高级课题，再分配研究团队",
+			"page": "research"
+		}
 	match str(row.key):
 		"settlements":
 			return {"text": "建立据点 %d / %d" % [value, target], "hint": "在地图上选址并建立首府", "page": ""}

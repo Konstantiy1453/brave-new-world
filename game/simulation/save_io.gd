@@ -134,6 +134,8 @@ static func _load_v3(sim: RefCounted, path: String, bytes: PackedByteArray) -> S
 		sim.Crews.ensure_state(candidate)
 		Weather.ensure_state(candidate)
 		LightRecord.ensure_state(candidate)
+		# The technologies merged within schema 7 (1.11 H): a save naming a merged part converts.
+		Research.convert_merged(candidate)
 	var error: String = validate(sim, candidate)
 	if error != "":
 		return error

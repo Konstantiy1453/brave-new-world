@@ -19,7 +19,7 @@ static func ensure_state(state: Dictionary) -> void:
 		r.contract = {"staff": 0, "effective": 0, "earned": 0.0}
 	if not r.has("projects"):
 		r.projects = {}
-		var old: String = str(r.get("current", ""))
+		var old: String = current_id(str(r.get("current", "")))
 		if old != "" and Rules.read("techs").techs.has(old):
 			r.projects[old] = {
 				"staff": 4,
@@ -35,6 +35,107 @@ static func ensure_state(state: Dictionary) -> void:
 		r.rng_state = (absi(int(state.world.seed)) * 7 % (MAX_RNG - 1)) + 1
 		for category: String in Rules.read("techs").categories:
 			_draw(r, category, [])
+	convert_merged(state)
+
+
+## A technology this game knows, or one merged into one it knows (converted on load, 1.11 H).
+static func _known(sim: RefCounted, key: String) -> bool:
+	return sim.config.techs.has(key) or Rules.read("techs").get("merged", {}).has(key)
+
+
+## The research points a technology costs; a merged part, what it cost before the merge.
+static func _cost(sim: RefCounted, key: String) -> float:
+	if sim.config.techs.has(key):
+		return float(sim.config.techs[key].cost)
+	var whole: Dictionary = sim.config.techs.get(current_id(key), {})
+	return float(whole.get("part_costs", {}).get(key, whole.get("cost", 0.0)))
+
+
+static func _names_merged(r: Dictionary, table: Dictionary) -> bool:
+	for key: Variant in r.get("completed", []):
+		if table.has(str(key)):
+			return true
+	for key: Variant in r.get("projects", {}):
+		if table.has(str(key)):
+			return true
+	for hand: Variant in r.get("offers", {}).values():
+		for key: Variant in hand:
+			if table.has(str(key)):
+				return true
+	return false
+
+
+## A technology id as it is now: an id merged in 1.11 H names the technology that replaced it.
+static func current_id(key: String) -> String:
+	return str(Rules.read("techs").get("merged", {}).get(key, key))
+
+
+## A save from before the technologies were merged (1.11 H): a merged technology is finished when
+## all its parts were; otherwise the parts finished become its progress (their research points,
+## short of finishing it). Projects on a part move to the merged technology with their work and
+## team; offers name it once. Nothing changes in a save that names no merged part.
+static func convert_merged(state: Dictionary) -> void:
+	var table: Dictionary = Rules.read("techs").get("merged", {})
+	var r: Dictionary = state.get("research", {})
+	if table.is_empty() or r.is_empty():
+		return
+	if not _names_merged(r, table):
+		return
+	var techs: Dictionary = Rules.read("techs").techs
+	var kept: Array = []
+	var parts_done: Dictionary = {}
+	var touched: Dictionary = {}
+	for key: Variant in r.get("completed", []):
+		var id: String = str(key)
+		if table.has(id):
+			var whole: String = str(table[id])
+			parts_done[whole] = parts_done.get(whole, []) + [id]
+		elif not kept.has(id):
+			kept.append(id)
+	var projects: Dictionary = r.get("projects", {})
+	for key: Variant in projects.keys():
+		if not table.has(str(key)):
+			continue
+		var whole: String = str(table[str(key)])
+		var moved: Dictionary = projects[key]
+		projects.erase(key)
+		touched[whole] = true
+		if not projects.has(whole):
+			projects[whole] = moved
+			continue
+		var into: Dictionary = projects[whole]
+		into.work = float(into.work) + float(moved.work)
+		into.staff = maxi(int(into.staff), int(moved.staff))
+	for whole: String in parts_done:
+		var tech: Dictionary = techs[whole]
+		var done: Array = parts_done[whole]
+		if done.size() >= tech.merged_from.size():
+			if not kept.has(whole):
+				kept.append(whole)
+			projects.erase(whole)
+			continue
+		var points: float = 0.0
+		for part: String in done:
+			points += float(tech.part_costs.get(part, 0.0))
+		if not projects.has(whole):
+			projects[whole] = {"staff": 0, "work": 0.0, "effective": 0, "rate": 0.0, "reason": ""}
+		var project: Dictionary = projects[whole]
+		project.work = float(project.work) + points
+		touched[whole] = true
+	# Short of finishing: only all the parts finish a merged technology.
+	for whole: String in touched:
+		if projects.has(whole) and not kept.has(whole):
+			var cap: float = float(techs[whole].cost) - 1.0
+			projects[whole].work = minf(float(projects[whole].work), cap)
+	r.completed = kept
+	r.projects = projects
+	for category: Variant in r.get("offers", {}):
+		var hand: Array = []
+		for key: Variant in r.offers[category]:
+			var id: String = current_id(str(key))
+			if not hand.has(id) and not kept.has(id):
+				hand.append(id)
+		r.offers[category] = hand
 
 
 static func ensure(sim: RefCounted) -> void:
@@ -83,6 +184,18 @@ static func researched(state: Dictionary) -> int:
 	var count: int = 0
 	for key: String in state.research.completed:
 		if not is_gift(key):
+			count += 1
+	return count
+
+
+## Technologies finished at `tier` or above, gifts left out: the contract's tier milestones
+## (1.11 H, goals `techs_tier_<n>`).
+static func researched_from_tier(state: Dictionary, tier: int) -> int:
+	var count: int = 0
+	var techs: Dictionary = Rules.read("techs").techs
+	for key: String in state.research.completed:
+		var spec: Dictionary = techs.get(key, {})
+		if not is_gift(key) and int(spec.get("tier", 0)) >= tier:
 			count += 1
 	return count
 
@@ -829,10 +942,10 @@ static func validate(sim: RefCounted, candidate: Dictionary, costs: Dictionary =
 		if not hand is Array:
 			return "科研候选无效"
 		for key: Variant in hand:
-			if not sim.config.techs.has(key):
+			if not _known(sim, str(key)):
 				return "未知科研项目"
 	for key: Variant in r.projects:
-		if not sim.config.techs.has(key):
+		if not _known(sim, str(key)):
 			return "未知科研项目"
 		err = sim._save_shape(
 			r.projects[key],
@@ -852,7 +965,7 @@ static func validate(sim: RefCounted, candidate: Dictionary, costs: Dictionary =
 			or p.work < 0
 			or p.effective < 0
 			or p.rate < 0
-			or p.work > float(costs.get(key, sim.config.techs[key].cost))
+			or p.work > float(costs.get(key, _cost(sim, str(key))))
 		):
 			return "科研分配或工作量无效"
 	for reservation: Variant in r.investigations.values():
