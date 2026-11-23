@@ -683,12 +683,14 @@ static func _import(
 		maxf(0.0, target - stock - incoming(sim, int(s.region), key, horizon))
 		+ maxf(0.0, _road_demand(sim, s, key) - maxf(0.0, stock - target))
 	)
-	# Sea freight through a working harbour comes in cheaper than by orbit (bay.gd).
+	# Sea freight through a working harbour comes in cheaper than by orbit (bay.gd); a contract
+	# may make orbital freight dearer (the `orbital_freight` effect, 群岛开发).
+	var sea: float = Bay.sea_discount(sim, s, key)
 	var price: float = (
-		float(sim.config.prices[key])
-		* (1.0 + float(sim.config.economy.port_fee))
-		* (1.0 - Bay.sea_discount(sim, s, key))
+		float(sim.config.prices[key]) * (1.0 + float(sim.config.economy.port_fee)) * (1.0 - sea)
 	)
+	if sea <= 0.0:
+		price *= maxf(0.2, 1.0 + Research.bonus(sim, "orbital_freight"))
 	var amount: float = minf(minf(capacity, need), maxf(0.0, float(sim.state.cash)) / price)
 	if amount <= 0:
 		return capacity

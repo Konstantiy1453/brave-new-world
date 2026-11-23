@@ -11,6 +11,7 @@ const Contract = preload("res://simulation/contract.gd")
 const TutorialCoach = preload("res://ui/tutorial_coach.gd")
 const DistrustGauge = preload("res://ui/distrust_gauge.gd")
 const Cues = preload("res://ui/cues.gd")
+const OriginCards = preload("res://ui/origin_cards.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
@@ -1402,22 +1403,9 @@ func show_menu():
 		radius_slider.get_parent().visible = false
 	planet_preview = D.label(v, "", 16, D.GOLD)
 	_show_planet_preview()
-	D.label(v, "开局合作方案", 15, D.TEAL)
-	var group = ButtonGroup.new()
-	for id: String in sim.config.openings:
-		var opening: Dictionary = sim.config.openings[id]
-		var b = D.button(
-			v, str(opening.name) + "  /  " + str(opening.description), func(): advantage = id
-		)
-		b.toggle_mode = true
-		b.button_group = group
-		b.button_pressed = id == (str(lesson.opening) if tutorial_on else advantage)
-		b.disabled = tutorial_on
-		b.custom_minimum_size.y = 34
-		D.font_size(b, 15)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		# A choice among several: the selected one shows the chosen style and keeps its text.
-		D.skin(b, "chip")
+	D.label(v, "合同类型", 15, D.TEAL)
+	var chosen: String = str(lesson.opening) if tutorial_on else advantage
+	OriginCards.cards(v, sim, chosen, tutorial_on, func(id: String): advantage = id)
 	var teach = D.button(
 		v,
 		"新手引导：开（使用引导专用星球）" if tutorial_on else "新手引导：关",

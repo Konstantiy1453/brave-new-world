@@ -1,6 +1,7 @@
 {
-  "version": 6,
+  "version": 7,
   "units": {
+    "openings": "contract types (1.11 origins), by the opening ids saves store in state.advantage: landing cash, people and goods (goods in 百吨); story, gains and costs as text with {placeholders} filled from the entry ({cash} {workers} {residents} {materials} ..., {rule:key}, {effect:key} as a percentage, {cut:key} as a reduction, {years:key} for a rule in days, {tech:key}); effects: permanent modifiers on the effect keys techs use (a third source in Research.bonus); rules: the parameters of the origin's unique rule (wage_floor as a multiple of base wages, crews at landing, research_funding and contract_income as factors, subsidy_per_resident in money a month for subsidy_days, tribute in goods units a year by stage, coastal_first); clauses: ids of contract.json document.origin_clauses; favours: a stage-three route id or empty",
     "money": "account units",
     "goods": "hundreds of tonnes: every amount, rate and capacity of goods here is in 100 t; the interface shows tonnes (display.tonnes_per_unit)",
     "time": "game day",
@@ -103,7 +104,9 @@
   },
   "openings": {
     "capital": {
-      "name": "资本储备",
+      "name": "标准承包",
+      "story": "公司最常用的一份标准合同：条款都写在明处，预付款最宽裕，适合第一次承包。",
+      "recommended": true,
       "cash": 32000.0,
       "workers": 44,
       "scientists": 4,
@@ -112,10 +115,23 @@
       "parts": 70.0,
       "food": 400.0,
       "first_expedition_factor": 0.6,
-      "description": "额外公共资本，容错更高；第一次远征的费用打六折。"
+      "description": "额外公共资本，容错更高；第一次远征的费用打六折。",
+      "gains": [
+        "预付款 ¥{cash}，容错最高",
+        "第一次远征的费用按 {first_expedition_factor} 倍计"
+      ],
+      "costs": [],
+      "rule": "年度报告的指标每年上调得最慢。",
+      "clauses": [
+        "origin_standard"
+      ],
+      "effects": {},
+      "rules": {},
+      "favours": ""
     },
     "workers": {
-      "name": "工程合作",
+      "name": "工程承包",
+      "story": "公司把开发工程整体分包给你的施工队：人手和预制件管够，钱要省着花。",
       "cash": 20000.0,
       "workers": 52,
       "scientists": 4,
@@ -126,10 +142,29 @@
       "description": "更多职工和预制物资，自带一处住区，生产展开最快。",
       "prefab": [
         "habitat"
-      ]
+      ],
+      "gains": [
+        "职工 {workers} 人，建材 {materials}、部件 {parts}",
+        "自带一处预制住区"
+      ],
+      "costs": [
+        "预付款只有 ¥{cash}",
+        "工资不得低于基准的 {rule:wage_floor} 倍"
+      ],
+      "rule": "登陆时就有 {rule:crews} 支工程队。",
+      "clauses": [
+        "origin_works"
+      ],
+      "effects": {},
+      "rules": {
+        "crews": 2,
+        "wage_floor": 1.1
+      },
+      "favours": ""
     },
     "science": {
-      "name": "科研合作",
+      "name": "科研托管",
+      "story": "一家研究机构托管的合同：带着实验室和课题来，采矿的人手少一些。",
       "cash": 22000.0,
       "workers": 40,
       "scientists": 12,
@@ -144,7 +179,126 @@
       ],
       "head_start": {
         "survey": 60.0
-      }
+      },
+      "gains": [
+        "自带研究所和 {scientists} 支研究团队",
+        "勘测误差更小，精细勘探已有进度",
+        "科研经费按 {rule:research_funding} 倍计"
+      ],
+      "costs": [
+        "职工只有 {workers} 人，采矿人手少"
+      ],
+      "rule": "登陆即掌握「{tech:contract_tech}」，可以承接研究合同；研究合同收入按 {rule:contract_income} 倍计。",
+      "clauses": [
+        "origin_research"
+      ],
+      "effects": {},
+      "rules": {
+        "research_funding": 0.5,
+        "contract_income": 1.5,
+        "grant_contract_tech": true
+      },
+      "favours": ""
+    },
+    "resettlement": {
+      "name": "移民安置",
+      "story": "公司接下了一船移民的安置合同，又转手交给了你：人先到，房子和工作要你来想办法。",
+      "cash": 22400.0,
+      "workers": 84,
+      "scientists": 4,
+      "children": 32,
+      "materials": 154.0,
+      "parts": 70.0,
+      "food": 520.0,
+      "gains": [
+        "登陆居民 {residents} 人，多出一船移民",
+        "迁入 {effect:immigration}"
+      ],
+      "costs": [
+        "预付款只有 ¥{cash}，建材 {materials}",
+        "登陆营地的床位不够所有人住"
+      ],
+      "rule": "既有床位又有工作的居民，每人每月领取安置补贴 ¥{rule:subsidy_per_resident}，记作经营收入「安置补贴」，自登陆起 {years:subsidy_days} 年。",
+      "clauses": [
+        "origin_resettlement"
+      ],
+      "effects": {
+        "immigration": 0.15
+      },
+      "rules": {
+        "subsidy_per_resident": 20.0,
+        "subsidy_days": 1440
+      },
+      "favours": "food_corridor"
+    },
+    "mining_pledge": {
+      "name": "矿权抵押",
+      "story": "你以这颗星球的矿权作抵押换来了这份合同：矿脉产得更多，但公司每年的船要先装走一份贡矿。",
+      "cash": 22000.0,
+      "workers": 44,
+      "scientists": 4,
+      "children": 12,
+      "materials": 220.0,
+      "parts": 70.0,
+      "food": 400.0,
+      "gains": [
+        "采矿产出 {effect:mine_output}"
+      ],
+      "costs": [
+        "公司的年度船到港时，从库存无偿装走贡矿，按阶段为 {rule:tribute}"
+      ],
+      "rule": "年度报告的矿业一项就是这批实物：交不足即为未达标，不能多报。",
+      "clauses": [
+        "origin_pledge"
+      ],
+      "effects": {
+        "mine_output": 0.2
+      },
+      "rules": {
+        "tribute": [
+          600.0,
+          1200.0,
+          1800.0,
+          2400.0,
+          3000.0
+        ]
+      },
+      "favours": "mining_network"
+    },
+    "archipelago": {
+      "name": "群岛开发",
+      "story": "合同只批了沿海的开发权：先有港口，后有道路，货物几乎都从海上来。",
+      "cash": 22000.0,
+      "workers": 44,
+      "scientists": 4,
+      "children": 12,
+      "materials": 220.0,
+      "parts": 70.0,
+      "food": 400.0,
+      "prefab": [
+        "harbor"
+      ],
+      "gains": [
+        "自带一座小港",
+        "近海勘测的费用和天数 {cut:offshore_survey}"
+      ],
+      "costs": [
+        "道路造价 {effect:road_cost}",
+        "轨道货运进口价 {effect:orbital_freight}"
+      ],
+      "rule": "首个据点必须建在海岸，内陆地点不能落脚。",
+      "clauses": [
+        "origin_coastal"
+      ],
+      "effects": {
+        "offshore_survey": 0.5,
+        "road_cost": 0.5,
+        "orbital_freight": 0.25
+      },
+      "rules": {
+        "coastal_first": true
+      },
+      "favours": "coastal_trade"
     }
   },
   "bay": {

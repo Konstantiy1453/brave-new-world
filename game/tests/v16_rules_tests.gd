@@ -105,13 +105,15 @@ func research_path(split: bool) -> Dictionary:
 		s.act("research_allocate", {"tech": "adaptation", "staff": 5})
 	var first: int = -1
 	var last: int = -1
+	# 科研托管 holds its contract's technology from landing (1.11): count only what is finished here.
+	var held: int = s.state.research.completed.size()
 	for day in range(1, 40):
 		s.tick()
-		if first < 0 and s.state.research.completed.size() > 0:
+		if first < 0 and s.state.research.completed.size() > held:
 			first = day
 			if not split:
 				s.act("research_allocate", {"tech": "adaptation", "staff": 10})
-		if s.state.research.completed.size() == 2:
+		if s.state.research.completed.size() == held + 2:
 			last = day
 			break
 	return {"first": first, "last": last}

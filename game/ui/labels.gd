@@ -116,6 +116,7 @@ const LEDGER: Dictionary = {
 	"invest.upgrade": "设施升级",
 	"invest.survey": "地面勘察",
 	"research.contract": "科研委托收入",
+	"origin.subsidy": "安置补贴",
 	"legacy.event": "旧版事件",
 }
 

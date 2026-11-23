@@ -23,6 +23,7 @@ const Stats = preload("res://simulation/stats.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
 const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
+const Origins = preload("res://simulation/origins.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -46,6 +47,7 @@ var blobs: Dictionary = {"checkpoint": PackedByteArray(), "archives": {}}
 ## What finished technologies add up to. Derived from state, rebuilt when the list grows.
 var tech_effects: Dictionary = {}
 var tech_effects_count: int = -1
+var tech_effects_origin: String = ""
 ## The great works' effect totals for one day of one state (Megaprojects.effect).
 var great_effects: Dictionary = {}
 var great_effects_day: int = -1
@@ -134,6 +136,7 @@ func new_game(
 	state.difficulty = difficulty
 	state.rng_state = (absi(int(state.world.seed)) % 2147483646) + 1
 	state.policy.wage = float(pop_rules.wage.default)
+	Origins.begin(self)
 	Research.ensure(self)
 	Company.ensure(self)
 	ensure_systems(state)
@@ -310,6 +313,10 @@ func progression_geo() -> Dictionary:
 
 
 func _set_policy(args: Dictionary) -> String:
+	if args.has("wage"):
+		var refusal: String = Origins.wage_refusal(self, float(args.wage))
+		if refusal != "":
+			return refusal
 	state.policy.tax = clampf(float(args.get("tax", state.policy.tax)), 0.0, 0.5)
 	state.policy.food_reserve = clampf(
 		float(args.get("food_reserve", state.policy.food_reserve)), 3.0, 25.0
@@ -367,6 +374,7 @@ func tick() -> void:
 	_public_expense(_admin_cost(), "admin", "external")
 	_public_expense(Crews.wages(self), "crew.wages", "residents")
 	Population.daily(self)
+	Origins.daily(self)
 	Company.social_environment(self)
 	Pollution.daily(self)
 	_event_tick()

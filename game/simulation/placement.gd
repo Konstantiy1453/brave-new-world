@@ -7,6 +7,7 @@ extends RefCounted
 ## the chosen point. Recommended sites stay as shortcuts. Plots on one planetary deposit share its
 ## reserve, in every town that reaches it (`share`).
 
+const Origins = preload("res://simulation/origins.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const SiteGen = preload("res://world/geo2/site_gen.gd")
@@ -82,6 +83,9 @@ static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 		)
 	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
+	var contract: String = Origins.founding_refusal(sim, bool(report.get("coast", false)))
+	if bool(report.first) and contract != "":
+		return contract
 	if bool(report.first) and not _can_expand(sim, report):
 		return "这里既没有陆路能到的其他地点，也不靠海，以后无法建立第二处据点"
 	return ""

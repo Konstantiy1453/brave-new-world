@@ -4,6 +4,7 @@ extends RefCounted
 ## a tree. R(n) = R10 * (n / 10)^a with a = ln 0.6 / ln 0.5, so R(5) / R(10) = 0.6 and R(0) = 0.
 ## Numbers: `research` in progression.json, technologies in techs.json.
 
+const Origins = preload("res://simulation/origins.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Rules = preload("res://simulation/rules.gd")
@@ -42,16 +43,20 @@ static func ensure(sim: RefCounted) -> void:
 
 ## What finished technologies and great works add up to for one effect, as a fraction. 0 when
 ## nothing touches it.
+## Technologies, then the colony's origin (its contract's permanent modifiers, 1.11), cached
+## together until either changes; great works on top.
 static func bonus(sim: RefCounted, key: String) -> float:
 	var done: Array = sim.state.research.completed
-	if int(sim.tech_effects_count) != done.size():
-		var totals: Dictionary = {}
+	var origin: String = str(sim.state.get("advantage", ""))
+	if int(sim.tech_effects_count) != done.size() or str(sim.tech_effects_origin) != origin:
+		var totals: Dictionary = Origins.effects(sim).duplicate()
 		for tech: String in done:
 			var effects: Dictionary = sim.config.techs.get(tech, {}).get("effects", {})
 			for name: String in effects:
 				totals[name] = float(totals.get(name, 0.0)) + float(effects[name])
 		sim.tech_effects = totals
 		sim.tech_effects_count = done.size()
+		sim.tech_effects_origin = origin
 	return float(sim.tech_effects.get(key, 0.0)) + Megaprojects.effect(sim, key)
 
 
@@ -91,6 +96,19 @@ static func grant(sim: RefCounted, key: String) -> bool:
 	r.completed.append(key)
 	sim._log("获得技术：%s（事件赠予）" % str(sim.config.techs[key].name))
 	sim.Sites.on_technology(sim, key)
+	return true
+
+
+## A technology the contract hands over at landing (1.11 origins): finished from the first day.
+static func grant_by_contract(sim: RefCounted, key: String) -> bool:
+	var r: Dictionary = sim.state.research
+	if key == "" or r.completed.has(key) or not sim.config.techs.has(key):
+		return false
+	r.completed.append(key)
+	r.projects.erase(key)
+	sim._log("合同授予技术：%s" % str(sim.config.techs[key].name))
+	sim.Sites.on_technology(sim, key)
+	_draw(r, str(sim.config.techs[key].category), [])
 	return true
 
 
@@ -222,15 +240,12 @@ static func _speed_factor(sim: RefCounted) -> float:
 		* EventsV2.colony_modifier(sim, "research")
 		* (1.0 + bonus(sim, "research_speed"))
 	)
-	if sim.state.advantage == "science":
-		factor *= float(sim.progression.research.science_opening_rate)
 	return factor
 
 
+## Research funding by the origin's factor (科研托管 pays half).
 static func _funding_factor(sim: RefCounted) -> float:
-	if sim.state.advantage == "science":
-		return float(sim.progression.research.science_opening_funding)
-	return 1.0
+	return Origins.factor(sim, "research_funding")
 
 
 ## Days to finish a technology at a staffing level, from the work already done.
@@ -441,6 +456,7 @@ static func rebalance(sim: RefCounted, advance: bool) -> void:
 					rate(n, reference)
 					* Megaprojects.research_factor(sim)
 					* float(cfg.contract_point_price)
+					* Origins.factor(sim, "contract_income")
 				)
 				sim._transfer("external", "public", income, "research.contract", true)
 				r.contract.earned = float(r.contract.earned) + income

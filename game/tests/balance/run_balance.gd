@@ -21,7 +21,19 @@ const BOTS: Dictionary = {
 	"sloppy": preload("res://tests/balance/bots/sloppy_bot.gd"),
 	"random_legal": preload("res://tests/balance/bots/random_legal_bot.gd"),
 	"windfall": preload("res://tests/balance/bots/windfall_bot.gd"),
+	"housing_first": preload("res://tests/balance/bots/housing_first_bot.gd"),
+	"mining": preload("res://tests/balance/bots/mining_bot.gd"),
+	"coastal": preload("res://tests/balance/bots/coastal_bot.gd"),
 }
+## Each new origin (1.11 C) also runs with the bot that plays it as it is meant to be played.
+const ORIGIN_BOTS: Dictionary = {
+	"resettlement": "housing_first",
+	"mining_pledge": "mining",
+	"archipelago": "coastal",
+}
+## Bots that measure failure, not play: they run on the three openings older than 1.11 only.
+const FAILURE_BOTS: Array[String] = ["passive", "sloppy"]
+const CLASSIC_OPENINGS: Array[String] = ["capital", "workers", "science"]
 ## The windfall case: the balanced bot with ¥1,000,000 on day 1,080, on its seeds, normal, capital.
 const WINDFALL_OPENING: String = "capital"
 const SEEDS: Array[int] = [
@@ -46,7 +58,9 @@ const SEEDS: Array[int] = [
 	1000003,
 	73939133,
 ]
-const OPENINGS: Array[String] = ["capital", "workers", "science"]
+const OPENINGS: Array[String] = [
+	"capital", "workers", "science", "resettlement", "mining_pledge", "archipelago"
+]
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const SIZE_MEDIUM: int = 1
 const DEFAULT_DAYS: int = 3600
@@ -183,6 +197,8 @@ func _build_cases() -> Array:
 	for bot: String in bots:
 		for difficulty: String in difficulties:
 			for opening: String in openings:
+				if bot in FAILURE_BOTS and not opening in CLASSIC_OPENINGS:
+					continue
 				for seed_value: int in seed_pool:
 					(
 						cases
@@ -197,6 +213,23 @@ func _build_cases() -> Array:
 						)
 					)
 	if not options.has("bots"):
+		for opening: String in openings:
+			if not ORIGIN_BOTS.has(opening):
+				continue
+			for difficulty: String in difficulties:
+				for seed_value: int in seed_pool:
+					(
+						cases
+						. append(
+							{
+								"bot": str(ORIGIN_BOTS[opening]),
+								"seed": seed_value,
+								"opening": opening,
+								"difficulty": difficulty,
+								"days": days,
+							}
+						)
+					)
 		for seed_value: int in seed_pool:
 			(
 				cases

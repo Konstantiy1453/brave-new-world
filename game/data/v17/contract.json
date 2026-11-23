@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -156,20 +156,78 @@
   "document": {
     "units": {
       "code": "the colony's company code CC-NN: NN = 1 + the world seed modulo code_modulus",
-      "clauses": "standard clauses in order; {placeholders} are filled from the rule files when the page is drawn"
+      "clauses": "standard clauses in order; {placeholders} are filled from the rule files when the page is drawn",
+      "origin_clauses": "the clause each origin adds (economy.json openings.<id>.clauses), filled like the origin's own text"
     },
     "title": "{code} 项目殖民开发承包合同（对赌协议）",
     "code_modulus": 99,
     "clauses": [
-      {"id": "parties", "title": "合同双方", "text": "甲方：殖民公司，发包方、验收方。乙方：承包人。双方就 {code} 项目的开发达成本协议，乙方按阶段交付，甲方按阶段验收并支付奖励。"},
-      {"id": "stages", "title": "阶段与期限", "text": "乙方须在以下日期前完成五个阶段（自着陆日起算）：{stage_deadlines}。"},
-      {"id": "rewards", "title": "验收奖励", "text": "每完成一个阶段，甲方在验收当日支付奖励：{stage_rewards}。"},
-      {"id": "overdue", "title": "逾期", "text": "阶段逾期未验收的，每逾期一日计入不信任 {overdue_distrust} 点，直至验收。"},
-      {"id": "review", "title": "评级、整改与介入", "text": "甲方按不信任给出评级：低于 {rating_a_below} 为 A，低于 {review_threshold} 为 B，低于 {intervention_threshold} 为 C，其余为 D。乙方出现持续履约风险、不信任达到 {warning_threshold} 时，甲方发出提示函；达到 {review_threshold} 时进入整改期，期限 {review_days} 日；整改期满风险仍在的，甲方介入，期限 {intervention_days} 日；介入期满风险仍在的，甲方接管项目。"},
-      {"id": "share", "title": "授权后的分成", "text": "第五阶段验收、乙方获总督授权后，项目经营结余的 {player_share}% 归乙方，其余归甲方。"},
-      {"id": "aid", "title": "有条件援助", "text": "乙方可在履约风险期间申请甲方的有条件援助。援助到达后，乙方按约定偿还，并在正经营结余中追加分成，直至还清；每类援助限用一次。"}
+      {
+        "id": "parties",
+        "title": "合同双方",
+        "text": "甲方：殖民公司，发包方、验收方。乙方：承包人。双方就 {code} 项目的开发达成本协议，乙方按阶段交付，甲方按阶段验收并支付奖励。"
+      },
+      {
+        "id": "stages",
+        "title": "阶段与期限",
+        "text": "乙方须在以下日期前完成五个阶段（自着陆日起算）：{stage_deadlines}。"
+      },
+      {
+        "id": "rewards",
+        "title": "验收奖励",
+        "text": "每完成一个阶段，甲方在验收当日支付奖励：{stage_rewards}。"
+      },
+      {
+        "id": "overdue",
+        "title": "逾期",
+        "text": "阶段逾期未验收的，每逾期一日计入不信任 {overdue_distrust} 点，直至验收。"
+      },
+      {
+        "id": "review",
+        "title": "评级、整改与介入",
+        "text": "甲方按不信任给出评级：低于 {rating_a_below} 为 A，低于 {review_threshold} 为 B，低于 {intervention_threshold} 为 C，其余为 D。乙方出现持续履约风险、不信任达到 {warning_threshold} 时，甲方发出提示函；达到 {review_threshold} 时进入整改期，期限 {review_days} 日；整改期满风险仍在的，甲方介入，期限 {intervention_days} 日；介入期满风险仍在的，甲方接管项目。"
+      },
+      {
+        "id": "share",
+        "title": "授权后的分成",
+        "text": "第五阶段验收、乙方获总督授权后，项目经营结余的 {player_share}% 归乙方，其余归甲方。"
+      },
+      {
+        "id": "aid",
+        "title": "有条件援助",
+        "text": "乙方可在履约风险期间申请甲方的有条件援助。援助到达后，乙方按约定偿还，并在正经营结余中追加分成，直至还清；每类援助限用一次。"
+      }
     ],
-    "annex": {"title": "附件七（密封）", "sealed": "第四阶段验收后启封"},
-    "stamp": "已验收"
+    "annex": {
+      "title": "附件七（密封）",
+      "sealed": "第四阶段验收后启封"
+    },
+    "stamp": "已验收",
+    "origin_clauses": {
+      "origin_standard": {
+        "title": "合同类型：标准承包",
+        "text": "本合同为标准承包合同。甲方预付开发资本 ¥{cash}，并承担乙方第一次远征费用的一部分。"
+      },
+      "origin_works": {
+        "title": "合同类型：工程承包",
+        "text": "本合同为工程承包合同。乙方自带施工队与预制住区；乙方的工资政策不得低于基准工资的 {rule:wage_floor} 倍。"
+      },
+      "origin_research": {
+        "title": "合同类型：科研托管",
+        "text": "本合同为科研托管合同。甲方于着陆日向乙方授予「{tech:contract_tech}」，乙方承接的研究合同按 {rule:contract_income} 倍结算，科研经费按 {rule:research_funding} 倍计。"
+      },
+      "origin_resettlement": {
+        "title": "合同类型：移民安置",
+        "text": "本合同为移民安置合同。乙方接收甲方转交的移民；对同时拥有床位和工作的居民，甲方每月按每人 ¥{rule:subsidy_per_resident} 支付安置补贴，自着陆日起 {years:subsidy_days} 年。"
+      },
+      "origin_pledge": {
+        "title": "合同类型：矿权抵押",
+        "text": "本合同为矿权抵押合同。乙方以本星球矿权作抵押。甲方年度船只到港时，乙方须从库存交付贡矿，不计价款，按阶段为 {rule:tribute}；交付不足的，年度报告矿业一项记为未达标。"
+      },
+      "origin_coastal": {
+        "title": "合同类型：群岛开发",
+        "text": "本合同为群岛开发合同，乙方取得沿海开发权。乙方的首个据点须建于海岸；甲方不承担内陆道路的额外造价。"
+      }
+    }
   }
 }

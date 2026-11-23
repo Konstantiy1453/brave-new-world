@@ -31,6 +31,7 @@
     {"name": "v110_people", "script": "res://tests/v110_people.gd", "success": "V110_PEOPLE_RESULT checks=\\d+ failures=0"},
     {"name": "v111_freeze", "script": "res://tests/v111_freeze.gd", "success": "V111_FREEZE_RESULT checks=\\d+ failures=0"},
     {"name": "v111_contract", "script": "res://tests/v111_contract.gd", "success": "V111_CONTRACT_RESULT checks=\\d+ failures=0"},
+    {"name": "v111_origins", "script": "res://tests/v111_origins.gd", "success": "V111_ORIGINS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_speed", "script": "res://tests/v17_speed.gd", "success": "V17_SPEED_RESULT checks=\\d+ failures=0"},
     {"name": "sim_tests", "script": "res://tests/sim_tests.gd", "success": "SIM_TEST_RESULT checks=\\d+ failures=0"},
     {"name": "world_self_test", "script": "res://world/self_test.gd", "success": "WORLD_SELF_TEST: PASS \\[\\]"},

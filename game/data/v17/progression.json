@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -56,9 +56,7 @@
       "price_per_point_by_tier": [100.0, 150.0, 220.0, 320.0, 450.0],
       "crowding": 0.25
     },
-    "contract_tech": "research_network",
-    "science_opening_rate": 1.1,
-    "science_opening_funding": 0.5
+    "contract_tech": "research_network"
   },
   "company": {
     "rating_a_below": 20,

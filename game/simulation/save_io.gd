@@ -165,6 +165,8 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 	sim.state = candidate
 	sim.geo = bound
 	sim.blobs = new_blobs
+	# The effects cache belongs to the game it was built for (research.gd `bonus`).
+	sim.tech_effects_count = -1
 	var issues: Array = sim.audit()
 	if not issues.is_empty():
 		sim.state = old_state

@@ -15,6 +15,13 @@ const AWARD_BANDS: Dictionary = {
 }
 const FLOOR_DAY: int = 1440
 const OPENING_SPREAD: float = 0.15
+## The contract types (1.11 origins) and the bot that plays each new one as it is meant to.
+const ORIGINS: Array[String] = [
+	"capital", "workers", "science", "resettlement", "mining_pledge", "archipelago"
+]
+const ORIGIN_BOTS: Dictionary = {
+	"resettlement": "housing_first", "mining_pledge": "mining", "archipelago": "coastal"
+}
 const POLLUTION_LATE_LEAST: float = 0.15
 const PASSIVE_REVIEW_DAY: Array[int] = [150, 400]
 const PASSIVE_FAILURE_DAY: Array[int] = [400, 900]
@@ -189,12 +196,12 @@ static func _award_rows(rows: Array, runs: Array) -> void:
 static func _opening_row(rows: Array, runs: Array) -> void:
 	var medians: Array = []
 	var labels: PackedStringArray = []
-	for opening: String in ["capital", "workers", "science"]:
+	for opening: String in ORIGINS:
 		var awards: Array = field(select(runs, "balanced", "normal", opening), "award_day")
 		if not awards.is_empty():
 			medians.append(median(awards))
 			labels.append("%s %.0f" % [opening, median(awards)])
-	if medians.size() < 3:
+	if medians.size() < 2:
 		_row(rows, "Openings", "medians within 15%", ", ".join(labels), STATUS_NONE)
 		return
 	var low: float = medians.min()
@@ -202,9 +209,12 @@ static func _opening_row(rows: Array, runs: Array) -> void:
 	var ok: bool = low > 0.0 and (high - low) / low <= OPENING_SPREAD
 	var best: Dictionary = {}
 	var best_of_styles: Dictionary = {}
-	for opening: String in ["capital", "workers", "science"]:
-		best[opening] = _best_bot(runs, opening, ["balanced", "rush", "research_first"])
-		best_of_styles[opening] = _best_bot(runs, opening, ["balanced", "research_first"])
+	for opening: String in ORIGINS:
+		var styles: Array = ["balanced", "research_first"]
+		if ORIGIN_BOTS.has(opening):
+			styles.append(str(ORIGIN_BOTS[opening]))
+		best[opening] = _best_bot(runs, opening, styles + ["rush"])
+		best_of_styles[opening] = _best_bot(runs, opening, styles)
 	var varied: bool = _distinct(best.values()) >= 2
 	_row(
 		rows,

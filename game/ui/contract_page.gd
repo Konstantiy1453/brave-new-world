@@ -8,6 +8,7 @@ extends RefCounted
 const D = preload("res://ui/design.gd")
 const Labels = preload("res://ui/labels.gd")
 const Contract = preload("res://simulation/contract.gd")
+const OriginCards = preload("res://ui/origin_cards.gd")
 const STAMP_COLOR: Color = Color("d0604f")
 const STATUS_WORDS: Dictionary = {
 	"planning": "待签署",
@@ -34,11 +35,13 @@ static func page(g, b) -> void:
 	_annex(g, b)
 
 
-## The standard clauses in order, numbered and filled from the rules: {id, number, title, text}.
+## The standard clauses in order, then the clauses of the colony's contract type (1.11 origins),
+## numbered and filled from the rules: {id, number, title, text}.
 static func clauses(sim: RefCounted) -> Array:
 	var values: Dictionary = clause_values(sim)
 	var out: Array = []
-	for clause: Dictionary in sim.contract_rules.get("document", {}).get("clauses", []):
+	var document: Dictionary = sim.contract_rules.get("document", {})
+	for clause: Dictionary in document.get("clauses", []):
 		(
 			out
 			. append(
@@ -50,7 +53,34 @@ static func clauses(sim: RefCounted) -> Array:
 				}
 			)
 		)
+	var entry: Dictionary = origin_entry(sim)
+	for id: Variant in entry.get("clauses", []):
+		var clause: Dictionary = document.get("origin_clauses", {}).get(str(id), {})
+		if clause.is_empty():
+			continue
+		(
+			out
+			. append(
+				{
+					"id": str(id),
+					"number": out.size() + 1,
+					"title": str(clause.title),
+					"text": OriginCards.fill(sim, entry, str(clause.text)),
+				}
+			)
+		)
 	return out
+
+
+## The colony's contract type as signed: its entry, with the advance as the difficulty scales it.
+static func origin_entry(sim: RefCounted) -> Dictionary:
+	var entry: Dictionary = sim.config.openings.get(str(sim.state.advantage), {}).duplicate(true)
+	if entry.has("cash"):
+		var difficulty: Dictionary = sim.progression.difficulty[sim.state.get(
+			"difficulty", "normal"
+		)]
+		entry.cash = float(entry.cash) * float(difficulty.capital)
+	return entry
 
 
 ## The document's title for this colony: "CC-NN 项目殖民开发承包合同（对赌协议）".
@@ -106,7 +136,14 @@ static func _header(g, b) -> void:
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	D.label(v, title(g.sim), 24, D.GOLD)
 	var status: String = str(state.status)
-	D.label(v, "合同状态：%s" % str(STATUS_WORDS.get(status, status)), 18, D.TEAL)
+	var entry: Dictionary = origin_entry(g.sim)
+	D.label(
+		v,
+		"合同类型：%s　·　状态：%s" % [str(entry.get("name", "")), str(STATUS_WORDS.get(status, status))],
+		18,
+		D.TEAL
+	)
+	D.label(v, str(entry.get("story", "")), 16, D.MUTED)
 	D.label(v, "分五个阶段，用六到八年建起一座配得上首府之名的城市。完成阶段可获得发展资金和新据点许可；错过期限不会立刻判负，但公司的不信任会慢慢上升。", 17)
 	_opening_line(g, v)
 	if status == "planning":

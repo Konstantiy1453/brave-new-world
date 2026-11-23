@@ -104,9 +104,10 @@ func _clauses() -> void:
 	var sim: RefCounted = _colony()
 	var rule: Dictionary = sim.contract_rules.document
 	var rows: Array = ContractPage.clauses(sim)
+	var origin: Array = sim.config.openings[str(sim.state.advantage)].get("clauses", [])
 	check(
-		rows.size() == rule.clauses.size() and rows.size() >= 7,
-		"every clause of contract.json is written: %d" % rows.size()
+		rows.size() == rule.clauses.size() + origin.size() and rows.size() >= 8,
+		"every standard clause and the origin's are written: %d" % rows.size()
 	)
 	var numbered: bool = true
 	var filled: bool = true

@@ -2,6 +2,7 @@ extends RefCounted
 ## Candidate sites and their plots: founding settlements, what is known about a site, surveys,
 ## and which plot a building stands on. `state.world.regions` is the list of sites.
 
+const Origins = preload("res://simulation/origins.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -625,6 +626,11 @@ static func settle_refusal(
 	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
 	if sim.state.settlements.is_empty():
+		var contract: String = Origins.founding_refusal(
+			sim, bool(sim.state.world.regions[region].get("coast", false))
+		)
+		if contract != "":
+			return contract
 		if not _can_expand_from(sim, region):
 			return "该登陆点既没有陆路相邻的地点，也不靠海，无法履行双据点合同"
 		return ""
@@ -783,7 +789,7 @@ static func settle(
 	Stats.count(sim.state, "moves", region, int(s.population))
 	var crews: Dictionary = sim.pop_rules.get("crews", {})
 	if first:
-		sim.Crews.found(sim, s, int(crews.get("opening", 1)))
+		sim.Crews.found(sim, s, Origins.crews_at_landing(sim, int(crews.get("opening", 1))))
 	else:
 		sim.Crews.join_expedition(sim, src, region, int(road.days), int(crews.get("expedition", 1)))
 	if first:
@@ -803,6 +809,7 @@ static func settle(
 			}
 		# Initial child cohorts age after 8 simulated years, adults are aggregate groups.
 		s.cohorts.append({"count": children, "mature_day": 2880})
+		Origins.land(sim)
 	else:
 		s.arrival = int(road.days)
 		for kind in ["power", "water"]:

@@ -144,6 +144,11 @@ var uses_great_works: bool = false
 var late_work_blocked: Dictionary = {}
 ## Short-range shuttle lines to new outposts while their roads are saved for and built (1.9).
 var uses_shuttle: bool = false
+## Origin play (1.11): the share of beds kept free, a factor on a mine's payback when choosing what
+## to build (below 1 prefers mines), and a factor on a coastal site's score for the next town.
+var housing_slack: float = 0.08
+var mine_payback_factor: float = 1.0
+var coast_bonus: float = 1.0
 var clean_air: bool = true
 var tech_order: Array[String] = [
 	"survey",
@@ -257,14 +262,28 @@ func _send_idle_crew(view: Dictionary, region: int) -> bool:
 	return false
 
 
-## Lands on the start that looks richest from orbit, among those with a farming partner in reach.
+## Lands on the start that looks richest from orbit, among those with a farming partner in reach;
+## under a coastal-only contract (群岛开发), among the coastal sites of those pairs, else on the
+## richest coastal site the contract accepts.
 func _land() -> void:
 	var best: float = -1.0
+	var coastal: bool = sim.Origins.coastal_first(sim)
 	for pair: Array in sim.geo.get("playability", {}).get("pairs", [[0, 1]]):
-		var score: float = sim.Sites.start_score(sim, int(pair[0]))
-		if score > best:
-			best = score
-			home = int(pair[0])
+		for site: int in [int(pair[0]), int(pair[1])] if coastal else [int(pair[0])]:
+			if coastal and sim.settle_refusal(site) != "":
+				continue
+			var score: float = sim.Sites.start_score(sim, site)
+			if score > best:
+				best = score
+				home = site
+	if coastal and best < 0.0:
+		for reg: Dictionary in sim.state.world.regions:
+			if sim.settle_refusal(int(reg.id)) != "":
+				continue
+			var score: float = sim.Sites.start_score(sim, int(reg.id))
+			if score > best:
+				best = score
+				home = int(reg.id)
 	act("settle", {"site": home})
 	act("build", {"site": home, "kind": "mine_ore"})
 	act("build", {"site": home, "kind": "mine_copper"})
@@ -826,6 +845,8 @@ func _next_site(reserve: float) -> Dictionary:
 			score = float(known.plots.general) * (0.5 + float(known.water.mid)) * 10.0
 		elif not hungry:
 			score = sim.Sites.start_score(sim, id) * 0.01
+		if bool(reg.coast):
+			score *= coast_bonus
 		scored.append(
 			[score / (0.4 + _angle_between(id, _nearest_settled(id))), id, float(known.farm_yield)]
 		)
@@ -992,7 +1013,7 @@ func _housing(reserve: float) -> void:
 	_clear_spent_mines()
 	for place: Dictionary in _places():
 		var region: int = int(place.region)
-		var slack: int = maxi(4, int(float(place.housing) * 0.08))
+		var slack: int = maxi(4, int(float(place.housing) * housing_slack))
 		if sim.Population.free_beds(sim, place) >= slack:
 			continue
 		var busy: bool = false
@@ -1122,6 +1143,8 @@ func _options(reserve: float) -> Array:
 			if forecast.is_empty() or forecast.disabled_reason != "":
 				continue
 			var payback: float = float(forecast.payback_days)
+			if role == "mine":
+				payback *= mine_payback_factor
 			if payback <= 0.0 or payback > payback_limit:
 				continue
 			var reserves: float = float(forecast.reserve_days)
@@ -1575,14 +1598,15 @@ func _wages() -> void:
 	if today() - last_wage_change < WAGE_REVIEW_PERIOD:
 		return
 	var wage: float = float(sim.state.policy.wage)
+	var lowest_allowed: float = maxf(1.0, sim.Origins.wage_floor(sim))
 	if _tight():
-		if wage > 1.0:
+		if wage > lowest_allowed + 0.001:
 			act("policy", {"wage": wage - WAGE_STEP})
 			last_wage_change = today()
 	elif lowest < 1.0 and wage < WAGE_LIMIT:
 		act("policy", {"wage": wage + WAGE_STEP})
 		last_wage_change = today()
-	elif lowest > 1.4 and lowest < 2.0 and wage > 1.0:
+	elif lowest > 1.4 and lowest < 2.0 and wage > lowest_allowed + 0.001:
 		act("policy", {"wage": wage - WAGE_STEP})
 		last_wage_change = today()
 
