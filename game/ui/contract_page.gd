@@ -328,9 +328,63 @@ static func _amendments(g, b) -> void:
 		D.label(card, amendment_terms(g.sim, amendment), 16)
 
 
-## Annex VII, sealed until stage four is accepted (opened in 1.11 E).
+## Annex VII (1.11 E): sealed until stage four is accepted; then its demand, the late goal it adds,
+## the one answer (照办, 周旋, 公开) and, by variant, where the dig's finds go or the secret told.
 static func _annex(g, b) -> void:
 	var rule: Dictionary = g.sim.contract_rules.get("document", {}).get("annex", {})
+	var view: Dictionary = g.sim.Annex.view(g.sim)
 	var card: VBoxContainer = D.card(b, "well")
-	D.label(card, str(rule.get("title", "附件七（密封）")), 19, D.GOLD)
-	D.label(card, str(rule.get("sealed", "")), 16, D.MUTED)
+	if not bool(view.open):
+		D.label(card, str(rule.get("title", "附件七（密封）")), 19, D.GOLD)
+		D.label(card, str(rule.get("sealed", "")), 16, D.MUTED)
+		return
+	var variant: Dictionary = view.rule
+	D.label(
+		card,
+		"%s · %s" % [str(rule.get("opened_title", "附件七")), str(variant.get("title", ""))],
+		19,
+		D.GOLD
+	)
+	D.label(card, str(variant.get("letter", "")), 16)
+	D.label(card, "附加目标：" + annex_goal(variant), 16, D.TEAL)
+	var answers: Dictionary = rule.get("answers", {})
+	if bool(view.waiting):
+		var row: HBoxContainer = D.row(card)
+		for id: String in ["comply", "maneuver", "disclose"]:
+			var answer: Dictionary = answers.get(id, {})
+			var picked: String = id
+			D.button(
+				row,
+				str(answer.get("name", id)),
+				func(): g.act("annex_answer", {"answer": picked}),
+				str(answer.get("text", "")),
+				"Annex_" + id
+			)
+		return
+	D.label(card, "答复：%s" % str(answers.get(str(view.answer), {}).get("name", "")), 16, D.MUTED)
+	if str(view.variant) == "beneath":
+		var to_public: bool = str(view.finds_to) == "public"
+		D.button(
+			card,
+			"发现去向：%s（点击改为%s）" % ["公开" if to_public else "公司", "公司" if to_public else "公开"],
+			func(): g.act("annex_finds", {"to": "company" if to_public else "public"}),
+			"",
+			"AnnexFinds"
+		)
+	if str(view.variant) == "secret_station" and not bool(view.disclosed):
+		D.button(card, "向居民公开设施用途", func(): g.act("annex_disclose", {}), "", "AnnexDisclose")
+
+
+## The late goal Annex VII adds, filled from its variant's numbers.
+static func annex_goal(variant: Dictionary) -> String:
+	var text: String = str(variant.get("goal", ""))
+	for key: String in variant:
+		if variant[key] is float or variant[key] is int:
+			var value: float = float(variant[key])
+			var shown: String = _number(value)
+			if key == "ore":
+				shown = Labels.t(value)
+			elif key in ["bonus_per_level"]:
+				shown = "%.0f" % value
+			text = text.replace("{%s}" % key, shown)
+	return text

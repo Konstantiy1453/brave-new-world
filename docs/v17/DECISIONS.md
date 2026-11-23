@@ -1262,3 +1262,28 @@ factories, so the game's cycle and the payback bands stay as they are.
   so the tallies compare identifiers, not display strings.
 - The company ship's light comes down over the capital from four days before it is due, on the
   globe, the flat map and the district, and stays while the report waits.
+- Annex VII (E) is drawn from the seed (`hash(seed:annex)`); a save from before 1.11 E draws the
+  same way on load. It opens when stage four is accepted, with a compliance letter per variant
+  (`letters.json` `annex_<variant>`). The answer is given once, on the contract page.
+- Answers move distrust by points and 民心 by a lasting shift in points (`state.annex.morale_shift`,
+  added after the appeal mapping and clamped to 0-100): 照办 -8 / -6, 周旋 +2 / 0, 公开 +12 / +10.
+  They set `state.ending_lean` (loyal, buyout, autonomy) and nothing else in 1.11; the lean is
+  shown and recorded, the endings themselves have their own conditions.
+- Variant rules, kept small: 改造试验 pays ¥60,000 per terraforming level standing on the last
+  stage's deadline; 矿权转卖: 360 days after opening, unless 30,000 units of ore were exported since
+  or the exchange stands, the two mines with the highest rate are disabled and marked sold;
+  秘密设施: while the shipyard is under construction and not disclosed, a 15% chance each month that
+  the colonists find out (民心 -12), disclosing costs 民心 -4 and ends the checks; 地下的东西: one
+  find a month, at most 12, to the company (¥4,000, distrust -1.5) or the public (民心 +1.5, 120
+  research points), as the contractor directs (公开 sends them to the public).
+- The stories tied to the open variant come three times as often (`event_weight`).
+- Endings: the award records 效忠 (loyal) until another follows. 收购: price = 8 x the company's
+  share x the trailing 360 days' operating profit, at least ¥250,000, from the career fund; 自治:
+  民心 >= 60, population >= 2,500 and a company rating of B or better, or 民心 >= 55 after a disclosed
+  annex. Both end the company's share (`Contract.company_rate` 0) and its process (no more
+  reviews); one ending per colony. The takeover is recorded as an ending too.
+- The settlement statement (结算单) is one screen (`settlement_page.gd`) opened on every ending: stages
+  promised and delivered, the annual reports and gaps, amendments, money, shares, landmarks; after
+  the award it offers the buyout and autonomy. The lights time-lapse waits for G.
+- Bots: balanced complies; rush manoeuvres; research_first discloses; the windfall bot aims for the
+  buyout. The harness reports variants, answers and endings as an INFO row.

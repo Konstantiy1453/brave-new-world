@@ -10,6 +10,7 @@ func _init() -> void:
 	uses_great_works = true
 	uses_shuttle = true
 	commission_all = true
+	annex_answer = "maneuver"
 	reserve_days = 2.0
 	payback_limit = 700.0
 	recruit_batch = 20

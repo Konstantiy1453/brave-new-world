@@ -7,6 +7,7 @@ func _init() -> void:
 	uses_transfer = true
 	uses_commissions = true
 	reserve_days = 5.0
+	annex_answer = "disclose"
 	payback_limit = 500.0
 	science_target = 0.2
 	research_full_income = 400.0

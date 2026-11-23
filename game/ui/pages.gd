@@ -13,6 +13,7 @@ const CrewPanel = preload("res://ui/crew_panel.gd")
 const GroundPanel = preload("res://ui/ground_panel.gd")
 const ContractPage = preload("res://ui/contract_page.gd")
 const AnnualReportPage = preload("res://ui/annual_report_page.gd")
+const SettlementPage = preload("res://ui/settlement_page.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -661,6 +662,8 @@ static func populate(g, b, page):
 			world_info(g, b)
 		"annual_report":
 			AnnualReportPage.page(g, b)
+		"settlement":
+			SettlementPage.page(g, b)
 	var feedback = D.label(b, "", 16, D.GOLD)
 	feedback.name = "Feedback"
 

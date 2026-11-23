@@ -140,6 +140,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_award_rows(rows, runs)
 	_opening_row(rows, runs)
 	_report_row(rows, runs)
+	_endings_row(rows, runs)
 	_failure_rows(rows, runs)
 	_population_rows(rows, runs)
 	_research_rows(rows, runs)
@@ -265,6 +266,40 @@ static func _report_row(rows: Array, runs: Array) -> void:
 			]
 		),
 		_verdict(float(early[1]) > float(early[0]) and later)
+	)
+
+
+## Annex VII and the endings (1.11 E): variants drawn, answers given, endings reached and when.
+static func _endings_row(rows: Array, runs: Array) -> void:
+	var variants: Dictionary = {}
+	var answers: Dictionary = {}
+	var endings: Dictionary = {}
+	var days: Dictionary = {}
+	for run: Dictionary in runs:
+		var annex: Dictionary = run.get("annex", {})
+		if int(annex.get("opened_day", -1)) >= 0:
+			variants[str(annex.variant)] = int(variants.get(str(annex.variant), 0)) + 1
+			var given: String = str(annex.get("answer", ""))
+			answers[given] = int(answers.get(given, 0)) + 1
+		var ending: Dictionary = run.get("ending", {})
+		var kind: String = str(ending.get("kind", ""))
+		if kind != "":
+			endings[kind] = int(endings.get(kind, 0)) + 1
+			if not days.has(kind):
+				days[kind] = []
+			days[kind].append(float(ending.get("day", -1)))
+	var parts: PackedStringArray = []
+	for kind: String in days:
+		parts.append("%s median day %.0f" % [kind, median(days[kind])])
+	_row(
+		rows,
+		"Annex VII and endings",
+		"no target (INFO)",
+		(
+			"opened %s; answers %s; endings %s; %s"
+			% [str(variants), str(answers), str(endings), ", ".join(parts)]
+		),
+		STATUS_INFO
 	)
 
 

@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "units": {
     "time": "game day",
     "money": "account units",
@@ -158,7 +158,8 @@
       "code": "the colony's company code CC-NN: NN = 1 + the world seed modulo code_modulus",
       "clauses": "standard clauses in order; {placeholders} are filled from the rule files when the page is drawn",
       "origin_clauses": "the clause each origin adds (economy.json openings.<id>.clauses), filled like the origin's own text",
-      "amendment_clauses": "clauses an amendment adds (an event option's add_clause, 1.11 D)"
+      "amendment_clauses": "clauses an amendment adds (an event option's add_clause, 1.11 D)",
+      "annex": "Annex VII (1.11 E): sealed until stage four is accepted; answers move distrust (points) and 民心 (points, a lasting shift) and set the ending the colony leans to; variants: the great work they ask for, the stories weighted x event_weight once open, the goal text, and the rule's numbers (money, days, goods units, chances a month)"
     },
     "title": "{code} 项目殖民开发承包合同（对赌协议）",
     "code_modulus": 99,
@@ -201,7 +202,84 @@
     ],
     "annex": {
       "title": "附件七（密封）",
-      "sealed": "第四阶段验收后启封"
+      "sealed": "第四阶段验收后启封",
+      "opened_title": "附件七",
+      "event_weight": 3.0,
+      "answers": {
+        "comply": {
+          "name": "照办",
+          "lean": "loyal",
+          "distrust": -8.0,
+          "morale": -6.0,
+          "text": "按公司的意思办，不向居民说明。"
+        },
+        "maneuver": {
+          "name": "周旋",
+          "lean": "buyout",
+          "distrust": 2.0,
+          "morale": 0.0,
+          "text": "表面照办，暗中为买断公司分成做准备。"
+        },
+        "disclose": {
+          "name": "公开",
+          "lean": "autonomy",
+          "distrust": 12.0,
+          "morale": 10.0,
+          "text": "把附件的内容告诉居民。"
+        }
+      },
+      "variants": {
+        "terraform_trial": {
+          "title": "改造试验",
+          "great_work": "terraforming",
+          "events": [
+            "archive_grant",
+            "nw_d_weather_lease"
+          ],
+          "goal": "在最后阶段的期限前完成行星改造；到期时每完成一级改造，公司支付 ¥{bonus_per_level}。",
+          "letter": "公司正在向一位更大的客户证明这颗星球可以改造。",
+          "bonus_per_level": 60000.0
+        },
+        "rights_sale": {
+          "title": "矿权转卖",
+          "great_work": "exchange",
+          "events": [
+            "price_window"
+          ],
+          "goal": "启封后 {buyer_days} 日内出口 {ore} 矿石，或建成交易所；否则买方接手两座产量最高的矿场。",
+          "letter": "公司正在出售这颗星球的矿权。",
+          "buyer_days": 360,
+          "ore": 30000.0,
+          "mines": 2
+        },
+        "secret_station": {
+          "title": "秘密设施",
+          "great_work": "shipyard",
+          "events": [
+            "silent_probe"
+          ],
+          "goal": "建成轨道船坞。建造期间若未公开，居民每月都可能发现它的真正用途，民心随之下降；公开即可结束这种风险。",
+          "letter": "公司要在轨道上建一处不对外说明的设施。",
+          "monthly_chance": 0.15,
+          "found_morale": -12.0,
+          "disclose_morale": -4.0
+        },
+        "beneath": {
+          "title": "地下的东西",
+          "great_work": "university",
+          "events": [
+            "nw_e_buried_sky",
+            "archaeology"
+          ],
+          "goal": "建成大学，主持发掘。每月的发现交给公司（资金与信任）或公开给居民（民心与科研），最多 {finds} 次。",
+          "letter": "公司早就知道这片土地下面埋着什么。",
+          "finds": 12,
+          "find_cash": 4000.0,
+          "find_trust": 1.5,
+          "find_morale": 1.5,
+          "find_research": 120.0
+        }
+      }
     },
     "stamp": "已验收",
     "origin_clauses": {

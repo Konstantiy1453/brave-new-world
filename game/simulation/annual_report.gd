@@ -332,6 +332,11 @@ static func gap_open(sim: RefCounted) -> bool:
 	return false
 
 
+## A story's weight factor: the audits while the books are open, the stories tied to Annex VII.
+static func story_weight(sim: RefCounted, id: String) -> float:
+	return audit_weight(sim, id) * sim.Annex.event_weight(sim, id)
+
+
 ## How much more often an audit story is drawn while the books are open: 1 + k x gap / target.
 static func audit_weight(sim: RefCounted, id: String) -> float:
 	if not id in AUDIT_EVENTS or not gap_open(sim):

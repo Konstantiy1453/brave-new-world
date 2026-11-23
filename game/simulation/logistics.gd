@@ -286,6 +286,7 @@ static func trade(sim: RefCounted, s: Dictionary) -> void:
 		Market.record_export(sim, key, amount)
 		sim._consume(s, key, amount)
 		sim._transfer("external", "public", revenue, "export", true, key)
+		sim.Annex.exported(sim, key, amount)
 		sim._public_expense(revenue * sim.config.economy.port_fee, "export.port_fee", "external")
 		sim.state.exports_total += revenue
 		Consignments.exported(sim, s, key, amount, revenue)

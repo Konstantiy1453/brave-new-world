@@ -596,4 +596,6 @@ static func morale(sim: RefCounted) -> float:
 		return 50.0
 	var low: float = float(rule.appeal_floor)
 	var span: float = maxf(0.0001, float(rule.appeal_ceiling) - low)
-	return clampf((weighted / people - low) / span, 0.0, 1.0) * 100.0
+	# Annex VII's answer and what the colonists learn move it for good (annex.gd).
+	var shift: float = float(sim.state.get("annex", {}).get("morale_shift", 0.0))
+	return clampf(clampf((weighted / people - low) / span, 0.0, 1.0) * 100.0 + shift, 0.0, 100.0)

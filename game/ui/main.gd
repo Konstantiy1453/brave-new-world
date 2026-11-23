@@ -973,7 +973,10 @@ func refresh():
 	)
 	date_label.tooltip_text = "登陆第 %d 日 · 生涯第 %d 日" % [state.day, state.career.global_day]
 	gauge.show_pair(sim)
-	if Cues.SHIP in cues.observe(sim):
+	var heard: Array[String] = cues.observe(sim)
+	if Cues.ENDING in heard:
+		open_page("settlement")
+	if Cues.SHIP in heard:
 		var report: Dictionary = sim.state.annual.pending
 		var lines: Array[String] = ["第 %d 年度报告待签署：如实、报达标或报超额。" % int(report.year)]
 		_post_notice("ShipNotice", D.NEUTRAL, "◆ 公司年度船抵达", "年度报告", lines, "annual_report", 20.0)
@@ -1358,6 +1361,7 @@ func open_page(page: String):
 	}
 	titles.merge({"company": "公司关系 / 审查与有条件介入", "career": "连续生涯 / 总督与代管", "manage": "生产管理 / 批量操作"})
 	titles.annual_report = "年度报告 / 公司年度船"
+	titles.settlement = "结算单 / 合同结局"
 	modal(titles.get(page, page), 960, true, page)
 	current_page = page
 	_mark_nav()

@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "units": {
     "letters": "company letters by kind (1.11): department, subject, the departments copied in, body and an optional handwritten note from the liaison; {placeholders} are filled from the rule files and the state when the letter is written",
     "departments": "sender and copy departments: id to the name shown"
@@ -100,6 +100,42 @@
       ],
       "body": "经核实，贵方年度报告所报数字高于实际产量。依合同约定，本部按差额与出口价格计收罚款 ¥{fine}，差额即日清零；已核定的年度指标不予下调。本决定已归入贵方履约档案，不影响贵方继续申请合同项下的其他事项。",
       "note": "总部里没人在意那几吨矿，他们在意的是档案里多了一页。下一份报告，报你真能交出来的数。"
+    },
+    "annex_terraform_trial": {
+      "department": "compliance",
+      "subject": "{code} 项目附件七启封通知：改造试验",
+      "cc": [
+        "operations"
+      ],
+      "body": "依合同附件七约定，现予启封。本公司正为一位更大的客户论证本星球的可改造性。请贵方在最后阶段的期限前推进行星改造工程；每完成一级，本公司将按附件支付奖金。本附件内容仅供贵方知悉。",
+      "note": "客户是谁我也不知道。我只知道，他们要的是一份报告，不是一个活着的城市。"
+    },
+    "annex_rights_sale": {
+      "department": "compliance",
+      "subject": "{code} 项目附件七启封通知：矿权转卖",
+      "cc": [
+        "operations"
+      ],
+      "body": "依合同附件七约定，现予启封。本公司已就本星球矿权与第三方达成意向。启封后一年内，贵方须交付约定数量的矿石或建成交易所；未能交付的，买方将接手产量最高的两座矿场。",
+      "note": "买方的人下个月就会来看矿。你要是不想交出矿场，就让他们看到矿石。"
+    },
+    "annex_secret_station": {
+      "department": "compliance",
+      "subject": "{code} 项目附件七启封通知：轨道设施",
+      "cc": [
+        "operations"
+      ],
+      "body": "依合同附件七约定，现予启封。本公司将在贵方轨道船坞内设置一处设施，其用途不对外说明。请贵方配合建设，并妥善处理与居民的沟通。本附件内容属商业机密。",
+      "note": "我看过图纸。那不是船坞该有的东西。你要怎么跟他们说，我帮不了你。"
+    },
+    "annex_beneath": {
+      "department": "compliance",
+      "subject": "{code} 项目附件七启封通知：地下遗存",
+      "cc": [
+        "operations"
+      ],
+      "body": "依合同附件七约定，现予启封。本公司在登陆前的勘测中已知本星球地下存在遗存。请贵方建成大学并主持发掘；发掘所得按贵方指示处理。本附件内容仅供贵方知悉。",
+      "note": "他们一直都知道。你登陆的那天，档案就在总部的保险柜里。"
     }
   }
 }

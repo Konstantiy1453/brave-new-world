@@ -79,6 +79,8 @@ static func deadline(sim: RefCounted, stage: int) -> int:
 
 ## The company's share of the operating surplus after the award, with signed amendments.
 static func company_rate(sim: RefCounted) -> float:
+	if sim.Endings.company_released(sim):
+		return 0.0
 	var points: float = float(sim.state.contract.get("company_share_points", 0.0))
 	return clampf(float(sim.config.contract.company_tax_rate) + points / 100.0, 0.0, 1.0)
 
@@ -376,6 +378,10 @@ static func _complete_stage(sim: RefCounted, stage: int) -> void:
 	contract.stage = stage + 1
 	contract.stage_started = int(sim.state.day)
 	contract.stage_streak = 0
+	if stage == sim.Annex.OPEN_STAGE:
+		sim.Annex.open(sim)
+	if stage == STAGE_COUNT:
+		sim.Endings.on_award(sim)
 	if stage == STAGE_COUNT:
 		sim.state.status = "success"
 		sim.state.success_day = sim.state.day

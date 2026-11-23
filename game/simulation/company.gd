@@ -310,6 +310,9 @@ static func transition(sim, stage: String, days: int, letter_kind: String) -> vo
 static func tick(sim) -> void:
 	ensure(sim)
 	aid_tick(sim)
+	# Bought out or autonomous (1.11 E): the company no longer reviews the colony.
+	if sim.Endings.company_released(sim):
+		return
 	var c: Dictionary = sim.state.company
 	var cfg: Dictionary = sim.progression.company
 	var diff: Dictionary = sim.progression.difficulty[sim.state.difficulty]

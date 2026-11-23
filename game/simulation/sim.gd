@@ -25,6 +25,8 @@ const Pollution = preload("res://simulation/pollution.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Origins = preload("res://simulation/origins.gd")
 const AnnualReport = preload("res://simulation/annual_report.gd")
+const Annex = preload("res://simulation/annex.gd")
+const Endings = preload("res://simulation/endings.gd")
 const Features = preload("res://simulation/features.gd")
 const Bay = preload("res://simulation/bay.gd")
 const Placement = preload("res://simulation/placement.gd")
@@ -173,6 +175,8 @@ static func ensure_systems(target: Dictionary) -> void:
 	Prospecting.ensure_state(target)
 	Company.ensure_state(target)
 	AnnualReport.ensure_state(target)
+	Annex.ensure_state(target)
+	Endings.ensure_state(target)
 
 
 func _stock() -> Dictionary:
@@ -299,6 +303,16 @@ func act(action: String, args: Dictionary = {}) -> String:
 			refusal = Crews.set_order(self, _site_arg(args), str(args.get("order", "")))
 		"annual_report":
 			refusal = AnnualReport.sign_report(self, args)
+		"annex_answer":
+			refusal = Annex.answer(self, str(args.get("answer", "")))
+		"annex_finds":
+			refusal = Annex.direct_finds(self, str(args.get("to", "")))
+		"annex_disclose":
+			refusal = Annex.disclose(self)
+		"buyout":
+			refusal = Endings.buy_out(self)
+		"declare_autonomy":
+			refusal = Endings.declare_autonomy(self)
 		"research_commission":
 			refusal = Research.commission(
 				self, str(args.get("tech", "")), int(args.get("level", 0))
@@ -393,6 +407,7 @@ func tick() -> void:
 			s.stock_delta[key] = float(s.stock[key]) - float(stocks[str(s.region)][key])
 	Contract.daily(self)
 	AnnualReport.daily(self)
+	Annex.daily(self)
 	Company.tick(self)
 	state.operating_history.append(
 		{
@@ -511,6 +526,7 @@ func _resolve_legacy_event(id: String, choice: String) -> String:
 func _fail(reason: String) -> void:
 	state.status = "failed"
 	state.failure_reason = reason
+	Endings.on_takeover(self)
 	_log("经营终止：" + reason)
 
 

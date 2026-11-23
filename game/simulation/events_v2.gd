@@ -928,7 +928,7 @@ static func tick(sim) -> void:
 			for s in sim.state.settlements:
 				if _matches(sim, s, d.conditions):
 					places.append(int(s.region))
-			var weight: float = float(d.weight) * AnnualReport.audit_weight(sim, id)
+			var weight: float = float(d.weight) * AnnualReport.story_weight(sim, id)
 			if not places.is_empty():
 				candidates.append({"id": id, "places": places, "weight": weight})
 				total += weight

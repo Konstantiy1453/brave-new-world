@@ -151,6 +151,10 @@ var housing_slack: float = 0.08
 ## The annual report (1.11 D): how every line is reported ("honest", "met" or "exceed"), and how
 ## many days before a mining pledge's ship the capital starts keeping its ore for the tribute.
 var report_policy: String = "honest"
+## Annex VII and the endings (1.11 E): the bot's answer when the annex opens, and the ending it
+## takes after the award if it can ("" stays loyal; "buyout" or "autonomy").
+var annex_answer: String = "comply"
+var ending_goal: String = ""
 var tribute_lead_days: int = 120
 var mine_payback_factor: float = 1.0
 var coast_bonus: float = 1.0

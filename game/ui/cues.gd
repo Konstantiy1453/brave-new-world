@@ -63,7 +63,12 @@ static func marks(state: Dictionary) -> Dictionary:
 	return {
 		LETTER: newest,
 		STAMP: state.get("contract", {}).get("completed", {}).size(),
-		ENDING: status if status in ["success", "failed"] else "",
+		ENDING:
+		(
+			"%s|%s" % [status, str(state.get("ending", {}).get("kind", ""))]
+			if status in ["success", "failed"]
+			else ""
+		),
 		SHIP: "" if pending.is_empty() else str(pending.get("year", "")),
 		SIGNATURE: signed,
 	}

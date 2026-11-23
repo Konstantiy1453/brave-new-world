@@ -6,6 +6,11 @@ const WINDFALL_DAY: int = 1080
 const WINDFALL: float = 1000000.0
 
 
+func _init() -> void:
+	super._init()
+	ending_goal = "buyout"
+
+
 func on_day() -> void:
 	if today() == WINDFALL_DAY and not sim.state.settlements.is_empty():
 		sim._transfer("external", "public", WINDFALL, "test.windfall", false)

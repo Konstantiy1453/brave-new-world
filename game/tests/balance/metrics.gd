@@ -131,6 +131,12 @@ func finish(sim: RefCounted) -> Dictionary:
 	record.sinks = state.get("stats", {}).get("sinks", []).duplicate(true)
 	record.great_works = _great_works(sim)
 	record.annual = _annual(state)
+	record.annex = {
+		"variant": str(state.get("annex", {}).get("variant", "")),
+		"answer": str(state.get("annex", {}).get("answer", "")),
+		"opened_day": int(state.get("annex", {}).get("opened_day", -1)),
+	}
+	record.ending = state.get("ending", {}).duplicate()
 	record.shuttle_lines = _shuttle_lines(sim)
 	if _window_expense > 0.0:
 		record.research_share = _research_spend / _window_expense

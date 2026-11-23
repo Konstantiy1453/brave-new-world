@@ -31,10 +31,27 @@ static func land(bot: RefCounted) -> void:
 	bot.act("build", {"site": bot.home, "kind": "mine_copper"})
 
 
+## After the award, the ending the bot aims for, once it is within reach.
+static func _ending(bot: RefCounted) -> void:
+	var sim: RefCounted = bot.sim
+	if str(sim.state.status) != "success" or str(bot.ending_goal) == "":
+		return
+	if str(sim.state.get("ending", {}).get("kind", "")) in ["buyout", "autonomy"]:
+		return
+	if str(bot.ending_goal) == "buyout":
+		if float(sim.state.career.balance) >= sim.Endings.buyout_price(sim):
+			bot.act("buyout", {})
+	elif bool(sim.Endings.autonomy_terms(sim).ok):
+		bot.act("declare_autonomy", {})
+
+
 ## Signs a waiting annual report by the bot's policy; under a mining pledge, keeps the year's ore
 ## tribute in the capital from `tribute_lead_days` before the ship, and lets it go after.
 static func annual_report(bot: RefCounted) -> void:
 	var sim: RefCounted = bot.sim
+	if sim.Annex.waiting(sim):
+		bot.act("annex_answer", {"answer": bot.annex_answer})
+	_ending(bot)
 	var annual: Dictionary = sim.state.get("annual", {})
 	if annual.is_empty():
 		return
