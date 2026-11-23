@@ -4,6 +4,11 @@ const Contract = preload("res://simulation/contract.gd")
 const Population = preload("res://simulation/population.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Pollution = preload("res://simulation/pollution.gd")
+const Rules = preload("res://simulation/rules.gd")
+## The fields every company letter carries since 1.11 (structured letters, letters.json).
+const LETTER_FIELDS: Dictionary = {
+	"department": "", "subject": "", "cc": [], "body": "", "note": ""
+}
 
 
 ## One causal source per economic and social chain, retained stage letters. Pollution is not one
@@ -149,19 +154,13 @@ static func accept(sim, offer: String, region: int = -1) -> String:
 		c.extension_used = true
 	letter(
 		sim,
-		"援助签署",
-		(
-			d.name
-			+ "；"
-			+ str(d.arrival_days)
-			+ " 日后抵达，偿还 "
-			+ str(d.repayment)
-			+ "，正经营结余追加分成 "
-			+ str(float(d.surcharge) * 100)
-			+ "%，期限 "
-			+ str(d.duration)
-			+ " 日。"
-		)
+		"aid_signed",
+		{
+			"aid_name": str(d.name),
+			"arrival_days": int(d.arrival_days),
+			"repayment": "%.0f" % float(d.repayment),
+			"surcharge_pct": "%.0f" % (float(d.surcharge) * 100.0),
+		}
 	)
 	return ""
 
@@ -213,22 +212,97 @@ static func aid_tick(sim) -> void:
 					a.status = "breached"
 
 
-static func letter(sim, kind: String, reason: String) -> void:
+## A letter from the company (1.11): the template for `kind` in letters.json (the sending
+## department, the subject, the departments copied in, the body and the liaison's handwritten note),
+## filled from the rules, the state and `values`. `reason` keeps the subject, for older readers.
+static func letter(sim, kind: String, values: Dictionary = {}) -> void:
 	var c: Dictionary = sim.state.company
-	c.letters.append(
-		{"day": int(sim.state.day), "kind": kind, "reason": reason, "deadline": int(c.deadline)}
-	)
+	var book: Dictionary = Rules.read("letters")
+	var template: Dictionary = book.letters.get(kind, {})
+	var fill: Dictionary = letter_values(sim, values)
+	var entry: Dictionary = {"day": int(sim.state.day), "kind": kind, "deadline": int(c.deadline)}
+	if template.is_empty():
+		var line: String = str(values.get("reason", kind))
+		entry.merge({"reason": line, "department": "", "subject": line, "cc": []})
+		entry.merge({"body": line, "note": ""})
+	else:
+		var copied: Array = []
+		for department: String in template.get("cc", []):
+			copied.append(str(book.departments.get(department, department)))
+		var subject: String = fill_text(str(template.subject), fill)
+		entry.reason = subject
+		entry.department = str(book.departments.get(str(template.department), template.department))
+		entry.subject = subject
+		entry.cc = copied
+		entry.body = fill_text(str(template.body), fill)
+		entry.note = fill_text(str(template.get("note", "")), fill)
+	c.letters.append(entry)
 	while c.letters.size() > 30:
 		c.letters.pop_front()
-	sim._log("公司" + kind + "：" + reason)
+	sim._log("公司来信 · %s：%s" % [str(entry.department), str(entry.subject)])
 
 
-static func transition(sim, stage: String, days: int, reason: String) -> void:
+## What a letter's {placeholders} can name: the colony's company code, the thresholds and windows
+## of the current difficulty, the company deadline, and the caller's own values.
+static func letter_values(sim, values: Dictionary) -> Dictionary:
+	var cfg: Dictionary = sim.progression.company
+	var diff: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
+	var fill: Dictionary = {
+		"code": str(sim.state.get("contract", {}).get("code", "")),
+		"review_threshold": "%.0f" % float(cfg.review_threshold),
+		"intervention_threshold": "%.0f" % float(cfg.intervention_threshold),
+		"review_days": int(diff.review_days),
+		"intervention_days": int(diff.intervention_days),
+		"deadline_day": int(sim.state.company.get("deadline", -1)),
+	}
+	fill.merge(values, true)
+	return fill
+
+
+static func fill_text(text: String, values: Dictionary) -> String:
+	for key: String in values:
+		text = text.replace("{%s}" % key, str(values[key]))
+	return text
+
+
+## Letters from before 1.11 get the structured fields: their one line becomes subject and body.
+## Runs before an old save is validated, so it leaves whatever is malformed for the validator.
+static func ensure_state(state: Dictionary) -> void:
+	var company: Variant = state.get("company")
+	if not company is Dictionary or not company.get("letters") is Array:
+		return
+	for entry: Variant in company.letters:
+		if not entry is Dictionary:
+			continue
+		for field: String in LETTER_FIELDS:
+			if not entry.has(field):
+				entry[field] = LETTER_FIELDS[field].duplicate() if field == "cc" else ""
+		if str(entry.subject) == "":
+			entry.subject = str(entry.get("reason", entry.get("kind", "")))
+		if str(entry.body) == "":
+			entry.body = str(entry.get("reason", ""))
+
+
+## The company's rating of the contractor from distrust: A below `rating_a_below`, B below the
+## review threshold, C below the intervention threshold, D above.
+static func rating(sim) -> String:
+	var cfg: Dictionary = sim.progression.company
+	var value: float = float(sim.state.get("company", {}).get("distrust", 0.0))
+	if value < float(cfg.get("rating_a_below", 20.0)):
+		return "A"
+	if value < float(cfg.review_threshold):
+		return "B"
+	if value < float(cfg.intervention_threshold):
+		return "C"
+	return "D"
+
+
+static func transition(sim, stage: String, days: int, letter_kind: String) -> void:
 	var c: Dictionary = sim.state.company
 	c.stage = stage
 	c.stage_day = int(sim.state.day)
 	c.deadline = int(sim.state.day) + days if days > 0 else -1
-	letter(sim, stage, reason)
+	letter(sim, letter_kind)
 
 
 static func tick(sim) -> void:
@@ -288,30 +362,25 @@ static func tick(sim) -> void:
 	c.stable = int(c.stable) + 1 if risk <= 0 else 0
 	var days_in_stage: int = int(sim.state.day) - int(c.stage_day)
 	if int(c.stable) >= int(cfg.stable_days) and c.stage in ["review", "intervention"]:
-		transition(sim, "recovery", 0, "整改已稳定，停止升级；不信任随持续稳定逐日恢复。")
+		transition(sim, "recovery", 0, "recovery_stable")
 		return
 	match str(c.stage):
 		"normal", "recovery":
 			if risk > 0 and c.distrust >= float(diff.warning):
-				transition(sim, "warning", 0, "出现持续履约风险；可贸易、调拨、企业复业、治理或查看有条件援助。")
+				transition(sim, "warning", 0, "warning")
 			elif c.distrust <= 0 and c.stage == "recovery":
-				transition(sim, "normal", 0, "持续稳定恢复正常经营。")
+				transition(sim, "normal", 0, "normal")
 		"warning":
 			if (
 				c.distrust >= float(cfg.review_threshold)
 				and days_in_stage >= int(cfg.minimum_stage_days)
 			):
-				transition(sim, "review", int(diff.review_days), "正式整改：解决当前经济与社会原因。现有合同到期不会绕过此窗口。")
+				transition(sim, "review", int(diff.review_days), "review")
 			elif c.stable >= int(cfg.stable_days):
-				transition(sim, "recovery", 0, "问题已解决，持续稳定将恢复评价。")
+				transition(sim, "recovery", 0, "recovery_solved")
 		"review":
 			if int(sim.state.day) >= int(c.deadline) and risk > 0:
-				transition(
-					sim,
-					"intervention",
-					int(diff.intervention_days),
-					"整改期限结束仍有风险；最后介入窗口，可接受尚未使用的援助并执行义务。"
-				)
+				transition(sim, "intervention", int(diff.intervention_days), "intervention")
 		"intervention":
 			if int(sim.state.day) >= int(c.deadline) and risk > 0:
 				c.failure_report = {
@@ -347,7 +416,20 @@ static func validate(sim, candidate: Dictionary) -> String:
 			"stage_day": 0,
 			"deadline": 0,
 			"sources": {},
-			"letters": [{"day": 0, "kind": "", "reason": "", "deadline": 0}],
+			"letters":
+			[
+				{
+					"day": 0,
+					"kind": "",
+					"reason": "",
+					"deadline": 0,
+					"department": "",
+					"subject": "",
+					"cc": [],
+					"body": "",
+					"note": ""
+				}
+			],
 			"aid": [],
 			"claimed": [""],
 			"stable": 0,

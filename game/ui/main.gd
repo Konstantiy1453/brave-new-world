@@ -10,6 +10,7 @@ const SaveIo = preload("res://simulation/save_io.gd")
 const Contract = preload("res://simulation/contract.gd")
 const TutorialCoach = preload("res://ui/tutorial_coach.gd")
 const DistrustGauge = preload("res://ui/distrust_gauge.gd")
+const Cues = preload("res://ui/cues.gd")
 const WorldGen = preload("res://world/world_gen.gd")
 const Labels = preload("res://ui/labels.gd")
 const Tutorial = preload("res://simulation/tutorial.gd")
@@ -89,6 +90,7 @@ var sidebar_actions: VBoxContainer
 var top_stats: GridContainer
 var top_cells: Dictionary = {}
 var gauge: PanelContainer
+var cues: RefCounted = Cues.new()
 var column_panel: PanelContainer
 var column_box: VBoxContainer
 var column_tab: Button
@@ -969,14 +971,8 @@ func refresh():
 		"%s · %s" % [Labels.date(int(state.day)), "已暂停" if paused else str(speed) + " 倍速"]
 	)
 	date_label.tooltip_text = "登陆第 %d 日 · 生涯第 %d 日" % [state.day, state.career.global_day]
-	var company: Dictionary = state.get("company", {})
-	var level: Dictionary = sim.progression.difficulty[state.get("difficulty", "normal")]
-	gauge.show_state(
-		company,
-		float(level.warning),
-		float(sim.progression.company.review_threshold),
-		float(sim.progression.company.intervention_threshold)
-	)
+	gauge.show_pair(sim)
+	cues.observe(sim)
 	var steps = ["立足 → 分工 → 网络 → 自立 → 首府：一步步把据点变成能自立的殖民地，赢得总督资格"]
 	var hint = "在地图上选一个地点，右侧卡片告诉你它适合做什么。"
 	if state.status != "planning":

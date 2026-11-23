@@ -128,6 +128,9 @@ static func load_legacy(sim: RefCounted, bytes: PackedByteArray) -> String:
 			return "精确状态校验失败"
 		candidate = bytes_to_var(Marshalls.base64_to_raw(parsed.binary))
 	var schema_one: bool = candidate is Dictionary and candidate.get("schema", 0) == 1
+	if candidate is Dictionary:
+		# Company letters became structured in 1.11; the old one-line letters get the fields first.
+		Company.ensure_state(candidate)
 	var error: String = validate_old(sim, candidate, schema_one)
 	if error != "":
 		return error

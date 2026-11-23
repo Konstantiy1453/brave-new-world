@@ -11,6 +11,7 @@ const PeopleLines = preload("res://ui/people_lines.gd")
 const BayLines = preload("res://ui/bay_lines.gd")
 const CrewPanel = preload("res://ui/crew_panel.gd")
 const GroundPanel = preload("res://ui/ground_panel.gd")
+const ContractPage = preload("res://ui/contract_page.gd")
 const PROBLEM_STATUSES: Array[String] = [Keys.B_IDLE, Keys.B_DEPLETED, Keys.B_NO_INPUT]
 const MONEY_ROWS: int = 8
 ## Years of spending by sink on the economy page, this year included.
@@ -776,118 +777,9 @@ static func world_info(g, b):
 	)
 
 
+## The contract as a document (1.11), in its own script.
 static func contract(g, b):
-	var state: Dictionary = g.sim.state
-	var view: Dictionary = g.sim.contract_view()
-	var row = D.row(b)
-	D.portrait(row, "liaison", 210, 320)
-	var v = D.col(row)
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var title: String = "殖民外包协议"
-	if state.status == "success":
-		title = "契约履行完毕  /  总督资格已授予"
-	if state.status == "failed":
-		title = "合同终止  /  经营失败"
-	D.label(v, title, 24, D.GOLD)
-	D.label(v, "分五个阶段，用六到八年建起一座配得上首府之名的城市。完成阶段可获得发展资金和新据点许可；错过期限不会立刻判负，但公司的不信任会慢慢上升。", 18)
-	var op: Dictionary = g.sim.config.openings[state.advantage]
-	var capital: float = float(
-		g.sim.progression.difficulty[state.get("difficulty", "normal")].capital
-	)
-	D.label(
-		v,
-		(
-			"开局支持：¥ %.0f；食品 %s、建材 %s、部件 %s。职工 %d 人、工程队 %d 支（每支计 1 人）、研究团队 %d 支（每支计 1 人）、未成年 %d 人。"
-			% [
-				float(op.cash) * capital,
-				Labels.t(float(op.food)),
-				Labels.t(float(op.materials)),
-				Labels.t(float(op.parts)),
-				int(op.workers) - int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
-				int(g.sim.pop_rules.get("crews", {}).get("opening", 0)),
-				op.scientists,
-				op.children
-			]
-		),
-		17,
-		D.TEAL
-	)
-	if state.status == "planning":
-		D.button(v, "接受协议，开始勘察  →", g.close_modal)
-	elif state.status == "success":
-		D.button(v, "继续担任总督 / 沙盒经营", g.close_modal)
-		D.button(v, "查看 B 代管与下一颗星球", func(): g.open_page("career"))
-	elif state.status == "failed":
-		D.label(v, str(state.get("failure_reason", "经营条件未达标。")), 18, D.RED)
-		D.button(v, "失败报告 / 恢复登陆检查点", func(): g.open_page("career"))
-		D.button(v, "查看公司审查经过", func(): g.open_page("company"))
-	else:
-		D.button(v, "返回经营", g.close_modal)
-	for stage: Dictionary in view.stages:
-		_contract_stage(g, b, stage, int(view.current))
-	if state.status == "success":
-		D.label(b, "行星里程碑（可选）：已达成 %d 项" % view.milestones.size(), 18, D.TEAL)
-
-
-static func _contract_stage(g, b, stage: Dictionary, current: int):
-	var card = D.card(b)
-	var done: bool = int(stage.completed_day) >= 0
-	var head: String = str(Labels.STAGE_NAMES.get(stage.id, stage.id))
-	if done:
-		head += "  ·  %s 完成" % Labels.short_date(int(stage.completed_day))
-	elif int(stage.stage) == current:
-		head += "  ·  期限 %s" % Labels.short_date(int(stage.deadline))
-	D.label(card, head, 21, D.GOLD if int(stage.stage) == current else D.TEAL)
-	var rewards: PackedStringArray = []
-	if float(stage.reward_cash) > 0.0:
-		rewards.append("发展资金 ¥ %.0f" % float(stage.reward_cash))
-	if str(stage.licence) != "":
-		rewards.append(str(Labels.LICENCE_NAMES.get(stage.licence, stage.licence)))
-	if int(stage.stage) == g.sim.Contract.STAGE_COUNT:
-		rewards.append("总督资格")
-	D.label(card, "奖励：" + "、".join(rewards), 16, D.MUTED)
-	if done or int(stage.stage) > current:
-		return
-	for goal_row: Dictionary in stage.goals:
-		var text: Dictionary = Labels.goal(goal_row)
-		var line = D.row(card)
-		var caption = D.label(
-			line,
-			"%s  %s" % ["✓" if goal_row.ok else "○", text.text],
-			17,
-			D.TEAL if goal_row.ok else D.INK
-		)
-		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if not goal_row.ok and str(text.page) != "":
-			var page: String = text.page
-			var fix = D.button(line, "去处理", func(): g.open_page(page), str(text.hint))
-			D.font_size(fix, 14)
-			fix.custom_minimum_size.y = 30
-		elif not goal_row.ok:
-			D.label(line, str(text.hint), 15, D.MUTED, false)
-		if str(goal_row.key) == "operating_route":
-			_route_lines(g, card)
-
-
-## Stage three's three routes, each with its measures over the last 30 days (operating_routes.gd).
-static func _route_lines(g, card: Control) -> void:
-	for route: Dictionary in g.sim.Contract.OperatingRoutes.view(g.sim):
-		var parts: PackedStringArray = []
-		for part: Dictionary in route.parts:
-			var value: float = float(part.value)
-			var target: float = float(part.target)
-			if target < 1.0:
-				parts.append("%s %.0f%% / %.0f%%" % [part.label, value * 100.0, target * 100.0])
-			elif str(part.label) == "沿海据点":
-				parts.append("%s %d / %d" % [part.label, int(value), int(target)])
-			else:
-				parts.append("%s %s / %s" % [part.label, Labels.t(value), Labels.t(target)])
-		D.label(
-			card,
-			"　%s %s：%s" % ["✓" if bool(route.ok) else "·", route.name, " · ".join(parts)],
-			15,
-			D.TEAL if bool(route.ok) else D.MUTED
-		)
+	ContractPage.page(g, b)
 
 
 ## The public services budget: an optional running cost that keeps people, by level.
@@ -909,16 +801,23 @@ static func _services_budget(g, b) -> void:
 	)
 	var row = D.row(b)
 	var current: int = int(g.sim.state.policy.get("services", 0))
+	var morale: Dictionary = g.sim.pop_rules.get(
+		"morale", {"appeal_floor": 0.0, "appeal_ceiling": 2.0}
+	)
+	var span: float = maxf(0.0001, float(morale.appeal_ceiling) - float(morale.appeal_floor))
 	for level: int in range(int(rules.levels) + 1):
 		var cost: float = g.sim.Population.services_cost(g.sim, level)
+		var appeal: float = float(rules.appeal[level])
 		var text: String = (
-			"关"
-			if level == 0
-			else ("%d 级 · ¥ %.0f/日 · 吸引力 +%.2f" % [level, cost, float(rules.appeal[level])])
+			"关" if level == 0 else ("%d 级 · ¥ %.0f/日 · 吸引力 +%.2f" % [level, cost, appeal])
+		)
+		var hint: String = (
+			"公共服务预算是民心的杠杆：民心是各据点吸引力按人口加权的平均。这一级让每个据点吸引力 +%.2f，民心约 +%.0f。"
+			% [appeal, appeal / span * 100.0]
 		)
 		var chosen: int = level
 		var button = D.button(
-			row, text, func(): g.act("policy", {"services": chosen}), "", "Services_%d" % level
+			row, text, func(): g.act("policy", {"services": chosen}), hint, "Services_%d" % level
 		)
 		button.toggle_mode = true
 		button.button_pressed = level == current

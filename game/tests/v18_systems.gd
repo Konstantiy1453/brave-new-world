@@ -10,6 +10,7 @@ const SaveIo = preload("res://simulation/save_io.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Labels = preload("res://ui/labels.gd")
 const Stats = preload("res://simulation/stats.gd")
+const Company = preload("res://simulation/company.gd")
 
 const SEED: int = 260129
 const OLD_SAVES: Array[String] = [
@@ -297,11 +298,12 @@ func _resource_table() -> void:
 
 func _gauge() -> void:
 	var gauge: Control = game.gauge
-	check(gauge != null and gauge.visible, "the distrust gauge stands beside the map")
+	check(gauge != null and gauge.visible, "the company rating and 民心 stand beside the map (1.11)")
 	game.sim.state.company.distrust = 35.0
 	game.sim.state.company.delta = 0.42
 	game.refresh()
-	check(gauge.value_label.text == "35", "it shows the level")
+	check(gauge.rating_label.text == Company.rating(game.sim), "it shows the rating letter")
+	check(gauge.tooltip_text.contains("35.0"), "with the level on hover")
 	check(gauge.delta_label.text == "+0.42 /日", "and the change of the day")
 	check(gauge.tooltip_text.contains("点击"), "and says what a click does")
 	game.sim.state.company.distrust = 0.0

@@ -406,7 +406,8 @@ static func _state_shape(sim: RefCounted) -> Dictionary:
 			"income_window": [],
 			"processing_days": 0,
 			"today_food": 0,
-			"milestones": []
+			"milestones": [],
+			"code": ""
 		},
 		"market": {"saturation": {}},
 		"pollution": {"load": 0, "emitted": 0, "absorbed": 0, "stage": 0},

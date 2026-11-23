@@ -167,6 +167,7 @@ static func ensure_systems(target: Dictionary) -> void:
 	Placement.ensure_state(target)
 	Consignments.ensure_state(target)
 	Prospecting.ensure_state(target)
+	Company.ensure_state(target)
 
 
 func _stock() -> Dictionary:

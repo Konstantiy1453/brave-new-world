@@ -4,6 +4,8 @@ const Career = preload("res://simulation/career.gd")
 const Labels = preload("res://ui/labels.gd")
 const ResearchPage = preload("res://ui/research_page.gd")
 const RadiusSlider = preload("res://ui/radius_slider.gd")
+const LettersView = preload("res://ui/letters_view.gd")
+const Company = preload("res://simulation/company.gd")
 
 
 static func populate(g, b, page: String):
@@ -33,8 +35,12 @@ static func company(g, b):
 	D.label(
 		b,
 		(
-			"不信任 %.1f / 100 · %s"
-			% [v.get("distrust", 0), stages.get(v.get("stage", "normal"), v.get("stage", ""))]
+			"公司评级 %s · 不信任 %.1f / 100 · %s"
+			% [
+				Company.rating(g.sim),
+				v.get("distrust", 0),
+				stages.get(v.get("stage", "normal"), v.get("stage", ""))
+			]
 		),
 		23,
 		D.GOLD
@@ -148,8 +154,7 @@ static func company(g, b):
 			17,
 			D.GOLD
 		)
-	for line in v.get("letters", []).slice(-12):
-		D.label(b, "第%d日 · %s" % [line.day, line.reason], 15, D.MUTED)
+	LettersView.list(g, b, v.get("letters", []))
 
 
 static func events(g, b):

@@ -578,3 +578,22 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 		if b.kind == "service" and not sim.state.enterprise.is_empty():
 			sim.state.enterprise.employees = b.employed
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)
+
+
+## 民心 (1.11): the population-weighted mean of the settlements' appeal, 0-100 through
+## population.json `morale` (appeal_floor to appeal_ceiling). Read by the HUD and, from 1.11 E, the
+## autonomy ending; the services budget is the player's lever on it.
+static func morale(sim: RefCounted) -> float:
+	var rule: Dictionary = sim.pop_rules.get("morale", {"appeal_floor": 0.0, "appeal_ceiling": 2.0})
+	var people: float = 0.0
+	var weighted: float = 0.0
+	for s: Dictionary in sim.state.get("settlements", []):
+		if int(s.get("arrival", 0)) > 0 or int(s.get("population", 0)) <= 0:
+			continue
+		people += float(s.population)
+		weighted += float(attractiveness(sim, s).value) * float(s.population)
+	if people <= 0.0:
+		return 50.0
+	var low: float = float(rule.appeal_floor)
+	var span: float = maxf(0.0001, float(rule.appeal_ceiling) - low)
+	return clampf((weighted / people - low) / span, 0.0, 1.0) * 100.0

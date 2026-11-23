@@ -5,7 +5,8 @@
     "money": "account units",
     "people": "persons: every count of people is in persons, and a worker (职工), a farmer (农民, a worker on a farm), a research team (研究团队, named so by the 1.8 request, counted as one person), a crew (工程队, counted as its resident foreman) and a child (未成年) each count one, take one bed and draw one wage",
     "share": "fraction 0-1",
-    "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews"
+    "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews",
+    "morale": "民心 0-100: the population-weighted mean of settlement appeal, mapped linearly from appeal_floor (0) to appeal_ceiling (100)"
   },
   "housing": {
     "capital": 60,
@@ -92,5 +93,9 @@
   "migration": {
     "per_road_per_day": 3,
     "keep_workers": 12
+  },
+  "morale": {
+    "appeal_floor": 0.0,
+    "appeal_ceiling": 2.0
   }
 }

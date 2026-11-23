@@ -13,11 +13,13 @@ const FILES: Dictionary = {
 	"geography": "res://data/v17/geography.json",
 	"tutorial": "res://data/v17/tutorial.json",
 	"techs": "res://data/v17/techs.json",
+	"letters": "res://data/v17/letters.json",
 }
 const REQUIRED: Dictionary = {
 	"economy":
 	["version", "units", "resources", "prices", "economy", "openings", "buildings", "contract"],
 	"techs": ["version", "units", "categories", "offers", "first_offers", "techs"],
+	"letters": ["version", "units", "departments", "letters"],
 	"progression":
 	["version", "units", "difficulty", "research", "company", "production", "pollution", "time"],
 	"career": ["version", "units", "calendar", "management"],

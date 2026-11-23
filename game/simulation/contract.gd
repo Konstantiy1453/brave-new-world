@@ -2,6 +2,7 @@ extends RefCounted
 ## The staged contract, from a foothold to a capital city. Goals live in data/v17/contract.json.
 ## Missing a soft deadline feeds the company process, never instant failure.
 
+const Rules = preload("res://simulation/rules.gd")
 const STREAK_WINDOW: int = 7
 const Keys = preload("res://simulation/keys.gd")
 const WorldGen = preload("res://world/world_gen.gd")
@@ -20,6 +21,9 @@ static func ensure_state(state: Dictionary) -> void:
 		if state.status == "success" and int(state.contract.stage) == OLD_STAGE_COUNT + 1:
 			state.contract.stage = STAGE_COUNT + 1
 		OperatingRoutes.ensure_state(state)
+		# The company code (1.11): saves from before it get the one their seed gives.
+		if not state.contract.has("code"):
+			state.contract.code = code_for(state)
 		return
 	var finished: bool = state.get("status", "") == "success"
 	state.contract = {
@@ -35,6 +39,7 @@ static func ensure_state(state: Dictionary) -> void:
 		"processing_days": 0,
 		"today_food": 0.0,
 		"milestones": [],
+		"code": code_for(state),
 	}
 	OperatingRoutes.ensure_state(state)
 
@@ -384,3 +389,46 @@ static func daily(sim: RefCounted) -> void:
 		if not goal.ok:
 			return
 	_complete_stage(sim, stage)
+
+
+## The colony's company code (1.11), CC-NN: NN from the world's seed. The company's letters,
+## reports and the contract name the project by it; no rule reads it.
+static func code_for(state: Dictionary) -> String:
+	var modulus: int = int(Rules.read("contract").get("document", {}).get("code_modulus", 99))
+	var seed_value: int = int(state.get("world", {}).get("seed", 0))
+	return "CC-%02d" % (posmod(seed_value, maxi(1, modulus)) + 1)
+
+
+## What the contract document shows (1.11), as numbers: the code, each stage's deadline, reward and
+## acceptance day (-1 until accepted), overdue distrust, the rating bands, the company's thresholds
+## and windows, and the post-award share. The contract page writes the clauses from these and contract.json.
+static func document(sim: RefCounted) -> Dictionary:
+	var contract: Dictionary = sim.state.get("contract", {})
+	var stages: Array = []
+	for index: int in range(STAGE_COUNT):
+		var rule: Dictionary = sim.contract_rules.stages[index]
+		(
+			stages
+			. append(
+				{
+					"id": str(rule.id),
+					"deadline": deadline(sim, index + 1),
+					"reward": float(rule.get("reward_cash", 0.0)),
+					"accepted": int(contract.get("completed", {}).get(str(index + 1), -1)),
+				}
+			)
+		)
+	var cfg: Dictionary = sim.progression.company
+	var diff: Dictionary = sim.progression.difficulty[sim.state.get("difficulty", "normal")]
+	return {
+		"code": str(contract.get("code", code_for(sim.state))),
+		"stages": stages,
+		"overdue_distrust": float(sim.contract_rules.overdue_distrust_per_day),
+		"rating_a_below": float(cfg.get("rating_a_below", 20.0)),
+		"warning_threshold": float(diff.warning),
+		"review_threshold": float(cfg.review_threshold),
+		"intervention_threshold": float(cfg.intervention_threshold),
+		"review_days": int(diff.review_days),
+		"intervention_days": int(diff.intervention_days),
+		"player_share": float(Rules.read("career").management.player_share),
+	}

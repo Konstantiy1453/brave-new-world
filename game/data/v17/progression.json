@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -61,6 +61,7 @@
     "science_opening_funding": 0.5
   },
   "company": {
+    "rating_a_below": 20,
     "review_threshold": 40,
     "intervention_threshold": 70,
     "recovery_per_day": 0.2,
