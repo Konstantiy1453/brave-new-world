@@ -422,9 +422,10 @@ func _upgrades() -> void:
 	var plain: float = float(sim.config.buildings.mine_ore.rate) * float(seam.grade)
 	check(dug > plain * 1.2, "the level 2 mine really digs more")
 	grant(sim, ["automation"])
+	var automated: float = float(Rules.read("techs").techs.automation.effects.mine_jobs)
 	check(
-		Production.jobs_for(sim, s.buildings[index]) == ceili((base_jobs + 4) * 0.7),
-		"automation takes 30% of mine jobs"
+		Production.jobs_for(sim, s.buildings[index]) == ceili((base_jobs + 4) * (1.0 + automated)),
+		"automation takes %.0f%% of mine jobs" % (-automated * 100.0)
 	)
 	var habitat: int = add_finished(sim, "habitat")
 	grant(sim, ["medicine"])

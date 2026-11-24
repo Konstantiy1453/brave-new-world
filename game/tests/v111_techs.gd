@@ -17,7 +17,8 @@ const Labels = preload("res://ui/labels.gd")
 const Bot = preload("res://tests/balance/bots/bot.gd")
 const SEED: int = 20261125
 ## Every effect key's total over the technologies before the merge (techs.json at 4a4e12d,
-## nickel_metallurgy, superalloys and seabed_mining left out as frozen).
+## nickel_metallurgy, superalloys and seabed_mining left out as frozen), with J's rebalance on top:
+## the later mine bonuses cut (mine_output 0.75 to 0.55, mine_jobs -0.65 to -0.35, DECISIONS.md).
 const TOTALS: Dictionary = {
 	"absorption": 2.3,
 	"admin": -0.15,
@@ -45,8 +46,8 @@ const TOTALS: Dictionary = {
 	"hydro_output": 0.5,
 	"immigration": 0.5,
 	"market_depth": 1.0,
-	"mine_jobs": -0.65,
-	"mine_output": 0.75,
+	"mine_jobs": -0.35,
+	"mine_output": 0.55,
 	"mine_upkeep": -0.2,
 	"offers": 1.0,
 	"offshore_survey": 0.5,

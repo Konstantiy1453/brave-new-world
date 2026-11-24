@@ -1507,3 +1507,14 @@ factories, so the game's cycle and the payback bands stay as they are.
   price did not move it reliably (above), so 1.11.0 reports the miss; the ways on are a change of
   what the contract asks for at stages four and five, or keeping the research-speed technologies
   out of the merged bundles (research-first now buys the whole society tier on its way to them).
+- The building prices above came out again: a dearer light ore mine (3,100) slows the jobs a
+  colony opens in its second year, and the wage lever fell to +11% (the harness extras of
+  `1.11-J1` and the lever probe; +27% with the mine at 2,100). The ore mines' year-6 speed came
+  from the later mine bonuses the merge delivers sooner, so J cuts those instead: 工业增效 and
+  工业升级 lose their +10% mine output, 工业升级's mine jobs go from -15% to -5% and 自动化产线's
+  from -30% to -10% (the descriptions follow). Totals over the tree: mine output 0.75 to 0.55, mine
+  jobs -0.65 to -0.35 (`v111_techs` holds the new totals). None of them is researched by year 2,
+  so the opening and the lever are untouched (+27%). The ore mines keep 2,100 and 16,000; the
+  smelter keeps 6,500. The payback suite passes 43 of 43 (light ore mine 77 days in year 6, heavy
+  131, copper 69, smelter 279 in year 4, processor 126). `1.11-J1` (the price version) was stopped
+  at 19 of 29 chunks; `1.11-J2` is the harness of this data.
