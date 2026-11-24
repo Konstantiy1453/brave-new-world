@@ -1452,6 +1452,11 @@ factories, so the game's cycle and the payback bands stay as they are.
   the days for the standard contract, 52% for 移民安置 and 47% for 矿权抵押, food on 27-32% (faster
   growth outruns the farms) and nothing on 15-28%; the lever probe gives +27% (202 to 258 arrivals).
   0.20-0.45 gave jobs 72% and +22%; 0.30-0.55 jobs 39% but food 37% and one seed at 33% jobless.
+  0.25-0.40 (stopping sooner, after one awarded trace colony on the new band was taken over 425
+  days after its award when its mines ran out and jobless newcomers kept arriving) gave +1% and
+  jobs 66%: above a quarter jobless, immigration then falls too steeply for the wage to matter. So
+  0.50 stays; takeovers after the award are the 1.7 finding (mines run out, the bot never hands
+  over) and the harness reports them.
   Employment stays above stage four's 60% and the company's 35% distress line.
 - The payback suite's misses (the smelter in year 4 since the freeze, the ore mines in year 6 since
   the merge brought their output effects sooner) have one lever: ore. J lowers ore's list price
