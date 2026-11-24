@@ -65,7 +65,7 @@ $env:APPDATA = $UserData
 $Bots = Join-Path $Kit "bots"
 New-Item -ItemType Directory -Force -Path $Bots | Out-Null
 $BotsSlash = $Bots -replace "\\", "/"
-foreach ($Name in "bot.gd", "colony_bot.gd", "balanced_bot.gd") {
+foreach ($Name in "bot.gd", "colony_bot.gd", "balanced_bot.gd", "contract_play.gd") {
     $Text = [IO.File]::ReadAllText((Join-Path $Repo "game\tests\balance\bots\$Name"))
     $Text = $Text.Replace("res://tests/balance/bots/", "$BotsSlash/")
     [IO.File]::WriteAllText((Join-Path $Bots $Name), $Text, (New-Object Text.UTF8Encoding $false))
