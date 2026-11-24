@@ -37,6 +37,9 @@ const EXPORT_CONCENTRATION: float = 0.60
 const PAUSE_INTERVAL_DAYS: float = 40.0
 const DISTINCT_EVENTS: int = 25
 const LABOUR_LEVER: float = 0.20
+## Jobs may hold the capital's growth on at most this share of the days from 200 to 600 people,
+## balanced runs pooled (1.10: 97%, every run; 1.11 J, DECISIONS.md).
+const JOBS_LIMIT_DAYS: float = 0.6
 const MIN_SHORT_EVENTS: int = 60
 const MIN_CHAINS: int = 10
 const MIN_OFF_SHARE: float = 0.25
@@ -146,6 +149,7 @@ static func targets(runs: Array, extras: Dictionary = {}) -> Array:
 	_endings_row(rows, runs)
 	_failure_rows(rows, runs)
 	_population_rows(rows, runs)
+	_limit_row(rows, runs)
 	_research_rows(rows, runs)
 	_money_rows(rows, runs)
 	_cash_rows(rows, runs)
@@ -446,6 +450,47 @@ static func _population_rows(rows: Array, runs: Array) -> void:
 		">= %d by year 2; >= %d by year 4" % [POPULATION_AT_720, POPULATION_AT_1440],
 		"%.0f / %.0f" % [early, later],
 		_verdict(early >= POPULATION_AT_720 and later >= POPULATION_AT_1440, not group.is_empty())
+	)
+
+
+## What held growth from 200 to 600 people (1.11 J, the 1.10 miss): the capital's main limit each
+## day between the two (`people_lines.gd`), balanced runs on normal pooled, and per run the limit
+## that held most days. Jobs should stay a common limit but no longer nearly the only one.
+static func _limit_row(rows: Array, runs: Array) -> void:
+	var group: Array = select(runs, "balanced", "normal")
+	var mains: Dictionary = {}
+	var days: Dictionary = {}
+	for run: Dictionary in group:
+		var limits: Dictionary = run.get("limits_200_600", {})
+		var main: String = ""
+		var most: int = 0
+		for key: String in limits:
+			days[key] = int(days.get(key, 0)) + int(limits[key])
+			if int(limits[key]) > most:
+				most = int(limits[key])
+				main = key
+		if main != "":
+			mains[main] = int(mains.get(main, 0)) + 1
+	var all_days: int = 0
+	for key: String in days:
+		all_days += int(days[key])
+	var shares: PackedStringArray = []
+	for key: String in days:
+		shares.append("%s %.0f%%" % [key, 100.0 * int(days[key]) / maxi(1, all_days)])
+	var jobs_share: float = float(days.get("jobs", 0)) / maxi(1, all_days)
+	_row(
+		rows,
+		"Growth limit, 200-600",
+		(
+			"balanced, normal: jobs the main limit on <= %.0f%% of the days"
+			% (JOBS_LIMIT_DAYS * 100.0)
+		),
+		(
+			"days %s; main limit by run %s" % [", ".join(shares), str(mains)]
+			if all_days > 0
+			else "not measured"
+		),
+		_verdict(jobs_share <= JOBS_LIMIT_DAYS, all_days > 0)
 	)
 
 

@@ -5,6 +5,7 @@ const EventsV2 = preload("res://simulation/events_v2.gd")
 const Research = preload("res://simulation/research.gd")
 const LightRecord = preload("res://simulation/light_record.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
+const PeopleLines = preload("res://ui/people_lines.gd")
 const POPULATION_CHECKPOINTS: Array[int] = [360, 720, 1080, 1440, 2160, 2880]
 const RESEARCH_WINDOW_FIRST_DAY: int = 360
 const RESEARCH_WINDOW_LAST_DAY: int = 1440
@@ -19,6 +20,9 @@ const COVER_WINDOW_DAYS: int = 90
 const COVER_EVERY_DAYS: int = 30
 const COVER_FROM_DAY: int = 720
 const YEAR_DAYS: int = 360
+## The colony sizes between which the capital's growth limit is tallied (1.10 miss, J).
+const LIMIT_FROM_PEOPLE: int = 200
+const LIMIT_TO_PEOPLE: int = 600
 
 var record: Dictionary = {}
 var _pending_seen: Dictionary = {}
@@ -80,6 +84,8 @@ func begin(case_info: Dictionary, sim: RefCounted) -> void:
 				"light_stage": {},
 				"stage3_routes": [],
 				"research_days": {},
+				"limits_200_600": {},
+				"reached_600": -1,
 			}
 		)
 	)
@@ -98,6 +104,7 @@ func sample(sim: RefCounted) -> void:
 		record.research_days[category] = int(record.research_days.get(category, 0)) + 1
 	if day > 0 and day % YEAR_DAYS == 0 and not state.settlements.is_empty():
 		record.light_stage[str(day / YEAR_DAYS)] = LightRecord.stage_of(sim, state.settlements[0])
+	_scan_limit(sim, day)
 	_scan_ledger(state, day)
 	_scan_events(sim)
 	_scan_company(state)
@@ -266,6 +273,22 @@ func _scientist_share(state: Dictionary) -> float:
 
 
 ## Counts every entry once, including those made by actions between two ticks.
+## What held the colony's growth from 200 towards 600 people (the 1.10 miss): each day between
+## the two, the capital's main limit as the people page names it (`people_lines.gd`).
+func _scan_limit(sim: RefCounted, day: int) -> void:
+	if int(record.reached_600) >= 0 or sim.state.settlements.is_empty():
+		return
+	var people: int = int(sim.Contract.population_total(sim))
+	if people >= LIMIT_TO_PEOPLE:
+		record.reached_600 = day
+		return
+	if people < LIMIT_FROM_PEOPLE:
+		return
+	var home: Dictionary = sim.state.settlements[0]
+	var key: String = str(PeopleLines.limit(sim, home, sim.population_view(int(home.region))).key)
+	record.limits_200_600[key] = int(record.limits_200_600.get(key, 0)) + 1
+
+
 func _scan_ledger(state: Dictionary, day: int) -> void:
 	var entries: Array = state.ledger
 	var index: int = entries.size() - 1

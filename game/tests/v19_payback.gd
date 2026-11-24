@@ -9,6 +9,7 @@ extends SceneTree
 ## year 4, as the plan says. Prints the whole table, medians with each seed's value, for BALANCE.md.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const RuleOverrides = preload("res://tests/support/rule_overrides.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 
@@ -55,6 +56,9 @@ var failures: Array[String] = []
 
 func _initialize() -> void:
 	Watchdog.arm(self, WATCHDOG_SECONDS)
+	# Tuning only: `--set=<file>.<path>=<value>` (tests/support/rule_overrides.gd).
+	for line: String in RuleOverrides.apply(OS.get_cmdline_user_args()):
+		print("PAYBACK set " + line)
 	call_deferred("run")
 
 
