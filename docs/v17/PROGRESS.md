@@ -18,7 +18,7 @@ container. Human playtests NOT_RUN.
 | G. Lights at two scales | the quarterly light record in the state (`light_record.gd`: place, stage, people, facilities, coast, roads); the night time-lapse at every ending and from the career page, drawn with the 1.9 town forms until the sheet arrives (`timelapse.gd`, `timelapse_view.gd`); the flat map only from the ground panel (founding, prospecting), back to the globe after a founding | **partial** (local tag `v111-G` on `03a03dd`; gate run at `cdf587a` with H): suite `v111_lights` (24 checks), captures `docs/v17/lights/`; the planet-scale forms in ordinary play, the crossfade and the five-stage captures wait for the user's concept sheet (asked 2026-11-23) |
 | H. Technologies merged | technologies that only add effects merged within category and tier (`tools/tech_merge.py`): 136 to 85, 79 researchable, every effect total kept; merged costs x0.8; saves converted on every load path; events and bots read old ids through `merged`; the contract's technology counts become tier milestones (`techs_tier_<n>`), calibrated (`calibrate_techs.gd`, nine balanced runs a tree): stages two to four ask for 1, 5 and 13 technologies at tier 2 or above, stage five for 5 at tier 3 or above | **done, provisional** (local tag `v111-H` on `cdf587a`): gate H, suites 63 of 64 (`v19_payback` the known miss, met in J) and quick harness `1.11-H` (90 runs, 0 audit errors; research-first now awarded on day 2,068, under the band: DECISIONS.md); research days per direction kept (DECISIONS.md); the user is asked whether 85 (the plan's rules, requirements re-pointed) or 55-65 (merging technologies that unlock buildings) is wanted; suite `v111_techs` (20 checks) |
 | I. The news line | one line at the bottom edge from `news.json` (weather, stages, reports and the company share index, town sizes, echoes, prices, Annex VII rumours, flavour), interface only, quiet on a waiting decision, holds while an event panel is open, a settings toggle (`news_line.gd`) | **done** (local tag `v111-I` on `3fd7f05`; gate run at `cdf587a` with H): suite `v111_news` (23 checks); `v17_speed` passes with it in the game; captures `docs/v17/weather/` |
-| J. Rebalance and release | the harness row for what holds growth from 200 to 600 people (`metrics.gd`, `growth_probe.gd`), `--set` for probes, the payback suite and the harness (`tests/support/rule_overrides.gd`); the rebalance (`8ecc070`): the smelter 8,500 to 6,500; tried and taken back with their evidence (DECISIONS.md): ore's price, dearer ore mines, the later mine bonuses, and the 0.25-0.50 unemployment band (harness `1.11-J2`: wage lever +27% and jobs 46% of the 200-600 days, but the balanced bot won 9 of 18 games against 14 of 18); the Windows run kit updated and pre-checked (`docs/v17/kit_1.11`, 108 of 108 checks in seven cases); changelog and playtest script | in progress: harness `1.11-J4` and the suites on `8ecc070` run; then the Windows build and package |
+| J. Rebalance and release | one rebalance, data only: the smelter 8,500 to 6,500 (`8ecc070`); tried and taken back with their evidence (DECISIONS.md): ore's price, dearer ore mines, the later mine bonuses and the 0.25-0.50 unemployment band; the harness rows for what holds growth from 200 to 600 people and for pace, `--set` for probes, the payback suite and the harness; the Windows build and package (`ColonyCharter-1.11.0-Windows-x64.zip`, SHA-256 `CEA06CCF…8DAC5A`); the run kit for 1.11.0 and its cases pre-checked on the shipped PCK (`docs/v17/kit_1.11`, 108 of 108 checks in seven cases); CHANGELOG, PLAYTEST, BALANCE | **done** (local tags `v111-J` and `v1.11.0` on `708ff33`, the commit packaged; code and data as `8ecc070`): suites 63 of 64 (`v19_payback`: the ore mines in year 6); harness `1.11-J4`, 17 targets met, 6 missed (below); the Windows checks and the full harness wait for the user's PC |
 
 **Harness `1.11-A`** (quick, 51 runs, 47 minutes with the extras beside the chunks): 0 audit
 errors, determinism 3/3; 18 targets met, 4 missed (openings, sloppy on hard, services budget, labour
@@ -40,11 +40,27 @@ candidate, then C, D, E and F; H's suites are the main-tree run on the same cont
 (`v19_payback` the known miss). Autogroup scheduling had given the gate a sixth of the CPU; it is off.
 Tags stay local: the session's proxy refuses tag pushes; the tag-to-commit map is in this table.
 
-**Known misses carried forward.** The freeze's later awards above (J). `v19_payback`: the smelter
-in year 4 (352 days against 120-300) after the freeze moved the colonies (DECISIONS.md); left for J.
-On the merged tree (H, `95975a3`-`b4c7c5e`) the smelter is 317 days and the ore mine on day 2160
-pays back in 62 days against 70-150: merged effects reach the colonies sooner; also for J.
-The Windows checks of the run kit (`docs/v17/WINDOWS_RUN_KIT.md`) wait for the user.
+**Release 1.11.0 (2026-11-24).** `ColonyCharter-1.11.0-Windows-x64.zip` (55,929,583 bytes, SHA-256
+`CEA06CCF7F4DD9D122951E560E46FD2850406241FD18B514F9744FB94D8DAC5A`) and the source ZIP in
+`delivery/v17`, from `708ff33` (`delivery/v17/RELEASE_IDENTITY.json`): PCK `A5CA2638…E990`, the EXE
+the same Godot 4.5.1 runtime as 1.10. Evidence: automated tests (64 headless suites, 63 pass);
+balance harness (`1.11-J4`, quick, Linux); exported PCK on the Linux runtime (the kit's seven
+cases, 108 of 108 checks; `boot` needs a GPU). Not run: the Windows EXE, the full harness, frame
+times and every human playtest (NOT_RUN); `docs/v17/WINDOWS_RUN_KIT.md` and `PLAYTEST.md` are ready.
+
+**Misses at release** (`BALANCE.md`, "1.11 the contractor"):
+- research-first is the best bot with all six origins and is awarded on day 2,065, under the band:
+  the merge bundles research speed with the whole society tier (H); the merge's price did not move it;
+- the openings row: balanced medians 2,516-2,964 (18% apart, target 15%) and the one best bot;
+- the labour lever (+8%) and jobs as the limit from 200 to 600 people (94% of the days): the
+  0.25-0.50 band fixes both (+27%, 46%) and costs the balanced bot half its games (`1.11-J2`);
+- research teams 9% of the balanced bot's adults (10% at gate H); cash cover before the award, p90
+  141 days (target 120);
+- `v19_payback`: the ore mines' year-6 payback, 54 and 91 days against 70-150 and 100-220, since
+  the merge;
+- G is partial (the light concept sheet); H is provisional (85 technologies, the user's choice of
+  85, 125 or 55-65 is open); C, D, E and F have no per-phase gate of their own (their code is
+  measured at H and J4).
 
 ---
 
