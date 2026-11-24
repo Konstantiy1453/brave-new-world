@@ -1427,6 +1427,11 @@ factories, so the game's cycle and the payback bands stay as they are.
 - A converted save's partly finished merged technology goes back into its direction's hand (a team
   can only take up a card on the table), once its prerequisites are done; the hand may hold one card
   over three until it next deals.
+- Research by direction before and after the merge (`tests/balance/research_days_probe.gd`, the
+  balanced bot, standard contract, seeds 260129, 42 and 20261029, 2,880 days; medians; 4a4e12d
+  against cdf587a): days with a team at work in industry 2,679 to 2,686, agriculture 2,264 to
+  2,003, construction 1,529 to 1,458, society 2,786 to 2,799; technologies finished 13 to 11, 12 to
+  8, 12 to 8, 13 to 9. The time spent on each direction holds; it buys fewer, larger technologies.
 - `v17_research`'s pool checks follow the merge: at least 55 technologies (the plan's floor), at
   least 15 per direction, and a starting hand of three or as many as are open.
 - The gates run in a different order from 2026-11-24 03:17: the head's (H, `cdf587a`) first, as the
