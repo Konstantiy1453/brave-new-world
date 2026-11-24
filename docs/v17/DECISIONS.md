@@ -1495,3 +1495,15 @@ factories, so the game's cycle and the payback bands stay as they are.
   54-113 days in one run), so the prices aim inside the bands: with 2,900, 19,000 and 6,500 the ore
   mine read 66 and 72 in two runs (floor 66.5 with the suite's tolerance), the heavy mine 103-109,
   the smelter 271-291, the processor 116-118; 3,100 adds the margin.
+- Gate H (`cdf587a`, quick harness `1.11-H`, 90 runs, 0 audit errors; the extras process died at
+  its 90-minute limit under load and the report was merged without it): research-first is the best
+  bot with all six origins and is awarded on day 2,068 (median of 18, all awarded; 1.11-B: 2,329 to
+  2,832), under the band. Stage days, medians: balanced 1,270 / 1,960 / 2,750 for stages three to
+  five, research-first 1,054 / 1,530 / 2,068. The balanced bot's stages four and five wait on the
+  calibrated tier goals (13 at tier 2 from day 1,825, 5 at tier 3 from day 2,546, then the streaks);
+  research-first's wait on people (1,000, then 2,000 by about day 1,890 against about 2,420 for the
+  balanced bot), which its earlier immigration, appeal and birth technologies bring. A population
+  goal research-first reaches inside the band is out of the balanced bot's reach, and the merge's
+  price did not move it reliably (above), so 1.11.0 reports the miss; the ways on are a change of
+  what the contract asks for at stages four and five, or keeping the research-speed technologies
+  out of the merged bundles (research-first now buys the whole society tier on its way to them).
