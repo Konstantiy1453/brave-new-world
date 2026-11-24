@@ -3,7 +3,9 @@
   "units": {
     "time": "game day",
     "money": "account units",
-    "share": "fraction 0-1", "routes": "goods units (100 t) moved, mined or carried by sea over the routes window; coastal_towns and mining_towns are counts"
+    "share": "fraction 0-1",
+    "routes": "goods units (100 t) moved, mined or carried by sea over the routes window; coastal_towns and mining_towns are counts",
+    "techs_tier": "1.11 H: a stage goal techs_tier_<n> counts the technologies finished at tier n or above, gifts left out; calibrated with tests/balance/calibrate_techs.gd so the balanced bot meets them about when it met the old counts (5, 14, 24, 40 -> tier 2+ x1, x5, x13, tier 3+ x5); the eighty-technology milestone keeps its id and counts 49 of the 79 researchable"
   },
   "scaled_goals": [
     "exports_total",
@@ -47,12 +49,30 @@
     "routes": 30
   },
   "routes": {
-    "food_corridor": {"name": "粮食走廊", "food_moved": 900.0, "local_food_share": 0.8},
-    "mining_network": {"name": "远程矿区网络", "remote_mined": 2400.0, "mining_towns": 2},
-    "coastal_trade": {"name": "沿海贸易网", "sea_cargo": 900.0, "coastal_towns": 2}
+    "food_corridor": {
+      "name": "粮食走廊",
+      "food_moved": 900.0,
+      "local_food_share": 0.8
+    },
+    "mining_network": {
+      "name": "远程矿区网络",
+      "remote_mined": 2400.0,
+      "mining_towns": 2
+    },
+    "coastal_trade": {
+      "name": "沿海贸易网",
+      "sea_cargo": 900.0,
+      "coastal_towns": 2
+    }
   },
   "achievements": [
-    {"id": "population_600", "name": "六百人的殖民地", "goal": "population", "target": 600, "reward_cash": 6000.0}
+    {
+      "id": "population_600",
+      "name": "六百人的殖民地",
+      "goal": "population",
+      "target": 600,
+      "reward_cash": 6000.0
+    }
   ],
   "settlement_cap": {
     "initial": 1,
@@ -84,7 +104,7 @@
         "local_food_share": 0.8,
         "processing_days": 120,
         "population": 200,
-        "technologies": 5
+        "techs_tier_2": 1
       }
     },
     {
@@ -93,7 +113,7 @@
       "licence": "network",
       "goals": {
         "connected": 3,
-        "technologies": 14,
+        "techs_tier_2": 5,
         "non_mining_share": 0.15,
         "operating_route": 1
       }
@@ -109,7 +129,7 @@
         "housed": 1,
         "enterprise_profit_days": 180,
         "non_mining_share": 0.3,
-        "technologies": 24,
+        "techs_tier_2": 13,
         "stage_streak": 90
       }
     },
@@ -120,7 +140,7 @@
       "goals": {
         "capital_population": 600,
         "population": 2000,
-        "technologies": 40,
+        "techs_tier_3": 5,
         "capital_hall": 1,
         "stage_streak": 180,
         "no_review": 1
@@ -149,7 +169,7 @@
     {
       "id": "eighty_technologies",
       "goal": "technologies",
-      "target": 80,
+      "target": 49,
       "reward": 8000.0
     }
   ],

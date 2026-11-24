@@ -3,6 +3,7 @@ extends SceneTree
 ## 1.3, recruitment stopped, on the harness's first six seeds. Prints the median of each and the
 ## change. Run: godot --headless --path game --script res://tests/balance/lever_probe.gd
 
+const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 const Summary = preload("res://tests/balance/summary.gd")
@@ -11,6 +12,17 @@ const DAYS: int = 360
 
 
 func _initialize() -> void:
+	# Tuning (1.11 J): `--set=<file>.<path>=<value>` changes a rule in this process only, e.g.
+	# --set=population.attractiveness.wage_per_multiplier=3.0 (repeatable).
+	for argument: String in OS.get_cmdline_user_args():
+		if argument.begins_with("--set="):
+			var pair: PackedStringArray = argument.trim_prefix("--set=").split("=", true, 1)
+			var path: PackedStringArray = pair[0].split(".")
+			var node: Dictionary = Rules.read(path[0])
+			for index: int in range(1, path.size() - 1):
+				node = node[path[index]]
+			node[path[path.size() - 1]] = float(pair[1])
+			print("LEVER_PROBE set %s = %s" % [pair[0], pair[1]])
 	var arrivals: Dictionary = {"1.0": [], "1.3": []}
 	for seed_value: int in SEEDS:
 		for wage: String in arrivals:

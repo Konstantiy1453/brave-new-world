@@ -1365,6 +1365,11 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The flat map leaves the main navigation (two views: globe and district). It opens from the panel
   of picked ground, where founding and prospecting happen (在平铺地图上选址与勘探 / 回到球面总览),
   and a founding made there returns to the globe. `navigate("flat")` stays for tests and captures.
+- The phase gates run in small pieces after the machine restarted twice under them: 29 chunks of
+  three cases (`--chunk=k/29`, which every gate commit's harness reads), three at a time beside
+  the extras, each with its own checkpoint, at lower priority than interactive work; a rerun of
+  the driver skips finished suites, chunks and extras · three chunks of 29 cases, which lost up
+  to 40 minutes each time. Tooling only; the harness's cases and results are the same.
 - J's measures in the harness: a weather row (systems born a year, strikes per settlement-year,
   goods lost to the weather, the share of warnings followed by a preparation, claims accepted of
   those made; the weather keeps running totals of warnings, strikes and preparations for it), a
@@ -1406,6 +1411,13 @@ factories, so the game's cycle and the payback bands stay as they are.
   `tests/balance/calibrate_techs.gd`: the balanced bot on the three classic contracts and the quick
   seeds, before the merge for the days its counts (5, 14, 24, 40) were reached, after it with the
   goals off for the day each tier count is reached.
+- The tier milestones (calibrated 2026-11-23, nine balanced runs per tree, the three classic
+  contracts and the quick seeds): the old counts were met on median days 569, 1163, 1834 and 2605
+  (8 of 9 reached 40); on the merged tree, one tier-2 technology comes on day 494, five on day 1174,
+  thirteen on day 1825, and five at tier 3 or above on day 2546. Stages two to four ask for 1, 5 and
+  13 at tier 2 or above, stage five for 5 at tier 3 or above · 6 at tier 3 (day 2605, the same
+  median, but 4 of 9 runs late or never against 1 of 9 for the old count; the freeze's later awards
+  were left for J). The milestone of eighty technologies counts 49 (80 of 130, the same share of 79).
 - After the merge, industry and agriculture open with two cards instead of three: tier one holds
   only their starter card and the merged technology. The hand deals what is open, so the first
   choice in those directions is narrower until the first card is done · adding a card to fill it.

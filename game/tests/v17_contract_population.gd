@@ -109,7 +109,8 @@ func _stages() -> void:
 	check(Contract.STAGE_COUNT == 5, "the charter now has five stages")
 	check(plain.contract_rules.stages.size() == Contract.STAGE_COUNT, "and the rules list all five")
 	var final_keys: Dictionary = plain.contract_rules.stages[Contract.STAGE_COUNT - 1].goals
-	for key: String in ["capital_population", "population", "technologies", "capital_hall"]:
+	# 1.11 H: the technology count became a tier milestone (techs_tier_3).
+	for key: String in ["capital_population", "population", "techs_tier_3", "capital_hall"]:
 		check(final_keys.has(key), "the final stage asks for " + key)
 	for stage: int in range(1, Contract.STAGE_COUNT + 1):
 		for goal: Dictionary in Contract.stage_goals(plain, stage):
