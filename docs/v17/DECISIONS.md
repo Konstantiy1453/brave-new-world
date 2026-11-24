@@ -1365,6 +1365,46 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The flat map leaves the main navigation (two views: globe and district). It opens from the panel
   of picked ground, where founding and prospecting happen (在平铺地图上选址与勘探 / 回到球面总览),
   and a founding made there returns to the globe. `navigate("flat")` stays for tests and captures.
+- G with the sheet (sent 2026-11-24): the sheet is kept as `docs/v17/lights/concept_light_forms.webp`,
+  lossless and pixel-identical to what was sent · the plan's `.png`: PNG files go through Git LFS in
+  this repository and the session cannot reach LFS, so a PNG could not be pushed.
+- The forms are drawn by the globe shader from a few numbers per town (`world/town_forms.gd`,
+  `shaders.gd` `TOWN_LIGHTS_GLSL`): a web of lit streets (block sides every 0.16 degrees, main
+  streets every four blocks, gently warped, each district on a heading of its own, each side lit by
+  chance as the density falls from the centre), dark patches, a ragged edge, a small white-hot core
+  and thin roads leading out. A block is the same size in every town; a town grows by adding blocks
+  · the sheet's pixels as textures, which would not follow the real coast, the roads or the growth
+  between stages.
+- Sizes keep the sheet's proportions (`progression.json` `lights.stages[].radius_degrees`: 0.25,
+  0.65, 1.27, 1.98, 2.6, so 0.09 / 0.25 / 0.49 / 0.76 / 1.0 of the capital's width), the built-up
+  edge at about 0.82 of the radius; between stages a town grows with its level; a form is never
+  wider than 0.45 of the way to its nearest neighbour. At the default distance a capital is about
+  50 pixels across on 1920 x 1080 and 100 on 3840 x 2160: a city, not a point.
+- A coastal town is cut by the globe's own land mask; its way to the sea (the world's 2.5-degree
+  grid) puts the core by the water, stretches the built-up area inland and turns the town's own
+  roads inland. An inland town spreads outwards. The roads the player built are bright arms out of
+  town; the town's own arms (1 + 1.5 x stage) are thin and broken.
+- Remote points only for the facilities whose role is in `lights.forms.remote_roles` (mines,
+  harbours, seabed platforms, weather stations) and that stand beyond 0.8 of the form's radius · every
+  building but homes, which in the first played capture drew the district's plot grid as a regular
+  field of dots round the capital.
+- A finished road's string is a light every 0.06 degrees (under half a texel of the 2048 x 1024 far
+  texture) at 0.05 · every 0.25 degrees at 0.16, which drew a string of beads.
+- Crossfade: the per-plot lights alone up to camera distance 7.6, the forms alone from 9.4 (so the
+  default 10.3 and the farthest 15.8 show forms), smoothstep between, the weights adding to one.
+  Over the capital of a played colony (balanced bot, seed 260129, day 1,500, 442 people) the light
+  falls steadily from 0.0185 to 0.0115 and is never above either end · matching the two totals:
+  the plots carry the district's real spread, the forms are the far view.
+- The flat map keeps the per-plot lights (it is now a tool for founding and prospecting; no parity
+  work). The time-lapse draws the same forms from the record (its own coast and roads); the 1.9
+  forms are gone from it.
+- Captures: `tests/art/capture_light_forms.gd` (STAGED: one town at each stage's threshold,
+  coastal and inland, the camera straight down at local midnight at the default distance; the
+  crossfade from ordinary play) and `tools/light_forms_sheet.py` (laid out beside the sheet). The
+  coastal place is the coastal region with the straightest shore on the atlas, the inland one the
+  inland region nearest the equator with no water within 4.5 degrees.
+- The forms come after the 1.11.0 package: they ship as a 1.11.1 preview (same saves, schema 7, the
+  same `v111` folder), and the next release takes them with the user's choice of tree (H).
 - The phase gates run in small pieces after the machine restarted twice under them: 29 chunks of
   three cases (`--chunk=k/29`, which every gate commit's harness reads), three at a time beside
   the extras, each with its own checkpoint, at lower priority than interactive work; a rerun of
