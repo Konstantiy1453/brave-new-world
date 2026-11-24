@@ -1,0 +1,285 @@
+{
+  "build": "packaged PCK",
+  "candidates": 29,
+  "checks": [
+    {
+      "label": "the menu's tutorial switch is off",
+      "ok": true
+    },
+    {
+      "label": "six unmarked targets: forest, forest, grassland, grassland, tundra, tundra",
+      "ok": true
+    },
+    {
+      "label": "click 1 is 353 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 1 on the planet (forest) selects that ground: 北纬 59.00° · 东经 106.50° · 地表：森林 · 地点类型：海岛",
+      "ok": true
+    },
+    {
+      "label": "click 2 is 224 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 2 on the flat (forest) selects that ground: 北纬 54.00° · 东经 114.00° · 地表：森林 · 地点类型：海岛",
+      "ok": true
+    },
+    {
+      "label": "click 3 is 251 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 3 on the planet (grassland) selects that ground: 北纬 44.00° · 东经 91.50° · 地表：草地 · 地点类型：滨海平原",
+      "ok": true
+    },
+    {
+      "label": "click 4 is 86 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 4 on the flat (grassland) selects that ground: 北纬 41.50° · 东经 106.50° · 地表：草地 · 地点类型：滨海平原",
+      "ok": true
+    },
+    {
+      "label": "click 5 is 352 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 5 on the planet (tundra) selects that ground: 北纬 59.00° · 东经 114.00° · 地表：苔原 · 地点类型：海岛",
+      "ok": true
+    },
+    {
+      "label": "click 6 is 297 px from the nearest marker",
+      "ok": true
+    },
+    {
+      "label": "click 6 on the flat (tundra) selects that ground: 北纬 56.50° · 西经 103.50° · 地表：苔原 · 地点类型：寒地",
+      "ok": true
+    },
+    {
+      "label": "the capital is founded",
+      "ok": true
+    },
+    {
+      "label": "founded at the last click (56.5000, -103.5000), not Site 01 (21.25, -118.75)",
+      "ok": true
+    }
+  ],
+  "engine": "4.5.1-stable (official)",
+  "found": {
+    "confirmation": "(56.5, -103.5)",
+    "confirmation_text": "自选地点 · 北纬 56.50° · 西经 103.50°"
+  },
+  "game_version": "1.11.0",
+  "ok": true,
+  "options": {
+    "bots": "",
+    "case": "regression",
+    "coast": "0",
+    "out": "/tmp/claude-0/-home-user-brave-new-world/fd0dfc0e-63fa-5476-a825-065a2248d6bf/scratchpad/j/kit/regression.json",
+    "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+    "seed": "3",
+    "target": "0",
+    "view": "planet"
+  },
+  "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+  "pck_sha256": "7cab83cce520458e68ed1fe1717a5facc94c3c5520f3aae73c205ffce3e7a31d",
+  "picks": [
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 352.865447998047,
+      "panel_text": "北纬 59.00° · 东经 106.50°",
+      "picked": {
+        "lat": 59.0,
+        "lon": 106.5,
+        "precision": 0.0668716430664062,
+        "view": "planet"
+      },
+      "screen": [
+        605.79345703125,
+        450.000061035156
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        59.0,
+        106.5
+      ],
+      "terrain_text": "地表：森林 · 地点类型：海岛",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "planet"
+    },
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 224.137359619141,
+      "panel_text": "北纬 54.00° · 东经 114.00°",
+      "picked": {
+        "lat": 54.0,
+        "lon": 114.0,
+        "precision": 0.0933303833007812,
+        "view": "flat"
+      },
+      "screen": [
+        712.5,
+        385.714294433594
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        54.0,
+        114.0
+      ],
+      "terrain_text": "地表：森林 · 地点类型：海岛",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "flat"
+    },
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 251.08464050293,
+      "panel_text": "北纬 44.00° · 东经 91.50°",
+      "picked": {
+        "lat": 44.0000076293945,
+        "lon": 91.5,
+        "precision": 0.0668716430664062,
+        "view": "planet"
+      },
+      "screen": [
+        605.793395996094,
+        450.000122070312
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        44.0,
+        91.5
+      ],
+      "terrain_text": "地表：草地 · 地点类型：滨海平原",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "planet"
+    },
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 86.4643478393555,
+      "panel_text": "北纬 41.50° · 东经 106.50°",
+      "picked": {
+        "lat": 41.5,
+        "lon": 106.5,
+        "precision": 0.0933303833007812,
+        "view": "flat"
+      },
+      "screen": [
+        712.5,
+        450.0
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        41.5,
+        106.5
+      ],
+      "terrain_text": "地表：草地 · 地点类型：滨海平原",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "flat"
+    },
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 352.242706298828,
+      "panel_text": "北纬 59.00° · 东经 114.00°",
+      "picked": {
+        "lat": 59.0000076293945,
+        "lon": 114.0,
+        "precision": 0.0668716430664062,
+        "view": "planet"
+      },
+      "screen": [
+        605.793334960938,
+        449.999969482422
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        59.0,
+        114.0
+      ],
+      "terrain_text": "地表：苔原 · 地点类型：海岛",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "planet"
+    },
+    {
+      "map_selected_marker": -1,
+      "nearest_marker_px": 297.333465576172,
+      "panel_text": "北纬 56.50° · 西经 103.50°",
+      "picked": {
+        "lat": 56.5,
+        "lon": -103.5,
+        "precision": 0.0933303833007812,
+        "view": "flat"
+      },
+      "screen": [
+        712.5,
+        358.928588867188
+      ],
+      "selected_site_after_click": 0,
+      "target": [
+        56.5,
+        -103.5
+      ],
+      "terrain_text": "地表：苔原 · 地点类型：寒地",
+      "verdict": "✓ 可以在这里建立首府",
+      "view": "flat"
+    }
+  ],
+  "res_has_tests": false,
+  "seed": 3,
+  "stored": {
+    "lat": 56.5,
+    "lon": -103.5,
+    "name": "回归首都",
+    "region": 29
+  },
+  "targets": [
+    {
+      "biome": "forest",
+      "lat": 59.0,
+      "lon": 106.5,
+      "site_degrees": 25.2943095627472,
+      "terrain": "海岛"
+    },
+    {
+      "biome": "forest",
+      "lat": 54.0,
+      "lon": 114.0,
+      "site_degrees": 9.99999885531927,
+      "terrain": "海岛"
+    },
+    {
+      "biome": "grassland",
+      "lat": 44.0,
+      "lon": 91.5,
+      "site_degrees": 16.8359979549948,
+      "terrain": "滨海平原"
+    },
+    {
+      "biome": "grassland",
+      "lat": 41.5,
+      "lon": 106.5,
+      "site_degrees": 7.95138777415879,
+      "terrain": "滨海平原"
+    },
+    {
+      "biome": "tundra",
+      "lat": 59.0,
+      "lon": 114.0,
+      "site_degrees": 7.72151775764201,
+      "terrain": "海岛"
+    },
+    {
+      "biome": "tundra",
+      "lat": 56.5,
+      "lon": -103.5,
+      "site_degrees": 15.2639803986449,
+      "terrain": "寒地"
+    }
+  ],
+  "viewport": [
+    1600.0,
+    900.0
+  ]
+}
