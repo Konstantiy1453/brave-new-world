@@ -1488,3 +1488,10 @@ factories, so the game's cycle and the payback bands stay as they are.
   the same six games give populations of 368-467 at year 2 and 898-1,092 at year 4 and five
   awards. Cutting ore's price cuts the opening's main export by a fifth; the payback bands are met
   with the buildings' prices instead (below).
+- The payback bands are met with the buildings' prices: the light ore mine from 2,100 to 3,100,
+  the heavy ore mine from 16,000 to 19,000, the smelter from 8,500 to 6,500. A price changes what
+  a building costs, not what it earns, so the opening's income is left alone. The suite's medians
+  move by 10-30% between runs as the colonies' paths change (the ore mine's five seeds ranged
+  54-113 days in one run), so the prices aim inside the bands: with 2,900, 19,000 and 6,500 the ore
+  mine read 66 and 72 in two runs (floor 66.5 with the suite's tolerance), the heavy mine 103-109,
+  the smelter 271-291, the processor 116-118; 3,100 adds the margin.
