@@ -48,8 +48,11 @@ its source ZIP in `delivery/v17`, from `0f7790d` (`RELEASE_IDENTITY.json`; 1.11.
 `RELEASE_IDENTITY-1.11.0.json`): PCK `020ED9D8…EA7D8`, the EXE unchanged. Rules as 1.11.0 (display
 data only, so no harness run). Evidence: automated tests (64 headless suites on `85af082`, 63 pass,
 `v19_payback` the known miss; window suites 3 of 4, `v16_interaction_probe` failing on its 1.6
-fixture on Linux as since 1.8, and on the 1.11.0 code); screenshots viewed (`docs/v17/lights/`).
-Not run: the Windows EXE, frame times on a real GPU, every human playtest (NOT_RUN).
+fixture on Linux as since 1.8, and on the 1.11.0 code); exported PCK on the Linux runtime (five of
+the run kit's cases, 64 of 64 checks, no script or shader error: both capital placements, the
+regression, the refusals and the save carried over; the two outpost cases, an hour each, not run);
+screenshots viewed (`docs/v17/lights/`). Not run: the Windows EXE, frame times on a real GPU, every
+human playtest (NOT_RUN).
 
 **Release 1.11.0 (2026-11-24).** `ColonyCharter-1.11.0-Windows-x64.zip` (55,929,583 bytes, SHA-256
 `CEA06CCF7F4DD9D122951E560E46FD2850406241FD18B514F9744FB94D8DAC5A`) and the source ZIP in
