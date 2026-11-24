@@ -339,6 +339,11 @@ func _tribute() -> void:
 	)
 	var a: Dictionary = sim.state.annual
 	_until(sim, int(a.next_ship) - 1)
+	# A staffed port sells ore on the ship's day before the ship loads (90 here once newcomers
+	# staff it, 1.11 J); with the port switched off only the ship's loading is checked.
+	for index: int in range(capital.buildings.size()):
+		if str(capital.buildings[index].kind) == "port":
+			sim.act("toggle", {"region": int(capital.region), "index": index})
 	sim._consume(capital, "ore", float(capital.stock.ore))
 	sim._produce(capital, "ore", due * 0.5, "TEST ore")
 	var sunk: float = float(sim.state.resource_sinks.ore)
