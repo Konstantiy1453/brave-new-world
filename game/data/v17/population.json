@@ -1,12 +1,12 @@
 {
-  "version": 4,
+  "version": 5,
   "units": {
     "time": "game day",
     "money": "account units",
     "people": "persons: every count of people is in persons, and a worker (职工), a farmer (农民, a worker on a farm), a research team (研究团队, named so by the 1.8 request, counted as one person), a crew (工程队, counted as its resident foreman) and a child (未成年) each count one, take one bed and draw one wage",
     "share": "fraction 0-1",
     "growth_per_crew": "share of the base price added to training or hiring a crew for each crew the colony has beyond free_crews",
-    "jobless": "jobless_free_share: newcomers keep coming until this share of a town's adults is out of work; fewer as it rises, none at jobless_stop_share (1.11 J: 0.25-0.50, was 0.10-0.35)",
+    "jobless": "jobless_free_share: newcomers keep coming until this share of a town's adults is out of work; fewer as it rises, none at jobless_stop_share (1.11 J tried 0.25-0.50 and kept 0.10-0.35, DECISIONS.md)",
     "morale": "民心 0-100: the population-weighted mean of settlement appeal, mapped linearly from appeal_floor (0) to appeal_ceiling (100)"
   },
   "housing": {
@@ -33,8 +33,8 @@
     "savings_per_person": 60.0,
     "scientist_share_per_lab": 0.12,
     "scientist_share_max": 0.3,
-    "jobless_free_share": 0.25,
-    "jobless_stop_share": 0.5,
+    "jobless_free_share": 0.1,
+    "jobless_stop_share": 0.35,
     "frontier_factor": 0.3
   },
   "attractiveness": {

@@ -1518,3 +1518,13 @@ factories, so the game's cycle and the payback bands stay as they are.
   smelter keeps 6,500. The payback suite passes 43 of 43 (light ore mine 77 days in year 6, heavy
   131, copper 69, smelter 279 in year 4, processor 126). `1.11-J1` (the price version) was stopped
   at 19 of 29 chunks; `1.11-J2` is the harness of this data.
+- The unemployment band goes back to 0.10-0.35 for 1.11.0. Harness `1.11-J2` (`741b872`, the band
+  with the payback fixes, 90 runs, 0 audit errors) met the wage lever (+27%) and the jobs limit
+  (jobs on 46% of the days from 200 to 600, food 41%), but the balanced bot was awarded in 9 of 18
+  games against 14 of 18 at gate H: two never met stage two's 80% local food (taken over on days
+  1,319 and 1,471, as newcomers outran the farms) and seven missed stage five's date, where the
+  employment goal's streak resets as unemployment floats near its 60% line. A reasonable player
+  losing half the games is a worse game than the two misses the band fixes, so 1.11.0 keeps the old
+  band and reports the wage lever and the jobs limit as misses; the band is a tested option for
+  the next round, with farms and stage two's food share moved with it. The payback fixes (the
+  smelter's price, the later mine bonuses) stay; `1.11-J3` is the harness of this data.
