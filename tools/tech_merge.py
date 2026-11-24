@@ -11,7 +11,17 @@ are the parts' largest. techs.json gains `merged` {old id: new id} and `merge_co
 events' tech_gift and research_lead, first_offers and always_dealt are remapped.
 
 Run once from the project root: python tools/tech_merge.py [--dry-run]. It refuses to run on
-data that is already merged."""
+data that is already merged.
+
+Three readings of the plan's rule, for comparison (the game ships `bundles`):
+- `strict`: only technologies that add effects, unlock nothing and that no other technology
+  requires (125);
+- `bundles`: also those other technologies require, the requirement pointed at the merged one (85);
+- `unlockers`: also technologies that unlock a facility, an upgrade or a link level; the facilities,
+  upgrades and link levels in economy.json then name the merged technology (55-65).
+`--source=<dir>` reads techs.json and events.json from another folder (the data before the merge)
+and `--out=<dir>` writes the merged techs.json, events.json and economy.json there instead of into
+the game, so a reading can be built and drawn (tools/tech_tree.py --data=<dir>) without changing it."""
 from pathlib import Path
 import argparse
 import json
@@ -49,16 +59,46 @@ NAMES = {
 }
 
 
+SOURCE = DATA
+
+
+# 55-65 (`unlockers`): in each direction and tier, the technologies that open something are
+# merged apart from the bonuses, so a tier holds at most one of each.
+UNLOCK_NAMES = {
+    ("agriculture", 1): "垦殖设施",
+    ("agriculture", 2): "农业设施",
+    ("agriculture", 3): "现代农场",
+    ("agriculture", 4): "生态设施",
+    ("agriculture", 5): "生物圈设施",
+    ("construction", 1): "建设装备",
+    ("construction", 2): "工程设施",
+    ("construction", 3): "大型设施",
+    ("construction", 4): "超级设施",
+    ("construction", 5): "星球设施",
+    ("industry", 1): "采选装备",
+    ("industry", 2): "工业设施",
+    ("industry", 3): "重工设施",
+    ("industry", 4): "先进工厂",
+    ("industry", 5): "自动化工厂",
+    ("society", 1): "社区设施",
+    ("society", 2): "公共设施",
+    ("society", 3): "社会设施",
+    ("society", 4): "科研设施",
+    ("society", 5): "未来设施",
+}
+
+
 def load(name):
-    return json.loads((DATA / name).read_text(encoding="utf-8"))
+    folder = SOURCE if name in ("techs.json", "events.json") else DATA
+    return json.loads((folder / name).read_text(encoding="utf-8"))
 
 
-def references(techs):
+def references(techs, soft_data=SOFT_DATA):
     """For each technology, the files that name it (as a quoted string)."""
     found = {key: set() for key in techs}
     pattern = re.compile(r'"([a-z_0-9]+)"')
     for path in DATA.glob("*.json"):
-        if path.name in SOFT_DATA:
+        if path.name in soft_data:
             continue
         for word in set(pattern.findall(path.read_text(encoding="utf-8"))):
             if word in found:
@@ -72,18 +112,61 @@ def references(techs):
     return found
 
 
-def groups(data):
+def economy_unlocks():
+    """The technologies economy.json names as what opens a facility, an upgrade or a link level."""
+    economy = load("economy.json")
+    found = set()
+    for spec in economy["buildings"].values():
+        if spec.get("requires_tech"):
+            found.add(spec["requires_tech"])
+    for steps in list(economy.get("upgrades", {}).values()) + list(
+        economy.get("road_levels", {}).values()
+    ):
+        if isinstance(steps, list):
+            for step in steps:
+                if isinstance(step, dict) and step.get("tech"):
+                    found.add(step["tech"])
+    return found
+
+
+def groups(data, mode="bundles"):
     techs = data["techs"]
     frozen = set()
     for content in load("progression.json")["features"].get("content", {}).values():
         frozen.update(content.get("techs", []))
-    named = references(techs)
+    soft = SOFT_DATA | ({"economy.json"} if mode == "unlockers" else set())
+    named = references(techs, soft)
+    opens = economy_unlocks() if mode == "unlockers" else set()
+    required = {need for tech in techs.values() for need in tech.get("requires", [])}
     merged = {}
     for key, tech in techs.items():
-        if named[key] or tech.get("gift") or key in frozen or not tech.get("effects"):
+        if named[key] or tech.get("gift") or key in frozen:
             continue
-        merged.setdefault((tech["category"], int(tech["tier"])), []).append(key)
+        if not tech.get("effects") and key not in opens:
+            continue
+        if mode == "strict" and key in required:
+            continue
+        group = (tech["category"], int(tech["tier"]))
+        if mode == "unlockers":
+            group += ("unlock" if key in opens else "bonus",)
+        merged.setdefault(group, []).append(key)
     return {group: keys for group, keys in merged.items() if len(keys) > 1}
+
+
+def remap_economy(table):
+    """economy.json with every facility, upgrade and link level naming the merged technology."""
+    text = (DATA / "economy.json").read_text(encoding="utf-8")
+    count = 0
+    for key in ("requires_tech", "tech"):
+        def swap(match):
+            nonlocal count
+            old = match.group(2)
+            if old in table:
+                count += 1
+                return f'{match.group(1)}"{table[old]}"'
+            return match.group(0)
+        text = re.sub(rf'("{key}":\s*)"([a-z_0-9]+)"', swap, text)
+    return text, count
 
 
 def describe(parts):
@@ -97,20 +180,32 @@ def describe(parts):
     return "合并了「" + "」「".join(p["name"] for p in parts) + "」：" + "".join(words)
 
 
+def merged_id(group):
+    if len(group) > 2 and group[2] == "unlock":
+        return f"{group[0]}_{group[1]}_unlocks"
+    return f"{group[0]}_{group[1]}_merged"
+
+
+def merged_name(group):
+    if len(group) > 2 and group[2] == "unlock":
+        return UNLOCK_NAMES[(group[0], group[1])]
+    return NAMES[(group[0], group[1])]
+
+
 def merge(data, plan):
     techs = data["techs"]
     table = {}
-    for (category, tier), keys in sorted(plan.items()):
-        new_id = f"{category}_{tier}_merged"
+    for group, keys in sorted(plan.items()):
         for key in keys:
-            table[key] = new_id
+            table[key] = merged_id(group)
     out = {}
     for key, tech in techs.items():
         if key in table:
             continue
         out[key] = dict(tech)
-    for (category, tier), keys in sorted(plan.items()):
-        new_id = f"{category}_{tier}_merged"
+    for group, keys in sorted(plan.items()):
+        category, tier = group[0], group[1]
+        new_id = merged_id(group)
         parts = [techs[key] for key in keys]
         cost = sum(float(p["cost"]) for p in parts)
         effects = {}
@@ -124,7 +219,7 @@ def merge(data, plan):
                 if need != new_id and need not in requires:
                     requires.append(need)
         out[new_id] = {
-            "name": NAMES[(category, tier)],
+            "name": merged_name(group),
             "category": category,
             "branch": parts[0].get("branch", category),
             "tier": tier,
@@ -176,7 +271,7 @@ def merge(data, plan):
 
 
 def remap_events(table):
-    path = DATA / "events.json"
+    path = SOURCE / "events.json"
     text = path.read_text(encoding="utf-8")
     count = 0
     for key in ("tech_gift", "research_lead"):
@@ -192,25 +287,39 @@ def remap_events(table):
 
 
 def main():
+    global SOURCE
     args = argparse.ArgumentParser(description=__doc__)
     args.add_argument("--dry-run", action="store_true")
-    dry = args.parse_args().dry_run
+    args.add_argument("--mode", choices=["strict", "bundles", "unlockers"], default="bundles")
+    args.add_argument("--source", default="")
+    args.add_argument("--out", default="")
+    options = args.parse_args()
+    if options.source:
+        SOURCE = Path(options.source)
     data = load("techs.json")
     if "merged" in data:
         raise SystemExit("techs.json is already merged")
     before = len(data["techs"])
-    plan = groups(data)
+    plan = groups(data, options.mode)
     table = merge(data, plan)
     events, swapped = remap_events(table)
-    print(f"{before} technologies -> {len(data['techs'])}; {len(table)} merged into {len(plan)}")
-    for (category, tier), keys in sorted(plan.items()):
-        print(f"  {category} {tier}: {NAMES[(category, tier)]} <- {', '.join(keys)}")
-    print(f"events remapped: {swapped}")
-    if dry:
+    economy, repointed = remap_economy(table) if options.mode == "unlockers" else ("", 0)
+    print(
+        f"{options.mode}: {before} technologies -> {len(data['techs'])}; "
+        f"{len(table)} merged into {len(plan)}"
+    )
+    for group, keys in sorted(plan.items()):
+        print(f"  {' '.join(str(part) for part in group)}: {merged_name(group)} <- {', '.join(keys)}")
+    print(f"events remapped: {swapped}; facilities, upgrades and link levels re-pointed: {repointed}")
+    if options.dry_run:
         return
+    out = Path(options.out) if options.out else DATA
+    out.mkdir(parents=True, exist_ok=True)
     text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-    (DATA / "techs.json").write_text(text, encoding="utf-8")
-    (DATA / "events.json").write_text(events, encoding="utf-8")
+    (out / "techs.json").write_text(text, encoding="utf-8")
+    (out / "events.json").write_text(events, encoding="utf-8")
+    if economy:
+        (out / "economy.json").write_text(economy, encoding="utf-8")
 
 
 if __name__ == "__main__":
