@@ -30,7 +30,7 @@
       "ok": true
     },
     {
-      "label": "the expansion licence came on day 234, with the capital the only town",
+      "label": "the expansion licence came on day 254, with the capital the only town",
       "ok": true
     },
     {
@@ -128,7 +128,7 @@
     "view": "flat"
   },
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "7cab83cce520458e68ed1fe1717a5facc94c3c5520f3aae73c205ffce3e7a31d",
+  "pck_sha256": "a5ca2638428a7bfbe869f267a10c5c98667f0039eab7e9d27e116909ac71e990",
   "pick": {
     "map_selected_marker": -1,
     "nearest_marker_px": 96.4285278320312,
@@ -151,7 +151,7 @@
     "terrain_text": "地表：草地 · 地点类型：滨海平原",
     "verdict": "✓ 可以在这里建立据点"
   },
-  "played_by": "balanced bot (tests/balance/bots) through Sim.act, days 1-234",
+  "played_by": "balanced bot (tests/balance/bots) through Sim.act, days 1-254",
   "quote": {
     "cost": 3145.92,
     "days": 5,
@@ -187,7 +187,7 @@
     "terrain": "滨海平原"
   },
   "towns_at_unlock": 1,
-  "unlock_day": 234,
+  "unlock_day": 254,
   "verdict": "✓ 可以在这里建立据点",
   "viewport": [
     1600.0,
@@ -208,8 +208,8 @@
     },
     "planet": {
       "marker_screen": [
-        605.793395996094,
-        450.000030517578
+        605.793518066406,
+        449.999969482422
       ],
       "selected_marker": 30
     }

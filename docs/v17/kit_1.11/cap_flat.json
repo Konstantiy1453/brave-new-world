@@ -104,7 +104,7 @@
     "view": "flat"
   },
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "7cab83cce520458e68ed1fe1717a5facc94c3c5520f3aae73c205ffce3e7a31d",
+  "pck_sha256": "a5ca2638428a7bfbe869f267a10c5c98667f0039eab7e9d27e116909ac71e990",
   "pick": {
     "map_selected_marker": -1,
     "nearest_marker_px": 72.2279739379883,
@@ -160,8 +160,8 @@
     },
     "planet": {
       "marker_screen": [
-        605.793518066406,
-        450.000122070312
+        605.793579101562,
+        449.999969482422
       ],
       "selected_marker": 29
     }

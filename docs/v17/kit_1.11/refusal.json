@@ -45,7 +45,7 @@
     "view": "planet"
   },
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "7cab83cce520458e68ed1fe1717a5facc94c3c5520f3aae73c205ffce3e7a31d",
+  "pck_sha256": "a5ca2638428a7bfbe869f267a10c5c98667f0039eab7e9d27e116909ac71e990",
   "refusals": [
     {
       "button_disabled": true,
@@ -53,17 +53,17 @@
       "founded": false,
       "pick": {
         "map_selected_marker": -1,
-        "nearest_marker_px": 394.104309082031,
+        "nearest_marker_px": 394.104370117188,
         "panel_text": "北纬 78.75° · 西经 178.75°",
         "picked": {
           "lat": 78.7500076293945,
-          "lon": -178.749984741211,
+          "lon": -178.750030517578,
           "precision": 0.0702884197235107,
           "view": "planet"
         },
         "screen": [
-          607.979248046875,
-          302.965545654297
+          607.979125976562,
+          302.965454101562
         ],
         "selected_site_after_click": 0,
         "target": [
@@ -83,14 +83,14 @@
         "nearest_marker_px": 354.445404052734,
         "panel_text": "北纬 78.75° · 西经 156.25°",
         "picked": {
-          "lat": 78.7500076293945,
-          "lon": -156.249969482422,
-          "precision": 0.0702884197235107,
+          "lat": 78.7499771118164,
+          "lon": -156.249984741211,
+          "precision": 0.0702579170465469,
           "view": "planet"
         },
         "screen": [
-          607.979248046875,
-          302.965484619141
+          607.979309082031,
+          302.965637207031
         ],
         "selected_site_after_click": 0,
         "target": [
@@ -107,17 +107,17 @@
       "founded": false,
       "pick": {
         "map_selected_marker": -1,
-        "nearest_marker_px": 190.56982421875,
+        "nearest_marker_px": 190.569869995117,
         "panel_text": "北纬 61.25° · 西经 153.75°",
         "picked": {
-          "lat": 61.2500076293945,
+          "lat": 61.25,
           "lon": -153.75,
           "precision": 0.0668716430664062,
           "view": "planet"
         },
         "screen": [
-          605.793395996094,
-          449.999938964844
+          605.793273925781,
+          450.0
         ],
         "selected_site_after_click": 0,
         "target": [

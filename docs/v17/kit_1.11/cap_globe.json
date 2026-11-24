@@ -97,25 +97,27 @@
     "bots": "",
     "case": "capital",
     "coast": "0",
-    "out": "/tmp/claude-0/-home-user-brave-new-world/fd0dfc0e-63fa-5476-a825-065a2248d6bf/scratchpad/j/pck/capital2.json",
-    "pck": "",
+    "out": "/tmp/claude-0/-home-user-brave-new-world/fd0dfc0e-63fa-5476-a825-065a2248d6bf/scratchpad/j/kit/cap_globe.json",
+    "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
     "seed": "3",
     "target": "0",
     "view": "planet"
   },
+  "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
+  "pck_sha256": "a5ca2638428a7bfbe869f267a10c5c98667f0039eab7e9d27e116909ac71e990",
   "pick": {
     "map_selected_marker": -1,
-    "nearest_marker_px": 100.535209655762,
+    "nearest_marker_px": 100.535293579102,
     "panel_text": "北纬 23.74° · 西经 112.31°",
     "picked": {
-      "lat": 23.7374000549316,
-      "lon": -112.306701660156,
-      "precision": 0.0668754577636719,
+      "lat": 23.7373924255371,
+      "lon": -112.306694030762,
+      "precision": 0.0668678283691406,
       "view": "planet"
     },
     "screen": [
-      605.793334960938,
-      450.000030517578
+      605.79345703125,
+      450.0
     ],
     "selected_site_after_click": 0,
     "target": [
@@ -159,7 +161,7 @@
     "planet": {
       "marker_screen": [
         605.79345703125,
-        450.000030517578
+        450.0
       ],
       "selected_marker": 29
     }

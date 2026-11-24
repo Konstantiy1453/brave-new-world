@@ -85,21 +85,21 @@
     "view": "planet"
   },
   "pck": "/home/user/brave-new-world/build/v17/ColonyCharter.pck",
-  "pck_sha256": "7cab83cce520458e68ed1fe1717a5facc94c3c5520f3aae73c205ffce3e7a31d",
+  "pck_sha256": "a5ca2638428a7bfbe869f267a10c5c98667f0039eab7e9d27e116909ac71e990",
   "picks": [
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 352.865447998047,
+      "nearest_marker_px": 352.865356445312,
       "panel_text": "北纬 59.00° · 东经 106.50°",
       "picked": {
-        "lat": 59.0,
-        "lon": 106.5,
-        "precision": 0.0668716430664062,
+        "lat": 59.0000076293945,
+        "lon": 106.499984741211,
+        "precision": 0.0668792724609375,
         "view": "planet"
       },
       "screen": [
-        605.79345703125,
-        450.000061035156
+        605.793334960938,
+        449.999877929688
       ],
       "selected_site_after_click": 0,
       "target": [
@@ -135,17 +135,17 @@
     },
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 251.08464050293,
+      "nearest_marker_px": 251.084609985352,
       "panel_text": "北纬 44.00° · 东经 91.50°",
       "picked": {
-        "lat": 44.0000076293945,
-        "lon": 91.5,
-        "precision": 0.0668716430664062,
+        "lat": 44.0000038146973,
+        "lon": 91.5000076293945,
+        "precision": 0.0668754577636719,
         "view": "planet"
       },
       "screen": [
         605.793395996094,
-        450.000122070312
+        450.0
       ],
       "selected_site_after_click": 0,
       "target": [
@@ -181,17 +181,17 @@
     },
     {
       "map_selected_marker": -1,
-      "nearest_marker_px": 352.242706298828,
+      "nearest_marker_px": 352.242645263672,
       "panel_text": "北纬 59.00° · 东经 114.00°",
       "picked": {
         "lat": 59.0000076293945,
-        "lon": 114.0,
+        "lon": 114.000007629395,
         "precision": 0.0668716430664062,
         "view": "planet"
       },
       "screen": [
         605.793334960938,
-        449.999969482422
+        449.999938964844
       ],
       "selected_site_after_click": 0,
       "target": [
