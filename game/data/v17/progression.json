@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "units": {
     "time": "game day",
     "month_days": 30,
@@ -175,17 +175,28 @@
     }
   },
   "lights": {
-    "units": "the colony's lights over time (1.11 G): a snapshot every snapshot_days of game time; a town's light stage is the highest whose population (people) and facilities (finished buildings other than homes) it both has; names as on the user's concept sheet 沿海与内陆的灯光形态; timelapse_seconds the night time-lapse at an ending, in real seconds",
+    "units": "the colony's lights over time (1.11 G): a snapshot every snapshot_days of game time; a town's light stage is the highest whose population (people) and facilities (finished buildings other than homes) it both has; names as on the user's concept sheet 沿海与内陆的灯光形态; timelapse_seconds the night time-lapse at an ending, in real seconds; stages[].radius_degrees the planet-scale form's radius at that stage, in degrees of arc, in the proportions of the sheet's five panels (着陆点 0.09, 首批住区 0.25, 小镇 0.49, 区域中心 0.76 of the capital's width), and shine its brightness; between stages a town's form grows with its level (the stage plus the way to the next); forms: near_distance and far_distance the globe camera distances between which the per-plot lights (near) give way to the forms (far), the two weights adding to one; neighbour_share caps a form's radius at that share of the distance to the nearest other town; remote_roles the roles of the facilities that stand apart (mines, harbours, seabed platforms, weather stations): one farther from its town than remote_share of the form's radius is a point of its own (facility_point bright), and every other building is part of its town's form; road_light the brightness of the faint string along a finished road, a light every road_step_degrees (under half a texel of the far texture, so the string is unbroken); cold_share the share of a form's light that is cold work light",
     "snapshot_days": 90,
     "snapshots_kept": 64,
     "timelapse_seconds": 20.0,
     "stages": [
-      {"id": "landing", "name": "着陆点", "population": 0, "facilities": 0},
-      {"id": "first_homes", "name": "首批住区", "population": 50, "facilities": 4},
-      {"id": "town", "name": "小镇", "population": 200, "facilities": 12},
-      {"id": "regional_centre", "name": "区域中心", "population": 600, "facilities": 25},
-      {"id": "capital", "name": "星球首府", "population": 1500, "facilities": 45}
-    ]
+      {"id": "landing", "name": "着陆点", "population": 0, "facilities": 0, "radius_degrees": 0.25, "shine": 0.55},
+      {"id": "first_homes", "name": "首批住区", "population": 50, "facilities": 4, "radius_degrees": 0.65, "shine": 0.7},
+      {"id": "town", "name": "小镇", "population": 200, "facilities": 12, "radius_degrees": 1.27, "shine": 0.85},
+      {"id": "regional_centre", "name": "区域中心", "population": 600, "facilities": 25, "radius_degrees": 1.98, "shine": 1.0},
+      {"id": "capital", "name": "星球首府", "population": 1500, "facilities": 45, "radius_degrees": 2.6, "shine": 1.1}
+    ],
+    "forms": {
+      "near_distance": 7.6,
+      "far_distance": 9.4,
+      "neighbour_share": 0.45,
+      "remote_share": 0.8,
+      "remote_roles": ["mine", "harbor", "seabed", "station"],
+      "facility_point": 0.45,
+      "road_light": 0.05,
+      "road_step_degrees": 0.06,
+      "cold_share": 0.12
+    }
   },
   "annual_report": {
     "units": "the annual ship and ratchet report (1.11 D): base_targets in goods units (100 t) a year by contract stage, calibrated from the harness (balanced bot, normal, median production in that stage-year x 0.9); exceed_factor a multiple of the target; miss_distrust, exceed_trust and exposure_distrust in distrust points; met_reward and exceed_reward in money at the reference income (scaled like event money); ratchet_growth a factor by origin; audit_k scales an audit story's draw weight by gap / target; fine_factor multiplies gap x export price; report_days to sign before the report goes as it is; amendment_chance per ship from amendment_from_year",

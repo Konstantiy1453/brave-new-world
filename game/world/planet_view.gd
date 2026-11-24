@@ -74,6 +74,8 @@ func _build_planet() -> void:
 	globe_shader.set_shader_parameter("atlas", geography_atlas)
 	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	globe_shader.set_shader_parameter("lights", _night_lights_texture())
+	globe_shader.set_shader_parameter("far_lights", _far_lights_texture())
+	form_weights = Vector2(-1.0, -1.0)
 	_apply_town_lights(globe_shader)
 	globe_shader.set_shader_parameter("ice_latitude", _ice_latitude())
 	var sphere := SphereMesh.new()
@@ -270,9 +272,21 @@ func _update_night_lights() -> void:
 		night_lights = ImageTexture.create_from_image(image)
 	else:
 		night_lights.update(image)
-	town_lights = NightLights.town_uniforms()
-	for material: ShaderMaterial in [globe_shader, flat_shader]:
-		_apply_town_lights(material)
+	_update_town_forms()
+
+
+## The planet-scale forms (1.11 G), on the globe only: the flat map keeps the per-plot lights.
+func _update_town_forms() -> void:
+	var buildings: Dictionary = Rules.read("economy").buildings
+	var rules: Dictionary = Rules.read("progression").get("lights", {})
+	var towns: Array = TownForms.towns_now(state, world, buildings)
+	var far: Image = TownForms.far_image(state, world, buildings, towns, rules)
+	if far_lights == null:
+		far_lights = ImageTexture.create_from_image(far)
+	else:
+		far_lights.update(far)
+	town_lights = TownForms.uniforms(towns, world, rules)
+	_apply_town_lights(globe_shader)
 
 
 ## Each settled town's landing camp in district units, as the district stands its pods: found once

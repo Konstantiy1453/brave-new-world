@@ -57,9 +57,14 @@ static func snapshot(sim: RefCounted) -> Dictionary:
 
 ## Finished buildings other than homes.
 static func facilities(sim: RefCounted, s: Dictionary) -> int:
+	return facility_count(sim.config.buildings, s)
+
+
+## The same count from the building table alone, for the views (town_forms.gd).
+static func facility_count(buildings: Dictionary, s: Dictionary) -> int:
 	var count: int = 0
 	for b: Dictionary in s.get("buildings", []):
-		var spec: Dictionary = sim.config.buildings.get(str(b.kind), {})
+		var spec: Dictionary = buildings.get(str(b.kind), {})
 		if int(b.get("remaining", 0)) <= 0 and str(spec.get("role", "")) != "housing":
 			count += 1
 	return count
@@ -67,21 +72,47 @@ static func facilities(sim: RefCounted, s: Dictionary) -> int:
 
 ## The index of the highest light stage whose people and facilities the town both has.
 static func stage_of(sim: RefCounted, s: Dictionary) -> int:
+	return stage_index(rules(sim).get("stages", []), float(s.population), facilities(sim, s))
+
+
+static func stage_index(stages: Array, people: float, count: float) -> int:
 	var stage: int = 0
-	var count: int = facilities(sim, s)
-	var stages: Array = rules(sim).get("stages", [])
 	for index: int in range(stages.size()):
 		var rule: Dictionary = stages[index]
-		if int(s.population) >= int(rule.population) and count >= int(rule.facilities):
+		if people >= float(rule.population) and count >= float(rule.facilities):
 			stage = index
 	return stage
 
 
+## The stage and how far the town has come towards the next one, as one number (2.5: half way
+## from 小镇 to 区域中心), so a town's lights grow with it instead of jumping at each threshold.
+static func stage_level(stages: Array, people: float, count: float) -> float:
+	var stage: int = stage_index(stages, people, count)
+	if stage + 1 >= stages.size():
+		return float(stage)
+	var here: Dictionary = stages[stage]
+	var next: Dictionary = stages[stage + 1]
+	var by_people: float = (
+		(people - float(here.population))
+		/ maxf(1.0, float(next.population) - float(here.population))
+	)
+	var by_count: float = (
+		(count - float(here.facilities))
+		/ maxf(1.0, float(next.facilities) - float(here.facilities))
+	)
+	return float(stage) + clampf(minf(by_people, by_count), 0.0, 0.999)
+
+
 ## The towns a finished road or sea link reaches from this one.
 static func roads_of(sim: RefCounted, region: int) -> Array:
+	return roads_reaching(sim.state, region)
+
+
+## The same from the state alone, for the views (town_forms.gd).
+static func roads_reaching(state: Dictionary, region: int) -> Array:
 	var out: Array = []
-	for road: Dictionary in sim.state.get("roads", []):
-		if int(road.get("ready_day", 0)) > int(sim.state.day):
+	for road: Dictionary in state.get("roads", []):
+		if int(road.get("ready_day", 0)) > int(state.get("day", 0)):
 			continue
 		if int(road.a) == region and not int(road.b) in out:
 			out.append(int(road.b))

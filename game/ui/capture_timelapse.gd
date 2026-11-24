@@ -1,8 +1,8 @@
 extends RefCounted
 ## Developer capture for 1.11 G, from the source project in a real window: the night time-lapse
 ## over a made-up eight-year record (a capital growing from a landing to 2,500 people, two towns
-## founded later), three frames along the way. The forms are the 1.9 town lights until the
-## user's light concept sheet arrives.
+## founded later and joined to it by road), three frames along the way, in the forms of the
+## user's concept sheet (world/town_forms.gd).
 ##   xvfb-run -a godot --path game --rendering-driver opengl3 -- --dev
 ##         --dev-script=res://ui/capture_timelapse.gd [--qa-out=<folder>]
 
@@ -52,23 +52,40 @@ static func _record(g) -> Array:
 	var reg: Dictionary = g.sim.state.world.regions[int(capital.region)]
 	var lat: float = float(capital.get("lat", reg.lat))
 	var lon: float = float(capital.get("lon", reg.lon))
+	var home: int = int(capital.region)
+	var coastal: bool = bool(reg.get("coast", false))
 	var out: Array = []
 	for quarter: int in range(YEARS * 4 + 1):
 		var t: float = float(quarter) / float(YEARS * 4)
-		var towns: Array = [
-			_town(int(capital.region), lat, lon, 40.0 + 2460.0 * t * t, 3.0 + 50.0 * t)
-		]
+		var capital_town: Dictionary = _town(
+			home, lat, lon, 40.0 + 2460.0 * t * t, 3.0 + 50.0 * t, coastal
+		)
+		var towns: Array = [capital_town]
 		if quarter >= 8:
 			var u: float = float(quarter - 8) / float(YEARS * 4 - 8)
-			towns.append(_town(9001, lat + 3.5, lon + 4.0, 30.0 + 700.0 * u, 2.0 + 18.0 * u))
+			towns.append(
+				_town(9001, lat + 3.5, lon + 4.0, 30.0 + 700.0 * u, 2.0 + 18.0 * u, false, [home])
+			)
+			capital_town.roads.append(9001)
 		if quarter >= 16:
 			var v: float = float(quarter - 16) / float(YEARS * 4 - 16)
-			towns.append(_town(9002, lat - 2.5, lon + 6.5, 20.0 + 300.0 * v, 1.0 + 9.0 * v))
+			towns.append(
+				_town(9002, lat - 2.5, lon + 6.5, 20.0 + 300.0 * v, 1.0 + 9.0 * v, false, [home])
+			)
+			capital_town.roads.append(9002)
 		out.append({"day": quarter * 90, "towns": towns})
 	return out
 
 
-static func _town(region: int, lat: float, lon: float, people: float, built: float) -> Dictionary:
+static func _town(
+	region: int,
+	lat: float,
+	lon: float,
+	people: float,
+	built: float,
+	coastal: bool,
+	roads: Array = []
+) -> Dictionary:
 	return {
 		"region": region,
 		"lat": lat,
@@ -76,9 +93,9 @@ static func _town(region: int, lat: float, lon: float, people: float, built: flo
 		"stage": 0,
 		"population": int(people),
 		"facilities": int(built),
-		"coastal": false,
+		"coastal": coastal,
 		"frontier": false,
-		"roads": [],
+		"roads": roads.duplicate(),
 	}
 
 

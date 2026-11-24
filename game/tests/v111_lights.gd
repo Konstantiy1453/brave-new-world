@@ -12,6 +12,10 @@ const Sim = preload("res://simulation/sim.gd")
 const LightRecord = preload("res://simulation/light_record.gd")
 const Timelapse = preload("res://world/timelapse.gd")
 const TimelapseView = preload("res://ui/timelapse_view.gd")
+const TownForms = preload("res://world/town_forms.gd")
+const Shaders = preload("res://world/shaders.gd")
+const SiteGen = preload("res://world/geo2/site_gen.gd")
+const Rules = preload("res://simulation/rules.gd")
 const SEED: int = 20261124
 
 var checks: int = 0
@@ -66,6 +70,7 @@ func run() -> void:
 	_stages()
 	_saved()
 	_interpolation()
+	_forms()
 	await _player()
 	print("V111_LIGHTS_RESULT checks=%d failures=%d %s" % [checks, failures.size(), str(failures)])
 	quit(0 if failures.is_empty() else 1)
@@ -217,6 +222,159 @@ func _interpolation() -> void:
 		),
 		"bigger towns are drawn bigger and brighter"
 	)
+
+
+## The planet-scale forms of the light concept sheet (1.11 G, town_forms.gd).
+func _forms() -> void:
+	var rules: Dictionary = Rules.read("progression").lights
+	var stages: Array = rules.stages
+	var sizes: Array = []
+	for index: int in range(stages.size()):
+		sizes.append(TownForms.form_radius(stages, float(index)))
+	var growing: bool = true
+	for index: int in range(1, sizes.size()):
+		growing = growing and float(sizes[index]) > float(sizes[index - 1])
+	check(
+		growing and float(sizes[4]) / float(sizes[0]) > 8.0,
+		"the five stages grow in the sheet's proportions: %s" % str(sizes)
+	)
+	var level_at: Array = []
+	for pair: Vector2 in [
+		Vector2(0, 0),
+		Vector2(50, 4),
+		Vector2(125, 8),
+		Vector2(200, 12),
+		Vector2(1500, 45),
+		Vector2(9000, 300)
+	]:
+		level_at.append(LightRecord.stage_level(stages, pair.x, pair.y))
+	check(
+		(
+			is_equal_approx(float(level_at[1]), 1.0)
+			and float(level_at[2]) > 1.0
+			and float(level_at[2]) < 2.0
+			and is_equal_approx(float(level_at[3]), 2.0)
+			and is_equal_approx(float(level_at[5]), 4.0)
+		),
+		"a town grows between stages and stops at the capital: %s" % str(level_at)
+	)
+	var sim: RefCounted = _colony()
+	# The views draw on the derived geography (main.gd `map.setup(sim.geo)`), which holds the grid.
+	var world: Dictionary = sim.geo
+	var coastal: Dictionary = {}
+	var inland: Dictionary = {}
+	for reg: Dictionary in world.regions:
+		if coastal.is_empty() and bool(reg.get("coast", false)):
+			coastal = reg
+		if inland.is_empty() and not bool(reg.get("coast", false)) and bool(reg.get("land", true)):
+			var way: Vector2 = TownForms.sea_direction(world, float(reg.lat), float(reg.lon), 1.0)
+			if way == Vector2.ZERO:
+				inland = reg
+	var sea: Vector2 = TownForms.sea_direction(world, float(coastal.lat), float(coastal.lon), 1.0)
+	var off_lat: float = float(coastal.lat) + sea.y * 1.0
+	var off_lon: float = (
+		float(coastal.lon) + sea.x * 1.0 / maxf(cos(deg_to_rad(float(coastal.lat))), 0.2)
+	)
+	var wet: bool = not bool(world.grid[SiteGen.cell_at(world, off_lat, off_lon)].get("land", true))
+	check(
+		sea.length() > 0.99 and wet and not inland.is_empty(),
+		"a coastal town knows which way its sea lies, an inland one has none"
+	)
+	var east := {"region": 1, "lat": 0.0, "lon": 10.0, "population": 700.0, "facilities": 30.0}
+	var west := {"region": 2, "lat": 0.0, "lon": 7.0, "population": 700.0, "facilities": 30.0}
+	east.roads = [2]
+	var bearing: Vector4 = TownForms.road_bearings(east, {1: Vector2(0, 10), 2: Vector2(0, 7)})
+	check(
+		absf(absf(bearing.x) - PI) < 0.01 and bearing.y == TownForms.NO_ROAD,
+		"a town's arm follows the road the player built: %s" % str(bearing)
+	)
+	var drawn: Dictionary = TownForms.uniforms([east, west], world, rules)
+	check(
+		float(drawn.towns[0].z) <= 3.0 * float(rules.forms.neighbour_share) + 0.0001,
+		"neighbouring towns stay apart: radius %.2f with 3° between them" % float(drawn.towns[0].z)
+	)
+	var sums: bool = true
+	for distance: float in [7.0, 7.6, 8.0, 8.5, 9.0, 9.4, 10.3, 15.8]:
+		var shares: Vector2 = TownForms.weights(distance, rules)
+		sums = sums and is_equal_approx(shares.x + shares.y, 1.0)
+	var near: Vector2 = TownForms.weights(7.0, rules)
+	var usual: Vector2 = TownForms.weights(10.3, rules)
+	check(
+		sums and near == Vector2(1, 0) and usual == Vector2(0, 1),
+		"up close the plots, from the default distance the forms, never both in full"
+	)
+	_far(sim, rules)
+	var record: Array = [{"day": 0, "towns": [_town(1, 240, 10)]}]
+	var shown: Dictionary = Timelapse.uniforms(Timelapse.towns_on(record, 0.0), world)
+	var same: Dictionary = TownForms.uniforms(Timelapse.towns_on(record, 0.0), world, rules)
+	check(
+		shown.towns == same.towns and shown.styles == same.styles,
+		"the time-lapse draws the same forms as the globe in play"
+	)
+	var code: String = Shaders.shader("globe").code
+	check(
+		(
+			code.contains("town_roads")
+			and code.contains("form_lights")
+			and code.contains("forms *= coast")
+		),
+		"the globe's shader draws the forms, cut by the coast, beside the plots"
+	)
+
+
+## A finished road shows as a faint string between its towns; a facility far from its town is a
+## point of its own; one in the town is part of its form.
+func _far(sim: RefCounted, rules: Dictionary) -> void:
+	var buildings: Dictionary = sim.config.buildings
+	var state: Dictionary = sim.state
+	var capital: Dictionary = state.settlements[0].duplicate()
+	var home: Dictionary = sim.geo.regions[int(capital.region)]
+	capital.lat = float(capital.get("lat", home.lat))
+	capital.lon = float(capital.get("lon", home.lon))
+	var other: Dictionary = {}
+	var other_index: int = -1
+	var closest: float = INF
+	for index: int in range(sim.geo.regions.size()):
+		var reg: Dictionary = sim.geo.regions[index]
+		var apart: float = rad_to_deg(
+			_unit(float(reg.lat), float(reg.lon)).angle_to(_unit(capital.lat, capital.lon))
+		)
+		if index != int(capital.region) and apart > 3.0 and apart < closest:
+			closest = apart
+			other = reg
+			other_index = index
+	check(other_index >= 0, "a second place to build a road to")
+	var road := {
+		"id": 900,
+		"a": int(capital.region),
+		"b": other_index,
+		"ready_day": 0,
+		"coordinates": [[capital.lat, capital.lon], [other.lat, other.lon]],
+	}
+	state.roads.append(road)
+	var towns: Array = TownForms.towns_now(state, sim.geo, buildings)
+	var image: Image = TownForms.far_image(state, sim.geo, buildings, towns, rules)
+	var middle := Vector2(
+		(float(capital.lat) + float(other.lat)) * 0.5,
+		float(capital.lon) + wrapf(float(other.lon) - float(capital.lon), -180.0, 180.0) * 0.5
+	)
+	var lit: float = 0.0
+	for dy: int in range(-2, 3):
+		for dx: int in range(-2, 3):
+			var x: int = posmod(
+				int((wrapf(middle.y, -180.0, 180.0) + 180.0) / 360.0 * TownForms.FAR_WIDTH) + dx,
+				TownForms.FAR_WIDTH
+			)
+			var y: int = int((90.0 - middle.x) / 180.0 * TownForms.FAR_HEIGHT) + dy
+			lit = maxf(lit, image.get_pixel(x, clampi(y, 0, TownForms.FAR_HEIGHT - 1)).r)
+	check(lit > 0.02, "a finished road is a faint string of light: %.3f midway" % lit)
+	state.roads.erase(road)
+
+
+func _unit(lat: float, lon: float) -> Vector3:
+	var la: float = deg_to_rad(lat)
+	var lo: float = deg_to_rad(lon)
+	return Vector3(cos(la) * sin(lo), sin(la), cos(la) * cos(lo))
 
 
 func _town(region: int, people: int, facilities: int) -> Dictionary:

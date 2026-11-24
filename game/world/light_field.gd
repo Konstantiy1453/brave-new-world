@@ -214,6 +214,12 @@ static func plot_point(reg: Dictionary, b: Dictionary) -> Vector2:
 	return Vector2(float(plots[plot].x), float(plots[plot].z))
 
 
+## Where a building's plot lies on the planet, (lat, lon) in degrees (town_forms.gd's remote points).
+static func plot_coordinate(world: Dictionary, reg: Dictionary, b: Dictionary) -> Vector2:
+	var at: Dictionary = _light(world, reg, plot_point(reg, b), 0.0, 0.0)
+	return Vector2(float(at.lat), float(at.lon))
+
+
 ## A few lamps where each finished road leaves a town, and a junction where three links meet. The
 ## rest of a road is dark: vehicles on it are drawn as they move.
 static func road_lights(state: Dictionary, world: Dictionary) -> Array:

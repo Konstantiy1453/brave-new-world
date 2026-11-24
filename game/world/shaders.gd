@@ -62,14 +62,22 @@ vec3 ice_color(float n2) {
 }
 """
 
-## Settlements at night, as orbit photos show them: a bright core, an irregular built-up outline,
-## lit blocks on a street grid and ribbons of light along the arterial roads, with suburbs at the
-## ends of the arms as a town grows into a metropolis. A few numbers per town (night_lights.gd
-## town_uniforms); a street grid finer than a screen pixel is drawn as its mean glow, not shimmer.
+## Settlements at night at planet scale (1.11 G), in the forms of the user's concept sheet
+## 沿海与内陆的灯光形态 (docs/v17/lights/concept_light_forms.webp): two or three warm sparks at the
+## landing; then a lit street grid with brighter arterials and dark patches round a white-hot core
+## drawn out along the town's main axis, a ragged built-up edge that reaches out along the roads
+## the player built and a few arms of its own, more as the town grows. On the coast the arms turn
+## inland, the town reaches further inland, its core sits by the water, and the globe's land mask
+## cuts it at the real coastline. A few numbers per town (town_forms.gd); a street grid finer than a
+## screen pixel is drawn as its mean glow, not shimmer.
 const TOWN_LIGHTS_GLSL: String = """
 const int MAX_TOWNS = 48;
+// A block's side in degrees, the same in every town.
+const float STREET_CELL = 0.16;
 uniform vec4 towns[48];
 uniform vec4 town_style[48];
+uniform vec4 town_shape[48];
+uniform vec4 town_roads[48];
 uniform int town_count = 0;
 
 float town_hash(vec2 p) {
@@ -93,49 +101,116 @@ float town_fbm(vec2 p) {
 	return town_noise(p) * 0.55 + town_noise(p * 2.1 + 3.7) * 0.3 + town_noise(p * 4.3 + 7.1) * 0.15;
 }
 
-// One settlement's warm and cold light at offset d (degrees east, north) from its centre.
-vec2 town_glow(vec2 d, vec4 town, vec4 style, float pixel) {
-	float radius = town.z;
+// The angle between two bearings, 0 to pi.
+float angle_gap(float a, float b) {
+	return abs(mod(a - b + 3.14159265, 6.2831853) - 3.14159265);
+}
+
+// The share of a pixel a line of half-width `half_width` lights at `distance` from its axis, all in
+// the same units, where a pixel is `pixel` of them: thinner than a pixel, it fades, not breaks up.
+float town_line(float distance, float half_width, float pixel) {
+	float w = max(half_width, pixel * 0.5);
+	return (half_width / w) * (1.0 - smoothstep(w * 0.5, w, distance));
+}
+
+// A street grid `cell` degrees apart, turned by `turn` and gently warped, each side of a block lit
+// by chance `lit`. Too fine for the pixel, it gives its average instead.
+float street_grid(vec2 d, float cell, float turn, float seed, float lit, float pixel, float half_width) {
+	vec2 s = vec2(cos(turn) * d.x - sin(turn) * d.y, sin(turn) * d.x + cos(turn) * d.y) / cell;
+	s += (vec2(town_noise(s * 0.21 + seed), town_noise(s * 0.21 + seed + 4.3)) - 0.5) * 1.3;
+	float px = pixel / cell;
+	float row = floor(s.y + 0.5);
+	float col = floor(s.x + 0.5);
+	float h = town_hash(vec2(floor(s.x), row) + seed);
+	float v = town_hash(vec2(col, floor(s.y)) + seed + 0.5);
+	float across = step(h, lit) * (0.55 + 0.45 * fract(h * 7.13)) * town_line(abs(s.y - row), half_width, px);
+	float along = step(v, lit) * (0.55 + 0.45 * fract(v * 7.13)) * town_line(abs(s.x - col), half_width, px);
+	return mix(max(across, along), lit * half_width * 2.9, smoothstep(0.35, 0.9, px));
+}
+
+// One settlement's warm and cold light at offset d (degrees east, north) from its centre, in the
+// forms of the concept sheet: a web of lit streets, brighter towards a small white-hot core, thin
+// roads leading out, a ragged edge.
+vec2 town_glow(vec2 d, vec4 town, vec4 style, vec4 shape, vec4 roads, float pixel) {
+	float radius = max(town.z, 0.0001);
 	float seed = town.w;
 	vec2 q = d / radius;
 	float r = length(q);
-	if (r > 2.6) {
+	if (r > 1.7) {
 		return vec2(0.0);
 	}
-	float size = style.z;
-	float fray = town_fbm(q * 2.6 + seed);
-	float outline = 1.0 - smoothstep(0.42 + 0.25 * fray, 0.92 + 0.35 * fray, r);
-	float arms = 0.0;
-	for (int k = 0; k < 5; k++) {
-		float angle = seed * 11.7 + float(k) * 1.31 + town_hash(vec2(seed, float(k))) * 2.0;
-		vec2 direction = vec2(cos(angle), sin(angle));
-		float along = dot(q, direction);
-		float across = abs(dot(q, vec2(-direction.y, direction.x)));
-		float reach = 0.9 + size * 1.3;
-		float ribbon = (1.0 - smoothstep(0.02, 0.05 + 0.06 * size, across))
-			* step(0.0, along) * (1.0 - smoothstep(0.45 * reach, reach * 1.1, along));
-		float suburb = (1.0 - smoothstep(0.06, 0.18 + 0.22 * size, length(q - direction * reach * 0.85)))
-			* step(0.3 + float(k) * 0.13, size);
-		arms = max(arms, max(ribbon * 0.5, suburb * 0.75));
+	float level = style.z;
+	float grown = clamp(level / 4.0, 0.0, 1.0);
+	vec2 sea = shape.xy;
+	float coastal = step(0.5, length(sea));
+	float theta = atan(q.y, q.x);
+	float pixel_q = pixel / radius;
+	// The landing: a few warm sparks and nothing more.
+	float spark = 0.0;
+	for (int k = 0; k < 3; k++) {
+		vec2 at = vec2(town_hash(vec2(seed, float(k))), town_hash(vec2(float(k) + 0.5, seed))) - 0.5;
+		vec2 off = q - at * 0.9;
+		spark += exp(-dot(off, off) * 40.0);
 	}
-	float density = max(outline * (1.0 - 0.6 * r), arms);
-	float cell_size = radius * mix(0.09, 0.04, size);
-	// Each town's streets run their own way; blocks go dark here and there (parks, yards, water).
-	float turn = seed * 2.39;
-	vec2 street = vec2(cos(turn) * d.x - sin(turn) * d.y, sin(turn) * d.x + cos(turn) * d.y);
-	vec2 grid = street / cell_size + seed;
-	vec2 cell = floor(grid);
-	float blocks = town_noise(cell * 0.33 + seed * 1.7);
-	float lit = step(1.0 - density * (0.65 + 0.55 * blocks), town_hash(cell));
-	vec2 jitter = vec2(town_hash(cell + 3.1), town_hash(cell + 5.7)) - 0.5;
-	float spread = 0.24 + 0.16 * town_hash(cell + 1.9);
-	float lamp = 1.0 - smoothstep(0.05, spread, length(fract(grid) - 0.5 - jitter * 0.55));
-	float sparkle = lit * lamp * (0.45 + 0.55 * town_hash(cell + 7.3));
-	float resolved = clamp(cell_size / max(pixel, 0.000001) * 0.35, 0.0, 1.0);
-	float streets = mix(density * 0.4, sparkle, resolved) + outline * 0.06;
-	float core = exp(-r * r * (14.0 - 7.0 * size)) * (0.5 + 0.8 * size);
-	float amount = (streets + core) * style.x;
-	return vec2(amount * (1.0 - style.y * 0.7), amount * style.y);
+	float landing = 1.0 - smoothstep(0.25, 1.0, level);
+	// Roads out of town as thin lines of light: the player's past the edge, then the town's own, more
+	// as it grows, turned inland on the coast. The built-up edge reaches a little out along them.
+	float road = 0.0;
+	float reach = 0.0;
+	for (int k = 0; k < 4; k++) {
+		float bearing = roads[k];
+		if (bearing < 9.0) {
+			vec2 way = vec2(cos(bearing), sin(bearing));
+			float along = dot(q, way);
+			float off = dot(q, vec2(-way.y, way.x)) + 0.03 * (town_noise(vec2(along * 5.0, seed + float(k))) - 0.5);
+			float line = town_line(abs(off), 0.012, pixel_q) * step(0.0, along);
+			road = max(road, line * (1.0 - smoothstep(1.3, 1.65, along)));
+			float gap = angle_gap(theta, bearing) / 0.16;
+			reach = max(reach, exp(-gap * gap));
+		}
+	}
+	for (int k = 0; k < 10; k++) {
+		if (float(k) >= 1.0 + 1.5 * level) {
+			break;
+		}
+		float bearing = seed * 2.3 + float(k) * 2.39996;
+		vec2 way = vec2(cos(bearing), sin(bearing));
+		if (coastal > 0.5 && dot(way, sea) > 0.1) {
+			way = reflect(way, sea);
+			bearing = atan(way.y, way.x);
+		}
+		float span = 0.85 + 0.4 * town_hash(vec2(seed, float(k) + 9.0));
+		float along = dot(q, way);
+		float off = dot(q, vec2(-way.y, way.x)) + 0.08 * (town_noise(vec2(along * 5.0, seed + float(k) * 1.7)) - 0.5);
+		float dashes = step(0.3, town_noise(vec2(along * 14.0, seed * 0.3 + float(k))));
+		float line = town_line(abs(off), 0.008, pixel_q) * step(0.0, along) * dashes;
+		road = max(road, 0.6 * line * (1.0 - smoothstep(span * 0.75, span, along)));
+		float gap = angle_gap(theta, bearing) / 0.14;
+		reach = max(reach, 0.6 * exp(-gap * gap) * (span - 0.85) * 2.5);
+	}
+	// The built-up area: a ragged round, a little out along the roads; a coastal town reaches
+	// inland, and the coastline (the globe's land mask) cuts it.
+	float inland = coastal * max(0.0, -dot(q / max(r, 0.0001), sea));
+	float ragged = town_fbm(q * 2.4 + seed) - 0.5;
+	float fine = town_noise(q * 8.0 + seed * 3.1) - 0.5;
+	float edge = (0.82 + 0.32 * ragged + 0.1 * fine + 0.25 * reach) * (1.0 + 0.3 * inland);
+	float inside = 1.0 - smoothstep(edge * 0.82, edge, r);
+	// Dense in the middle, thinning out, with dark patches (parks, yards, water).
+	float patches = smoothstep(0.25, 0.6, town_fbm(q * 3.1 + seed * 1.3));
+	float density = inside * (0.15 + 0.85 * exp(-r * r * 3.0)) * (0.3 + 0.7 * patches);
+	// The streets: block sides and, four blocks apart, main streets, each district on a heading of
+	// its own; a block is the same size in every town.
+	float turn = seed * 2.39 + 0.7 * step(0.5, town_noise(q * 1.6 + seed * 5.0));
+	float minor = street_grid(d, STREET_CELL, turn, seed, density, pixel, 0.1);
+	float major = street_grid(d, STREET_CELL * 4.0, turn + 0.15, seed + 11.0, min(1.0, density * 1.4), pixel, 0.04);
+	float lit = minor * 0.55 + major * 0.42 + density * 0.06 + road * 0.5;
+	// The white-hot core at the centre; on the coast it sits by the water.
+	vec2 c = q - sea * 0.2 * coastal;
+	float core = exp(-dot(c, c) * 70.0) * (0.35 + 0.35 * grown);
+	float shine = style.x * (1.0 - landing);
+	float warm = (lit * (1.0 - style.y) + core * 0.8) * shine + spark * 0.8 * landing * style.x;
+	float cold = (lit * style.y + core * 0.6) * shine + spark * 0.15 * landing * style.x;
+	return vec2(warm, cold);
 }
 
 // Every settlement's light at a point on the map; pixel is the screen pixel in degrees.
@@ -149,10 +224,11 @@ vec2 town_lights(float lat, float lon, float pixel) {
 		float east = lon - town.y;
 		east -= 360.0 * floor(east / 360.0 + 0.5);
 		vec2 d = vec2(east * cos(radians(town.x)), lat - town.x);
-		if (abs(d.y) > town.z * 2.6 || abs(d.x) > town.z * 2.6) {
+		float reach = town.z * 1.7;
+		if (abs(d.y) > reach || abs(d.x) > reach) {
 			continue;
 		}
-		light += town_glow(d, town, town_style[i], pixel);
+		light += town_glow(d, town, town_style[i], town_shape[i], town_roads[i], pixel);
 	}
 	return light;
 }
@@ -439,8 +515,12 @@ uniform float season = 0.0;
 uniform float relief = 1.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
-// The per-plot lights' share (light_field.gd); the night time-lapse turns them off (1.11 G).
+// The per-plot lights' share (light_field.gd) and the planet-scale forms' share (town_forms.gd):
+// the globe crossfades them by camera distance, adding up to one; the time-lapse shows only forms.
 uniform float plot_lights = 1.0;
+uniform float form_lights = 0.0;
+// Faint strings along finished roads and points of far facilities, for the forms' view.
+uniform sampler2D far_lights : filter_linear_mipmap, repeat_enable;
 uniform float halo_warm = 2.2;
 uniform float halo_cold = 1.6;
 varying vec3 local_point;
@@ -519,11 +599,17 @@ void fragment() {
 	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * halo_warm);
 	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * halo_cold);
 	glow *= plot_lights;
-	// The planet-scale town forms (TOWN_LIGHTS_GLSL); only the night time-lapse fills them (1.11 G).
-	if (town_count > 0) {
+	// The planet-scale town forms (TOWN_LIGHTS_GLSL, town_forms.gd), cut by the coastline, with the
+	// faint road strings and far facilities beside them (1.11 G).
+	if (form_lights > 0.001) {
 		float pixel = max(length(ddx_uv * vec2(360.0, 180.0)), length(ddy_uv * vec2(360.0, 180.0)));
-		vec2 forms = town_lights(lat, degrees(atan(n.x, n.z)), pixel);
-		glow += vec3(1.0, 0.7, 0.36) * forms.x * 1.8 + vec3(0.72, 0.86, 1.0) * forms.y * 1.5;
+		vec2 forms = town_count > 0 ? town_lights(lat, degrees(atan(n.x, n.z)), pixel) : vec2(0.0);
+		forms *= coast;
+		vec2 far = textureGrad(far_lights, uv, ddx_uv, ddy_uv).rg;
+		vec2 far_halo = textureGrad(far_lights, uv, ddx_uv * 3.0, ddy_uv * 3.0).rg;
+		vec3 shown = vec3(1.0, 0.7, 0.36) * (forms.x * 1.8 + far.r * 2.4 + far_halo.r * 0.8);
+		shown += vec3(0.72, 0.86, 1.0) * (forms.y * 1.5 + far.g * 2.4 + far_halo.g * 0.8);
+		glow += shown * form_lights;
 	}
 	ALBEDO = color + glow * dark;
 }

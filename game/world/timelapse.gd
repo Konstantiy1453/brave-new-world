@@ -1,18 +1,12 @@
 extends RefCounted
-## The colony's night, played back (1.11 G): the quarterly light record (light_record.gd) turned
-## into the planet-scale town forms that the globe shader draws from a few numbers per town
-## (shaders.gd TOWN_LIGHTS_GLSL: a bright core, a lit street grid, arms and suburbs as a town
-## grows). These are the 1.9 forms with their 1.9 sizes; the five stages of the user's light
-## concept sheet replace them when it arrives (DECISIONS.md). Display only.
+## The colony's night, played back (1.11 G): the quarterly light record (light_record.gd) drawn in
+## the planet-scale forms of the user's light concept sheet (town_forms.gd, shaders.gd
+## TOWN_LIGHTS_GLSL), each town at its stage and growing between them, coastal towns cut by the
+## coast and spreading inland, arms along the roads each snapshot records. Display only.
 
-const MAX_TOWNS: int = 48
-const GLOBE_RADIUS: float = 3.0
-## The population the brightest, densest form stands for.
-const METROPOLIS: float = 3000.0
-## Homes are not in the record: one for about this many people, for the size of the built area.
-const PEOPLE_PER_HOME: float = 40.0
-## The share of a town's light that is cold work light.
-const WORK_SHARE: float = 0.4
+const TownForms = preload("res://world/town_forms.gd")
+const Rules = preload("res://simulation/rules.gd")
+const MAX_TOWNS: int = TownForms.MAX_TOWNS
 
 
 ## The towns on `day`, between the snapshots around it; a town missing from the earlier snapshot
@@ -45,6 +39,8 @@ static func towns_on(snapshots: Array, day: float) -> Array:
 					"population": lerpf(float(was.get("population", 0)), float(town.population), t),
 					"facilities": lerpf(float(was.get("facilities", 0)), float(town.facilities), t),
 					"frontier": bool(town.get("frontier", false)),
+					"coastal": bool(town.get("coastal", false)),
+					"roads": town.get("roads", []),
 					"fade": 1.0 if not was.is_empty() else t,
 				}
 			)
@@ -52,25 +48,6 @@ static func towns_on(snapshots: Array, day: float) -> Array:
 	return out
 
 
-## The shader's arrays for these towns: towns[i] = (lat, lon, radius in degrees, seed) and
-## town_style[i] = (brightness, cold share, size 0-1, frontier).
-static func uniforms(towns: Array) -> Dictionary:
-	var places: Array = []
-	var styles: Array = []
-	for town: Dictionary in towns:
-		if places.size() >= MAX_TOWNS:
-			break
-		var people: float = float(town.population)
-		var size: float = clampf(log(1.0 + people / 40.0) / log(1.0 + METROPOLIS / 40.0), 0.0, 1.0)
-		var built: float = float(town.facilities) + people / PEOPLE_PER_HOME
-		var radius: float = rad_to_deg((0.05 + sqrt(built) * 0.022) / GLOBE_RADIUS)
-		var frontier: bool = bool(town.frontier)
-		var shine: float = ((0.45 if frontier else 0.6) + 0.5 * size) * float(town.fade)
-		var seed_value: float = float(posmod(int(town.region) * 7717 + 3, 997)) + 0.37
-		places.append(Vector4(float(town.lat), float(town.lon), maxf(radius, 0.25), seed_value))
-		styles.append(Vector4(shine, WORK_SHARE, size, 1.0 if frontier else 0.0))
-	var count: int = places.size()
-	while places.size() < MAX_TOWNS:
-		places.append(Vector4.ZERO)
-		styles.append(Vector4.ZERO)
-	return {"towns": places, "styles": styles, "count": count}
+## The shader's arrays for these towns (town_forms.gd `uniforms`), on `world` for the coasts.
+static func uniforms(towns: Array, world: Dictionary = {}) -> Dictionary:
+	return TownForms.uniforms(towns, world, Rules.read("progression").get("lights", {}))
