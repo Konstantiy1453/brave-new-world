@@ -18,7 +18,7 @@ container. Human playtests NOT_RUN.
 | G. Lights at two scales | the quarterly light record in the state (`light_record.gd`: place, stage, people, facilities, coast, roads); the night time-lapse at every ending and from the career page, drawn with the 1.9 town forms until the sheet arrives (`timelapse.gd`, `timelapse_view.gd`); the flat map only from the ground panel (founding, prospecting), back to the globe after a founding | **partial**: suite `v111_lights` (24 checks), captures `docs/v17/lights/`; the planet-scale forms in ordinary play, the crossfade and the five-stage captures wait for the user's concept sheet (asked 2026-11-23) |
 | H. Technologies merged | technologies that only add effects merged within category and tier (`tools/tech_merge.py`): 136 to 85, 79 researchable, every effect total kept; merged costs x0.8; saves converted on every load path; events and bots read old ids through `merged`; the contract's technology counts become tier milestones (`techs_tier_<n>`), calibrated (`calibrate_techs.gd`, nine balanced runs a tree): stages two to four ask for 1, 5 and 13 technologies at tier 2 or above, stage five for 5 at tier 3 or above | code done, provisional: the user is asked whether 85 (the plan's rules, requirements re-pointed) or 55-65 (merging technologies that unlock buildings) is wanted; suite `v111_techs` (20 checks) |
 | I. The news line | one line at the bottom edge from `news.json` (weather, stages, reports and the company share index, town sizes, echoes, prices, Annex VII rumours, flavour), interface only, quiet on a waiting decision, holds while an event panel is open, a settings toggle (`news_line.gd`) | code done; suite `v111_news` (23 checks); `v17_speed` passes with it in the game; captures `docs/v17/weather/` |
-| J. Rebalance and release | | |
+| J. Rebalance and release | the harness row for what holds growth from 200 to 600 people (`metrics.gd`, `growth_probe.gd`), `--set` for probes and the payback suite (`tests/support/rule_overrides.gd`); data: newcomers keep coming until a quarter of a town's adults are jobless (0.25-0.50, was 0.10-0.35), ore's list price 8 to 6.2, the processor 3,900 to 4,400 (`b2af2ab`); changelog and playtest script drafts | in progress: probes on six seeds give the wage lever +27% (was +8%), jobs the limit on 44-52% of the days from 200 to 600 (was 97%), the payback suite 43 of 43; the suites on the new data and gate H's harness (the baseline) are running; research-first per origin waits for that harness |
 
 **Harness `1.11-A`** (quick, 51 runs, 47 minutes with the extras beside the chunks): 0 audit
 errors, determinism 3/3; 18 targets met, 4 missed (openings, sloppy on hard, services budget, labour
@@ -35,7 +35,9 @@ was resumed from the checkpoints at 08:22 (chunk 2 and the extras again). It **d
 `v17_world_stats` timed out under the load; its harness lost a 29-case chunk at 28 cases and the
 extras at 37 minutes). From 2026-11-24 02:56 the chain runs with `gate3.sh`: 29 chunks of three
 cases, three at a time beside the extras, each with its own checkpoint, so a restart costs minutes,
-and a rerun resumes.
+and a rerun resumes. At 03:17 the order changed (DECISIONS.md): H first, the J baseline, then the J
+candidate, then C, D, E and F; H's suites are the main-tree run on the same content, 63 of 64
+(`v19_payback` the known miss). Autogroup scheduling had given the gate a sixth of the CPU; it is off.
 Tags stay local: the session's proxy refuses tag pushes; the tag-to-commit map is in this table.
 
 **Known misses carried forward.** The freeze's later awards above (J). `v19_payback`: the smelter
