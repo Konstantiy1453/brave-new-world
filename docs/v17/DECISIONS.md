@@ -1474,3 +1474,17 @@ factories, so the game's cycle and the payback bands stay as they are.
 - The quick harness plays normal only, so the sloppy row's "takes over on hard" is reported as not
   measured there (it read MISS with "hard failed 0/0"); the full harness on the Windows PC plays
   hard and judges it.
+- The merge's price (`merge_cost_factor`) stays at 0.8. Against research-first's new lead on the
+  merged tree (gate H: awarded on days 1,970-2,191 on the standard contract, under the band) the
+  balanced and research-first bots played the standard contract on three seeds at 0.8, 0.9 and 1.0
+  (with the J band, ore at 8): research-first 2,076 / 2,091 / 2,269, then 2,154 / 1,875 / 2,964,
+  then 1,983 / 3,209 / 3,077; the balanced bot lost the same seed (260129) at every price. The same
+  seed moves by up to 1,100 days between prices, so the price is not a lever three seeds can set;
+  the tier milestones were calibrated at 0.8.
+- Ore's list price goes back to 8 and the processor's price to 3,900 (both changed above for the
+  payback suite). The probes behind the unemployment band had run before that change; with both
+  in, the standard contract on three seeds (balanced and research-first) lost four of six games
+  and one research-first colony stood at 327 people on day 1,440. With ore at 8 and the band kept,
+  the same six games give populations of 368-467 at year 2 and 898-1,092 at year 4 and five
+  awards. Cutting ore's price cuts the opening's main export by a fifth; the payback bands are met
+  with the buildings' prices instead (below).
