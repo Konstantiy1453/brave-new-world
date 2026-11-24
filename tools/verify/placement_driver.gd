@@ -161,6 +161,15 @@ func _press(control: Control) -> void:
 	if control == null:
 		_check(false, "a control the step needs is on screen")
 		return
+	# A page taller than the window scrolls, as a person would scroll it (1.11: the menu's six
+	# contract cards push its last buttons below a 720-pixel window).
+	var parent: Node = control.get_parent()
+	while parent != null:
+		if parent is ScrollContainer:
+			(parent as ScrollContainer).ensure_control_visible(control)
+			await _frames(2)
+			break
+		parent = parent.get_parent()
 	await _click(control.get_global_rect().get_center())
 	await _frames(2)
 
