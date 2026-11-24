@@ -5,7 +5,7 @@ extends SceneTree
 ## the days its old counts were reached, and on the merged tree with `--no-tech-goals` (the
 ## contract's technology goals at 0, so they hold nothing back) for the tier milestones.
 ##   godot --headless --path game --script res://tests/balance/calibrate_techs.gd --
-##         --out=<file.json> [--no-tech-goals] [--days=3000]
+##         --out=<file.json> [--no-tech-goals] [--days=3000] [--part=k/K]
 
 const Sim = preload("res://simulation/sim.gd")
 const Balanced = preload("res://tests/balance/bots/balanced_bot.gd")
@@ -25,8 +25,14 @@ func run() -> void:
 		options[parts[0]] = parts[1] if parts.size() > 1 else "true"
 	var days: int = int(options.get("days", 3000))
 	var runs: Array = []
+	# `--part=k/K`: only every K-th case from the k-th, so the nine can run side by side.
+	var part: PackedStringArray = str(options.get("part", "0/1")).split("/")
+	var index: int = 0
 	for opening: String in OPENINGS:
 		for seed_value: int in SEEDS:
+			index += 1
+			if (index - 1) % int(part[1]) != int(part[0]):
+				continue
 			runs.append(_run(opening, seed_value, days, options.has("no-tech-goals")))
 			print("CALIBRATE_TECHS %s %d done" % [opening, seed_value])
 	var file: FileAccess = FileAccess.open(

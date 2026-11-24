@@ -4,7 +4,7 @@ technology counts were reached) and one on the merged tree with those goals off 
 "n technologies at tier t or above" was reached). For each old count it picks the (t, n) whose
 median day is nearest; within 30 days of the best, the higher tier wins.
 
-    python tools/calibrate_tech_goals.py <before.json> <after.json>
+    python tools/calibrate_tech_goals.py <before.json[,part...]> <after.json[,part...]>
 """
 import json
 import statistics
@@ -16,9 +16,13 @@ MAX_COUNT = 40
 CLOSE_DAYS = 30
 
 
-def load(path):
-    with open(path, encoding="utf-8") as handle:
-        return json.load(handle)["runs"]
+def load(paths):
+    """One recording, or its parts (calibrate_techs.gd --part=k/K) separated by commas."""
+    runs = []
+    for path in paths.split(","):
+        with open(path, encoding="utf-8") as handle:
+            runs.extend(json.load(handle)["runs"])
+    return runs
 
 
 def day_reached(techs, count, tier=1):
