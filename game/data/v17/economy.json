@@ -28,7 +28,7 @@
     "superalloy": "高温合金"
   },
   "prices": {
-    "ore": 6.2,
+    "ore": 8.0,
     "copper": 14.0,
     "crystal": 32.0,
     "food": 3.0,
@@ -1067,7 +1067,7 @@
       "name": "复合加工厂",
       "category": "industry",
       "role": "factory",
-      "cost": 4400.0,
+      "cost": 3900.0,
       "materials": 48.0,
       "parts": 12.0,
       "days": 25,
