@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "units": {
     "cost": "research points",
     "funding": "money per day at ten research teams",
@@ -201,9 +201,9 @@
         "electronics"
       ],
       "minimum_staff": 3,
-      "description": "矿场岗位 -10%，工厂岗位 -30%；解锁矿场三级升级。",
+      "description": "矿场和工厂岗位 -30%；解锁矿场三级升级。",
       "effects": {
-        "mine_jobs": -0.1,
+        "mine_jobs": -0.3,
         "factory_jobs": -0.3
       }
     },
@@ -1407,11 +1407,12 @@
         "industry_1_merged"
       ],
       "minimum_staff": 3,
-      "description": "合并了「精益产线」「余热回收」「矿区窄轨」：所有工厂产量 +15%。工厂用电和污染都少一点：用电 -8%，排放 -8%。矿山维护费再 -10%。",
+      "description": "合并了「精益产线」「余热回收」「矿区窄轨」：所有工厂产量 +15%。工厂用电和污染都少一点：用电 -8%，排放 -8%。矿山日产 +10%，矿山维护费再 -10%。",
       "effects": {
         "factory_output": 0.15,
         "power_use": -0.08,
         "pollution": -0.08,
+        "mine_output": 0.1,
         "mine_upkeep": -0.1
       },
       "merged_from": [
@@ -1438,11 +1439,12 @@
         "heavy_machinery"
       ],
       "minimum_staff": 3,
-      "description": "合并了「冶金闭环」「矿用机器人」「边疆补给体系」：合金产量 +20%，排放 -15%。矿场岗位 -5%。边疆据点产量 +10%。",
+      "description": "合并了「冶金闭环」「矿用机器人」「边疆补给体系」：合金产量 +20%，排放 -15%。矿场岗位 -15%，矿山日产 +10%。边疆据点产量 +10%。",
       "effects": {
         "alloy_output": 0.2,
         "pollution": -0.15,
-        "mine_jobs": -0.05,
+        "mine_jobs": -0.15,
+        "mine_output": 0.1,
         "frontier_output": 0.1
       },
       "merged_from": [

@@ -1528,3 +1528,11 @@ factories, so the game's cycle and the payback bands stay as they are.
   band and reports the wage lever and the jobs limit as misses; the band is a tested option for
   the next round, with farms and stage two's food share moved with it. The payback fixes (the
   smelter's price, the later mine bonuses) stay; `1.11-J3` is the harness of this data.
+- The later mine bonuses go back as they were. On `1bbfef8` (the old band, the cuts in) the
+  payback suite read the light ore mine at 54 days and the heavy one at 93 in year 6, as on gate H
+  (55 and 93): the cuts had not moved them; the J2 pass came from the band, whose bigger colonies
+  sell more ore and lower its price. A change with no measured effect does not ship. The J
+  rebalance for 1.11.0 is the smelter's price (8,500 to 6,500: its year-4 payback 325 days to
+  260-279 in four runs, band 120-300); the ore mines' year-6 payback stays a known miss since the
+  merge (the band, dearer mines and a lower ore price each fix it at a cost recorded above).
+  `1.11-J3` was stopped at 12 of 29 chunks; `1.11-J4` is the harness of the release data.
