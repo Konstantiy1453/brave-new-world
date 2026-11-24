@@ -435,8 +435,16 @@ static func _failure_rows(rows: Array, runs: Array) -> void:
 		rows,
 		"Failure, sloppy",
 		"review on all difficulties; fails on hard",
-		"all reach review: %s; hard failed %d/%d" % [str(sloppy_review), hard_failed, hard.size()],
-		_verdict(sloppy_review and not hard.is_empty() and hard_failed == hard.size(), sloppy_any)
+		(
+			(
+				"all reach review: %s; hard failed %d/%d"
+				% [str(sloppy_review), hard_failed, hard.size()]
+			)
+			if not hard.is_empty()
+			else "all reach review: %s; hard not run (quick)" % str(sloppy_review)
+		),
+		# The quick harness plays normal only: "fails on hard" is then not measured, not missed.
+		_verdict(sloppy_review and hard_failed == hard.size(), sloppy_any and not hard.is_empty())
 	)
 
 

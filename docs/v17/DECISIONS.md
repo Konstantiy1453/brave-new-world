@@ -1461,3 +1461,6 @@ factories, so the game's cycle and the payback bands stay as they are.
   price rises from 3,900 to 4,400 (121 days). With the unemployment band above, the suite passes,
   43 of 43 (`v19_payback.gd -- --set=...` before the data changed; `tests/support/rule_overrides.gd`
   gives the probes and the payback suite the same `--set` switch).
+- The quick harness plays normal only, so the sloppy row's "takes over on hard" is reported as not
+  measured there (it read MISS with "hard failed 0/0"); the full harness on the Windows PC plays
+  hard and judges it.
