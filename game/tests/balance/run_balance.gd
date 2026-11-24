@@ -12,6 +12,7 @@ extends SceneTree
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Metrics = preload("res://tests/balance/metrics.gd")
+const RuleOverrides = preload("res://tests/support/rule_overrides.gd")
 const Summary = preload("res://tests/balance/summary.gd")
 const Pace = preload("res://tests/balance/pace.gd")
 const BOTS: Dictionary = {
@@ -93,6 +94,10 @@ func _initialize() -> void:
 
 func run() -> void:
 	options = _parse_options()
+	# Tuning only (1.11 J): `--set=<file>.<path>=<value>` (tests/support/rule_overrides.gd), in this
+	# process; with --jobs above 1 the shards do not get it.
+	for line: String in RuleOverrides.apply(OS.get_cmdline_user_args()):
+		print("BALANCE_SET " + line)
 	var cases: Array = _build_cases()
 	if options.has("shard"):
 		_run_shard(cases)
