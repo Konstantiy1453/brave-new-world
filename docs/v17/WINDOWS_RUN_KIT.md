@@ -1,4 +1,4 @@
-# Windows run kit — Colony Charter 1.10.1 preview (2026-11-22)
+# Windows run kit — Colony Charter 1.11.0 (2026-11-24)
 
 This kit runs the packaged Windows build on your PC and checks it. The cloud session cannot run Windows.
 
@@ -12,8 +12,8 @@ This kit runs the packaged Windows build on your PC and checks it. The cloud ses
 |---|---|
 | Windows | 10 or 11, x64, a GPU with OpenGL 3.3 (the game's default renderer) |
 | PowerShell | Windows PowerShell 5.1 (built in) or PowerShell 7 |
-| Repository | `D:\勇敢新世界` on branch `v17-bay`, at `d24c660` or later (`git pull`) |
-| The build | `ColonyCharter-1.10.1-preview-20261122-metals-crews-Windows-x64.zip`, SHA-256 `E621BCFBD90733DAFC6CB24376747EA4C289058726FB1E246BD42CED3F0364BA` |
+| Repository | `D:\勇敢新世界` on branch `v17-charter`, at `8ecc070` or later (`git fetch`, `git checkout v17-charter`, `git pull`) |
+| The build | `ColonyCharter-1.11.0-Windows-x64.zip`, SHA-256 `CEA06CCF7F4DD9D122951E560E46FD2850406241FD18B514F9744FB94D8DAC5A` |
 | Only for `-Engine` / `-Suites` | the repository's `tools\godot-4.5.1\Godot_v4.5.1-stable_win64_console.exe` |
 
 Your saves are safe. Every game the kit starts writes its user data under `evidence\v17\windows_kit\<time>\userdata`, so nothing in `%APPDATA%\ColonyCharter` is read or written.
@@ -23,7 +23,7 @@ Your saves are safe. Every game the kit starts writes its user data under `evide
 ```powershell
 cd D:\勇敢新世界
 git pull
-powershell -ExecutionPolicy Bypass -File tools\windows_run_kit.ps1 -Zip "<folder>\ColonyCharter-1.10.1-preview-20261122-metals-crews-Windows-x64.zip" -Suites
+powershell -ExecutionPolicy Bypass -File tools\windows_run_kit.ps1 -Zip "<folder>\ColonyCharter-1.11.0-Windows-x64.zip" -Suites
 ```
 
 What it does, in order:
@@ -39,7 +39,7 @@ What it does, in order:
 | `refusal` | Sea, polar and steep ground: the reason shows, the button is off, nothing is founded | 15 min | `CASE_PASS`, 7 checks |
 | `out_inland_globe` | Bot plays to the expansion licence; expedition to inland ground through the interface; save, reload | 60 min | `CASE_PASS`, 22 checks |
 | `out_coast_flat` | The same to coastal ground on the flat map | 60 min | `CASE_PASS`, 22 checks |
-| `save_carry` | A 1.10.0 save (`docs\v17\placement\save_files\before-1.10.0.save`) loads and plays on in this build | 15 min | `CASE_PASS`, 13 checks |
+| `save_carry` | A 1.10.0 save (`docs\v17\placement\save_files\before-1.10.0.save`) loads in 1.11.0 (upgraded to schema 7) and plays on | 15 min | `CASE_PASS`, 13 checks |
 | `boot` | The game starts and closes itself after 3,000 frames | 10 min | `CASE_PASS`, no `SCRIPT ERROR` in its log |
 
 - With `-Suites`, it also runs from the source project the checks that only run on Windows: `v17_saves`, `v18_systems`, `world_v16_seed` and `v17_tutorial`. On Linux these print `SKIP … recorded on Windows`. Pass: `RUNNER: 4 passed, 0 failed` in `suites.txt`, with no SKIP lines for those fixtures.

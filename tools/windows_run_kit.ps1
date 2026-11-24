@@ -1,14 +1,14 @@
 <#
-Colony Charter 1.10.1 - Windows run kit (2026-11-22).
+Colony Charter 1.11.0 - Windows run kit (2026-11-24).
 
 Runs the packaged game from the delivery ZIP (ColonyCharter.exe with its own ColonyCharter.pck)
 through the automated drivers on this Windows PC, with user data isolated, and packs every log
 and record into one ZIP to send back. Instructions and pass/fail criteria:
 docs/v17/WINDOWS_RUN_KIT.md.
 
-PowerShell, from the repository root (branch v17-bay at d24c660 or later):
+PowerShell, from the repository root (branch v17-charter at 8ecc070 or later):
 
-  powershell -ExecutionPolicy Bypass -File tools\windows_run_kit.ps1 -Zip <path>\ColonyCharter-1.10.1-preview-20261122-metals-crews-Windows-x64.zip
+  powershell -ExecutionPolicy Bypass -File tools\windows_run_kit.ps1 -Zip <path>\ColonyCharter-1.11.0-Windows-x64.zip
 
   -Suites   also runs the checks that only run on Windows (v17_saves, v18_systems,
             world_v16_seed, v17_tutorial) from the source project with tools\run_tests.ps1
@@ -21,7 +21,7 @@ every game the kit starts, and the player's saves are never read or written.
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Zip,
-    [string]$ExpectedSha = "E621BCFBD90733DAFC6CB24376747EA4C289058726FB1E246BD42CED3F0364BA",
+    [string]$ExpectedSha = "CEA06CCF7F4DD9D122951E560E46FD2850406241FD18B514F9744FB94D8DAC5A",
     [switch]$Suites,
     [string]$Only = "",
     [string]$Engine = ""
@@ -110,7 +110,7 @@ Run-Case "refusal" $Placement @("--case=refusal", "--seed=3", "--pck=`"$Pck`"") 
 Run-Case "out_inland_globe" $Placement @("--case=outpost", "--view=planet", "--coast=0", "--seed=3", "--bots=`"$Bots`"", "--pck=`"$Pck`"") 3600
 Run-Case "out_coast_flat" $Placement @("--case=outpost", "--view=flat", "--coast=1", "--seed=3", "--bots=`"$Bots`"", "--pck=`"$Pck`"") 3600
 
-# 2. A 1.10.0 save carries over to this build.
+# 2. A 1.10.0 save carries over to this build (1.11 upgrades it to schema 7 on load).
 $Before = Join-Path $Repo "docs\v17\placement\save_files\before-1.10.0.save"
 $BeforeRecord = Join-Path $Repo "docs\v17\placement\save_make_1.10.0.json"
 Run-Case "save_carry" $Carry @("--check", "--save=`"$Before`"", "--after=`"$(Join-Path $Out 'after.save')`"", "--before=`"$BeforeRecord`"") 900
