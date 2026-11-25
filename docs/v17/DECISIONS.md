@@ -1405,6 +1405,10 @@ factories, so the game's cycle and the payback bands stay as they are.
   inland region nearest the equator with no water within 4.5 degrees.
 - The forms come after the 1.11.0 package: they ship as a 1.11.1 preview (same saves, schema 7, the
   same `v111` folder), and the next release takes them with the user's choice of tree (H).
+- H is final: the user chose the 85-technology tree on 2026-11-25 (the plan's rule, merging what
+  only adds effects within direction and tier, requirements re-pointed), the tree 1.11.0 ships, so
+  no data changes. The 124 (strict) and 56 (unlockers bundled) readings stay in
+  `docs/v17/tech_trees/` as comparisons; `tools/tech_merge.py` can still build them.
 - The phase gates run in small pieces after the machine restarted twice under them: 29 chunks of
   three cases (`--chunk=k/29`, which every gate commit's harness reads), three at a time beside
   the extras, each with its own checkpoint, at lower priority than interactive work; a rerun of
