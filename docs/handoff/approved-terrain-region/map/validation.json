@@ -1,0 +1,250 @@
+{
+  "engine": "Godot 4.5.1.stable.official.f62fdbde1",
+  "platform": "Windows x86_64",
+  "renderer": "Godot OpenGL Compatibility, NVIDIA 610.47, NVIDIA GeForce RTX 4070 Laptop GPU",
+  "applied_to": "96d26551623c6b7c84a9db4143ce38956c11f6a4",
+  "comparison_to_approved_game": {
+    "files_compared": 906,
+    "changed_from_baseline": 36,
+    "mismatches": 0,
+    "text_eol": "LF",
+    "godot_import_cache_excluded": true
+  },
+  "inputs": {
+    "01-cc-geo-2.3.patch": "4ae938c0348dec7a925cb00369368cf083e39ddb6f546543e8dcb25fe654e8ad",
+    "02-alpine-snow.patch": "855c6127769f0997dfd1f55e677d82fe3acbc4ecff53751def655d60d07396bf",
+    "render_review.gd": "97333bba3d23a294130ac49022a195d70821f6682cfcee35a2346297470bc0b7",
+    "legacy-260129.save": "8d7e804e8d76cc710315d405fde9570d1c99f633e071cba3cacd0b6aa3401e08"
+  },
+  "fresh_runs": [
+    {
+      "name": "import",
+      "exit": 0,
+      "seconds": 6.9,
+      "error_lines": [],
+      "log_sha256": "160193f60a2bcb30394db7106dd4d93318b9d18b679231a922156a76f5909128"
+    },
+    {
+      "name": "sites",
+      "exit": 0,
+      "seconds": 6.1,
+      "error_lines": [],
+      "log_sha256": "239d8557b9828b6d5b8bef9834f38b8df3cbfd81fb4105f728f0a6454da86b17"
+    },
+    {
+      "name": "water",
+      "exit": 0,
+      "seconds": 18.6,
+      "error_lines": [],
+      "log_sha256": "51614b4e7f660f3eb1549a017df620b0aed78ca21f95ac61851a804e27ccff2f"
+    },
+    {
+      "name": "careers",
+      "exit": 0,
+      "seconds": 37.6,
+      "error_lines": [],
+      "log_sha256": "c97c34de946541d6b837122ae85e9009fe1f41d9fac96e73ac0f0db74943c13b"
+    },
+    {
+      "name": "rendered",
+      "exit": 0,
+      "seconds": 77.8,
+      "error_lines": [],
+      "log_sha256": "452928c076559f49d11efb3b2f1376ef352c6312f219208b49c80b45bc2860e4",
+      "maps_saved": 8
+    }
+  ],
+  "career_checks": {
+    "cases": [
+      {
+        "day": 1,
+        "regions": 29,
+        "round_trip_ms": 6272,
+        "seed": 260129,
+        "size": 1,
+        "surface_sha256": "03813894a7bd93e16cf4cbd572fe0570562bd1b342ee202e047b9c3b5e6201fe",
+        "viable_pairs": 6,
+        "water_sha256": "3a97e4e165535742b5f1a48e25f3781007e80ef06c8e0721404a6aead68ab5b8",
+        "world_sha256": "60dbcafeb9abb7c2662987c923dd67e21bc96f211bee1a22918adf2b4a3d67da"
+      },
+      {
+        "day": 1,
+        "regions": 19,
+        "round_trip_ms": 9967,
+        "seed": 42,
+        "size": 0,
+        "surface_sha256": "c90586123545e1704676ef38ccc7e79f9f01d3ba2e9b7e83a780bb8dcb5cc9d1",
+        "viable_pairs": 3,
+        "water_sha256": "5b7132fd6a854735f8df23177eb946f2e8781de995a0845117a86dd408808f8d",
+        "world_sha256": "9c88b9b658e30c34d54246edd199e3bc356e5669c98b7cc0ee83e69503657058"
+      },
+      {
+        "day": 1,
+        "regions": 29,
+        "round_trip_ms": 10472,
+        "seed": 17,
+        "size": 2,
+        "surface_sha256": "7841098fa356ed35a4c8f30756b8d16638154496c8d11918ef10bf1065fe9ab9",
+        "viable_pairs": 6,
+        "water_sha256": "20faa42387a40ecf23cec2e71212d1fb2f63f2e3b0af3e2475bb4fea5f68b844",
+        "world_sha256": "c0b94b53abcfa7a4cb261dd4d9983ad30fd1d01b6073f6e6fd8929b1e07e6cbd"
+      },
+      {
+        "day": 1,
+        "regions": 22,
+        "round_trip_ms": 7636,
+        "seed": 42,
+        "size": 1,
+        "surface_sha256": "36aa9bcfd4e3621c5783a53672c3a2511c6595100a9db7e1530b464c20ddaaf8",
+        "viable_pairs": 4,
+        "water_sha256": "4cac86a8fb58dc229f5dfface93b0129d97b7562e02a968102dad76e3770aab2",
+        "world_sha256": "622c453a2cafa3e3aabf0b11e28508661a0266f2768d21c2a76605a71a7c19af"
+      }
+    ],
+    "failures": [],
+    "old_save_loaded": true
+  },
+  "water_checks": {
+    "cases": [
+      {
+        "active_cells": 8065,
+        "atlas_ms": 38,
+        "green_pixels": 385,
+        "lakes": 20,
+        "ms": 3051,
+        "r": 6371.0,
+        "red_pixels": 34115,
+        "rivers": 35,
+        "seed": 260129,
+        "sha": "414e0f69cea84db95ff04bb73950960c2bc8527c38cb0892bca4991f5ad20d64",
+        "size": 1
+      },
+      {
+        "active_cells": 3252,
+        "atlas_ms": 30,
+        "green_pixels": 221,
+        "lakes": 20,
+        "ms": 4804,
+        "r": 3823.0,
+        "red_pixels": 10688,
+        "rivers": 29,
+        "seed": 42,
+        "sha": "3ebe881099d50a689d24fe3ad2e2917481038a254e6a0d72284a8d081173dad9",
+        "size": 0
+      },
+      {
+        "active_cells": 7319,
+        "atlas_ms": 40,
+        "green_pixels": 251,
+        "lakes": 20,
+        "ms": 5896,
+        "r": 8282.0,
+        "red_pixels": 31831,
+        "rivers": 32,
+        "seed": 17,
+        "sha": "6733fb124bc694845ec7280872f1aafc24d8e4d6126ce3bfbf1e254b896946ba",
+        "size": 2
+      }
+    ],
+    "failures": []
+  },
+  "site_checks": {
+    "failures": [],
+    "recommended_sites": 53
+  },
+  "review": [
+    {
+      "seed": 260129,
+      "png_sha256": "2f0cb4dabef5df308a58142e44370c37c131f63021a38ae927ed4d46d1a4c312",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260130,
+      "png_sha256": "50dd2022d9df721221ee0f9bdf9396833e246ae544100cb99db21dcab8cbc1e6",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260133,
+      "png_sha256": "a1d6be2f9edf5841c175bf4ded987876e609a85941cd6dd61292130ea10e114b",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260137,
+      "png_sha256": "32582a16eb22a15f2a53dd6bce11ec379f113b42aadee133232d1d2eec8bc2fd",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260140,
+      "png_sha256": "851f6973bf910885433c070734c8a29fb7afb59682ec018ff7b9ca869c633282",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260141,
+      "png_sha256": "ad6bcfdc8b5c89f8391f9604ec9df92bdbebf1ed50b73f8b3b19df682a16c8f9",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260143,
+      "png_sha256": "63b8b413a5226287523e93333a041e36429bd0e9c7554ec153f9bcad0070b585",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    },
+    {
+      "seed": 260144,
+      "png_sha256": "b3469647a06c8bf0cf70abcdcdda16f2275c4c033875d8033f75b2885c991f69",
+      "matches_original_png_bytes": true,
+      "matches_original_rgb_pixels": true,
+      "matches_approved_world_hash": true
+    }
+  ],
+  "review_atlas_sources": {
+    "first_seed": "cached full-resolution atlas",
+    "remaining_seven": "preview then completed refinement"
+  },
+  "exported_windows_probe": {
+    "atlas_dimensions": "(1536.0, 768.0)",
+    "atlas_finished": true,
+    "atlas_wait_ms": 5461,
+    "background_refine_ms": 4963,
+    "exported": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "height_same_texture": true,
+    "initial_atlas_source": "preview",
+    "legacy_hash": "ac70a6c6ef23c1e0cad36104889c6eaf130ac6daa0e3be4229c918cbfb03ef9e",
+    "legacy_save_loaded": true,
+    "pairs": 6,
+    "passed": true,
+    "region_count": 29,
+    "seed": 260130,
+    "shader_loaded": true,
+    "switched_via_siting_panel": true,
+    "version": "CC-GEO-2.3",
+    "visible_landing_sites": 29,
+    "water_same_texture": true,
+    "world_hash": "287242ac363da2392e6d6e18c0cb2a340ca5d6c8804aaffe3e9404780ed1097a"
+  },
+  "local_export_artifacts_sha256": {
+    "ColonyCharter.exe": "78ccc576e8f8bffd7ef6ad6f36ebd72a41e609a1052225a55b3407c96ea84065",
+    "ColonyCharter.pck": "01ee8592f81bc4dd365abf051e6e84d71155e5d18af15a149488c7b8be80596a",
+    "globe.png": "fb620da3923a6d34e87e805a8642cb7dd87a0772a6797da0c9b7fdf05f4fdd30",
+    "satellite.png": "8a8cad1a4e85daa7a97cb352284152aeef3b522554fdf335ce4a32242ad7b9b9"
+  },
+  "published_review_script": {
+    "path": "render_review.gd",
+    "sha256_lf": "367fd3743c4c6ff796992ffe1d68b5e131317986022a5e5ef04bdb9d5a242824",
+    "note": "The inputs section records the executed CRLF file. The published copy is normalized to LF."
+  }
+}

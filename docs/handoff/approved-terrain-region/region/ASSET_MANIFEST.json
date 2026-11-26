@@ -1,0 +1,533 @@
+{
+  "format": 1,
+  "description": "Runtime media for the approved 06 layout and 07 surface reference. All paths are relative to the isolated Godot reference project.",
+  "file_count": 71,
+  "payload_bytes": 73529353,
+  "files": {
+    "assets/artpreview/art/meshes_v2/apartment.res": {
+      "bytes": 1308055,
+      "sha256": "fc0b93e6c01ad0b6e14e48bf0c9bb1bfe245b6f2fbcc39fcf6591f4fa8d56971",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/civic_center.res": {
+      "bytes": 685353,
+      "sha256": "ac628d12b0a8bacccac5c9b1fc0ef7afb6f9afb9df9803120e02a8aa667c236f",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/clinic.res": {
+      "bytes": 573886,
+      "sha256": "08321dc7d724d8a5b0ddbd5e3f0692155d6938d6cb28b236f7a63c8a6ed5c736",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/commerce.res": {
+      "bytes": 270750,
+      "sha256": "ebda3b6a98549a7c5c895d15ea4b9209e6e42c05655a2d53de1fc57850a0ff0a",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/crew_quarters.res": {
+      "bytes": 1046187,
+      "sha256": "d71322124605be36f944c9b49f42be3794ecfbfdb6338c0cd91f5ea790a06172",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/depot.res": {
+      "bytes": 902261,
+      "sha256": "7b82072c33aabb434c792db4e76b7ce8a32d71f5277ba345d1c9c189a22d1f73",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/farm.res": {
+      "bytes": 3815892,
+      "sha256": "43132f58b378d61f2cb992cea4a9ef4ca395a085bf96988339209e62b39c2216",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/habitat.res": {
+      "bytes": 886970,
+      "sha256": "852e2aa9a1fe0f5c9188bf8247ed2bb2365eb995f03c41eeb1334c97788d468f",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/lab.res": {
+      "bytes": 1713759,
+      "sha256": "60a328955e5dc0cdaaa85f81590781419a01b75e2e45a3576553a2e7459df4bc",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/power.res": {
+      "bytes": 889079,
+      "sha256": "5b391de81ea0af8f8fec7b7de88c3beedde53b92b9f610c7ed17ce2ca7cd2e1f",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/processor.res": {
+      "bytes": 1447493,
+      "sha256": "9e3b30734bea76511f5eac99134375cdbe1d6b7293c5cdc1dfc8d2ce6186e385",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/school.res": {
+      "bytes": 1119152,
+      "sha256": "7db35ce0529696c71266e602d989b12c8f2f36708d3f6c0b379ae611ffddcac0",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/smelter.res": {
+      "bytes": 498175,
+      "sha256": "729c608d7976b48eb22090f8660fcbae4413996d215aefb9d2ac36f8d479e988",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/vehicle_bus.res": {
+      "bytes": 765013,
+      "sha256": "cbf72822ba0af1a4f342e0c6e4d65e57f31cd7ba61efaadcf5d66a493713df87",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/vehicle_truck.res": {
+      "bytes": 729169,
+      "sha256": "5fe4efdd71e7321bc32686517210bcb98498c9049748b23254d625e40c905c39",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/vehicle_van.res": {
+      "bytes": 522518,
+      "sha256": "9a837e97c687397fa795ab3c4488b6525198213b7e9e68b2cc32989e31ddad58",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/meshes_v2/water.res": {
+      "bytes": 1550400,
+      "sha256": "783efde120e8838fbe628064e2cc150235e9594ef11a293fb9c5c5374b956e04",
+      "collection": "settlement_high_poly"
+    },
+    "assets/artpreview/art/surfaces/patina.png": {
+      "bytes": 489497,
+      "sha256": "ae3ab56a76a5384657e31122d1cbd24efec70d5f6aa3250a1528fc76805a27dd",
+      "collection": "built_surface"
+    },
+    "assets/artpreview/art/textures/concrete_basecolor_1k.png": {
+      "bytes": 591936,
+      "sha256": "2765771473b365242e8421bdb835fc098bd19db18a95c6c0f6c42e5b7dfed69e",
+      "collection": "built_surface"
+    },
+    "assets/artpreview/art/textures/concrete_roughness_1k.png": {
+      "bytes": 286847,
+      "sha256": "de2b0242851cf45ce411038d2e6a73d481dc04e9a9375b05a97ef83b0622a6a7",
+      "collection": "built_surface"
+    },
+    "assets/artpreview/art/textures/soil_basecolor_1k.png": {
+      "bytes": 592257,
+      "sha256": "e0d4069cc8ec883a5e86ccfab998bfb0ca511e9d0acbc9a7c4fd7e4558853527",
+      "collection": "built_surface"
+    },
+    "assets/artpreview/art/textures/soil_roughness_1k.png": {
+      "bytes": 287149,
+      "sha256": "6ae8dbeb2ea630b8642130dc99f68d1ec806257b0dd7c6ebbed48b89162612dd",
+      "collection": "built_surface"
+    },
+    "assets/artpreview/env/CC_GRASS_SOURCE.meshbin": {
+      "bytes": 16856,
+      "sha256": "62d64f77c4ac031df32ae516d13f269b294f7d16178fca7d7117f99c9ee1cb3f",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_ROCK_SOURCE_00.meshbin": {
+      "bytes": 16856,
+      "sha256": "38e397753b21a96bb4066b375c3b44aeb0413c30f792be59352f8be613781190",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_ROCK_SOURCE_01.meshbin": {
+      "bytes": 16856,
+      "sha256": "a41647b9d9ade3455f5665bc3bf865afc0ae0d7c9fd9a32c8fd649baa870c1ee",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_ROCK_SOURCE_02.meshbin": {
+      "bytes": 16856,
+      "sha256": "0a01226071cff34616d0ba7dd83a6a0379439dc2aa8d6d4c69850ac60b667cca",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_SHRUB_SOURCE_BRANCH_NETWORK.meshbin": {
+      "bytes": 35192,
+      "sha256": "623d22b3a9afd262aaf39ad29683f655e310b7512aca7690a3c64d5ddf0e2101",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_SHRUB_SOURCE_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 57032,
+      "sha256": "2c767cf7db731ae39ed3fb5b29be66aa2da76aa374ae47388f5242420f1b7373",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_00_BRANCH_NETWORK.meshbin": {
+      "bytes": 166568,
+      "sha256": "832e24569b440e82959e30f0308b7538c4fd58637db5972c95d14cb9d5746c8f",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_00_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "9dcacd06dd899837321ebc2876443441ce8f6de03aebb1d16e70a3cac575a0bc",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_01_BRANCH_NETWORK.meshbin": {
+      "bytes": 173144,
+      "sha256": "689f2b39f9e8cb0a5a02bd55b4205fe87f40e1e24a0e61dbc53370be1c3ec18e",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_01_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "98815cdff0b6190f9c43388b901699b57edf870f60ff681dc8f258c5217b4842",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_02_BRANCH_NETWORK.meshbin": {
+      "bytes": 182360,
+      "sha256": "e3921ce8c5a7abbd90d539711c3c65f3d1bebfbafbe1adf6030d9f7288ffebf1",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/CC_TREE_SOURCE_02_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "2eaeee62b72cbdf2809d5b8bd51436468db4be49de58aed83eb170cc68fdc065",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/leaf-spray.png": {
+      "bytes": 513595,
+      "sha256": "517ba28e57dd4a0cd0bc621b3a8850372f77538e03f759a1ca0fe1f5f1ad0cb0",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/rock_basecolor.jpg": {
+      "bytes": 184315,
+      "sha256": "340045e9139172b5c9572b3f3ab61e32f203370d67524b7cd1b0a3d03794fe13",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/scrub_noise.png": {
+      "bytes": 483363,
+      "sha256": "6ded335a43315db8e29d43cdbd72ec40611a1cf517425b93f7ea48ce6aab4c89",
+      "collection": "dryland"
+    },
+    "assets/artpreview/env/soil_basecolor.jpg": {
+      "bytes": 174326,
+      "sha256": "27ed3e5303143d35003d999eeb9c0d55481ad7e1b9c7dbafef966cd7fbc98109",
+      "collection": "dryland"
+    },
+    "assets/scale02/assets_fix/apartment.res": {
+      "bytes": 1308336,
+      "sha256": "e378c54f7f40dcd6044a01c51ea82f3ec75849c5a1159a71ed4280b3dff42aaa",
+      "collection": "trimmed_foundations"
+    },
+    "assets/scale02/assets_fix/clinic.res": {
+      "bytes": 579660,
+      "sha256": "df05dcf6db24e4356edca45d8bc0d7ff9d057da3594276bfe03ec3d915665232",
+      "collection": "trimmed_foundations"
+    },
+    "assets/scale02/assets_fix/crew_quarters.res": {
+      "bytes": 1044078,
+      "sha256": "dc8027d34323454e6077ed8af29616551a16e4bdec5e130428c8c5605b0ada95",
+      "collection": "trimmed_foundations"
+    },
+    "assets/scale02/assets_fix/habitat.res": {
+      "bytes": 896166,
+      "sha256": "bdf9add2045eee6783c892689e1897c82180034c99c5dd19d9397a15a8e6a11a",
+      "collection": "trimmed_foundations"
+    },
+    "assets/scale02/assets_fix/lab.res": {
+      "bytes": 1715491,
+      "sha256": "395a68c9b7254bd22350e6d5f5fe6dc4e05fb1fc7155971caac00e11f394f011",
+      "collection": "trimmed_foundations"
+    },
+    "assets/space06/vegetation05_reference.bin": {
+      "bytes": 1270392,
+      "sha256": "c82ceab351f62902b93a61c8348ecdbda5212e302bfffe1bbada0ca18e5a9cdf",
+      "collection": "fixed_sites"
+    },
+    "assets/surface07/fringe/road_fringe.png": {
+      "bytes": 973948,
+      "sha256": "f6991016f3453076bb5580ba20699ce2cc5b853e1aebf4abfad5c6a1f89cf0b9",
+      "collection": "shoulder"
+    },
+    "assets/surface07/rock_assets/boulder_01/chip.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/boulder_01/field.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/boulder_01/near.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/boulder_01/textures/boulder_01_arm_1k.jpg": {
+      "bytes": 659386,
+      "sha256": "c57187c5746b6be913fa53846cb44ff78743e7ca5000f131c9627b99563c2b87",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/boulder_01/textures/boulder_01_nor_gl_1k.jpg": {
+      "bytes": 1183552,
+      "sha256": "0810cf6e89d89bb6eb065b4d2e2855288f5dcbd2c15c6e40ab90d462021b50aa",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/boulder_01/weathered_diffuse.png": {
+      "bytes": 1751164,
+      "sha256": "538a369c6330ac78499ef25f568f69b803338ee25ef60fab0f7b4114f2249e87",
+      "collection": "poly_haven_boulder_01"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/chip.rock": {
+      "bytes": 9656,
+      "sha256": "0ef296ebde6386b7bdb57272b3ef699b3dfde70005850ea544aaed27683ae458",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/field.rock": {
+      "bytes": 77960,
+      "sha256": "81c52f423e2996d9a68f1a5edc8845b46517e9e8c95756742661110497ebf19a",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/near.rock": {
+      "bytes": 519392,
+      "sha256": "a31579e14edaa797043c355e099f31fb4ba91b70d341041a389346b316fe5d6d",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_arm_1k.jpg": {
+      "bytes": 600523,
+      "sha256": "b9556284b65a603cee0c282f1a13f1642ac64cd586db14caa065e7322ec95db2",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_nor_gl_1k.jpg": {
+      "bytes": 906782,
+      "sha256": "a7042070d6e369c80d818b7e787b977bf84c1f78b0c83e3ecf690ac2fa17d291",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_04/weathered_diffuse.png": {
+      "bytes": 1620038,
+      "sha256": "34353462d79470acbc875b2ef6693542d46d29e42886d98b7ca6d55c171b46af",
+      "collection": "poly_haven_namaqualand_boulder_04"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/chip.rock": {
+      "bytes": 11384,
+      "sha256": "13fdb6c4dc2299843dedb69bc45691b284d0f05cd06b3c001043b74e36d1ab24",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/field.rock": {
+      "bytes": 82088,
+      "sha256": "a70eb2aec2bc17211bf96785d2f5b55003e78638e0f025529129416bce9b0004",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/near.rock": {
+      "bytes": 531368,
+      "sha256": "713f323ce1298dc6d276a8f50f3e060068585c34e6397c23a080efbd1bb80d8a",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_arm_1k.jpg": {
+      "bytes": 713844,
+      "sha256": "1466c8467188f54c2fb655b05f9e1d0a9a93a366f3cd45878bcf6905487c5f3e",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_nor_gl_1k.jpg": {
+      "bytes": 1099873,
+      "sha256": "027359a8a79febee925cc29af3106cc12bdeed5bc91cb26f1d88f589c77f448d",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_05/weathered_diffuse.png": {
+      "bytes": 1616575,
+      "sha256": "05d6c3fd5600af2dcf3f7f660d449d640970f7b7bda0c4d7cee20f47e1ea45c9",
+      "collection": "poly_haven_namaqualand_boulder_05"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/chip.rock": {
+      "bytes": 13112,
+      "sha256": "c3aed274ed6577290e207dfc0b6e9814e531dc282d96e00ed80aa4425c593f59",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/field.rock": {
+      "bytes": 84764,
+      "sha256": "569486e59f8a44ee431a77804e1f25423385783f013f8d4e0afa01a2509f3af5",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/near.rock": {
+      "bytes": 539096,
+      "sha256": "a51db98c098ae674ab9396b49aeb29928aa69dbe00a973b5123f5bcdb07558b5",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_arm_1k.jpg": {
+      "bytes": 733753,
+      "sha256": "27675c935809c6d8bffefa47135f76303d1c7668392d83ac65845cdbf6a17a4f",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_nor_gl_1k.jpg": {
+      "bytes": 1080458,
+      "sha256": "68ef851810c372e879534249c453289112cd3d0cb670d77e9216d9aeb2d5011c",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/rock_assets/namaqualand_boulder_06/weathered_diffuse.png": {
+      "bytes": 1750494,
+      "sha256": "596f00aaaefa7ff65c192b42b0727d4c91051e057a8a7a238afcc87e8ebfeefb",
+      "collection": "poly_haven_namaqualand_boulder_06"
+    },
+    "assets/surface07/soil/sparse_turf.png": {
+      "bytes": 8808038,
+      "sha256": "8f945b82aa50eac8d35dcf1b0e43c3d0188879931edfb0ec4e0ab89a6c9a3c15",
+      "collection": "ground"
+    },
+    "assets/surface07/soil/weathered_loam.png": {
+      "bytes": 7559841,
+      "sha256": "abc83247e956ac11552183b23a7b495b067b55dba1f70433c7139408555ba2cd",
+      "collection": "ground"
+    }
+  },
+  "settlement_sources": {
+    "apartment": {
+      "source": "art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_APARTMENT_HP_v002.fbx",
+      "source_sha256": "e844258821744a4e5698ee190c465c22edbec32338043be4264022bc05d78473",
+      "source_triangles": 118464,
+      "converted_triangles": 118464
+    },
+    "civic_center": {
+      "source": "art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CIVIC_CENTER_HP_v001.fbx",
+      "source_sha256": "6e3786b6154258c6813d9b47522d1994224cc763eba9769b3e739caee5385c08",
+      "source_triangles": 64820,
+      "converted_triangles": 64616
+    },
+    "clinic": {
+      "source": "art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CLINIC_HP_v001.fbx",
+      "source_sha256": "324695cb1a7d774ef4a04e115c568f7fa3b8d2ca1d7a5b6ac326a2b05505e12c",
+      "source_triangles": 47916,
+      "converted_triangles": 47508
+    },
+    "commerce": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_COMMERCE_HP_v001.fbx",
+      "source_sha256": "c3758a8f636e4cfd2cd69d2d946873b32c47d4713e981589a052a24eef0d9c1f",
+      "source_triangles": 19492,
+      "converted_triangles": 19288
+    },
+    "crew_quarters": {
+      "source": "art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_CREW_QUARTERS_HP_v001.fbx",
+      "source_sha256": "4f2b37076d4cb9c81e148f3d5d60dfb40605505df73a28541b7db84a139e03f5",
+      "source_triangles": 83220,
+      "converted_triangles": 83220
+    },
+    "depot": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_DEPOT_HP_v002.fbx",
+      "source_sha256": "7e109d06beb4e43ec2ad5fe48d1f2d0d3fa35f63d180d6e005407432d2d9121f",
+      "source_triangles": 72660,
+      "converted_triangles": 72252
+    },
+    "farm": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_FARM_HP_v002.fbx",
+      "source_sha256": "57db5d8474c9cfd8edf46c8c73f9993e84404184e900c9f4750eec03056dc357",
+      "source_triangles": 211988,
+      "converted_triangles": 211784
+    },
+    "habitat": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_HABITAT_HP_v002.fbx",
+      "source_sha256": "18ffd36d6cf44fddeb374dfdd4a798744b1877d49c062f7bbe690e15da226af3",
+      "source_triangles": 73420,
+      "converted_triangles": 73012
+    },
+    "lab": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_LAB_HP_v002.fbx",
+      "source_sha256": "0e1902b8c015aef38a02874f49a0b274bd663825270f1bb02212e12983b0dd6b",
+      "source_triangles": 119152,
+      "converted_triangles": 118744
+    },
+    "power": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_POWER_HP_v002.fbx",
+      "source_sha256": "c97d092ca9fe5b99d52a3b47bca845d9d65bc1ffa9d1223669f0cec311da2c52",
+      "source_triangles": 66028,
+      "converted_triangles": 65824
+    },
+    "processor": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_PROCESSOR_HP_v002.fbx",
+      "source_sha256": "d61be773ef5d7942d5be7bdce0249441ddfea2a773c89dc0574f06e2fc37ebf2",
+      "source_triangles": 101732,
+      "converted_triangles": 101528
+    },
+    "school": {
+      "source": "art_reserve/max_highpoly_continuation_20261102/08_exports/highpoly_fbx/CC_SCHOOL_HP_v002.fbx",
+      "source_sha256": "d8c4b433c6d0d0c5b33c997a250d0250a1f9dab56f61378b14aa2d4eb55a8ec6",
+      "source_triangles": 104644,
+      "converted_triangles": 104440
+    },
+    "smelter": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_SMELTER_HP_v002.fbx",
+      "source_sha256": "3b069e29385d923c7b08637a4efc2679136174a42cf6b941c0829bf835d3f545",
+      "source_triangles": 37072,
+      "converted_triangles": 36868
+    },
+    "water": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_WATER_HP_v002.fbx",
+      "source_sha256": "223b1fea87b3670a0dc886173c126eaf7203b1287ccc880ec466563f9f5f1679",
+      "source_triangles": 107064,
+      "converted_triangles": 106860
+    },
+    "vehicle_bus": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_VEHICLE_BUS_HP_v002.fbx",
+      "source_sha256": "277f6fb8ee4f1022bf3a98b9fce5e0307157da406e4a70bbd575fc0c2e9b60eb",
+      "source_triangles": 54800,
+      "converted_triangles": 54800
+    },
+    "vehicle_truck": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_VEHICLE_TRUCK_HP_v002.fbx",
+      "source_sha256": "01d27c67502f513588dddc04279aad80710cafaecae7ccd30b01a61aebec83e3",
+      "source_triangles": 51952,
+      "converted_triangles": 51952
+    },
+    "vehicle_van": {
+      "source": "art_reserve/max_models_20261109/08_exports/highpoly_fbx/CC_VEHICLE_VAN_HP_v002.fbx",
+      "source_sha256": "46deb9e575f5d988e9fa2e1689dd20da3236bb4980382294edac03a81c726701",
+      "source_triangles": 37184,
+      "converted_triangles": 37184
+    }
+  },
+  "poly_haven_sources": {
+    "boulder_01": {
+      "asset_url": "https://polyhaven.com/a/boulder_01",
+      "license": "CC0-1.0",
+      "triangles": {
+        "near": 56540,
+        "field": 56540,
+        "chip": 56540
+      },
+      "original_download_md5": {
+        "boulder_01.gltf": "26e2eef4a1f68c9557c65cd375b21d6c",
+        "textures/boulder_01_arm_1k.jpg": "d632159982cc3121ed3d69b89a122146",
+        "textures/boulder_01_diff_1k.jpg": "25f8a843f13369d56d37f49db05ea8c3",
+        "boulder_01.bin": "27a19fa031d8b4c3a09261f19c444dc5",
+        "textures/boulder_01_nor_gl_1k.jpg": "0c4da644d901144b53e4fe2446f3c389"
+      }
+    },
+    "namaqualand_boulder_04": {
+      "asset_url": "https://polyhaven.com/a/namaqualand_boulder_04",
+      "license": "CC0-1.0",
+      "triangles": {
+        "near": 13994,
+        "field": 2000,
+        "chip": 220
+      },
+      "original_download_md5": {
+        "namaqualand_boulder_04.gltf": "7cc9f708bf5792f89af6638465cac3b4",
+        "textures/namaqualand_boulder_04_arm_1k.jpg": "03f2b36ad3349fc1768dbd20c9b07403",
+        "textures/namaqualand_boulder_04_diff_1k.jpg": "0ef2c0fe9eaca715efad500c13ce140c",
+        "textures/namaqualand_boulder_04_nor_gl_1k.jpg": "e642a0c62a3b33adf953a7832f9231ae",
+        "namaqualand_boulder_04.bin": "bd83376dfe39432568dc13a8fb738953"
+      }
+    },
+    "namaqualand_boulder_05": {
+      "asset_url": "https://polyhaven.com/a/namaqualand_boulder_05",
+      "license": "CC0-1.0",
+      "triangles": {
+        "near": 14000,
+        "field": 2000,
+        "chip": 220
+      },
+      "original_download_md5": {
+        "namaqualand_boulder_05.gltf": "93b2f39714f9b4d19197335eb22d9283",
+        "textures/namaqualand_boulder_05_arm_1k.jpg": "aa40bbddb8be6e13b0e6cba68c99b3e0",
+        "textures/namaqualand_boulder_05_nor_gl_1k.jpg": "0337869f7d21c538f307792a927c8db2",
+        "namaqualand_boulder_05.bin": "64bca194605dee7e361d43beabb3d4b7",
+        "textures/namaqualand_boulder_05_diff_1k.jpg": "de60e1accb73ea17db74fc2fedda85b5"
+      }
+    },
+    "namaqualand_boulder_06": {
+      "asset_url": "https://polyhaven.com/a/namaqualand_boulder_06",
+      "license": "CC0-1.0",
+      "triangles": {
+        "near": 14000,
+        "field": 1999,
+        "chip": 220
+      },
+      "original_download_md5": {
+        "namaqualand_boulder_06.gltf": "64791b0352526beffa233116758ef9a6",
+        "textures/namaqualand_boulder_06_nor_gl_1k.jpg": "3798db04e45dbb4bccd35d64ad5dfa20",
+        "textures/namaqualand_boulder_06_arm_1k.jpg": "f858b35124fdd60f6220c96a9a09c3bf",
+        "namaqualand_boulder_06.bin": "1643b528fa072dc3bf5bc5ad6add1933",
+        "textures/namaqualand_boulder_06_diff_1k.jpg": "edffd9c1cd6a0acbaccc2b75eeda47ba"
+      }
+    }
+  }
+}

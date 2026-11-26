@@ -1,0 +1,133 @@
+{
+  "baseline_commit": "96d26551623c6b7c84a9db4143ce38956c11f6a4",
+  "baseline_game_tree": "da4dd9101f688e57708abdaa4502a3ae2a1ce6f3",
+  "intermediate_reference_commit": "785b5fa5bb2bf819956c7a0a03d316e43638647d",
+  "hashes_sha256_lf_text_binary_as_stored": {
+    "game/assets/terrain_v3/CREDITS.txt": "7dafc127963484d28ea5921d758294ee82081100bd8f8cb0f0410ee03885b567",
+    "game/assets/terrain_v3/cloud-coverage.png": "9463a59636bcfd4dd24a51717d6a72dedfa3833aa7e0dc1c5758218a0c2c1104",
+    "game/assets/terrain_v3/cloud-coverage.png.import": "64647c26131f63f9b410fbc8dfeb612ae167e2c59bffa53f6fc181808458f6d6",
+    "game/assets/terrain_v3/optical.png": "3e2f13ba7867deface35ec01cba9adb52b0b24fae79b7772fc545e195e1d25f8",
+    "game/assets/terrain_v3/optical.png.import": "820d52201b47991b7b21fcb6ff5f20435d776ad1707576b943a8f9c44d650041",
+    "game/assets/terrain_v3/relief.bin": "bec3322194fc028902ea2a59b2c352eb1a1d52086490dca205c8e933f6612c68",
+    "game/data/v17/tutorial.json": "1c2dfae6e60ecde9d3a8d47337731bb681e8b5af8ab92ec1f457287bdd5c06f5",
+    "game/export_presets.cfg": "455f773ac436d7d0900f9bd0ae4cc7ef45b2e44796f93a6d5c554ff55bad92e6",
+    "game/simulation/career.gd": "077a7794164bd47481be9af4c74b25cf665395b4afe451799a0c3c5f42d432c4",
+    "game/simulation/sim.gd": "1c0ce633c57d02f0dcc44bdeb310e7d49a8945409f3b748237053605400e088c",
+    "game/simulation/tutorial.gd": "50d9501f04e2e4bb9330d44be73b6d9a41a32040a0de7f387d2bde5b528e9e92",
+    "game/tests/terrain23_career.gd": "82794e5341433ec219eb1e8536646d904dd1d179448feab1fa32695f53961abd",
+    "game/tests/terrain23_career.gd.uid": "3186bcfa918209070e20251f28ffd16e2175b89dcecb2d407c84eefe5e0c9aa7",
+    "game/tests/terrain23_export.gd": "d8d5bddc659a4c8443246940d89c654987d6de4989362825284f64c54206c786",
+    "game/tests/terrain23_export.gd.uid": "2fe670a29df5f56032725f7818f7b10866cd8a2fb2a2ba6734024f8da3ed2a8e",
+    "game/tests/terrain23_sites.gd": "61eb588661470dd2412a01c23bd03552c7f77f25ff0f7e3b951dad55a8552e38",
+    "game/tests/terrain23_sites.gd.uid": "65f652d5cbdd362b4ac311a76a126b3903ce6aaca1fa93998efb1c112d3a45e8",
+    "game/tests/terrain_water23.gd": "43fcd21a466d487097d7c7efff92d10fba0881d836d37ceea47d7adcc070c576",
+    "game/tests/terrain_water23.gd.uid": "168c177a5253cb9a15af343b124bd452fdf4693a7ba8100093e41c6202206664",
+    "game/tests/v110_placement.gd": "0ce88eab511b00d2dafcb242584a5d042f5395f867ccc61318708b0dc9c17e4d",
+    "game/ui/main.gd": "2c27418e2c2c5d4d25c4003f6846b7e666e2cac6747975bec099ed452db7f520",
+    "game/ui/tutorial_coach.gd": "6c3d3daab30eb03d524ceba48ddade5aaf3ab78e7a4ef2fd96266840a785db59",
+    "game/world/drainage23.gd": "ba5ac60f3eafa4dc88ed2c131d93027b35fa1177ab7eea208c23fee33953fa5b",
+    "game/world/drainage23.gd.uid": "2e063d4e17be98227fc6d2d783a352f901a44d0164cb9c0a49564fb476814cc5",
+    "game/world/flat_view.gd": "f7b27896809b0a68f21ad7217709a3ec2a65f439db6d49c24bcf171355ddf484",
+    "game/world/geo2/natural_relief.gd": "51f653a352c351ea5874718bf2a85c348d6b31a33de14f0a13f5f3ea781f0f4f",
+    "game/world/geo2/natural_relief.gd.uid": "240575449f38d05a8bd5a11d3e17d9dc450432f4639c5cdb2a88ef3d759a3c6e",
+    "game/world/geo2/plates.gd": "6affceb854d21f6278d62e2f8feab14ac5674032422df707a2fac43bbfc1b541",
+    "game/world/geo2/site_gen.gd": "a061cc4ccbca05873e59289dc2769011ff8aaea7f21c0869cd68a6623aa65667",
+    "game/world/geo2/world_gen2.gd": "f22dfe5a960183378e87145a6688f6f08ed971b1d16eaaa8e915d50ad9a4186c",
+    "game/world/hydrology.gd": "b6555cfb9a21d70da144b3fadaa768ad05bd8dec4e9c08deeea864d5704b34e7",
+    "game/world/map_base.gd": "bc0ea646a635b6a8fc7773818c1a815cdc30e8eb31badc56e2e00728e45fae93",
+    "game/world/map_view.gd": "c00b10ba3fe8be50ec7bc80890e85b8b83ff3ae287e67d73f11c7614b01a49a1",
+    "game/world/planet_view.gd": "e6fe8d4b0097cdb6a2b4576d077e4ad7e6ad56bb2101d2b8c6d26a949dc698a8",
+    "game/world/shaders.gd": "491b4b5a75f29ba98e58c558f1f2ab98ae08e440c807065ea9c4daed648a34c8",
+    "game/world/world_gen.gd": "f6e868bec3ed75ed7a95b39d87bb8e4d04c8163bdcb69cef2a5667d8e8b1c48b"
+  },
+  "approved_worlds": [
+    {
+      "seed": 260129,
+      "size": 1,
+      "world_hash": "60dbcafeb9abb7c2662987c923dd67e21bc96f211bee1a22918adf2b4a3d67da",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "gentle",
+      "atlas_render_png_sha256": "2f0cb4dabef5df308a58142e44370c37c131f63021a38ae927ed4d46d1a4c312"
+    },
+    {
+      "seed": 260130,
+      "size": 1,
+      "world_hash": "287242ac363da2392e6d6e18c0cb2a340ca5d6c8804aaffe3e9404780ed1097a",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "rugged",
+      "atlas_render_png_sha256": "50dd2022d9df721221ee0f9bdf9396833e246ae544100cb99db21dcab8cbc1e6"
+    },
+    {
+      "seed": 260133,
+      "size": 1,
+      "world_hash": "561181fd3609fa5db6e593e495f8b8762366086370a4e3eb75cfed323eaab677",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "gentle",
+      "atlas_render_png_sha256": "a1d6be2f9edf5841c175bf4ded987876e609a85941cd6dd61292130ea10e114b"
+    },
+    {
+      "seed": 260137,
+      "size": 1,
+      "world_hash": "73c2c64f1e30411c31d291583214cea5a4481b22c3a4566b8eb6510b73a890c2",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "ordinary",
+      "atlas_render_png_sha256": "32582a16eb22a15f2a53dd6bce11ec379f113b42aadee133232d1d2eec8bc2fd"
+    },
+    {
+      "seed": 260140,
+      "size": 1,
+      "world_hash": "9ac73aa5c6f35a773824cff9f03eb5c79dc3e507a9540247f575236ae5720a94",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "ordinary",
+      "atlas_render_png_sha256": "851f6973bf910885433c070734c8a29fb7afb59682ec018ff7b9ca869c633282"
+    },
+    {
+      "seed": 260141,
+      "size": 1,
+      "world_hash": "7ddcdded5f9e67e92155b72f2fbfdbceaeb98f3ab953ec596dccb0457fdb0319",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "ordinary",
+      "atlas_render_png_sha256": "ad6bcfdc8b5c89f8391f9604ec9df92bdbebf1ed50b73f8b3b19df682a16c8f9"
+    },
+    {
+      "seed": 260143,
+      "size": 1,
+      "world_hash": "80bcc4b33c927f834862fc46c329471456f6bcef27beb1305829560bb00e88a9",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "ordinary",
+      "atlas_render_png_sha256": "63b8b413a5226287523e93333a041e36429bd0e9c7554ec153f9bcad0070b585"
+    },
+    {
+      "seed": 260144,
+      "size": 1,
+      "world_hash": "9c8147858408a8c0af8304155bcc0e2760847b8ea4ed0e8f57b96e70ab7e87cf",
+      "atlas": [
+        1536,
+        768
+      ],
+      "relief": "gentle",
+      "atlas_render_png_sha256": "b3469647a06c8bf0cf70abcdcdda16f2275c4c033875d8033f75b2885c991f69"
+    }
+  ]
+}

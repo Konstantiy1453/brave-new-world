@@ -1,0 +1,56 @@
+{
+  "06-region-layout.webp": {
+    "caption": "Revision 06; approved spacing, roads and placement.",
+    "size_px": [
+      3840,
+      2160
+    ],
+    "original_png_sha256": "248aa5924da137fbc7e9ea982c0cfc1405666f1755e0492dcd3a438b54acc11b",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  },
+  "07-settlement.webp": {
+    "caption": "Revision 07; approved terrain, buildings and hills from the settlement camera.",
+    "size_px": [
+      3840,
+      2160
+    ],
+    "original_png_sha256": "24ce967ecf949a01eee652875759a19a0f27564a14e373eeea56dfc2906a3db5",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  },
+  "07-rocks.webp": {
+    "caption": "Revision 07; approved weathered rocks and partly embedded debris at dusk.",
+    "size_px": [
+      3840,
+      2160
+    ],
+    "original_png_sha256": "52bec9132ee04f259f4ee4b68d4ddcb0552315b0f4ed3b7c3e565407c41e21ea",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  },
+  "07-road-verge.webp": {
+    "caption": "Revision 07; approved shoulder, soil, gravel and sparse grass.",
+    "size_px": [
+      3840,
+      2160
+    ],
+    "original_png_sha256": "8454fddf495fc5bf5f5591cf7280929470ad9a8eeb25b8cdbc295b92a18c1998",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  },
+  "world-eight-seeds.webp": {
+    "caption": "Eight reviewed generated worlds with mountain and plateau snow.",
+    "size_px": [
+      1894,
+      2236
+    ],
+    "original_png_sha256": "d6de4e201bdc652d5ed1ffafe03f6322b6d8b71226ea1b718067918b7268290c",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  },
+  "world-snow-detail.webp": {
+    "caption": "Reviewed mountain and broad highland examples for seed 260130.",
+    "size_px": [
+      1454,
+      862
+    ],
+    "original_png_sha256": "91530fd3d18b212040e8fae9b060334c6a747152857c449091956b0012ce4967",
+    "encoding": "WebP viewing copy; original pixel dimensions"
+  }
+}

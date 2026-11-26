@@ -1,0 +1,66 @@
+{
+  "reference": "Revision 06 inland placement with revision 07 materials and rocks",
+  "engine": "4.5.1.stable.official.f62fdbde1",
+  "system": "Windows x86_64",
+  "graphics": "Forward+ / Vulkan, NVIDIA GeForce RTX 4070 Laptop GPU",
+  "test_date": "2026-11-26",
+  "commands": {
+    "fresh_source_validation": "godot --headless --path . -- --validate",
+    "fresh_source_capture": "godot --path . --rendering-method forward_plus -- --capture <rocks|verge|settlement> --output <output-directory>",
+    "packed_export": [
+      "godot --headless --path . --import",
+      "godot --headless --path . --export-pack \"Reference pack\" <absolute-path-to-region.pck>"
+    ],
+    "isolated_pack_validation": "godot --headless --main-pack <region.pck> -- --validate",
+    "isolated_pack_capture": "godot --main-pack <region.pck> --rendering-method forward_plus -- --capture <rocks|verge|settlement> --output <output-directory>"
+  },
+  "validation": {
+    "headless_source_exit": 0,
+    "headless_pack_exit": 0,
+    "pack_bytes": 73655940,
+    "buildings": 19,
+    "vehicles": 5,
+    "roads": 4,
+    "rocks_replaced": 750,
+    "original_outcrops": 853,
+    "toe_stones": 11288,
+    "road_shoulder_bake_triangles": 7793,
+    "road_shoulder_regenerated_sha256": "f6991016f3453076bb5580ba20699ce2cc5b853e1aebf4abfad5c6a1f89cf0b9"
+  },
+  "captures": {
+    "rocks-07-dusk.png": {
+      "resolution": [
+        3840,
+        2160
+      ],
+      "approved_png_sha256": "52bec9132ee04f259f4ee4b68d4ddcb0552315b0f4ed3b7c3e565407c41e21ea",
+      "source_png_same_bytes": true,
+      "isolated_pck_png_same_bytes": true,
+      "source_exit": 0,
+      "pck_exit": 0
+    },
+    "verge-07-dusk.png": {
+      "resolution": [
+        3840,
+        2160
+      ],
+      "approved_png_sha256": "8454fddf495fc5bf5f5591cf7280929470ad9a8eeb25b8cdbc295b92a18c1998",
+      "source_png_same_bytes": true,
+      "isolated_pck_png_same_bytes": true,
+      "source_exit": 0,
+      "pck_exit": 0
+    },
+    "settlement-07-dusk.png": {
+      "resolution": [
+        3840,
+        2160
+      ],
+      "approved_png_sha256": "24ce967ecf949a01eee652875759a19a0f27564a14e373eeea56dfc2906a3db5",
+      "source_png_same_bytes": true,
+      "isolated_pck_png_same_bytes": true,
+      "source_exit": 0,
+      "pck_exit": 0
+    }
+  },
+  "scope": "The fresh source directory and the independently launched reference pack rendered the approved three fixture cameras on the listed GPU. Gameplay, save compatibility, frame times and other hardware are separate release checks."
+}

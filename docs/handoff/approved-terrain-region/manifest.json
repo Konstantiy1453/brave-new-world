@@ -1,0 +1,598 @@
+{
+  "format": 1,
+  "base": "96d26551623c6b7c84a9db4143ce38956c11f6a4",
+  "files": {
+    ".gitattributes": {
+      "bytes": 340,
+      "sha256": "90f2db48654776e3a2eb267d419dcf654c538151fdc1a7d64e23633153df8436"
+    },
+    "CLAUDE_INSTRUCTIONS.md": {
+      "bytes": 5401,
+      "sha256": "0c73f379393a9be659beb9b11da9c4dd656aec4b5f71aa5dd32540f7b32f5ecb"
+    },
+    "map/01-cc-geo-2.3.patch": {
+      "bytes": 2187352,
+      "sha256": "4ae938c0348dec7a925cb00369368cf083e39ddb6f546543e8dcb25fe654e8ad"
+    },
+    "map/02-alpine-snow.patch": {
+      "bytes": 7589,
+      "sha256": "855c6127769f0997dfd1f55e677d82fe3acbc4ecff53751def655d60d07396bf"
+    },
+    "map/fixtures/legacy-260129.save": {
+      "bytes": 19012,
+      "sha256": "8d7e804e8d76cc710315d405fde9570d1c99f633e071cba3cacd0b6aa3401e08"
+    },
+    "map/MAP.md": {
+      "bytes": 5956,
+      "sha256": "9cbcf594c85bf0cec21ef788340d657d7644aa7bc4d0e81edbb4b70442456a24"
+    },
+    "map/provenance.json": {
+      "bytes": 6617,
+      "sha256": "983e5979afbbbc430900296f35293b9751886980cc1b0aa0b495a41ed5e42c62"
+    },
+    "map/render_review.gd": {
+      "bytes": 4147,
+      "sha256": "367fd3743c4c6ff796992ffe1d68b5e131317986022a5e5ef04bdb9d5a242824"
+    },
+    "map/TERRAIN-DATA-NOTICE.md": {
+      "bytes": 2730,
+      "sha256": "dafe70c55316b0742ebe9f1ee086455ddb063bc9fe6b3af8a4812bcc5e15d709"
+    },
+    "map/validation.json": {
+      "bytes": 8354,
+      "sha256": "239dbfd7db8b813c683593f016efcefe8b8bdc09f4eeadc70529421f818b224e"
+    },
+    "map/verify_payload.py": {
+      "bytes": 2882,
+      "sha256": "e9753b00fab4ae06e4df7eeebb9f6a86ff8d5beb9e4671642ccfb9725f559201"
+    },
+    "README.md": {
+      "bytes": 2993,
+      "sha256": "796911461bcc670106ac12ecb2b82d9a190aae3d82a9090cf96bb622af411d96"
+    },
+    "reference/06-region-layout.webp": {
+      "bytes": 843562,
+      "sha256": "3a343fc9a88ad4d797aab3088dfec113956e1fc111b6df54ccc51967b7a38496"
+    },
+    "reference/07-road-verge.webp": {
+      "bytes": 2072436,
+      "sha256": "332d947593e77ec2c4862de09dd4accd37a9fc4f56326dd59b68557af6c8a571"
+    },
+    "reference/07-rocks.webp": {
+      "bytes": 3122024,
+      "sha256": "03c01cda5d7ffa55abbabe2dd58f492b9006190c4c8898f9490ed2162edd1508"
+    },
+    "reference/07-settlement.webp": {
+      "bytes": 2051184,
+      "sha256": "fa8c3f9bbfa2f480a85f835fa96c854d40989039c6e409cc998e53b0a9a79187"
+    },
+    "reference/approved-layout.json": {
+      "bytes": 13080,
+      "sha256": "d5ae5f69c568516f34ccfa44bd611520acc30c1c7200bf0ab20106ee35dfc088"
+    },
+    "reference/sources.json": {
+      "bytes": 1927,
+      "sha256": "a6863f3050ec9a5a534ac3be93761ed5217f1a8e5d3b3687dccad60b1e40abd3"
+    },
+    "reference/world-eight-seeds.webp": {
+      "bytes": 743632,
+      "sha256": "bd56c3d425adcf5d77eb99b4c7d0a8d7e9491c13a73995dd7aad7b7afca5b273"
+    },
+    "reference/world-snow-detail.webp": {
+      "bytes": 140460,
+      "sha256": "3242c57bcfb177d2a1de2f3011da025fc0f304c3a26fa1371abba31248817851"
+    },
+    "region/ASSET_MANIFEST.json": {
+      "bytes": 23613,
+      "sha256": "77a3ec9390d0ce3b927aa31b63642d904abd36a5f776031c061cb70f4bb1c89b"
+    },
+    "region/assets/artpreview/art/meshes_v2/apartment.res": {
+      "bytes": 1308055,
+      "sha256": "fc0b93e6c01ad0b6e14e48bf0c9bb1bfe245b6f2fbcc39fcf6591f4fa8d56971"
+    },
+    "region/assets/artpreview/art/meshes_v2/civic_center.res": {
+      "bytes": 685353,
+      "sha256": "ac628d12b0a8bacccac5c9b1fc0ef7afb6f9afb9df9803120e02a8aa667c236f"
+    },
+    "region/assets/artpreview/art/meshes_v2/clinic.res": {
+      "bytes": 573886,
+      "sha256": "08321dc7d724d8a5b0ddbd5e3f0692155d6938d6cb28b236f7a63c8a6ed5c736"
+    },
+    "region/assets/artpreview/art/meshes_v2/commerce.res": {
+      "bytes": 270750,
+      "sha256": "ebda3b6a98549a7c5c895d15ea4b9209e6e42c05655a2d53de1fc57850a0ff0a"
+    },
+    "region/assets/artpreview/art/meshes_v2/crew_quarters.res": {
+      "bytes": 1046187,
+      "sha256": "d71322124605be36f944c9b49f42be3794ecfbfdb6338c0cd91f5ea790a06172"
+    },
+    "region/assets/artpreview/art/meshes_v2/depot.res": {
+      "bytes": 902261,
+      "sha256": "7b82072c33aabb434c792db4e76b7ce8a32d71f5277ba345d1c9c189a22d1f73"
+    },
+    "region/assets/artpreview/art/meshes_v2/farm.res": {
+      "bytes": 3815892,
+      "sha256": "43132f58b378d61f2cb992cea4a9ef4ca395a085bf96988339209e62b39c2216"
+    },
+    "region/assets/artpreview/art/meshes_v2/habitat.res": {
+      "bytes": 886970,
+      "sha256": "852e2aa9a1fe0f5c9188bf8247ed2bb2365eb995f03c41eeb1334c97788d468f"
+    },
+    "region/assets/artpreview/art/meshes_v2/lab.res": {
+      "bytes": 1713759,
+      "sha256": "60a328955e5dc0cdaaa85f81590781419a01b75e2e45a3576553a2e7459df4bc"
+    },
+    "region/assets/artpreview/art/meshes_v2/power.res": {
+      "bytes": 889079,
+      "sha256": "5b391de81ea0af8f8fec7b7de88c3beedde53b92b9f610c7ed17ce2ca7cd2e1f"
+    },
+    "region/assets/artpreview/art/meshes_v2/processor.res": {
+      "bytes": 1447493,
+      "sha256": "9e3b30734bea76511f5eac99134375cdbe1d6b7293c5cdc1dfc8d2ce6186e385"
+    },
+    "region/assets/artpreview/art/meshes_v2/school.res": {
+      "bytes": 1119152,
+      "sha256": "7db35ce0529696c71266e602d989b12c8f2f36708d3f6c0b379ae611ffddcac0"
+    },
+    "region/assets/artpreview/art/meshes_v2/smelter.res": {
+      "bytes": 498175,
+      "sha256": "729c608d7976b48eb22090f8660fcbae4413996d215aefb9d2ac36f8d479e988"
+    },
+    "region/assets/artpreview/art/meshes_v2/vehicle_bus.res": {
+      "bytes": 765013,
+      "sha256": "cbf72822ba0af1a4f342e0c6e4d65e57f31cd7ba61efaadcf5d66a493713df87"
+    },
+    "region/assets/artpreview/art/meshes_v2/vehicle_truck.res": {
+      "bytes": 729169,
+      "sha256": "5fe4efdd71e7321bc32686517210bcb98498c9049748b23254d625e40c905c39"
+    },
+    "region/assets/artpreview/art/meshes_v2/vehicle_van.res": {
+      "bytes": 522518,
+      "sha256": "9a837e97c687397fa795ab3c4488b6525198213b7e9e68b2cc32989e31ddad58"
+    },
+    "region/assets/artpreview/art/meshes_v2/water.res": {
+      "bytes": 1550400,
+      "sha256": "783efde120e8838fbe628064e2cc150235e9594ef11a293fb9c5c5374b956e04"
+    },
+    "region/assets/artpreview/art/model_units.json": {
+      "bytes": 369,
+      "sha256": "07818c5beac905f0ffce318e588946b91166a491947bf661be0c25585cbade71"
+    },
+    "region/assets/artpreview/art/region_assets.gd": {
+      "bytes": 4393,
+      "sha256": "1470ab0aba666c4f9faa80af2bb61d4813d81052a73623d6d37b663380a1a61a"
+    },
+    "region/assets/artpreview/art/surfaces/architectural.gdshader": {
+      "bytes": 4054,
+      "sha256": "6f2efeab6ed4f231bed35ecd790a8d10042ff8be3b5698dc73b196e2b20f0964"
+    },
+    "region/assets/artpreview/art/surfaces/finishes.gd": {
+      "bytes": 2898,
+      "sha256": "f12a6c12345f744a8fbf792ac417867470f5b2c599e347d120e2af22ec0fc000"
+    },
+    "region/assets/artpreview/art/surfaces/patina.png": {
+      "bytes": 489497,
+      "sha256": "ae3ab56a76a5384657e31122d1cbd24efec70d5f6aa3250a1528fc76805a27dd"
+    },
+    "region/assets/artpreview/art/surfaces/patina.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/art/textures/concrete_basecolor_1k.png": {
+      "bytes": 591936,
+      "sha256": "2765771473b365242e8421bdb835fc098bd19db18a95c6c0f6c42e5b7dfed69e"
+    },
+    "region/assets/artpreview/art/textures/concrete_basecolor_1k.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/art/textures/concrete_roughness_1k.png": {
+      "bytes": 286847,
+      "sha256": "de2b0242851cf45ce411038d2e6a73d481dc04e9a9375b05a97ef83b0622a6a7"
+    },
+    "region/assets/artpreview/art/textures/concrete_roughness_1k.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/art/textures/soil_basecolor_1k.png": {
+      "bytes": 592257,
+      "sha256": "e0d4069cc8ec883a5e86ccfab998bfb0ca511e9d0acbc9a7c4fd7e4558853527"
+    },
+    "region/assets/artpreview/art/textures/soil_basecolor_1k.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/art/textures/soil_roughness_1k.png": {
+      "bytes": 287149,
+      "sha256": "6ae8dbeb2ea630b8642130dc99f68d1ec806257b0dd7c6ebbed48b89162612dd"
+    },
+    "region/assets/artpreview/art/textures/soil_roughness_1k.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/control/evening-sky.gdshader": {
+      "bytes": 1008,
+      "sha256": "d2e916a40936aca4052afd715c73a02211635466d39fd72914bbf6a2c0b36b46"
+    },
+    "region/assets/artpreview/control/residents.gd": {
+      "bytes": 3567,
+      "sha256": "e0908ed8000277dedaf6e47f77ee4520400a4671b2c639d6e377c5a2abcb8c19"
+    },
+    "region/assets/artpreview/control/road_contact.gd": {
+      "bytes": 2033,
+      "sha256": "bcb9eae0852b5f584ba8c3e2607284a9f4328636d9b096297b36339df4687907"
+    },
+    "region/assets/artpreview/control/vapour.gdshader": {
+      "bytes": 1220,
+      "sha256": "b373626fa63b60be593137ba7ca3503f243e02423ed677602fc5ea9f0494e15b"
+    },
+    "region/assets/artpreview/control/vent.json": {
+      "bytes": 55,
+      "sha256": "9b25fe881215ecb8f52536bd203dbbcd5b858ff85cdf836c0a6322cc13d30202"
+    },
+    "region/assets/artpreview/env/CC_GRASS_SOURCE.meshbin": {
+      "bytes": 16856,
+      "sha256": "62d64f77c4ac031df32ae516d13f269b294f7d16178fca7d7117f99c9ee1cb3f"
+    },
+    "region/assets/artpreview/env/CC_ROCK_SOURCE_00.meshbin": {
+      "bytes": 16856,
+      "sha256": "38e397753b21a96bb4066b375c3b44aeb0413c30f792be59352f8be613781190"
+    },
+    "region/assets/artpreview/env/CC_ROCK_SOURCE_01.meshbin": {
+      "bytes": 16856,
+      "sha256": "a41647b9d9ade3455f5665bc3bf865afc0ae0d7c9fd9a32c8fd649baa870c1ee"
+    },
+    "region/assets/artpreview/env/CC_ROCK_SOURCE_02.meshbin": {
+      "bytes": 16856,
+      "sha256": "0a01226071cff34616d0ba7dd83a6a0379439dc2aa8d6d4c69850ac60b667cca"
+    },
+    "region/assets/artpreview/env/CC_SHRUB_SOURCE_BRANCH_NETWORK.meshbin": {
+      "bytes": 35192,
+      "sha256": "623d22b3a9afd262aaf39ad29683f655e310b7512aca7690a3c64d5ddf0e2101"
+    },
+    "region/assets/artpreview/env/CC_SHRUB_SOURCE_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 57032,
+      "sha256": "2c767cf7db731ae39ed3fb5b29be66aa2da76aa374ae47388f5242420f1b7373"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_00_BRANCH_NETWORK.meshbin": {
+      "bytes": 166568,
+      "sha256": "832e24569b440e82959e30f0308b7538c4fd58637db5972c95d14cb9d5746c8f"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_00_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "9dcacd06dd899837321ebc2876443441ce8f6de03aebb1d16e70a3cac575a0bc"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_01_BRANCH_NETWORK.meshbin": {
+      "bytes": 173144,
+      "sha256": "689f2b39f9e8cb0a5a02bd55b4205fe87f40e1e24a0e61dbc53370be1c3ec18e"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_01_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "98815cdff0b6190f9c43388b901699b57edf870f60ff681dc8f258c5217b4842"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_02_BRANCH_NETWORK.meshbin": {
+      "bytes": 182360,
+      "sha256": "e3921ce8c5a7abbd90d539711c3c65f3d1bebfbafbe1adf6030d9f7288ffebf1"
+    },
+    "region/assets/artpreview/env/CC_TREE_SOURCE_02_CURVED_LEAF_CROWN_SPRAYS.meshbin": {
+      "bytes": 104552,
+      "sha256": "2eaeee62b72cbdf2809d5b8bd51436468db4be49de58aed83eb170cc68fdc065"
+    },
+    "region/assets/artpreview/env/leaf-spray.png": {
+      "bytes": 513595,
+      "sha256": "517ba28e57dd4a0cd0bc621b3a8850372f77538e03f759a1ca0fe1f5f1ad0cb0"
+    },
+    "region/assets/artpreview/env/leaf-spray.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/env/leaves.gdshader": {
+      "bytes": 787,
+      "sha256": "ee34e711769dcc07b558c68669420f929df00c251514c46a6ac47e7671667133"
+    },
+    "region/assets/artpreview/env/rock_basecolor.jpg": {
+      "bytes": 184315,
+      "sha256": "340045e9139172b5c9572b3f3ab61e32f203370d67524b7cd1b0a3d03794fe13"
+    },
+    "region/assets/artpreview/env/rock_basecolor.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/env/scrub_noise.png": {
+      "bytes": 483363,
+      "sha256": "6ded335a43315db8e29d43cdbd72ec40611a1cf517425b93f7ea48ce6aab4c89"
+    },
+    "region/assets/artpreview/env/scrub_noise.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/artpreview/env/soil_basecolor.jpg": {
+      "bytes": 174326,
+      "sha256": "27ed3e5303143d35003d999eeb9c0d55481ad7e1b9c7dbafef966cd7fbc98109"
+    },
+    "region/assets/artpreview/env/soil_basecolor.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/scale02/assets_fix/apartment.res": {
+      "bytes": 1308336,
+      "sha256": "e378c54f7f40dcd6044a01c51ea82f3ec75849c5a1159a71ed4280b3dff42aaa"
+    },
+    "region/assets/scale02/assets_fix/clinic.res": {
+      "bytes": 579660,
+      "sha256": "df05dcf6db24e4356edca45d8bc0d7ff9d057da3594276bfe03ec3d915665232"
+    },
+    "region/assets/scale02/assets_fix/crew_quarters.res": {
+      "bytes": 1044078,
+      "sha256": "dc8027d34323454e6077ed8af29616551a16e4bdec5e130428c8c5605b0ada95"
+    },
+    "region/assets/scale02/assets_fix/crop_site.gd": {
+      "bytes": 1040,
+      "sha256": "345214f8b83b4d6aa5fdf8886d2641a466c2650b5446faedf47f7bab65cf58a1"
+    },
+    "region/assets/scale02/assets_fix/habitat.res": {
+      "bytes": 896166,
+      "sha256": "bdf9add2045eee6783c892689e1897c82180034c99c5dd19d9397a15a8e6a11a"
+    },
+    "region/assets/scale02/assets_fix/lab.res": {
+      "bytes": 1715491,
+      "sha256": "395a68c9b7254bd22350e6d5f5fe6dc4e05fb1fc7155971caac00e11f394f011"
+    },
+    "region/assets/scale02/ridge.gd": {
+      "bytes": 7502,
+      "sha256": "f8fdc0c14afe4deb53f5b8de801f2315c71aed7100b4e4fe1a1ec2c2bcfdba4e"
+    },
+    "region/assets/space06/positions06.json": {
+      "bytes": 1594,
+      "sha256": "4eccc0c80ddb6fa59e93cf8c0e5c87a7598ad55dd71280763726aeef7439927d"
+    },
+    "region/assets/space06/streets06.gd": {
+      "bytes": 32306,
+      "sha256": "d2a0be204ef7e3e11390cda2df46373feb2f151d37e5f09acfecb14bf3bda498"
+    },
+    "region/assets/space06/vegetation05_reference.bin": {
+      "bytes": 1270392,
+      "sha256": "c82ceab351f62902b93a61c8348ecdbda5212e302bfffe1bbada0ca18e5a9cdf"
+    },
+    "region/assets/surface07/fringe/road_fringe.png": {
+      "bytes": 973948,
+      "sha256": "f6991016f3453076bb5580ba20699ce2cc5b853e1aebf4abfad5c6a1f89cf0b9"
+    },
+    "region/assets/surface07/fringe/road_fringe.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/lowgrass.gd": {
+      "bytes": 4111,
+      "sha256": "ab30514b6365bda904f5fca3c44f1b48e05ac6d7b35b9afcbef8994801c55454"
+    },
+    "region/assets/surface07/rock07.gd": {
+      "bytes": 7141,
+      "sha256": "078add4466c4c3b7543aeada745501749be604a37d6936339ae05dbdad5fc826"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/chip.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/field.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/near.rock": {
+      "bytes": 3488456,
+      "sha256": "be81f1e04af3420c5652f241b0dde6a4cfe6ded8436d22be4f0f4127eb3b9c53"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/textures/boulder_01_arm_1k.jpg": {
+      "bytes": 659386,
+      "sha256": "c57187c5746b6be913fa53846cb44ff78743e7ca5000f131c9627b99563c2b87"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/textures/boulder_01_arm_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/textures/boulder_01_nor_gl_1k.jpg": {
+      "bytes": 1183552,
+      "sha256": "0810cf6e89d89bb6eb065b4d2e2855288f5dcbd2c15c6e40ab90d462021b50aa"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/textures/boulder_01_nor_gl_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/weathered_diffuse.png": {
+      "bytes": 1751164,
+      "sha256": "538a369c6330ac78499ef25f568f69b803338ee25ef60fab0f7b4114f2249e87"
+    },
+    "region/assets/surface07/rock_assets/boulder_01/weathered_diffuse.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/chip.rock": {
+      "bytes": 9656,
+      "sha256": "0ef296ebde6386b7bdb57272b3ef699b3dfde70005850ea544aaed27683ae458"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/field.rock": {
+      "bytes": 77960,
+      "sha256": "81c52f423e2996d9a68f1a5edc8845b46517e9e8c95756742661110497ebf19a"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/near.rock": {
+      "bytes": 519392,
+      "sha256": "a31579e14edaa797043c355e099f31fb4ba91b70d341041a389346b316fe5d6d"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_arm_1k.jpg": {
+      "bytes": 600523,
+      "sha256": "b9556284b65a603cee0c282f1a13f1642ac64cd586db14caa065e7322ec95db2"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_arm_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_nor_gl_1k.jpg": {
+      "bytes": 906782,
+      "sha256": "a7042070d6e369c80d818b7e787b977bf84c1f78b0c83e3ecf690ac2fa17d291"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/textures/namaqualand_boulder_04_nor_gl_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/weathered_diffuse.png": {
+      "bytes": 1620038,
+      "sha256": "34353462d79470acbc875b2ef6693542d46d29e42886d98b7ca6d55c171b46af"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_04/weathered_diffuse.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/chip.rock": {
+      "bytes": 11384,
+      "sha256": "13fdb6c4dc2299843dedb69bc45691b284d0f05cd06b3c001043b74e36d1ab24"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/field.rock": {
+      "bytes": 82088,
+      "sha256": "a70eb2aec2bc17211bf96785d2f5b55003e78638e0f025529129416bce9b0004"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/near.rock": {
+      "bytes": 531368,
+      "sha256": "713f323ce1298dc6d276a8f50f3e060068585c34e6397c23a080efbd1bb80d8a"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_arm_1k.jpg": {
+      "bytes": 713844,
+      "sha256": "1466c8467188f54c2fb655b05f9e1d0a9a93a366f3cd45878bcf6905487c5f3e"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_arm_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_nor_gl_1k.jpg": {
+      "bytes": 1099873,
+      "sha256": "027359a8a79febee925cc29af3106cc12bdeed5bc91cb26f1d88f589c77f448d"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/textures/namaqualand_boulder_05_nor_gl_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/weathered_diffuse.png": {
+      "bytes": 1616575,
+      "sha256": "05d6c3fd5600af2dcf3f7f660d449d640970f7b7bda0c4d7cee20f47e1ea45c9"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_05/weathered_diffuse.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/chip.rock": {
+      "bytes": 13112,
+      "sha256": "c3aed274ed6577290e207dfc0b6e9814e531dc282d96e00ed80aa4425c593f59"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/field.rock": {
+      "bytes": 84764,
+      "sha256": "569486e59f8a44ee431a77804e1f25423385783f013f8d4e0afa01a2509f3af5"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/near.rock": {
+      "bytes": 539096,
+      "sha256": "a51db98c098ae674ab9396b49aeb29928aa69dbe00a973b5123f5bcdb07558b5"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_arm_1k.jpg": {
+      "bytes": 733753,
+      "sha256": "27675c935809c6d8bffefa47135f76303d1c7668392d83ac65845cdbf6a17a4f"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_arm_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_nor_gl_1k.jpg": {
+      "bytes": 1080458,
+      "sha256": "68ef851810c372e879534249c453289112cd3d0cb670d77e9216d9aeb2d5011c"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/textures/namaqualand_boulder_06_nor_gl_1k.jpg.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/weathered_diffuse.png": {
+      "bytes": 1750494,
+      "sha256": "596f00aaaefa7ff65c192b42b0727d4c91051e057a8a7a238afcc87e8ebfeefb"
+    },
+    "region/assets/surface07/rock_assets/namaqualand_boulder_06/weathered_diffuse.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/rock_assets/weathered.gdshader": {
+      "bytes": 857,
+      "sha256": "a5bcf9a8834c9985672605651c88185b4771a0895301895e15d519aef457135f"
+    },
+    "region/assets/surface07/soil/soil07.gd": {
+      "bytes": 892,
+      "sha256": "b7ea461346867f854092a6edd467e1da5b49a487d23533cb233805a83284e25d"
+    },
+    "region/assets/surface07/soil/soil07.gdshader": {
+      "bytes": 4649,
+      "sha256": "d4d843563b4522369aedc66715525fcdc78df4f43200a344e41b8d70aefb8eb7"
+    },
+    "region/assets/surface07/soil/sparse_turf.png": {
+      "bytes": 8808038,
+      "sha256": "8f945b82aa50eac8d35dcf1b0e43c3d0188879931edfb0ec4e0ab89a6c9a3c15"
+    },
+    "region/assets/surface07/soil/sparse_turf.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/soil/weathered_loam.png": {
+      "bytes": 7559841,
+      "sha256": "abc83247e956ac11552183b23a7b495b067b55dba1f70433c7139408555ba2cd"
+    },
+    "region/assets/surface07/soil/weathered_loam.png.import": {
+      "bytes": 25,
+      "sha256": "c7d129df259feb5addb132a77ded322a6d94840a35e6112510cf7ff731f474bb"
+    },
+    "region/assets/surface07/terrain07.gd": {
+      "bytes": 19800,
+      "sha256": "3bad028bd9e333aa7c376f689c868cedf7fca8cac5951755de3eaf26e888b3b2"
+    },
+    "region/export_presets.cfg": {
+      "bytes": 300,
+      "sha256": "e712032657ef2a3cbef10853199625852f50e5b9ee5e9ed51e7220dd695466f4"
+    },
+    "region/LICENSES.md": {
+      "bytes": 3202,
+      "sha256": "bb3e94e4027b099b2fb1188e996b817a5fb92439f0f0b0367eb7ab71489b8830"
+    },
+    "region/preview.gd": {
+      "bytes": 12750,
+      "sha256": "4b55eb82f69d2498a4a0eee091bf769f1f125b6513e852720bcd9079b326b8b9"
+    },
+    "region/preview.tscn": {
+      "bytes": 186,
+      "sha256": "50c4ece2533f8f3f5ef58d04aed62a9c90fdee318f6987999592c5f0dddde469"
+    },
+    "region/project.godot": {
+      "bytes": 555,
+      "sha256": "3d14430163453c3ab768f90f2a77a439150eb472f90fca4e324b30f073618619"
+    },
+    "region/README.md": {
+      "bytes": 6337,
+      "sha256": "8271627aaca91a877be9b82e26d3f87e87e8b6b9396054c46a1711336bdf163a"
+    },
+    "region/REFERENCE_CHECK.json": {
+      "bytes": 2527,
+      "sha256": "d0d6d6aa1ae4022cae501d22f7f104c6362c205b6fdb0d59cbffb5ea92e39c66"
+    },
+    "region/reference_io.gd": {
+      "bytes": 1216,
+      "sha256": "f270574679fbdf58396c2eaef47e046e56b2f75f07f38391de8b04ae3ba58716"
+    },
+    "region/tools/bake_road_fringe.py": {
+      "bytes": 4340,
+      "sha256": "e17c4ea0dd6e6e29d135b8467ea6c6b92d0d929f5d2b9e08873bf25d44deb73e"
+    },
+    "region/tools/export_paving.gd": {
+      "bytes": 2216,
+      "sha256": "b6b927ee2f61cabefc686e0a52fcad7b28fd56ae8c9fe30fc2b678f10c5a4b63"
+    },
+    "region/views.json": {
+      "bytes": 432,
+      "sha256": "4d722dcdb2a955d56ee1fd40adfa09c2158dc6a7dc441bb50851d5595b7ea100"
+    },
+    "verify_package.py": {
+      "bytes": 1337,
+      "sha256": "e019d0e3829ca882e48ebbe49fe0b878ea497a7d9e9edd02e8a915d38e2a6abc"
+    }
+  }
+}
