@@ -26,6 +26,18 @@ const APRON_REACH: float = 520.0
 const APRON_TRUE: float = 40.0
 const APRON_SPREAD: float = 0.22
 const APRON_LATITUDE: float = 88.0
+## River pieces meet when their ends lie this close (units); bends sharper than a hairpin keep
+## their own sides, and a mitre is at most 1/RIVER_MITRE_LIMIT of the river's width.
+const RIVER_JOINT: float = 0.001
+const RIVER_HAIRPIN: float = 0.2
+const RIVER_MITRE_LIMIT: float = 0.5
+## CC-GEO-2.3's water (1.12) in the approved district's muted palette: greyer and deeper than the
+## older districts' sea, lakes and rivers, which read as saturated cyan under its evening light.
+const NATURAL_WATER: Dictionary = {
+	"sea": Color("2f4b55"),
+	"lake": Color("35545b"),
+	"river": Color("2d454b"),
+}
 ## Every plot is a level pad graded into the slope: flat to PAD_FLAT from its centre, back to the
 ## natural ground by PAD_BLEND along a smooth curve, so no wall or mesa is cut.
 const PAD_FLAT: float = 2.35
@@ -414,7 +426,7 @@ func landing_spot(region: int) -> Vector2:
 ## (`_prepare_local_rivers`): [kind, a or centre, b, width or radius].
 func _water_marks(reg: Dictionary) -> Array:
 	var marks: Array = []
-	for river: Dictionary in render_rivers:
+	for river: Dictionary in district_rivers:
 		var coordinates: Array = river.coordinates
 		for i in range(coordinates.size() - 1):
 			var a: Vector2 = _point_to_local_in(
@@ -651,7 +663,7 @@ func _prepare_local_rivers() -> void:
 	region_ground = float(Geo.sample_geo(reg.lat, reg.lon, noise, str(world.version)).height)
 	if str(world.version) == "CC-GEO-1.4":
 		return
-	var rivers: Array = render_rivers
+	var rivers: Array = district_rivers
 	for river_index in range(rivers.size()):
 		var river = rivers[river_index]
 		var coordinates: Array = river.coordinates
@@ -691,6 +703,7 @@ func _prepare_local_rivers() -> void:
 					"river_index": river_index
 				}
 			)
+	_join_river_segments()
 	for lake in world.get("lakes", []):
 		var center := _point_to_local(float(lake.lat), float(lake.lon))
 		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
@@ -700,6 +713,30 @@ func _prepare_local_rivers() -> void:
 		local_lakes.append(
 			{"center": center, "radius": radius, "height": _lift((h - region_ground) * 30.0) + .04}
 		)
+
+
+## Consecutive pieces of one river share their joint's side direction (a mitre), so a bend's outer
+## bank closes instead of showing a wedge between two quads (1.12).
+func _join_river_segments() -> void:
+	for segment: Dictionary in local_river_segments:
+		var side: Vector2 = (segment.b - segment.a).normalized().orthogonal()
+		segment.side_a = side
+		segment.side_b = side
+	for index: int in range(1, local_river_segments.size()):
+		var before: Dictionary = local_river_segments[index - 1]
+		var segment: Dictionary = local_river_segments[index]
+		if int(before.river_index) != int(segment.river_index):
+			continue
+		if (before.b as Vector2).distance_to(segment.a) > RIVER_JOINT:
+			continue
+		var own: Vector2 = segment.side_a
+		var mitre: Vector2 = (before.side_b as Vector2) + own
+		if mitre.length() < RIVER_HAIRPIN:
+			continue
+		mitre = mitre.normalized()
+		mitre /= maxf(mitre.dot(own), RIVER_MITRE_LIMIT)
+		before.side_b = mitre
+		segment.side_a = mitre
 
 
 func _river_height(heights: Array, index: int, ll: Array) -> float:
@@ -1460,8 +1497,8 @@ func _build_river() -> void:
 		var a: Vector2 = segment.a
 		var b: Vector2 = segment.b
 		var normal: Vector2 = (b - a).normalized().orthogonal()
-		var side_a: Vector2 = normal * float(segment.width_a)
-		var side_b: Vector2 = normal * float(segment.width_b)
+		var side_a: Vector2 = (segment.get("side_a", normal) as Vector2) * float(segment.width_a)
+		var side_b: Vector2 = (segment.get("side_b", normal) as Vector2) * float(segment.width_b)
 		var aa := Vector3(a.x - side_a.x, segment.ya, a.y - side_a.y)
 		var ab := Vector3(a.x + side_a.x, segment.ya, a.y + side_a.y)
 		var ba := Vector3(b.x - side_b.x, segment.yb, b.y - side_b.y)
@@ -1532,15 +1569,18 @@ func _build_sea() -> void:
 	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
-## Moving water: rippling normals over the same colours as before.
+## Moving water: rippling normals over the same colours as before. A CC-GEO-2.3 district takes
+## NATURAL_WATER instead.
 func _water_material(kind: String, tint: Color) -> ShaderMaterial:
 	var key: String = "water_" + kind
 	if not mats.has(key):
 		var material := ShaderMaterial.new()
 		material.shader = Shaders.shader("water")
 		material.set_shader_parameter("noise3d", Shaders.noise_texture())
-		material.set_shader_parameter("tint", tint)
 		mats[key] = material
+	if str(world.version) == WorldGen2.VERSION and NATURAL_WATER.has(kind):
+		tint = NATURAL_WATER[kind]
+	(mats[key] as ShaderMaterial).set_shader_parameter("tint", tint)
 	return mats[key]
 
 

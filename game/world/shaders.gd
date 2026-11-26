@@ -248,7 +248,6 @@ void seam_derivatives(vec2 uv, out vec2 ddx_uv, out vec2 ddy_uv) {
 }
 """
 
-
 # Versioned optical albedo. Angles, material coordinates and the runoff map are in the planet's
 # frame, so turning the globe, zooming, or switching to a different projection does not move them.
 const OPTICAL_SETTINGS_GLSL: String = """
@@ -535,10 +534,11 @@ void fragment() {
 }
 """
 
-## A soft pool of lamp light on the ground; `intensity` follows the night at the site.
+## A soft pool of lamp light on the ground; `intensity` follows the night at the site. Not fogged:
+## fog would add the haze's colour over the whole quad, by day as well (1.12).
 const GLOW_CODE: String = """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 glow_color : source_color = vec4(1.0, 0.72, 0.4, 1.0);
 uniform float intensity = 0.0;
 

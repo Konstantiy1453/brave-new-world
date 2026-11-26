@@ -120,6 +120,9 @@ var label_font: Font
 var local_river_segments: Array = []
 var local_lakes: Array = []
 var render_rivers: Array = []
+## The rivers as the district draws them (flat_view.gd `_prepare_render_rivers`): CC-GEO-2.3's
+## coarse-grid channels rounded over half a step, older worlds' as the maps draw them.
+var district_rivers: Array = []
 var last_setup_ms: int = 0
 var last_atlas_ms: int = 0
 var last_atlas_cached: bool = false
@@ -166,7 +169,9 @@ func _prepare_optical_geography(key: String) -> void:
 		mask.generate_mipmaps()
 		if optical_water_cache.size() >= 2:
 			optical_water_cache.erase(optical_water_cache.keys()[0])
-		optical_water_cache[key] = [ImageTexture.create_from_image(water), ImageTexture.create_from_image(mask)]
+		optical_water_cache[key] = [
+			ImageTexture.create_from_image(water), ImageTexture.create_from_image(mask)
+		]
 	optical_water = optical_water_cache[key][0]
 	optical_coast = optical_water_cache[key][1]
 

@@ -138,7 +138,9 @@ void fragment() {
 	old_base *= .79 + .23 * broad + .15 * (n(p * 3.1) + .55 * n(p * 8.3));
 	// The approved close ground round the town, fading to the earlier ground on the hills.
 	float reach = length((world_pos.xz - town.xy) / max(town.zw, vec2(1.0)));
-	float local = 1. - smoothstep(1.0, 1.7, reach);
+	// Fades over 1.4 town extents (1.12; the approved district, a single still, over 0.7), so the
+	// close ground does not end in a ring round a small town.
+	float local = 1. - smoothstep(1.0, 2.4, reach);
 	float coarse2 = n(m * .165 + vec2(17.2, -31.));
 	float ecology = n(m * .49 + vec2(89., -19.));
 	float scatter = n(m * 1.47 + vec2(-63., 107.));
@@ -197,8 +199,12 @@ void fragment() {
 	vec3 r1 = cross(py, vn);
 	vec3 r2 = cross(vn, px);
 	float det = dot(px, r1);
+	// Relief finer than a pixel turns the normals at random and darkens the distant ground: it
+	// fades out as one pixel comes to cover more than about a metre.
+	float footprint = 0.5 * (length(px) + length(py)) * metres_per_unit;
+	vec2 slope = vec2(dFdx(relief), dFdy(relief)) * (1.0 - smoothstep(0.4, 1.6, footprint));
 	if (abs(det) > .0000001) {
-		vec3 grad = sign(det) * (dFdx(relief) * r1 + dFdy(relief) * r2);
+		vec3 grad = sign(det) * (slope.x * r1 + slope.y * r2);
 		NORMAL = normalize(abs(det) * vn - grad);
 	}
 	ROUGHNESS = clamp(.945 - .065 * upper_clast + .025 * cover, .83, .98);

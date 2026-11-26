@@ -8,6 +8,9 @@ extends "res://world/region_view.gd"
 ## The ground round the town reads as the approved close ground this far past its buildings, in
 ## units (district_ground.gd).
 const TOWN_GROUND_MARGIN: float = 8.0
+## The close ground reaches at least this far from a town's middle (units, about 600 m): a new
+## town of a few buildings otherwise stood on a small disc of it, ringed by the far ground.
+const TOWN_GROUND_MIN_REACH: float = 36.0
 ## A lane stops where the next building along its row stands further than this from the last, in
 ## units: two plots apart and a little.
 const LANE_GAP: float = 12.5
@@ -318,7 +321,9 @@ func _dress_ground() -> void:
 		centre = (low + high) * 0.5
 		reach = (high - low) * 0.5 + Vector2.ONE * TOWN_GROUND_MARGIN
 		level = total / town_spots.size()
-	DistrictGround.set_town(ground_material, centre, reach, level)
+	DistrictGround.set_town(
+		ground_material, centre, reach.max(Vector2.ONE * TOWN_GROUND_MIN_REACH), level
+	)
 
 
 ## A reviewed kind's high-detail model over the game's own, the one shown near the camera and the

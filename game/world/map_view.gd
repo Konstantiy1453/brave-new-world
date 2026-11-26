@@ -86,7 +86,14 @@ const REGION_EXPOSURE: float = 1.12
 const REGION_SHADOW_REACH: Vector2 = Vector2(1.6, 14.0)
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
-const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
+## A generated district's haze (1.12), the approved district's aerial perspective (0.00075 a metre,
+## exponential from the camera): it begins REGION_HAZE.x camera distances out, so the town in view
+## stays clear at any zoom, and thickens over the next REGION_HAZE.y units (2.5 km) along a
+## square-root curve, close to the approved haze from the settlement and verge cameras.
+const REGION_HAZE: Vector2 = Vector2(0.8, 150.0)
+const REGION_HAZE_CURVE: float = 0.5
+## The haze's light, as the approved district's (0.75 by day, 0.7 in the evening).
+const REGION_HAZE_ENERGY: float = 0.72
 ## The town view's near clip plane. Its camera orbits 31 units or more from its pivot and at least
 ## 7 units above it, so nothing comes this close; the depth buffer is ten times finer than with the
 ## globe's 0.05, and ground and water no longer flicker where they meet.
@@ -840,7 +847,16 @@ func _update_camera(weight: float) -> void:
 			sun_light.directional_shadow_max_distance = clampf(
 				smooth_distance * REGION_SHADOW_REACH.x, REGION_SHADOW_REACH.y, 110.0
 			)
+			_region_haze()
 	_aim_sun()
+
+
+## The haze of a generated district follows the camera (REGION_HAZE).
+func _region_haze() -> void:
+	if environment == null or not environment.fog_enabled:
+		return
+	environment.fog_depth_begin = smooth_distance * REGION_HAZE.x
+	environment.fog_depth_end = environment.fog_depth_begin + REGION_HAZE.y
 
 
 ## On the globe the light comes from the real sun (or over the viewer's shoulder without day and
@@ -963,11 +979,11 @@ func _region_air(daylight: float, dusk: float, evening: float = 0.0) -> void:
 	environment.tonemap_white = 4.0
 	environment.fog_mode = Environment.FOG_MODE_DEPTH
 	environment.fog_light_color = air
-	environment.fog_light_energy = 1.0
+	environment.fog_light_energy = REGION_HAZE_ENERGY
 	environment.fog_sun_scatter = 0.0
 	environment.fog_density = 1.0
-	environment.fog_depth_begin = REGION_HAZE.x
-	environment.fog_depth_end = REGION_HAZE.y
+	environment.fog_depth_curve = REGION_HAZE_CURVE
+	_region_haze()
 
 
 func _build_environment() -> void:

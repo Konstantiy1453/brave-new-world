@@ -10,7 +10,7 @@ extends SceneTree
 ##     res://tests/art/capture_district.gd -- --out=<folder> [--seed=260129] [--days=1200]
 ##     [--size=1920x1080] [--hours=day,dusk] [--views=overview,settlement,verge,rocks]
 ##     [--save=<file>: play once and keep the colony there, or load it when it exists]
-##     [--landing=inland_dry: land the capital on the driest inland playable site]
+##     [--landing=inland_dry: land the capital on the driest temperate inland playable site]
 ## The approved views are lit from behind the camera; each view here turns the same way to the
 ## site's own sun. --approved_closeups=false draws Boulder 01's play mesh instead of its approved
 ## scan. Diagnostics: --hide_sea, --no_fringe, --no_terrain_shadow, --probe_pixel=x:y.
@@ -23,6 +23,8 @@ const DistrictPlan = preload("res://world/district/district_plan.gd")
 const Geo = preload("res://world/world_gen.gd")
 const DistrictNature = preload("res://world/district/district_nature.gd")
 
+## The inland dry landing's floor: a temperate dry site, not a polar one (degrees C).
+const DRY_SITE_MIN_C: float = 8.0
 ## [distance m, pitch degrees, fov] of the approved views (views.json, metres).
 const VIEWS: Dictionary = {
 	"settlement": [155.5, 15.7, 43.0],
@@ -128,6 +130,8 @@ func run() -> void:
 		for node: Node in map.surface.find_children("*", "MeshInstance3D", false, false):
 			if (node as MeshInstance3D).mesh is PlaneMesh:
 				(node as MeshInstance3D).visible = false
+	if str(options.get("ground_debug", "")) != "":
+		_debug_ground(str(options.ground_debug))
 	var targets: Dictionary = _targets(sim, region)
 	report.targets = {}
 	for key: String in targets:
@@ -300,27 +304,76 @@ func _town_facing(target: Vector2, sun_yaw: float, distance: float) -> float:
 	return best
 
 
-## The capital on the driest inland site of the world's playable pairs (the bot builds it up from
-## there): the comparison's inland, dry ground.
+## The capital on inland, dry, temperate ground with no river or lake (the bot builds it up from
+## there): the comparison's inland dry site, where no water may show. The driest such site of the
+## world's playable pairs, else the driest such point a player could found at (free placement).
 func _land_inland_dry(sim: RefCounted, bot: RefCounted) -> void:
 	var best: int = -1
 	var driest: float = INF
 	for pair: Array in sim.geo.get("playability", {}).get("pairs", []):
 		for site: int in [int(pair[0]), int(pair[1])]:
 			var reg: Dictionary = sim.geo.regions[site]
-			if bool(reg.get("coast", false)) or sim.settle_refusal(site) != "":
+			if bool(reg.get("coast", false)) or bool(reg.get("river", false)):
+				continue
+			if (
+				float(reg.get("temperature", 0.0)) < DRY_SITE_MIN_C
+				or sim.settle_refusal(site) != ""
+			):
 				continue
 			if float(reg.get("rainfall", 1.0)) < driest:
 				driest = float(reg.get("rainfall", 1.0))
 				best = site
-	if best < 0:
-		report.failures.append("no inland site to land on")
+	if best >= 0:
+		var landed: Dictionary = sim.geo.regions[best]
+		report.landing = {
+			"site": best,
+			"rainfall": driest,
+			"temperature": float(landed.get("temperature", 0.0)),
+			"lat": float(landed.lat),
+			"lon": float(landed.lon),
+		}
+		bot.home = best
+		bot.act("settle", {"site": best})
+		bot.act("build", {"site": best, "kind": "mine_ore"})
+		bot.act("build", {"site": best, "kind": "mine_copper"})
 		return
-	report.landing = {"site": best, "rainfall": driest}
-	bot.home = best
-	bot.act("settle", {"site": best})
-	bot.act("build", {"site": best, "kind": "mine_ore"})
-	bot.act("build", {"site": best, "kind": "mine_copper"})
+	var ground: Dictionary = _dry_ground(sim)
+	if ground.is_empty():
+		report.failures.append("no inland dry ground to land on")
+		return
+	var refusal: String = bot.act("settle_at", {"lat": float(ground.lat), "lon": float(ground.lon)})
+	if refusal != "" or sim.state.settlements.is_empty():
+		report.failures.append("landing refused: " + refusal)
+		return
+	bot.home = int(sim.state.settlements[0].region)
+	report.landing = {
+		"site": bot.home,
+		"placed": true,
+		"lat": float(ground.lat),
+		"lon": float(ground.lon),
+		"temperature": float(ground.temperature),
+		"water": float(ground.water),
+		"biome": str(ground.biome),
+		"terrain": str(ground.terrain),
+	}
+
+
+## The driest ground a capital could be founded on at a grid cell's centre: inland, no river or
+## lake, DRY_SITE_MIN_C or warmer.
+func _dry_ground(sim: RefCounted) -> Dictionary:
+	var found: Dictionary = {}
+	var width: int = int(sim.geo.grid_width)
+	for index: int in range(sim.geo.grid.size()):
+		var lat: float = 90.0 - (float(index / width) + 0.5) * 2.5
+		var lon: float = (float(index % width) + 0.5) * 2.5 - 180.0
+		var view: Dictionary = sim.Placement.view(sim, lat, lon)
+		if str(view.refusal) != "" or bool(view.coast) or bool(view.river) or bool(view.lake):
+			continue
+		if bool(view.get("lake_here", false)) or float(view.temperature) < DRY_SITE_MIN_C:
+			continue
+		if found.is_empty() or float(view.water) < float(found.water):
+			found = view
+	return found
 
 
 ## A point five metres off a road near the middle of town, on a stretch running away from the sun,
@@ -380,6 +433,33 @@ func _show_overlays(on: bool) -> void:
 
 
 ## Diagnostics: what stands under a pixel ("x:y" in the window's pixels).
+## Diagnostic: the landscape drawn unshaded with its albedo (`albedo`), its world normal (`normal`),
+## its vertex data (`data`: temperature, rain, wetness) or any shader value (`expr:<glsl>`), to tell
+## its material from its light.
+func _debug_ground(what: String) -> void:
+	var land := map.surface.get_node_or_null("Landscape") as GeometryInstance3D
+	if land == null:
+		return
+	var probe := (map.ground_material as ShaderMaterial).duplicate() as ShaderMaterial
+	var code: String = probe.shader.code.replace(
+		"render_mode cull_back,", "render_mode unshaded, cull_back,"
+	)
+	var shown: Dictionary = {
+		"normal": "ALBEDO = world_normal * 0.5 + 0.5;",
+		"data": "ALBEDO = data.rgb;",
+	}
+	if what.begins_with("expr:"):
+		shown[what] = "ALBEDO = vec3(%s);" % what.substr(5)
+	if shown.has(what):
+		code = code.replace(
+			"\tROUGHNESS = clamp(", "\t" + str(shown[what]) + "\n\tROUGHNESS = clamp("
+		)
+	var shader := Shader.new()
+	shader.code = code
+	probe.shader = shader
+	land.material_override = probe
+
+
 func _probe_pixel(pixel: String) -> void:
 	var at := Vector2(float(pixel.get_slice(":", 0)), float(pixel.get_slice(":", 1)))
 	var origin: Vector3 = map.camera.project_ray_origin(at)

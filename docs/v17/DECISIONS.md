@@ -1647,3 +1647,30 @@ factories, so the game's cycle and the payback bands stay as they are.
   `v110_placement` founds on three such landmasses. The 1.10 rule's coast clause is still inert (it
   reads `sea_partners` from the base geography rules, which carry it only for CC-GEO-2.2 and later
   worlds' generation); letting a coast alone qualify is a rule change, not this release's.
+- A generated district's haze follows the camera: it begins 0.8 camera distances out and thickens
+  over the next 150 units (2.5 km) on a square-root curve, which from the settlement and verge
+  cameras is close to the approved district's exponential haze (0.00075 a metre: about 30% at
+  600 m, half at 1 km). The first comparison frames had a fixed haze from 2.5 km; the old soil
+  and rock beyond the town (albedo about 0.02, the approved shader's own colours) stood unveiled
+  and ACES's toe drew it black, a band behind the town and a black corner in the overview. With
+  the haze tied to the camera, the town in view stays clear at any zoom.
+- CC-GEO-2.3 districts' water is greyer and deeper (sea `2f4b55`, lakes `35545b`, rivers `2d454b`):
+  the older districts' tints read as saturated cyan (HSV saturation 0.86-0.94) beside the
+  approved palette. Older worlds keep theirs.
+- The ground's fine relief fades out where one pixel covers 0.4-1.6 m, so distant ground does not
+  shimmer with sub-pixel bumps.
+- The inland dry capture lands on the driest inland site at 8 °C or warmer: on seed 260133 the
+  driest of all was a cold desert at 66°S under snow, dry but not the steppe the request means.
+- A CC-GEO-2.3 district rounds its rivers' corners over half a coarse step (`district_rivers`);
+  the maps keep a quarter step. At four district units a degree, quarter-step corners crossed the
+  district as right-angled staircases. Consecutive river pieces share mitred sides at their
+  joints, so a bend's outer bank no longer shows wedge-shaped gaps. Older worlds' districts draw
+  their rivers as before.
+- The haze is drawn at 0.72 of the air's light (the approved preview: 0.75 by day, 0.7 in the
+  evening); at full light it lifted the settlement frame's mean to 124 against the approved 95.
+- Lamp-light pools are not fogged: an additive surface takes the fog's colour over its whole quad,
+  which drew pale squares over every plot once the haze reached the town.
+- The close ground (soil07's loam and turf) reaches at least 36 units (about 600 m) from a town's
+  middle and fades out over 1.4 town extents (the approved still: 0.7). A new town of a few
+  buildings stood on a small disc of it ringed by the far ground, sharpest at arid sites (tan
+  against rust-brown).

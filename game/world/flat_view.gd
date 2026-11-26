@@ -20,6 +20,12 @@ const GOOD_WEIGHT: Dictionary = {"ore": 8.0, "copper": 14.0, "crystal": 32.0}
 const CLIMATE_RING_DEGREES: float = 35.0
 ## Straight-line jumps longer than this on the flat map cross the antimeridian: no gliding there.
 const FLAT_WRAP_JUMP: float = 9.0
+## How far along the steps on either side a river's corners are rounded: on the maps, and in a
+## CC-GEO-2.3 district (half a step: one smooth bend per cell).
+const MAP_RIVER_ROUNDING: float = 0.24
+const DISTRICT_RIVER_ROUNDING: float = 0.5
+## Points of a rounded river closer than this (degrees) are one point.
+const RIVER_POINT_EPSILON: float = 0.0001
 ## The flat map's width and height in scene units (360° and 180° at 20° a unit).
 const FLAT_WIDTH: float = 18.0
 const FLAT_HEIGHT: float = 9.0
@@ -716,6 +722,7 @@ func _prepare_render_rivers() -> void:
 	# Round only the corners of the persisted coarse-grid channels. The same
 	# subcell centerline and monotone height interpolation feed all three views.
 	render_rivers.clear()
+	district_rivers.clear()
 	var metadata: Array = world.get("river_metadata", [])
 	var rivers: Array = world.get("rivers", [])
 	for river_index in range(rivers.size()):
@@ -740,20 +747,39 @@ func _prepare_render_rivers() -> void:
 			samples.append(Vector3(lon, float(ll[0]), h))
 		if samples.size() < 2:
 			continue
-		var rounded: Array[Vector3] = [samples[0]]
-		for i in range(1, samples.size() - 1):
-			var a: Vector3 = samples[i - 1].lerp(samples[i], .76)
-			var b: Vector3 = samples[i].lerp(samples[i + 1], .24)
-			rounded.append(a)
-			for step in range(1, 7):
-				var t: float = float(step) / 6
-				rounded.append(a.lerp(samples[i], t).lerp(samples[i].lerp(b, t), t))
-		rounded.append(samples.back())
-		var output: Array = []
-		var output_heights: Array = []
-		for point in rounded:
-			output.append([point.y, wrapf(point.x, -180, 180)])
-			output_heights.append(point.z)
-		render_rivers.append(
-			{"coordinates": output, "heights": output_heights, "river_index": river_index}
+		var drawn: Dictionary = _rounded_river(samples, MAP_RIVER_ROUNDING, river_index)
+		render_rivers.append(drawn)
+		# In a district four units span a degree: a coarse step is several units long, and corners
+		# rounded over a quarter of it still read as a staircase (1.12).
+		district_rivers.append(
+			(
+				_rounded_river(samples, DISTRICT_RIVER_ROUNDING, river_index)
+				if _uses_optical_geography()
+				else drawn
+			)
 		)
+
+
+## A channel's cell centres (lon, lat, height) with each corner rounded by a quadratic curve over
+## `reach` of the steps on either side, as [lat, lon] coordinates and heights. Heights stay
+## monotone: each curve runs between points of the falling channel.
+func _rounded_river(samples: Array[Vector3], reach: float, river_index: int) -> Dictionary:
+	# Half-step curves meet end to end; their shared points are kept once.
+	var merge: bool = reach >= DISTRICT_RIVER_ROUNDING
+	var rounded: Array[Vector3] = [samples[0]]
+	for i in range(1, samples.size() - 1):
+		var a: Vector3 = samples[i - 1].lerp(samples[i], 1.0 - reach)
+		var b: Vector3 = samples[i].lerp(samples[i + 1], reach)
+		if not merge or a.distance_to(rounded.back()) > RIVER_POINT_EPSILON:
+			rounded.append(a)
+		for step in range(1, 7):
+			var t: float = float(step) / 6
+			rounded.append(a.lerp(samples[i], t).lerp(samples[i].lerp(b, t), t))
+	if not merge or samples.back().distance_to(rounded.back()) > RIVER_POINT_EPSILON:
+		rounded.append(samples.back())
+	var output: Array = []
+	var output_heights: Array = []
+	for point in rounded:
+		output.append([point.y, wrapf(point.x, -180, 180)])
+		output_heights.append(point.z)
+	return {"coordinates": output, "heights": output_heights, "river_index": river_index}
