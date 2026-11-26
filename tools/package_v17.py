@@ -51,11 +51,13 @@ CREDITS = [
     ("game/assets/terrain_v3/CREDITS.txt", "CREDITS-terrain.txt"),
     ("game/assets/district/CREDITS.txt", "CREDITS-district.txt"),
 ]
-# Raw files the game reads by path at run time (1.12): every one must be inside the PCK.
+# Raw files the game reads by path at run time (1.12): every one must be inside the PCK as it is.
+# (The terrain's two PNGs are imported textures, loaded through their import remaps.)
 RAW_ASSETS = [
     ("game/assets/district", {".meshbin", ".rock", ".json", ".jpg", ".png", ".gdshader", ".txt"}),
-    ("game/assets/terrain_v3", {".bin", ".png", ".txt"}),
+    ("game/assets/terrain_v3", {".bin", ".txt"}),
 ]
+IMPORTED_ASSETS = ["assets/terrain_v3/optical.png", "assets/terrain_v3/cloud-coverage.png"]
 SKIPPED_PARTS = {".godot", "__pycache__", "_tmp"}
 SKIPPED_SUFFIXES = {".tmp", ".bak"}
 
@@ -99,6 +101,7 @@ def check_pck():
                 inside = path.relative_to(ROOT / "game").as_posix()
                 if inside not in listed:
                     missing.append(inside)
+    missing += [path for path in IMPORTED_ASSETS if path + ".import" not in listed]
     if missing:
         raise SystemExit(f"Raw assets missing from the PCK: {missing}")
     print(f"PCK directory: {len(paths)} files, no test material, all {raw} raw district and terrain files")

@@ -8,14 +8,16 @@ extends SceneTree
 ## settlement camera and a street-level verge) and a capture of each, with the machine they ran on.
 ##
 ##   godot --main-pack <pck> --rendering-driver opengl3 --script <abs>/district_check.gd --
-##     --save=<file> --out=<json> [--frames=240] [--size=1920x1080] [--pck=<pck>] [--expect=59: the
+##     --save=<file> --out=<json> [--frames=240] [--size=1920x1080] [--pck=<pck>] [--expect=58: the
 ##     raw files the source holds]
 
 const METRES_PER_UNIT: float = 16.6
-const RAW_FOLDERS: Array[String] = ["res://assets/district", "res://assets/terrain_v3"]
-const RAW_SUFFIXES: Array[String] = [
-	"meshbin", "rock", "json", "jpg", "png", "gdshader", "txt", "bin"
-]
+## Folders the game reads raw files from, and the kinds it reads raw in each (the terrain's PNGs
+## are imported textures, loaded through their import remaps).
+const RAW_FOLDERS: Dictionary = {
+	"res://assets/district": ["meshbin", "rock", "json", "jpg", "png", "gdshader", "txt"],
+	"res://assets/terrain_v3": ["bin", "txt"],
+}
 
 var options: Dictionary = {"save": "", "out": "", "frames": "240", "size": "1920x1080", "pck": ""}
 var record: Dictionary = {"checks": [], "ok": true, "views": {}}
@@ -129,13 +131,13 @@ func _raw_files() -> void:
 	var bad: Array[String] = []
 	for folder: String in RAW_FOLDERS:
 		for path: String in _walk(folder):
-			if path.get_extension() not in RAW_SUFFIXES:
+			if path.get_extension() not in RAW_FOLDERS[folder]:
 				continue
 			count += 1
 			if FileAccess.get_file_as_bytes(path).is_empty():
 				bad.append(path)
 	record.raw_files = count
-	var expected: int = int(options.get("expect", "59"))
+	var expected: int = int(options.get("expect", "58"))
 	_check(
 		count >= expected and bad.is_empty(),
 		"%d raw files open from res:// (of %d) %s" % [count, expected, str(bad)]

@@ -1,5 +1,23 @@
 # Colony Charter — Progress
 
+## 1.12.0 — approved terrain and settlement (branch `v17-terrain`, 2026-11-26)
+
+The request: integrate the approved terrain and settlement handoff (`codex/approved-terrain-and-region`
+`6046c90`, instructions `docs/handoff/approved-terrain-region/CLAUDE_INSTRUCTIONS.md`) into 1.11.1 and
+release 1.12.0 for Windows x64. Evidence labels as in `CLAUDE.md`; everything ran in the Linux cloud
+container (llvmpipe software rendering). Human playtests NOT_RUN; the Windows EXE NOT_RUN.
+
+| Part | What | State |
+|---|---|---|
+| Setup | branch from the handoff, LFS assets, `verify_package.py`, the regional reference reproduced (llvmpipe Forward+ within ~1.7/255 of the approved frames) | **done** |
+| Map | CC-GEO-2.3 and mountain and plateau snow (patches 01, 02) in New Expedition, the satellite map and the globe; old saves keep their generator and settlement places; Linux hashes and a Linux 1.11.1 fixture beside the Windows ones; world-dependent suites pinned to 2.2 worlds | **done** (`8a41277`) |
+| District layout (rev 06) | 16.6 m per unit (59.62 m median clear space), reviewed footprints x1.3 (cap 91 m), metric streets (8.6 m through road, 6.2 m lanes, 7.0 m works roads, gutters, footways, gravel shoulders), the grid bent into curving streets, oriented footprint pads, high-detail reviewed models near the camera, metric vehicles; lanes from the player's own buildings, outlying buildings joined along open grid lines | **done** (`c876309`, `acad7f9`) |
+| Ground (rev 07) | soil07 loam and turf, packed earth and gravel along the live paving (shoulders' mask rebuilt from the drawn streets), layered rock on far and steep slopes, the site's climate; settled town ground; no inland sea ponds | **done** (`384a6b1`, `9c90dbd`) |
+| Nature (rev 07) | trees, shrubs, fine grass, weathered boulders with toe stones, far outcrops, from forest and climate, clear of paving and footprints; Boulder 01 field and chip meshes (2,000 and 220 triangles) and a 12,000-triangle play mesh (the 56,540 scan kept for comparison captures) | **done** (`acad7f9`, `6bfc011`) |
+| Light | graded sky, ACES 1.12, warm ambient, evening sun; calibrated against the approved frames from equivalent cameras | **done** (`9c90dbd`) |
+| Frame budget | draw limits for play, sectors, shadow reach with the camera: settlement camera 10.2 M to 3.7 M primitives, 1,497 to 561 draws | **done** (`6bfc011`) |
+| Release | version 1.12.0, CHANGELOG, players' note, credits in the zip and the PCK, packaging checks every raw file is in the PCK | in progress |
+
 ## 1.11.0 — the contractor (branch `v17-charter`, started 2026-11-23)
 
 The plan is `docs/superpowers/plans/2026-11-23-v111-contractor-instructions.md`: the player is an

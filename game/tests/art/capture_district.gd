@@ -10,6 +10,7 @@ extends SceneTree
 ##     res://tests/art/capture_district.gd -- --out=<folder> [--seed=260129] [--days=1200]
 ##     [--size=1920x1080] [--hours=day,dusk] [--views=overview,settlement,verge,rocks]
 ##     [--save=<file>: play once and keep the colony there, or load it when it exists]
+##     [--landing=inland_dry: land the capital on the driest inland playable site]
 ## The approved views are lit from behind the camera; each view here turns the same way to the
 ## site's own sun. --approved_closeups=false draws Boulder 01's play mesh instead of its approved
 ## scan. Diagnostics: --hide_sea, --no_fringe, --no_terrain_shadow, --probe_pixel=x:y.
@@ -69,6 +70,8 @@ func run() -> void:
 		sim.new_game(int(options.seed), "capital", 1, "normal")
 		var bot: RefCounted = Bot.new()
 		bot.begin(sim, int(options.seed))
+		if str(options.get("landing", "")) == "inland_dry":
+			_land_inland_dry(sim, bot)
 		for _day: int in range(int(options.days)):
 			bot.on_day()
 			sim.tick()
@@ -295,6 +298,33 @@ func _town_facing(target: Vector2, sun_yaw: float, distance: float) -> float:
 			best_count = count
 			best = yaw
 	return best
+
+
+## The capital on the driest inland site of the world's playable pairs (the bot builds it up from
+## there): the comparison's inland, dry ground.
+func _land_inland_dry(sim: RefCounted, bot: RefCounted) -> void:
+	var noise := FastNoiseLite.new()
+	var best: int = -1
+	var driest: float = INF
+	for pair: Array in sim.geo.get("playability", {}).get("pairs", []):
+		for site: int in [int(pair[0]), int(pair[1])]:
+			var reg: Dictionary = sim.geo.regions[site]
+			if bool(reg.get("coast", false)) or sim.settle_refusal(site) != "":
+				continue
+			var g: Dictionary = Geo.sample_geo(
+				float(reg.lat), float(reg.lon), noise, str(sim.geo.version)
+			)
+			if float(g.rainfall) < driest:
+				driest = float(g.rainfall)
+				best = site
+	if best < 0:
+		report.failures.append("no inland site to land on")
+		return
+	report.landing = {"site": best, "rainfall": driest}
+	bot.home = best
+	bot.act("settle", {"site": best})
+	bot.act("build", {"site": best, "kind": "mine_ore"})
+	bot.act("build", {"site": best, "kind": "mine_copper"})
 
 
 ## A point five metres off a road near the middle of town, on a stretch running away from the sun,
