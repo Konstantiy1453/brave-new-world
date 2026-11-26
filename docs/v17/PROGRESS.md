@@ -17,6 +17,8 @@ container (llvmpipe software rendering). Human playtests NOT_RUN; the Windows EX
 | Light | graded sky, ACES 1.12, warm ambient, evening sun; calibrated against the approved frames from equivalent cameras | **done** (`9c90dbd`) |
 | Frame budget | draw limits for play, sectors, shadow reach with the camera: settlement camera 10.2 M to 3.7 M primitives, 1,497 to 561 draws | **done** (`6bfc011`) |
 | Rocks | Boulder 01's reduced meshes had merged across UV seams and turned inside-out; the decimator now keeps UV islands and the scan's clockwise winding (`e2a5222`); `docs/v17/terrain/boulder_01_details.webp` | **done** |
+| Founding | the ground panel's ✓ and the founding disagreed for a capital placed on a landmass with no recommended site (four of the kit's six seed-3 clicks on CC-GEO-2.3); the founding now judges a placed site by the panel's rule; `v110_placement` founds on three such landmasses | **done** (`c57287f`) |
+| Distance and water | the far ground beyond the town drew black (unveiled, then ACES's toe): the haze now begins near the camera's focus as the approved district's does; muted CC-GEO-2.3 water; lamp pools out of the fog (they drew pale squares); rivers rounded over half a coarse step with mitred bends (they crossed districts as staircases); a small town's close ground reaches 600 m | **done** (`e4dbab7`) |
 | Release | version 1.12.0, CHANGELOG, players' note, credits in the zip and the PCK, packaging checks every raw file is in the PCK | in progress |
 
 **Suites** (automated test, all 75 that need no window, on `9c90dbd`, 2026-11-26): 67 pass. The
