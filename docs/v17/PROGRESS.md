@@ -19,15 +19,44 @@ container (llvmpipe software rendering). Human playtests NOT_RUN; the Windows EX
 | Rocks | Boulder 01's reduced meshes had merged across UV seams and turned inside-out; the decimator now keeps UV islands and the scan's clockwise winding (`e2a5222`); `docs/v17/terrain/boulder_01_details.webp` | **done** |
 | Founding | the ground panel's ✓ and the founding disagreed for a capital placed on a landmass with no recommended site (four of the kit's six seed-3 clicks on CC-GEO-2.3); the founding now judges a placed site by the panel's rule; `v110_placement` founds on three such landmasses | **done** (`c57287f`) |
 | Distance and water | the far ground beyond the town drew black (unveiled, then ACES's toe): the haze now begins near the camera's focus as the approved district's does; muted CC-GEO-2.3 water; lamp pools out of the fog (they drew pale squares); rivers rounded over half a coarse step with mitred bends (they crossed districts as staircases); a small town's close ground reaches 600 m | **done** (`e4dbab7`) |
-| Release | version 1.12.0, CHANGELOG, players' note, credits in the zip and the PCK, packaging checks every raw file is in the PCK | in progress |
+| Release | version 1.12.0, CHANGELOG, players' note, credits in the zip and the PCK, packaging checks every raw file is in the PCK (723 files, no test material, all 58 raw district and terrain files); GitHub release `v1.12.0` | **done** |
 
-**Suites** (automated test, all 75 that need no window, on `9c90dbd`, 2026-11-26): 67 pass. The
+**Suites** (automated test, all 75 that need no window, on `f2a62da`, 2026-11-26): 67 pass. The
 8 failures are `v19_payback` (on CC-GEO-2.3 worlds the light ore mine pays back in 56 days, band
 70-150, and the processor in 113, band 120-300: 1.12 does not rebalance the economy) and the seven
 `review_*` tools, which need their original `D:` paths. The four suites that used to fail on Linux
 for Windows-made fixtures (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`) pass, as
-do `terrain23_career`, `terrain_water23` and `terrain23_sites`. The region suites (`v19_region`,
-`v110_bay`, `v110_placement`, `v110_lights`, `v17_bugs`) pass again after each district change.
+do `terrain23_career`, `terrain_water23` and `terrain23_sites`. Window suites under Xvfb: 3 of 4
+(`v16_scroll_probe`, `world_v16_visual`, `world_v17_seam`); `v16_interaction_probe` fails on its
+1.6 fixture's world (no `grid_width` for the sea-route grid), as since 1.8 and on 1.11.0.
+
+**Packaged build** (exported PCK from `e4dbab7`, the game files the release ships; run with the Linux
+4.5.1 runtime, `--main-pack`; evidence label: exported PCK, not the Windows EXE): boot to the menu
+with no script error; capital founded on picked ground from the globe (14 of 14 checks) and from
+the flat map (14 of 14), each saved, quit, continued from the menu and found where it was clicked;
+the seed-3 regression (16 of 16: six clicks on unmarked land, then the capital founded at the last,
+which before `c57287f` the founding refused); refusals at sea, at the pole and on steep ground (7 of
+7); a 1.10 save carried over (13 of 13); a 1.10 save's district from cold (15 of 15); the terrain
+export check (CC-GEO-2.3 new games, a legacy 2.2 save keeping its generator and settlement places);
+and the district of the played coastal colony from cold (15 of 15: all 58 raw district and terrain
+files open from the PCK, ground textures, shoulders, paving, boulders, toe stones, grass,
+buildings, near-camera models). The two outpost cases (the colony played by the balanced bot to
+the expansion licence inside the running game, then an expedition through the interface to picked
+inland ground from the globe and to coastal ground from the flat map, its arrival, a building
+ordered through the build page, a road, a save and a reload) were still playing to the licence
+after 80 minutes when the release was packaged; their result is added below when they finish.
+
+**Frame times** (packaged PCK, the coastal colony at day 900: 37 buildings, 277 people; Intel Xeon
+2.30 GHz, 4 threads, llvmpipe software rendering (Mesa 25.2.8, OpenGL 4.5), GL Compatibility,
+1600 x 900; 240 frames each): cold region entry 4,648 ms (nature 458 ms, shoulders 97 ms); the
+district's default view (1,112 m) 684 ms mean, 682 median, 722 p95 (3.53 M primitives, 1,661
+draws); the approved settlement camera (155.5 m) 506 / 502 / 536 ms (3.71 M, 561 draws); a
+street-level verge (16.2 m) 352 / 348 / 381 ms (2.10 M, 359 draws). Software rendering only: no GPU
+frame time was measured.
+
+**Captures** (screenshot viewed; `docs/v17/terrain/`): the coastal colony and an inland arid colony
+at the approved cameras, day, evening and night, in Compatibility, and the coastal colony and seed
+260130's globe and satellite map in Forward+ (lavapipe).
 
 **District measures** (the played colony, seed 260129, day 900, 37 buildings): median clear space
 53.2 m between neighbouring footprints (approved 59.62 m), the built window 1,453.5 x 1,049.9 m
