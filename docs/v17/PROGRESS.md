@@ -16,7 +16,21 @@ container (llvmpipe software rendering). Human playtests NOT_RUN; the Windows EX
 | Nature (rev 07) | trees, shrubs, fine grass, weathered boulders with toe stones, far outcrops, from forest and climate, clear of paving and footprints; Boulder 01 field and chip meshes (2,000 and 220 triangles) and a 12,000-triangle play mesh (the 56,540 scan kept for comparison captures) | **done** (`acad7f9`, `6bfc011`) |
 | Light | graded sky, ACES 1.12, warm ambient, evening sun; calibrated against the approved frames from equivalent cameras | **done** (`9c90dbd`) |
 | Frame budget | draw limits for play, sectors, shadow reach with the camera: settlement camera 10.2 M to 3.7 M primitives, 1,497 to 561 draws | **done** (`6bfc011`) |
+| Rocks | Boulder 01's reduced meshes had merged across UV seams and turned inside-out; the decimator now keeps UV islands and the scan's clockwise winding (`e2a5222`); `docs/v17/terrain/boulder_01_details.webp` | **done** |
 | Release | version 1.12.0, CHANGELOG, players' note, credits in the zip and the PCK, packaging checks every raw file is in the PCK | in progress |
+
+**Suites** (automated test, all 75 that need no window, on `9c90dbd`, 2026-11-26): 67 pass. The
+8 failures are `v19_payback` (on CC-GEO-2.3 worlds the light ore mine pays back in 56 days, band
+70-150, and the processor in 113, band 120-300: 1.12 does not rebalance the economy) and the seven
+`review_*` tools, which need their original `D:` paths. The four suites that used to fail on Linux
+for Windows-made fixtures (`v17_saves`, `v17_tutorial`, `v18_systems`, `world_v16_seed`) pass, as
+do `terrain23_career`, `terrain_water23` and `terrain23_sites`. The region suites (`v19_region`,
+`v110_bay`, `v110_placement`, `v110_lights`, `v17_bugs`) pass again after each district change.
+
+**District measures** (the played colony, seed 260129, day 900, 37 buildings): median clear space
+53.2 m between neighbouring footprints (approved 59.62 m), the built window 1,453.5 x 1,049.9 m
+(approved 1,076.40 x 1,020.24 m with 19 buildings), 16 vehicles. Comparison frames and their
+cameras: `docs/v17/terrain/` (screenshot viewed).
 
 ## 1.11.0 — the contractor (branch `v17-charter`, started 2026-11-23)
 

@@ -303,7 +303,6 @@ func _town_facing(target: Vector2, sun_yaw: float, distance: float) -> float:
 ## The capital on the driest inland site of the world's playable pairs (the bot builds it up from
 ## there): the comparison's inland, dry ground.
 func _land_inland_dry(sim: RefCounted, bot: RefCounted) -> void:
-	var noise := FastNoiseLite.new()
 	var best: int = -1
 	var driest: float = INF
 	for pair: Array in sim.geo.get("playability", {}).get("pairs", []):
@@ -311,11 +310,8 @@ func _land_inland_dry(sim: RefCounted, bot: RefCounted) -> void:
 			var reg: Dictionary = sim.geo.regions[site]
 			if bool(reg.get("coast", false)) or sim.settle_refusal(site) != "":
 				continue
-			var g: Dictionary = Geo.sample_geo(
-				float(reg.lat), float(reg.lon), noise, str(sim.geo.version)
-			)
-			if float(g.rainfall) < driest:
-				driest = float(g.rainfall)
+			if float(reg.get("rainfall", 1.0)) < driest:
+				driest = float(reg.get("rainfall", 1.0))
 				best = site
 	if best < 0:
 		report.failures.append("no inland site to land on")
