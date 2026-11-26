@@ -47,6 +47,15 @@ SOURCE_FILES = [
     "docs/GODOT_LICENSE.txt",
     "docs/GODOT_COPYRIGHT.txt",
 ]
+CREDITS = [
+    ("game/assets/terrain_v3/CREDITS.txt", "CREDITS-terrain.txt"),
+    ("game/assets/district/CREDITS.txt", "CREDITS-district.txt"),
+]
+# Raw files the game reads by path at run time (1.12): every one must be inside the PCK.
+RAW_ASSETS = [
+    ("game/assets/district", {".meshbin", ".rock", ".json", ".jpg", ".png", ".gdshader", ".txt"}),
+    ("game/assets/terrain_v3", {".bin", ".png", ".txt"}),
+]
 SKIPPED_PARTS = {".godot", "__pycache__", "_tmp"}
 SKIPPED_SUFFIXES = {".tmp", ".bak"}
 
@@ -80,7 +89,19 @@ def check_pck():
     found = [path for path in paths if path.startswith(FORBIDDEN_PREFIXES)]
     if found:
         raise SystemExit(f"Test material inside the export: {found}")
-    print(f"PCK directory: {len(paths)} files, no test material")
+    listed = set(paths)
+    missing = []
+    raw = 0
+    for folder, suffixes in RAW_ASSETS:
+        for path in sorted((ROOT / folder).rglob("*")):
+            if path.is_file() and path.suffix in suffixes:
+                raw += 1
+                inside = path.relative_to(ROOT / "game").as_posix()
+                if inside not in listed:
+                    missing.append(inside)
+    if missing:
+        raise SystemExit(f"Raw assets missing from the PCK: {missing}")
+    print(f"PCK directory: {len(paths)} files, no test material, all {raw} raw district and terrain files")
 
 
 def keep(path):
@@ -99,12 +120,14 @@ def package_game():
         for path in sorted(BUILD.iterdir()):
             if path.is_file() and path.suffix in {".exe", ".pck", ".txt"}:
                 archive.write(path, path.name)
-        if LABEL:
-            archive.write(ROOT / "docs" / "v17" / "PREVIEW.md", "预览版说明.md")
-        else:
-            archive.write(ROOT / "README.md", "中文说明.md")
+        # The players' note: how to run, saves, what is new, what is known (1.12: a release ships
+        # it too; the root README is the developers' and goes with the source).
+        archive.write(ROOT / "docs" / "v17" / "PREVIEW.md", "预览版说明.md" if LABEL else "中文说明.md")
         archive.write(ROOT / "CHANGELOG.md", "CHANGELOG.md")
         archive.write(ROOT / "docs" / "v17" / "PLAYTEST.md", "PLAYTEST.md")
+        # Third-party notices, readable beside the game (terrain data, scanned rocks, artwork).
+        for source, name in CREDITS:
+            archive.write(ROOT / source, name)
 
 
 def package_source():

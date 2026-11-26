@@ -1580,3 +1580,49 @@ factories, so the game's cycle and the payback bands stay as they are.
   260-279 in four runs, band 120-300); the ore mines' year-6 payback stays a known miss since the
   merge (the band, dearer mines and a lower ore price each fix it at a cost recorded above).
   `1.11-J3` was stopped at 12 of 29 chunks; `1.11-J4` is the harness of the release data.
+
+## 1.12.0 — approved terrain and settlement (branch `v17-terrain`, 2026-11-26)
+
+- The work branch is `v17-terrain`, from the handoff commit `6046c90` (on 1.11.1 `96d2655`), as
+  the handoff instructions ask; 1.12.0 is built and released from it. It is not merged into
+  `v17-charter`: that is the user's call.
+- CLAUDE.md keeps textures out of `game/`; the handoff's instructions require its approved runtime
+  textures, meshes and shaders inside `game/` and in the PCK. The rule's purpose is the 3ds Max
+  sources of `art_reserve/`; the handoff's files are finished runtime art with their own notices,
+  so they go under `game/assets/district/` (raw files read by path, export filter extended).
+- One district unit is 16.6 m: plots stand 6 units apart, so neighbouring buildings leave the
+  approved median clear space (59.62 m). Reviewed footprints are revision 06's (x1.3); other kinds
+  their models' metre size x1.3; nothing wider than 91 m; heights are not scaled by 1.3.
+- The plot grid is drawn bent by one smooth displacement (0.85 units, wavelengths 47 and 41) that
+  roads, lots, traffic, lamps and free plots share, so streets curve as the approved layout's do
+  while every building keeps its plot and uid.
+- Lanes follow the player's buildings: a lane runs along its row only while buildings stand within
+  12.5 units (two plots) of each other; further buildings get an L-shaped road along the grid's
+  open lines (lane line, then the gap between plot columns) to the nearest road laid, nearest
+  first. Traffic follows those roads.
+- CC-GEO-2.3 towns are settled: within 5-20 units of the plots, 85% of the hills and hollows on the
+  broad lie are taken off and the broad slope eases halfway to the town's level; the sea, the beach
+  band and river and lake banks are untouched. Below-sea hollows not joined to open water are
+  raised 0.2 units over the sea, so a coast shows water only where it is open water.
+- A district's climate is its site's with 30% of the planet's variation across the region (a
+  region spans many degrees of the globe); planet-sea drawn as land takes the site's climate. The
+  globe's high-ground rock is suppressed 80% in the town's close ground; steep ground still shows
+  stone.
+- Generated regions use ACES (exposure 1.12, white 4), a warm ambient `c9c8c2` at 0.8 and a graded
+  sky, calibrated so that whole-frame means of the settlement, verge and rock views match the
+  approved frames (equivalent cameras, sun 17 degrees behind the camera) within a few levels.
+- Boulder 01 gets real lower details by vertex clustering (`tools/rock_lods.py`): field 2,000 and
+  chip 220 triangles; the approved 56,540-triangle scan stays as the near mesh (within 210 m).
+- The source tussock mesh is not drawn: at the district's close cameras it reads as a solid lump.
+  Fine grass carries the grass, sparser past the town.
+- Nature is scattered again only when the paving or the footprints change (a signature on the
+  region's ground), not on every building state change (about 0.5 s a scattering).
+- Tests whose calibrated numbers depend on the world are pinned to CC-GEO-2.2 worlds
+  (`tests/support/legacy_world.gd`: `v19_money`, `v110_audit`, `v110_dispatch`, `v110_people`,
+  `v111_weather`); `v17_world_stats` runs 80 seeds on 2.3 (each world is slower) with its
+  threshold scaled. `terrain23_career` carries Linux hashes and a Linux-made 1.11.1 fixture beside
+  the Windows ones (floating point differs between the platforms' world hashes).
+- The release ships the players' note (`docs/v17/PREVIEW.md`, as 中文说明.md) and the terrain and
+  district credits; the root README is the developers' and goes with the source.
+- In a generated district the free plots' patches and deposit stones show only with the placement
+  marks, while building.

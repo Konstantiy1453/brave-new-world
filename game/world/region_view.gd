@@ -134,6 +134,8 @@ var lamp_lights: Array[OmniLight3D] = []
 ## The free-plot rings (shown only when the player turns plot marks on) and that setting.
 var plot_marks_node: MultiMeshInstance3D
 var plot_marks_on: bool = false
+## A generated district's plot patches and deposit stones, shown with the marks (1.12).
+var plot_aids: Array = []
 ## Road sections over water in the town being built, joined into runs: one bridge each.
 var bridge_runs: Array = []
 ## The cargo ship of a coastal town: where it sails from and to, and how far it is in its cycle.
@@ -367,10 +369,14 @@ func _draw_free_plots(settlement: Dictionary) -> void:
 						color.lerp(Color("6f6a63"), .35)
 					]
 				)
+	# A generated district shows its plots' patches and deposit stones only with the marks, while
+	# building (1.12): otherwise the ground is the district's own.
+	plot_aids.clear()
 	if not patches.is_empty():
 		var soft: MultiMeshInstance3D = _instanced(_plot_plane(), _plot_material(0.0), patches)
 		soft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		buildings_root.add_child(soft)
+		plot_aids.append(soft)
 	if not rocks.is_empty():
 		var stone := SphereMesh.new()
 		stone.radius = 1.0
@@ -381,6 +387,11 @@ func _draw_free_plots(settlement: Dictionary) -> void:
 			stone, _natural_material("plotrock", .95), rocks
 		)
 		buildings_root.add_child(outcrop)
+		plot_aids.append(outcrop)
+	if town_streets == null:
+		plot_aids.clear()
+	for aid: MultiMeshInstance3D in plot_aids:
+		aid.visible = plot_marks_on
 	plot_marks_node = null
 	if not rings.is_empty():
 		plot_marks_node = _instanced(_plot_plane(), _plot_material(PLOT_RING_WIDTH), rings)
@@ -394,6 +405,9 @@ func set_plot_marks(on: bool) -> void:
 	plot_marks_on = on
 	if plot_marks_node != null and is_instance_valid(plot_marks_node):
 		plot_marks_node.visible = on
+	for aid: Variant in plot_aids:
+		if is_instance_valid(aid):
+			(aid as MultiMeshInstance3D).visible = on
 
 
 func _plot_plane() -> PlaneMesh:

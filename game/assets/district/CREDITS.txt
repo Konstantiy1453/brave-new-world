@@ -1,0 +1,34 @@
+District art credits (Colony Charter 1.12)
+
+The settlement district's rocks, buildings, vehicles, plants, soil and road surfaces come from the
+approved terrain and settlement handoff (docs/handoff/approved-terrain-region/region, revisions 06
+and 07).
+
+Scanned rocks (rocks/)
+
+Poly Haven distributes the following four models and their surface maps under the CC0 1.0
+Universal dedication. The game uses derived geometry (Boulder 01's field and chip meshes are
+reduced from its 56,540-triangle scan), colour-graded albedo, tangent-space normal maps and packed
+ambient-occlusion, roughness and metalness maps.
+Poly Haven asset license: https://polyhaven.com/license
+CC0 dedication: https://creativecommons.org/publicdomain/zero/1.0/
+
+- Boulder 01 (https://polyhaven.com/a/boulder_01): Rico Cilliers. rocks/boulder_01/
+- Namaqualand Boulder 04 (https://polyhaven.com/a/namaqualand_boulder_04): Jenelle van Heerden.
+  rocks/namaqualand_boulder_04/
+- Namaqualand Boulder 05 (https://polyhaven.com/a/namaqualand_boulder_05): photography by Dario
+  Barresi, modeling by Jenelle van Heerden. rocks/namaqualand_boulder_05/
+- Namaqualand Boulder 06 (https://polyhaven.com/a/namaqualand_boulder_06): photography by Greg Zaal,
+  modeling by Jenelle van Heerden. rocks/namaqualand_boulder_06/
+
+Colony Charter artwork
+
+The building and vehicle meshes (art/) come from the project's own high-poly art reserve; five of
+them are cropped to their footprints with the original dimensions and pivots. The tree, shrub,
+grass and outcrop meshes, the leaf atlas, the soil and turf tiles and the procedural masks (env/,
+soil/) were made for the project's previews. They stay under the project's own artwork terms.
+
+Terrain data
+
+The world's relief, optical texture and cloud cover credit the U.S. Geological Survey, Mapzen and
+NASA: see assets/terrain_v3/CREDITS.txt.
