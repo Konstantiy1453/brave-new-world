@@ -12,6 +12,7 @@ extends SceneTree
 ##   for by immigration, departures, births and people moved between towns.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const LegacyWorld = preload("res://tests/support/legacy_world.gd")
 const Features = preload("res://simulation/features.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -61,7 +62,7 @@ func run() -> void:
 
 func _colony(coastal: bool = true) -> RefCounted:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1)
+	LegacyWorld.new_game(sim, SEED, "capital", 1)
 	var region: int = -1
 	for reg: Dictionary in sim.state.world.regions:
 		if bool(reg.get("coast", false)) == coastal and region < 0:
@@ -398,7 +399,7 @@ func _crews_follow_freight() -> void:
 
 func _growth_is_measured() -> void:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1)
+	LegacyWorld.new_game(sim, SEED, "capital", 1)
 	var bot: RefCounted = Bot.new()
 	bot.begin(sim, SEED)
 	var worst: int = 0

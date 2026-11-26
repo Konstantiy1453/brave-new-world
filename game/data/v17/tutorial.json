@@ -10,7 +10,8 @@
   "difficulty": "easy",
   "opening": "capital",
   "start_site": 11,
-  "partner_site": 10,
+  "partner_site": 9,
+  "legacy_partner_site": 10,
   "first_event_day": 120,
   "shortage": {
     "kind": "water",

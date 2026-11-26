@@ -3,6 +3,7 @@ extends RefCounted
 ## Poisson-disk filling, deposits, plots and names. Numbers are in data/v17/geography.json.
 
 const Plates = preload("res://world/geo2/plates.gd")
+const Hydrology = preload("res://world/hydrology.gd")
 const Geology = preload("res://world/geo2/geology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Routes = preload("res://world/routes.gd")
@@ -33,6 +34,8 @@ const SLOT_X: int = 4
 const SLOT_Z: int = 3
 const RIVER_CLEARANCE: float = 3.2
 const PARTNER_TRIES: int = 3
+## Angular width of one 1536 x 768 global-map texel.
+const LANDING_TEXEL_DEGREES := 360.0 / 1536.0
 ## A coast counts as this many neighbours where ships can go from the first day.
 const SEA_LINK_NEIGHBORS: int = 2
 
@@ -44,7 +47,7 @@ static func place(world: Dictionary, rules: Dictionary, ctx: Dictionary, attempt
 	var count_range: Array = rules.site_count[size]
 	var target: int = rng.randi_range(int(count_range[0]), int(count_range[1]))
 	var separation: float = deg_to_rad(float(rules.separation_degrees[size]))
-	var cells: Array = _land_cells(world, rng)
+	var cells: Array = _land_cells(world, rng, ctx)
 	var scores: Dictionary = _scores(world, cells, rules)
 	var chosen: Array = []
 	for archetype: String in QUOTA_ORDER:
@@ -55,8 +58,10 @@ static func place(world: Dictionary, rules: Dictionary, ctx: Dictionary, attempt
 
 
 ## Land cells away from the poles, in a seeded order. That order is the Poisson-disk draw.
-static func _land_cells(world: Dictionary, rng: RandomNumberGenerator) -> Array:
+static func _land_cells(world: Dictionary, rng: RandomNumberGenerator, ctx: Dictionary) -> Array:
 	var cells: Array = []
+	var precise := world.has("optical_drainage")
+	var noise := _noise(world) if precise else null
 	var width: int = int(world.grid_width)
 	var height: int = int(world.grid_height)
 	for index: int in range(world.grid.size()):
@@ -65,12 +70,17 @@ static func _land_cells(world: Dictionary, rng: RandomNumberGenerator) -> Array:
 		var lat: float = 90.0 - (index / width + 0.5) * 180.0 / height
 		if absf(lat) > MAX_LATITUDE:
 			continue
+		var lon := (index % width + 0.5) * 360.0 / width - 180.0
+		if _lake_surface(world, lat, lon):
+			continue
+		if precise and not _landing_footprint(lat, lon, noise, ctx):
+			continue
 		(
 			cells
 			. append(
 				{
 					"index": index,
-					"point": SeedGeo.unit(lat, (index % width + 0.5) * 360.0 / width - 180.0),
+					"point": SeedGeo.unit(lat, lon),
 					"lat": lat,
 				}
 			)
@@ -81,6 +91,21 @@ static func _land_cells(world: Dictionary, rng: RandomNumberGenerator) -> Array:
 		cells[i] = cells[j]
 		cells[j] = swap
 	return cells
+
+
+## The four texel centres surrounding a recommended landing must all be dry. A shoal
+## narrower than the global map's sampling footprint is still available to free placement.
+static func _landing_footprint(lat: float, lon: float, noise: FastNoiseLite, ctx: Dictionary) -> bool:
+	var x := floorf((lon + 180.0) / LANDING_TEXEL_DEGREES - 0.5)
+	var y := floorf((90.0 - lat) / LANDING_TEXEL_DEGREES - 0.5)
+	for j in range(2):
+		var sample_lat := 90.0 - (y + j + 0.5) * LANDING_TEXEL_DEGREES
+		for i in range(2):
+			var sample_lon := (x + i + 0.5) * LANDING_TEXEL_DEGREES - 180.0
+			var p := SeedGeo.unit(sample_lat, sample_lon)
+			if float(Plates.raw_height(p, noise, ctx).raw) <= float(ctx.sea_level):
+				return false
+	return true
 
 
 ## Archetype name to a score per cell position in `cells`; zero means the archetype does not fit.
@@ -269,7 +294,7 @@ static func _site(
 		"lon": lon,
 		"canonical_lat": lat,
 		"canonical_lon": lon,
-		"elevation": maxf(20.0, float(cell.height) * 4300.0),
+		"elevation": maxf(0.0 if world.get("version", "") == Plates.NATURAL_VERSION else 20.0, float(cell.height) * 4300.0),
 		"fertility": float(cell.fertility),
 		"water": float(cell.water),
 		"temperature": float(cell.temperature),
@@ -356,7 +381,7 @@ static func _slots(
 			var lat: float = float(site.lat) - z / LOCAL_UNITS_PER_DEGREE
 			var lon: float = float(site.lon) + x / LOCAL_UNITS_PER_DEGREE
 			var sampled: Dictionary = Plates.sample_with_context(lat, lon, noise, ctx)
-			if not bool(sampled.land):
+			if not bool(sampled.land) or _lake_surface(world, lat, lon):
 				continue
 			slots.append({"x": x, "z": z, "height": float(sampled.height)})
 	slots.sort_custom(
@@ -609,7 +634,9 @@ static func site_at(
 	var spec: Dictionary = rules.archetypes[archetype]
 	var rugged: float = float(cell.get("ruggedness", 0.0))
 	var noise: FastNoiseLite = _noise(world)
-	var height: float = float(Plates.sample_with_context(lat, lon, noise, world.plates).height)
+	var here := Plates.sample_with_context(lat, lon, noise, world.plates)
+	var height: float = float(here.height)
+	var natural: bool = world.get("version", "") == Plates.NATURAL_VERSION
 	var site: Dictionary = {
 		"id": id,
 		"name": site_number(id),
@@ -621,11 +648,11 @@ static func site_at(
 		"lon": lon,
 		"canonical_lat": lat,
 		"canonical_lon": lon,
-		"elevation": maxf(20.0, height * 4300.0),
+		"elevation": maxf(0.0 if natural else 20.0, height * 4300.0),
 		"fertility": float(cell.get("fertility", 0.05)),
 		"water": float(cell.get("water", 0.05)),
-		"temperature": float(cell.get("temperature", 0.0)),
-		"rainfall": float(cell.get("rainfall", 0.0)),
+		"temperature": float(here.temperature) if natural else float(cell.get("temperature", 0.0)),
+		"rainfall": float(here.rainfall) if natural else float(cell.get("rainfall", 0.0)),
 		"deposits": {"ore": 0.0, "copper": 0.0, "crystal": 0.0},
 		"grade": {"ore": 1.0, "copper": 1.0, "crystal": 1.0},
 		"neighbors": [],
@@ -806,11 +833,14 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 	var slope: float = clampf(relief / float(rules.placement.max_relief_m), 0.0, 1.0)
 	var land: bool = bool(here.land)
 	var on_lake: bool = false
-	var point: Vector3 = SeedGeo.unit(lat, lon)
-	for lake: Dictionary in world.get("lakes", []):
-		var middle: Vector3 = SeedGeo.unit(float(lake.lat), float(lake.lon))
-		if rad_to_deg(point.angle_to(middle)) < float(lake.get("radius_degrees", 0.45)):
-			on_lake = true
+	if world.has("optical_drainage"):
+		on_lake = _lake_surface(world, lat, lon)
+	else:
+		var point: Vector3 = SeedGeo.unit(lat, lon)
+		for lake: Dictionary in world.get("lakes", []):
+			var middle: Vector3 = SeedGeo.unit(float(lake.lat), float(lake.lon))
+			if rad_to_deg(point.angle_to(middle)) < float(lake.get("radius_degrees", 0.45)):
+				on_lake = true
 	var report: Dictionary = {
 		"lat": lat,
 		"lon": lon,
@@ -826,7 +856,7 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 		"water": float(cell.get("water", 0.0)),
 		"coast": bool(cell.get("coast", false)),
 		"landmass": int(world.landmass[index]) if land else -1,
-		"temperature": float(cell.get("temperature", 0.0)),
+		"temperature": float(here.temperature) if world.get("version", "") == Plates.NATURAL_VERSION else float(cell.get("temperature", 0.0)),
 		"fertility": float(cell.get("fertility", 0.0)),
 		"archetype": "",
 		"terrain": "海洋" if not land else "",
@@ -843,6 +873,10 @@ static func ground(world: Dictionary, rules: Dictionary, lat: float, lon: float)
 	var probe: Dictionary = {"lat": lat, "lon": lon}
 	report.slots = _slots(world, probe, noise, world.plates, rules).size()
 	return report
+
+
+static func _lake_surface(world: Dictionary, lat: float, lon: float) -> bool:
+	return world.has("optical_drainage") and Hydrology.sample_water(world, lat, lon).lake_fraction >= 0.30
 
 
 ## Viable start pairs, best start first. Puts the best start at index 0 and its partner at 1.

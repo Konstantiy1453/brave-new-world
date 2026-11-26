@@ -10,7 +10,7 @@ func _build_planet() -> void:
 	# Both global modes share this authoritative atlas: no second random map.
 	var atlas_start: int = Time.get_ticks_msec()
 	var cache_key: String = (
-		"atlas-1536-r6-data:"
+		("atlas-1536-r3-optical:" if _uses_optical_geography() else "atlas-1536-r6-data:")
 		+ str(world.version)
 		+ ":"
 		+ str(world.seed)
@@ -19,7 +19,11 @@ func _build_planet() -> void:
 		+ ":"
 		+ JSON.stringify(world.get("generation", {})).sha256_text()
 	)
+	if _uses_optical_geography():
+		# Includes the generator revision and the sampled world, also for retained saved planets.
+		cache_key += ":%d:%s" % [Geo.WorldGen2.REVISION, str(world.get("hash", ""))]
 	current_atlas_key = cache_key
+	_prepare_optical_geography(cache_key)
 	atlas_refining = false
 	pending_atlas.clear()
 	var disk_path: String = "user://world_atlas_" + cache_key.sha256_text() + ".png"
@@ -48,7 +52,9 @@ func _build_planet() -> void:
 		else:
 			var context: Dictionary = {}
 			if Geo.is_generated(str(world.version)):
-				context = Geo.Plates.context(int(world.seed))
+				context = world.get("plates", {})
+				if context.is_empty():
+					context = Geo.Plates.context(int(world.seed), str(world.version))
 			elif str(world.version) != "CC-GEO-1.4":
 				context = Geo.SeedGeo.context(int(world.seed)).duplicate(true)
 			# A small authoritative preview is visible immediately. Only the high
@@ -71,6 +77,7 @@ func _build_planet() -> void:
 	last_atlas_ms = Time.get_ticks_msec() - atlas_start
 	globe_shader = ShaderMaterial.new()
 	globe_shader.shader = Shaders.shader("globe")
+	_bind_optical(globe_shader, true, false)
 	globe_shader.set_shader_parameter("atlas", geography_atlas)
 	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	globe_shader.set_shader_parameter("lights", _night_lights_texture())
@@ -89,7 +96,8 @@ func _build_planet() -> void:
 	planet.add_child(mesh)
 	atmosphere_shader = ShaderMaterial.new()
 	atmosphere_shader.shader = Shaders.shader("atmosphere")
-	_sphere(planet, Vector3.ZERO, 3.08, atmosphere_shader, 96, 48)
+	atmosphere_shader.set_shader_parameter("optical_v3", _uses_optical_geography())
+	_sphere(planet, Vector3.ZERO, 3.038 if _uses_optical_geography() else 3.08, atmosphere_shader, 96, 48)
 	_build_clouds()
 	marker_root = Node3D.new()
 	planet.add_child(marker_root)
@@ -253,6 +261,7 @@ func _trim_disk_atlases(current: String) -> void:
 func _build_clouds() -> void:
 	cloud_shader = ShaderMaterial.new()
 	cloud_shader.shader = Shaders.shader("clouds")
+	_bind_optical(cloud_shader, false, true)
 	cloud_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	# The towns' light on the clouds' undersides at night (1.11 F).
 	cloud_shader.set_shader_parameter("lights", _night_lights_texture())

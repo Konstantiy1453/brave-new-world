@@ -1,10 +1,10 @@
 extends RefCounted
 ## Authoritative, deterministic spherical geography. All coordinates use degrees.
-const VERSION := "CC-GEO-2.2"
-const GENERATED_VERSIONS: Array[String] = ["CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2"]
+const VERSION := "CC-GEO-2.3"
+const GENERATED_VERSIONS: Array[String] = ["CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2", VERSION]
 const LEGACY_VERSION := "CC-GEO-1.6"
 const SUPPORTED_VERSIONS := [
-	"CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2"
+	"CC-GEO-1.4", "CC-GEO-1.5", "CC-GEO-1.6", "CC-GEO-2.0", "CC-GEO-2.1", "CC-GEO-2.2", VERSION
 ]
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Hydrology = preload("res://world/hydrology.gd")
@@ -62,6 +62,8 @@ static func road_building(route: Dictionary, day: int) -> bool:
 ## Derived geography for a seed. Grid data is shared read-only between games on the same seed;
 ## `regions` is a private copy because deposits change during play.
 func build(seed_input: Variant, size_id: int = 1, version: String = VERSION) -> Dictionary:
+	if version == VERSION and not Plates.Natural.initialize():
+		return {"error": "地形样本文件缺失或校验失败，请修复安装后再使用 CC-GEO-2.3。"}
 	var modern: bool = is_generated(version)
 	var key: String = (
 		"%s|%d|%d"
@@ -75,6 +77,8 @@ func build(seed_input: Variant, size_id: int = 1, version: String = VERSION) -> 
 				if modern
 				else generate(seed_input, size_id)
 			)
+			if world.has("error"):
+				return world
 			world.hash = geo_hash(world)
 			if modern:
 				_write_disk(key, world)
@@ -83,7 +87,7 @@ func build(seed_input: Variant, size_id: int = 1, version: String = VERSION) -> 
 		_geo_cache[key] = world
 	var entry: Dictionary = _geo_cache[key]
 	if modern:
-		Plates.activate(int(entry.seed), entry.plates)
+		Plates.activate(int(entry.seed), entry.plates, str(entry.version))
 	var copy: Dictionary = entry.duplicate(false)
 	copy.regions = entry.regions.duplicate(true)
 	copy.seed_input = str(seed_input)
@@ -92,7 +96,10 @@ func build(seed_input: Variant, size_id: int = 1, version: String = VERSION) -> 
 
 static func _disk_path(key: String) -> String:
 	var rules: String = JSON.stringify(WorldGen2.Rules.read("geography")).sha256_text().left(12)
-	var name: String = (key + "|" + str(WorldGen2.REVISION) + "|" + rules).sha256_text().left(32)
+	var revision := str(WorldGen2.REVISION)
+	if key.begins_with(VERSION + "|"):
+		revision += ".natural.1"
+	var name: String = (key + "|" + revision + "|" + rules).sha256_text().left(32)
 	return GEO_CACHE_DIR + name + ".geo"
 
 
@@ -105,11 +112,28 @@ static func _read_disk(key: String) -> Dictionary:
 	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
 	if bytes.size() < 8:
 		return {}
-	var raw: PackedByteArray = bytes.slice(8).decompress(
-		bytes.decode_u64(0), FileAccess.COMPRESSION_ZSTD
-	)
+	# A damaged size header must not allocate an arbitrary amount of memory.
+	var raw_size := bytes.decode_u64(0)
+	if raw_size <= 0 or raw_size > 128 * 1024 * 1024:
+		return {}
+	var raw: PackedByteArray = bytes.slice(8).decompress(raw_size, FileAccess.COMPRESSION_ZSTD)
+	if raw.size() != raw_size:
+		return {}
 	var world: Variant = bytes_to_var(raw)
-	return world if world is Dictionary and world.has("plates") else {}
+	if not world is Dictionary or not world.get("plates") is Dictionary:
+		return {}
+	var stored_key: String = "%s|%d|%d" % [
+		world.get("version", ""), int(world.get("seed", 0)), int(world.get("size", -1))
+	]
+	if stored_key != key or not world.get("grid") is Array or world.grid.size() != GW * GH:
+		return {}
+	if not world.get("regions") is Array or world.regions.is_empty():
+		return {}
+	if world.version == VERSION:
+		var terrain: Dictionary = world.plates
+		if terrain.get("version") != VERSION or not terrain.has("detail_basis") or not world.has("optical_drainage"):
+			return {}
+	return world if world.get("hash", "") == geo_hash(world) else {}
 
 
 static func _write_disk(key: String, world: Dictionary) -> void:
@@ -167,6 +191,8 @@ func bind(record: Dictionary) -> Dictionary:
 		geo = build(
 			int(record.seed), int(record.size), str(record.version) if modern else LEGACY_VERSION
 		)
+		if geo.has("error"):
+			return geo
 		if str(geo.hash) != str(record.hash):
 			return {"error": "此存档的世界与当前生成器的结果不一致，无法恢复原有地理。原存档未改动；请使用生成它的版本继续。"}
 	geo.regions = record.regions
@@ -187,6 +213,9 @@ static func geo_hash(world: Dictionary) -> String:
 	context.update(var_to_bytes(world.get("rivers", [])))
 	context.update(var_to_bytes(world.get("river_metadata", [])))
 	context.update(var_to_bytes(world.get("lakes", [])))
+	if world.get("version", "") == VERSION:
+		context.update(var_to_bytes(world.get("plates", {})))
+		context.update(var_to_bytes(world.get("optical_drainage", {})))
 	return context.finish().hex_encode()
 
 
@@ -374,7 +403,7 @@ static func sample_geo(
 	lat: float, lon: float, noise: FastNoiseLite, version: String = LEGACY_VERSION
 ) -> Dictionary:
 	if is_generated(version):
-		return Plates.sample(lat, lon, noise)
+		return Plates.sample_with_context(lat, lon, noise, Plates.context(noise.seed, version))
 	if version == "CC-GEO-1.4":
 		return _sample_geo_v14(lat, lon, noise)
 	return SeedGeo.sample(lat, lon, noise)
@@ -407,6 +436,8 @@ static func local_geo(
 		float(r.get("canonical_lon", r.lon)) + x / 4.0,
 		world
 	)
+	if world.has("plates"):
+		return Plates.sample_with_context(ll.x, ll.y, noise, world.plates)
 	return sample_geo(ll.x, ll.y, noise, str(world.version))
 
 

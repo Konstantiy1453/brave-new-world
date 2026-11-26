@@ -9,6 +9,7 @@ extends SceneTree
 ## - the audit catches farmers counted beyond the workers.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const LegacyWorld = preload("res://tests/support/legacy_world.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Population = preload("res://simulation/population.gd")
 const Labels = preload("res://ui/labels.gd")
@@ -40,7 +41,7 @@ func run() -> void:
 
 func _colony() -> RefCounted:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1)
+	LegacyWorld.new_game(sim, SEED, "capital", 1)
 	sim.act("settle", {"region": 0})
 	sim.state.events_v2.next_draw = 99999
 	sim._transfer("external", "public", 200000.0, "TEST funds", false)

@@ -75,8 +75,9 @@ func new_game(
 	advantage: String,
 	size: int = 1,
 	difficulty: String = "normal",
-	radius: float = 0.0
-) -> void:
+	radius: float = 0.0,
+	checkpoint_world: Dictionary = {}
+) -> String:
 	if not progression.difficulty.has(difficulty):
 		difficulty = "normal"
 	if not config.openings.has(advantage):
@@ -89,7 +90,13 @@ func new_game(
 		radius = clampf(radius, float(planet.min), float(planet.max))
 		var bands: Array = planet.size_bands
 		size = 0 if radius < float(bands[0]) else (2 if radius >= float(bands[1]) else 1)
-	geo = WorldGen.new().build(seed_value, size)
+	var generator := WorldGen.new()
+	var next_world: Dictionary = (
+		generator.build(seed_value, size) if checkpoint_world.is_empty() else generator.bind(checkpoint_world)
+	)
+	if next_world.has("error"):
+		return str(next_world.error)
+	geo = next_world
 	if radius > 0.0:
 		geo.radius_km = snappedf(radius * float(planet.earth_km), 0.1)
 	blobs = {"checkpoint": PackedByteArray(), "archives": {}}
@@ -156,6 +163,7 @@ func new_game(
 	_log("合同已签署。请勘察后选择登陆点。")
 	Career.ensure(self)
 	EventsV2.ensure(self)
+	return ""
 
 
 ## Adds the state of systems newer than a save. Safe to run on any state, any number of times.

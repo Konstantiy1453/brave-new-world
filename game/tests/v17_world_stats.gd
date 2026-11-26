@@ -10,7 +10,10 @@ const SiteGen = preload("res://world/geo2/site_gen.gd")
 const Plates = preload("res://world/geo2/plates.gd")
 
 const VARIETY_CHECKS: int = 5
+## Every planet type on at least this many of every 200 seeds (4%), scaled to the seeds run: a
+## CC-GEO-2.3 world takes about five seconds, so the suite runs 80 (1.12, DECISIONS.md).
 const MIN_TYPE_SEEDS: int = 8
+const TYPE_SEEDS_PER: int = 200
 const MIN_LAND_SPREAD: float = 0.15
 const MIN_TEMPERATURE_SPREAD: float = 15.0
 const MIN_RAIN_SPREAD: float = 0.2
@@ -66,9 +69,10 @@ func _variety_failures(rows: Array) -> int:
 		warmth.append(float(row.mean_temperature))
 		rain.append(float(row.mean_rainfall))
 	var types: Dictionary = Rules.read("geography").planet_types
+	var least: int = maxi(1, ceili(float(MIN_TYPE_SEEDS) * rows.size() / TYPE_SEEDS_PER))
 	for part: String in seen:
 		for key: String in types[part + "s"]:
-			if int(seen[part].get(key, 0)) < MIN_TYPE_SEEDS:
+			if int(seen[part].get(key, 0)) < least:
 				failures += 1
 				print("FAIL %s %s appears on only %d seeds" % [part, key, seen[part].get(key, 0)])
 	print("planet types ", seen)

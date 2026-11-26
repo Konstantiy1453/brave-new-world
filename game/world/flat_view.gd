@@ -67,6 +67,7 @@ func _flat_point(lat: float, lon: float) -> Vector3:
 func _build_flat() -> void:
 	var material := ShaderMaterial.new()
 	material.shader = Shaders.shader("flat")
+	_bind_optical(material, true, true)
 	material.set_shader_parameter("atlas", geography_atlas)
 	material.set_shader_parameter("noise3d", Shaders.noise_texture())
 	material.set_shader_parameter("lights", _night_lights_texture())
@@ -663,6 +664,9 @@ func _place_movers(movers: Array, fraction: float) -> void:
 
 
 func _build_global_water(parent: Node3D, flat: bool) -> void:
+	if _uses_optical_geography():
+		# The shared optical atlas already includes river and lake areas at observation scale.
+		return
 	# This overlay reads the same persisted river paths as the regional view.
 	for river in render_rivers:
 		var coordinates: Array = river.coordinates

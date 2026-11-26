@@ -1,11 +1,15 @@
 extends RefCounted
-## Deterministic drainage on the authoritative spherical height grid.
-## Rivers follow strict natural descent. Closed terrain depressions are small
-## endorheic lakes; no pre-drawn channel is forced through a mountain.
+## Deterministic drainage on the world's spherical height field.
+## CC-GEO-2.3 fills spill levels on a finer routing grid. Legacy worlds keep
+## their original natural-descent paths and endorheic lakes.
+const V23 = preload("res://world/drainage23.gd")
 const METHOD := "D8 natural descent / precipitation-weighted accumulation v1"
 
 
 static func apply(world: Dictionary) -> Dictionary:
+	if world.get("version", "") == "CC-GEO-2.3":
+		V23.build_grid(world)
+		return world
 	var width: int = int(world.grid_width)
 	var height: int = int(world.grid_height)
 	var count: int = world.grid.size()
@@ -310,3 +314,17 @@ static func _unit(ll: Vector2) -> Vector3:
 	var a: float = deg_to_rad(ll.x)
 	var b: float = deg_to_rad(ll.y)
 	return Vector3(cos(a) * sin(b), sin(a), cos(a) * cos(b))
+
+
+## The accepted CC-GEO-2.3 world shares its immutable optical arrays between views.
+static func prepare_optical(world: Dictionary, ctx: Dictionary) -> void:
+	if world.get("version", "") == "CC-GEO-2.3":
+		V23.prepare_optical(world, ctx)
+
+
+static func optical_atlas(world: Dictionary, width: int = 1024, height: int = 512) -> Image:
+	return V23.texture(world, width, height)
+
+
+static func sample_water(world: Dictionary, lat: float, lon: float) -> Dictionary:
+	return V23.query(world, lat, lon)

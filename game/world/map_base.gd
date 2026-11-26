@@ -31,7 +31,14 @@ const WEATHER_COLORS: Dictionary = {
 const VisualClock = preload("res://world/visual_clock.gd")
 const REGION_CACHE_LIMIT: int = 3
 static var atlas_cache: Dictionary = {}
+static var optical_tiles: Texture2D
+static var optical_clouds: Texture2D
+static var optical_water_cache: Dictionary = {}
+var optical_water: Texture2D
+var optical_coast: Texture2D
+var optical_phase := Vector3.ZERO
 var world: Dictionary = {}
+
 var state: Dictionary = {}
 var mode: String = "planet"
 var selected_region: int = 0
@@ -129,6 +136,65 @@ var region_build_count: int = 0
 var last_region_ms: int = 0
 var last_region_cached: bool = false
 var terrain_unique_samples: int = 0
+
+
+func _uses_optical_geography() -> bool:
+	return str(world.get("version", "")) == "CC-GEO-2.3"
+
+
+func _prepare_optical_geography(key: String) -> void:
+	optical_water = null
+	optical_coast = null
+	if not _uses_optical_geography():
+		return
+	if optical_tiles == null:
+		optical_tiles = _optical_texture("res://assets/terrain_v3/optical.png")
+		optical_clouds = _optical_texture("res://assets/terrain_v3/cloud-coverage.png")
+	var random := RandomNumberGenerator.new()
+	random.seed = int(world.seed) ^ 0x4f505449
+	optical_phase = Vector3(random.randf(), random.randf(), random.randf())
+	if not optical_water_cache.has(key):
+		var water: Image = preload("res://world/hydrology.gd").optical_atlas(world, 1536, 768)
+		water.generate_mipmaps()
+		var width: int = int(world.grid_width)
+		var height: int = int(world.grid_height)
+		var mask := Image.create(width, height, false, Image.FORMAT_R8)
+		for y: int in range(height):
+			for x: int in range(width):
+				var cell: Dictionary = world.grid[y * width + x]
+				mask.set_pixel(x, y, Color(float(cell.get("rocky_coast", 0.5)), 0, 0))
+		mask.generate_mipmaps()
+		if optical_water_cache.size() >= 2:
+			optical_water_cache.erase(optical_water_cache.keys()[0])
+		optical_water_cache[key] = [ImageTexture.create_from_image(water), ImageTexture.create_from_image(mask)]
+	optical_water = optical_water_cache[key][0]
+	optical_coast = optical_water_cache[key][1]
+
+
+static func _optical_texture(path: String) -> Texture2D:
+	var texture: Texture2D = load(path)
+	var image := texture.get_image()
+	if image.is_compressed():
+		image.decompress()
+	if not image.has_mipmaps():
+		image.generate_mipmaps()
+	return ImageTexture.create_from_image(image)
+
+
+func _bind_optical(material: ShaderMaterial, surface_layer: bool, atmosphere_layer: bool) -> void:
+	var enabled := _uses_optical_geography()
+	material.set_shader_parameter("optical_v3", enabled)
+	if not enabled:
+		return
+	material.set_shader_parameter("optical_phase", optical_phase)
+	if surface_layer:
+		material.set_shader_parameter("radius_km", float(world.radius_km))
+		material.set_shader_parameter("low_haze", 1.0 if weather_enabled else 0.0)
+		material.set_shader_parameter("optical_tiles", optical_tiles)
+		material.set_shader_parameter("optical_water", optical_water)
+		material.set_shader_parameter("optical_coast", optical_coast)
+	if atmosphere_layer:
+		material.set_shader_parameter("cloud_pattern", optical_clouds)
 
 
 func _ice_latitude() -> float:

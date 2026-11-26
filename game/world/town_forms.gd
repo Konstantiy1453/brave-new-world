@@ -21,9 +21,11 @@ const MAX_ROADS: int = 4
 ## The texture of faint road strings and remote points: equirectangular, a texel about 0.18°.
 const FAR_WIDTH: int = 2048
 const FAR_HEIGHT: int = 1024
-## Directions sampled round a coastal town to find its sea, and the ring they are taken on.
+## Directions sampled round a coastal town to find its sea, and the rings they are taken on (as
+## shares of its reach): out past the town, since a coastal region's centre can stand a few
+## degrees from an irregular coast (CC-GEO-2.3).
 const SEA_SAMPLES: int = 16
-const SEA_RINGS: Array[float] = [0.5, 1.0]
+const SEA_RINGS: Array[float] = [0.5, 1.0, 1.6, 2.4]
 ## The smallest ring for a small town's sea search, in degrees.
 const SEA_LEAST: float = 0.6
 

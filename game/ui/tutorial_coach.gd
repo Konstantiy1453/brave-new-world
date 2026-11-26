@@ -170,7 +170,9 @@ func _enter() -> void:
 	var step: Dictionary = steps()[index]
 	if step.has("site"):
 		var rules: Dictionary = Tutorial.data()
-		var site: int = int(rules.start_site if step.site == "start" else rules.partner_site)
+		var site: int = (
+			int(rules.start_site) if step.site == "start" else Tutorial.partner_site(game.sim.geo)
+		)
 		game.selected = site
 		game.map.focus_region(site)
 		game.refresh_sidebar()

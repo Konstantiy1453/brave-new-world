@@ -12,6 +12,7 @@ extends SceneTree
 ## - saves keep the weather; the audit holds; the clouds follow the state's systems; the page.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const LegacyWorld = preload("res://tests/support/legacy_world.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Weather = preload("res://simulation/weather.gd")
@@ -68,7 +69,7 @@ func run() -> void:
 
 func _colony(seed_value: int = SEED) -> RefCounted:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(seed_value, "capital", 1)
+	LegacyWorld.new_game(sim, seed_value, "capital", 1)
 	for reg: Dictionary in sim.state.world.regions:
 		if sim.settle_refusal(int(reg.id)) == "":
 			sim.act("settle", {"region": int(reg.id)})

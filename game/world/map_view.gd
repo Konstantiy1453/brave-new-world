@@ -13,6 +13,7 @@ const STAR_SIZE: float = 170.0
 const SPACE_SHADER: String = """
 shader_type spatial;
 render_mode unshaded, cull_front, depth_draw_never, fog_disabled, shadows_disabled;
+uniform bool optical_sky = false;
 uniform vec3 band_normal = vec3(0.32, 0.86, 0.40);
 varying vec3 dir;
 void vertex() {
@@ -61,6 +62,10 @@ void fragment() {
 	float star = step(0.9972, s) * (0.3 + 0.7 * hash(cell + 3.1));
 	star += step(0.990, s) * band * 0.35;
 	col += vec3(0.72, 0.80, 1.0) * star * 0.55;
+	if (optical_sky) {
+		col = col * 0.64 + vec3(0.002, 0.005, 0.013);
+		if (!OUTPUT_IS_SRGB) { col = pow(col, vec3(2.2)); }
+	}
 	ALBEDO = col;
 }
 """
@@ -131,6 +136,8 @@ func setup(data: Dictionary) -> void:
 	marker_filter = "all"
 	hovered_region = -1
 	world = data
+	if space_dome != null:
+		(space_dome.material_override as ShaderMaterial).set_shader_parameter("optical_sky", _uses_optical_geography())
 	flat_user_zoomed = false
 	flat_center = Vector2.ZERO
 	noise = FastNoiseLite.new()
@@ -672,6 +679,9 @@ func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
 	sky.weather_enabled = weather
 	day_night_enabled = day_night
 	weather_enabled = weather
+	for material: ShaderMaterial in [globe_shader, flat_shader]:
+		if material != null:
+			material.set_shader_parameter("low_haze", 1.0 if weather else 0.0)
 	if not spin:
 		sky.spin_factor = 0.0
 
@@ -945,6 +955,8 @@ func _apply_render_quality() -> void:
 func _apply_mode_quality() -> void:
 	if environment != null and high_quality:
 		environment.ssao_enabled = mode == "region"
+		# The optical palette is already display-referred in both graphics modes.
+		environment.adjustment_enabled = mode == "region" or not _uses_optical_geography()
 
 
 func _build_stars() -> void:

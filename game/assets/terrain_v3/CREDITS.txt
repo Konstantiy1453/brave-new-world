@@ -1,0 +1,7 @@
+# Terrain data credits
+
+The terrain generator places continents, mountain belts, climates and drainage from the game seed. The following observations supply local relief, small-scale optical brightness and cloud cover.
+
+- Normalized high-frequency relief in relief.bin derives from Mapzen Terrain Tiles at the Himalaya, Zagros and interior western United States. Elevation data from the U.S. Geological Survey, including 3DEP, GMTED2010 and SRTM. https://registry.opendata.aws/terrain-tiles/ and https://github.com/tilezen/joerd/blob/master/docs/attribution.md
+- Optical surface texture in optical.png derives from normalized inland samples of the NASA Blue Marble Next Generation July 2004 reflectance composite. NASA Earth Observatory, Reto Stöckli, NASA/Goddard Space Flight Center. https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/
+- The cloud coverage composite credits NASA Goddard Space Flight Center and Reto Stöckli, with enhancements by Robert Simmon. https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/

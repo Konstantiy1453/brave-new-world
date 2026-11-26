@@ -453,13 +453,15 @@ static func handover(
 	c.last_local_day = 0
 	c.checkpoint = ""
 	var next = sim.get_script().new()
-	next.new_game(
+	var generation_error: String = next.new_game(
 		seed_value,
 		advantage,
 		int(sim.state.world.size) if size_id < 0 else size_id,
 		difficulty,
 		radius
 	)
+	if not generation_error.is_empty():
+		return generation_error
 	next.state.career = c
 	next.blobs.archives = sim.blobs.archives.duplicate()
 	next.blobs.archives[old_id] = archive_blob
@@ -488,9 +490,12 @@ static func restart(sim, difficulty: String, path: String) -> String:
 	# Reapply a changed opening from the same pre-attempt career, never stack funding.
 	if difficulty != str(candidate.get("difficulty", "normal")):
 		var kept: Dictionary = candidate.career.duplicate(true)
-		next.new_game(
-			candidate.world.seed, candidate.advantage, int(candidate.world.size), difficulty
+		var generation_error: String = next.new_game(
+			candidate.world.seed, candidate.advantage, int(candidate.world.size), difficulty,
+			0.0, candidate.world
 		)
+		if not generation_error.is_empty():
+			return generation_error
 		next.state.career = kept
 	else:
 		next.state = candidate

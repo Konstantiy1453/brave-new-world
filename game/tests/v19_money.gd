@@ -4,6 +4,7 @@ extends SceneTree
 ## services budget with its costs, effects, refusal to run into debt and its place in saves.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const LegacyWorld = preload("res://tests/support/legacy_world.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Copies = preload("res://simulation/copies.gd")
@@ -44,7 +45,7 @@ func check(ok: bool, label: String) -> void:
 
 func make() -> RefCounted:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1, "normal")
+	LegacyWorld.new_game(sim, SEED, "capital", 1, "normal")
 	sim.act("settle", {"site": 0})
 	sim.state.events_v2.next_draw = 99999
 	return sim
@@ -534,7 +535,7 @@ func _ledger_today(sim: RefCounted, key: String) -> float:
 ## with its own commissions off, then the test drives them.
 func _commissions() -> void:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "science", 1, "normal")
+	LegacyWorld.new_game(sim, SEED, "science", 1, "normal")
 	sim.state.events_v2.next_draw = 99999
 	var bot: RefCounted = ResearchBot.new()
 	bot.uses_commissions = false

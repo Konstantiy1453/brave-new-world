@@ -12,6 +12,7 @@ extends SceneTree
 ## - the audit holds, and the same orders on the same seed give the same state.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
+const LegacyWorld = preload("res://tests/support/legacy_world.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Crews = preload("res://simulation/crews.gd")
 const Geology = preload("res://world/geo2/geology.gd")
@@ -51,7 +52,7 @@ func run() -> void:
 
 func _colony() -> RefCounted:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1)
+	LegacyWorld.new_game(sim, SEED, "capital", 1)
 	sim.act("settle", {"region": 0})
 	sim.state.events_v2.next_draw = 99999
 	sim._transfer("external", "public", 200000.0, "TEST funds", false)
@@ -265,7 +266,7 @@ func _repairs() -> void:
 
 func _field_work() -> void:
 	var sim: RefCounted = Sim.new()
-	sim.new_game(SEED, "capital", 1)
+	LegacyWorld.new_game(sim, SEED, "capital", 1)
 	var rules: Dictionary = sim.Prospecting.rules(sim)
 	var reach: float = float(rules.field.reach_km) / (deg_to_rad(1.0) * float(sim.geo.radius_km))
 	var spot: Dictionary = {}

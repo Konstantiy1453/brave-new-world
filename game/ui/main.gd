@@ -191,7 +191,21 @@ func _ready():
 	Graphics.start_choice()
 	Engine.max_fps = 60
 	dev_mode = OS.is_debug_build() or OS.get_cmdline_user_args().has("--dev")
-	sim.new_game(260129, "capital", 1)
+	var startup_error: String = sim.new_game(260129, "capital", 1)
+	if not startup_error.is_empty():
+		var previous := _latest_save()
+		if previous.is_empty() or not sim.load_game(previous).is_empty():
+			set_process(false)
+			set_process_input(false)
+			set_process_unhandled_input(false)
+			var dialog := AcceptDialog.new()
+			dialog.title = "地图初始化失败"
+			dialog.dialog_text = startup_error
+			add_child(dialog)
+			dialog.confirmed.connect(get_tree().quit)
+			dialog.canceled.connect(get_tree().quit)
+			dialog.popup_centered()
+			return
 	map = Map.new()
 	add_child(map)
 	map.setup(sim.geo)
@@ -232,6 +246,8 @@ func _ready():
 	Graphics.apply_anti_aliasing(get_viewport(), visual_aa)
 	map.set_plot_marks(plot_marks)
 	show_menu()
+	if not startup_error.is_empty():
+		toast(startup_error)
 	var args = OS.get_cmdline_user_args()
 	for a in args:
 		if a.begins_with("--load="):
@@ -1543,7 +1559,8 @@ func start_game():
 	var seed_value: Variant = text
 	var scale_id: int = 1
 	difficulty = DIFFICULTIES[difficulty_option.selected]
-	_begin_world(seed_value, advantage, scale_id, difficulty, menu_radius)
+	if not _begin_world(seed_value, advantage, scale_id, difficulty, menu_radius):
+		return
 	menu_seed = ""
 	coach.stop(false)
 	open_page("contract")
@@ -1559,7 +1576,8 @@ func start_tutorial():
 	var rules: Dictionary = Tutorial.data()
 	advantage = str(rules.opening)
 	difficulty = str(rules.difficulty)
-	_begin_world(int(rules.seed), advantage, int(rules.size), difficulty)
+	if not _begin_world(int(rules.seed), advantage, int(rules.size), difficulty):
+		return
 	sim.act("tutorial_begin")
 	_hide_overlay()
 	coach.start()
@@ -1568,8 +1586,11 @@ func start_tutorial():
 
 func _begin_world(
 	seed_value: Variant, opening: String, scale_id: int, level: String, radius: float = 0.0
-):
-	sim.new_game(seed_value, opening, scale_id, level, radius)
+) -> bool:
+	var error: String = sim.new_game(seed_value, opening, scale_id, level, radius)
+	if not error.is_empty():
+		toast(error)
+		return false
 	Career.capture_checkpoint(sim)
 	selected = 0
 	local_view = false
@@ -1587,6 +1608,7 @@ func _begin_world(
 	expanded_kinds = {}
 	announced_event = 0
 	_hide_overlay()
+	return true
 
 
 func load_path(path: String):

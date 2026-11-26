@@ -194,8 +194,7 @@ func _expeditions() -> void:
 		sim._produce(capital, good, 400.0, "TEST stock")
 	sim.state.contract.licences.append("expedition")
 	sim.state.contract.licences.append("network")
-	var inland: Array = _destination(sim, capital_point, false)
-	var coastal: Array = _destination(sim, capital_point, true)
+	var inland: Array = _destination(sim, capital_point, false, capital_region)
 	if not inland.is_empty():
 		var licences: Array = sim.state.contract.licences.duplicate()
 		sim.state.contract.licences.clear()
@@ -205,9 +204,10 @@ func _expeditions() -> void:
 			"before the expansion licence a second town is refused: " + str(before.refusal)
 		)
 		sim.state.contract.licences = licences
-	check(not inland.is_empty(), "an inland point an expedition can reach")
-	check(not coastal.is_empty(), "and a coastal one")
-	for target: Array in [inland, coastal]:
+	for coastal: bool in [false, true]:
+		# The first expedition establishes a town and changes the minimum separation for the next one.
+		var target: Array = _destination(sim, capital_point, true, capital_region) if coastal else inland
+		check(not target.is_empty(), "a reachable coastal destination" if coastal else "a reachable inland destination")
 		if target.is_empty():
 			continue
 		var view: Dictionary = sim.Placement.view(sim, target[0], target[1], capital_region)
@@ -231,7 +231,7 @@ func _expeditions() -> void:
 			),
 			"its route ends at the chosen point"
 		)
-		var name: String = "内陆镇" if target == inland else "海湾镇"
+		var name: String = "海湾镇" if coastal else "内陆镇"
 		check(
 			(
 				sim.act(
@@ -248,7 +248,7 @@ func _expeditions() -> void:
 			(
 				is_equal_approx(float(site.lat), float(view.lat))
 				and is_equal_approx(float(site.lon), float(view.lon))
-				and bool(site.coast) == (target == coastal)
+				and bool(site.coast) == coastal
 			),
 			"%s stands at the chosen point (coast %s)" % [name, str(site.coast)]
 		)
@@ -301,13 +301,13 @@ func _expeditions() -> void:
 
 
 ## A point 9-16 degrees from the capital an expedition can reach, inland or on the coast.
-func _destination(sim: RefCounted, from: Array, coastal: bool) -> Array:
+func _destination(sim: RefCounted, from: Array, coastal: bool, capital_region: int) -> Array:
 	for ring: float in [9.0, 11.0, 13.0, 16.0]:
 		for step: int in range(24):
 			var angle: float = TAU * float(step) / 24.0
 			var lat: float = float(from[0]) + sin(angle) * ring
 			var lon: float = float(from[1]) + cos(angle) * ring
-			var view: Dictionary = sim.Placement.view(sim, lat, lon)
+			var view: Dictionary = sim.Placement.view(sim, lat, lon, capital_region)
 			if str(view.refusal) != "" or bool(view.coast) != coastal:
 				continue
 			return [float(view.lat), float(view.lon)]

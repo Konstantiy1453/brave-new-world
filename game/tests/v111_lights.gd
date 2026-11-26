@@ -271,11 +271,17 @@ func _forms() -> void:
 			if way == Vector2.ZERO:
 				inland = reg
 	var sea: Vector2 = TownForms.sea_direction(world, float(coastal.lat), float(coastal.lon), 1.0)
-	var off_lat: float = float(coastal.lat) + sea.y * 1.0
-	var off_lon: float = (
-		float(coastal.lon) + sea.x * 1.0 / maxf(cos(deg_to_rad(float(coastal.lat))), 0.2)
-	)
-	var wet: bool = not bool(world.grid[SiteGen.cell_at(world, off_lat, off_lon)].get("land", true))
+	# Water lies that way: within the rings the search looks on.
+	var wet: bool = false
+	for step: int in range(1, 13):
+		var reach: float = 0.25 * step
+		var off_lat: float = float(coastal.lat) + sea.y * reach
+		var off_lon: float = (
+			float(coastal.lon) + sea.x * reach / maxf(cos(deg_to_rad(float(coastal.lat))), 0.2)
+		)
+		wet = (
+			wet or not bool(world.grid[SiteGen.cell_at(world, off_lat, off_lon)].get("land", true))
+		)
 	check(
 		sea.length() > 0.99 and wet and not inland.is_empty(),
 		"a coastal town knows which way its sea lies, an inland one has none"

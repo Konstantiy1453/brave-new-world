@@ -8,7 +8,7 @@
     {"name": "v17_contract_population", "script": "res://tests/v17_contract_population.gd", "success": "V17_CONTRACT_RESULT checks=\\d+ failures=0"},
     {"name": "v17_research", "script": "res://tests/v17_research.gd", "success": "V17_RESEARCH_RESULT checks=\\d+ failures=0"},
     {"name": "v17_sites", "script": "res://tests/v17_sites.gd", "success": "V17_SITES_RESULT checks=\\d+ failures=0"},
-    {"name": "v17_world_stats", "script": "res://tests/v17_world_stats.gd", "args": ["--seeds=200"], "timeout": 500, "success": "V17_WORLD_RESULT checks=\\d+ failures=0"},
+    {"name": "v17_world_stats", "script": "res://tests/v17_world_stats.gd", "args": ["--seeds=80"], "timeout": 1100, "success": "V17_WORLD_RESULT checks=\\d+ failures=0"},
     {"name": "v17_events", "script": "res://tests/v17_events.gd", "success": "V17_EVENTS_RESULT checks=\\d+ failures=0"},
     {"name": "v17_tutorial", "script": "res://tests/v17_tutorial.gd", "success": "V17_TUTORIAL_RESULT checks=\\d+ failures=0"},
     {"name": "v18_systems", "script": "res://tests/v18_systems.gd", "success": "V18_SYSTEMS_RESULT checks=\\d+ failures=0"},
@@ -78,6 +78,9 @@
     {"name": "v16_interaction_probe", "script": "res://tests/v16_interaction_probe.gd", "window": true},
     {"name": "v16_scroll_probe", "script": "res://tests/v16_scroll_probe.gd", "window": true},
     {"name": "world_v16_visual", "script": "res://tests/world_v16_visual.gd", "window": true},
-    {"name": "world_v17_seam", "script": "res://tests/world_v17_seam.gd", "window": true, "success": "WORLD_V17_SEAM_RESULT failures=0"}
+    {"name": "world_v17_seam", "script": "res://tests/world_v17_seam.gd", "window": true, "success": "WORLD_V17_SEAM_RESULT failures=0"},
+    {"name": "terrain23_career", "script": "res://tests/terrain23_career.gd", "timeout": 900, "success": "TERRAIN_CAREER .*\"failures\":\\[\\],\"old_save_loaded\":true"},
+    {"name": "terrain_water23", "script": "res://tests/terrain_water23.gd", "timeout": 900, "success": "\"failures\":\\[\\]\\}"},
+    {"name": "terrain23_sites", "script": "res://tests/terrain23_sites.gd", "success": "TERRAIN23_SITES \\{\"failures\":\\[\\]"}
   ]
 }

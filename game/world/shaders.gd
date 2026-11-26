@@ -248,9 +248,139 @@ void seam_derivatives(vec2 uv, out vec2 ddx_uv, out vec2 ddy_uv) {
 }
 """
 
+
+# Versioned optical albedo. Angles, material coordinates and the runoff map are in the planet's
+# frame, so turning the globe, zooming, or switching to a different projection does not move them.
+const OPTICAL_SETTINGS_GLSL: String = """
+uniform bool optical_v3 = false;
+uniform vec3 optical_phase = vec3(0.0);
+"""
+const OPTICAL_SURFACE_GLSL: String = """
+uniform sampler2D optical_tiles : filter_linear_mipmap, repeat_disable;
+uniform sampler2D optical_water : filter_linear_mipmap, repeat_enable;
+uniform sampler2D optical_coast : filter_linear_mipmap, repeat_enable;
+uniform float radius_km = 6000.0;
+uniform float low_haze = 1.0;
+
+float optical_sample(float tile, vec2 p) {
+	// Mirrored sampling keeps the six independent swatches from bleeding into their neighbours.
+	vec2 mirrored = abs(fract(p * 0.5) * 2.0 - 1.0);
+	vec2 coord = (mirrored * 127.0 + 0.5) / 128.0;
+	return textureGrad(optical_tiles, vec2((tile + coord.x) / 6.0, coord.y),
+		dFdx(p) * vec2(1.0 / 6.0, 1.0), dFdy(p) * vec2(1.0 / 6.0, 1.0)).r - 0.5;
+}
+
+// Geographic neighbours wrap at the date line. Submerged relief does not shade a land slope.
+float optical_land_metres(vec2 uv, vec2 dx, vec2 dy) {
+	vec2 coord = vec2(fract(uv.x), clamp(uv.y, 0.0, 1.0));
+	return max(0.0, 4300.0 * geo_height(textureGrad(atlas, coord, dx, dy).a));
+}
+
+// x/y are east/north rises in metres per metre. Broad slopes reveal plateau shoulders,
+// while the near neighbours keep snow-capped spurs and valleys attached to the actual terrain.
+vec4 optical_relief(vec2 uv, vec2 dx, vec2 dy, vec3 n, float height) {
+	vec2 step_uv = 1.0 / vec2(textureSize(atlas, 0));
+	float stride = max(1.0, max(length(dx / step_uv), length(dy / step_uv)));
+	vec2 east = vec2(step_uv.x * stride, 0.0);
+	vec2 north = vec2(0.0, -step_uv.y * stride);
+	vec4 near_z = vec4(optical_land_metres(uv + east, dx, dy), optical_land_metres(uv - east, dx, dy),
+		optical_land_metres(uv + north, dx, dy), optical_land_metres(uv - north, dx, dy));
+	vec4 far_z = vec4(optical_land_metres(uv + 4.0 * east, dx, dy), optical_land_metres(uv - 4.0 * east, dx, dy),
+		optical_land_metres(uv + 4.0 * north, dx, dy), optical_land_metres(uv - 4.0 * north, dx, dy));
+	float latitude_scale = max(0.12, sqrt(max(0.0, 1.0 - n.y * n.y)));
+	vec2 span = 2.0 * radius_km * 1000.0 * stride *
+		vec2(6.2831853 * step_uv.x * latitude_scale, 3.14159265 * step_uv.y);
+	vec2 near_slope = (near_z.xz - near_z.yw) / span;
+	vec2 far_slope = (far_z.xz - far_z.yw) / (4.0 * span);
+	float surrounding = dot(far_z, vec4(0.25));
+	return vec4(mix(near_slope, far_slope, 0.27), height - surrounding, surrounding);
+}
+
+vec3 optical_albedo(vec2 uv, vec2 dx, vec2 dy, vec3 n, float h, float t, float wet,
+		float ridge, float n1, float n2, float coast, vec4 terrain, out float water_ice) {
+	float z = h * 4300.0;
+	float cold = 1.0 - smoothstep(-12.0, 8.0, t);
+	float dry = (1.0 - smoothstep(0.27, 0.53, wet)) * smoothstep(-3.0, 18.0, t);
+	float forest = smoothstep(0.38, 0.70, wet) * (1.0 - dry) * (1.0 - 0.76 * cold);
+	float rock = (0.15 + 0.48 * ridge + 0.18 * dry) * smoothstep(180.0, 2200.0, z);
+	vec3 surface = vec3(90.0, 91.0, 64.0) + n1 * vec3(5.0, 4.0, 1.0);
+	surface = mix(surface, vec3(42.0, 64.0, 49.0), forest);
+	surface = mix(surface, vec3(149.0, 126.0, 98.0), dry * 0.91);
+	surface = mix(surface, vec3(107.0, 105.0, 87.0), cold * 0.79);
+	surface = mix(surface, vec3(106.0, 102.0, 94.0) + 5.0 * n1, rock);
+
+	vec3 pos = n + optical_phase * 2.0;
+	vec2 p = vec2(dot(pos, vec3(0.74, 0.44, -0.51)), dot(pos, vec3(-0.36, 0.89, 0.28)));
+	vec2 q = vec2(dot(pos, vec3(-0.24, 0.52, 0.82)), dot(pos, vec3(0.93, 0.36, 0.04)));
+	p = p * 8.0 + vec2(n1, n2) * 0.68;
+	q = q * 5.5 + vec2(n2, n1) * 0.51;
+	float detail = mix(optical_sample(2.0, p), optical_sample(1.0, q), forest);
+	detail = mix(detail, optical_sample(0.0, p * 0.82), forest * smoothstep(13.0, 25.0, t));
+	detail = mix(detail, optical_sample(3.0, q * 1.24), dry);
+	detail = mix(detail, optical_sample(5.0, p * 1.38), cold);
+	detail = mix(detail, optical_sample(4.0, q * 1.53), rock);
+	surface += vec3(1.04, 1.0, 0.80) * (detail * 41.0 + n2 * 3.0);
+	// The world temperature already contains a 28 °C / 4300 m lapse. Recover its
+	// sea-level value before comparing elevation with a regional snowline (metres).
+	float background_t = t + max(z, 0.0) * (28.0 / 4300.0);
+	float pole_facing = clamp(-terrain.y * sign(n.y) * 24.0, -1.0, 1.0);
+	float snowline = clamp(1000.0 + 74.0 * background_t + 1480.0 * (0.54 - wet)
+		- 145.0 * ridge, 700.0, 3900.0);
+	float steepness = length(terrain.xy);
+	float hollow = smoothstep(35.0, 390.0, -terrain.z);
+	float retention = 125.0 * pole_facing + 110.0 * hollow + 125.0 * detail;
+	float alpine = smoothstep(-145.0, 155.0, z - snowline + retention);
+	float exposed_face = smoothstep(0.014, 0.045, steepness) *
+		(0.22 + 0.65 * smoothstep(-0.25, 0.26, detail + 0.12 * n2));
+	float plateau = smoothstep(850.0, 1850.0, terrain.w) *
+		(1.0 - smoothstep(0.004, 0.020, steepness));
+	float parched = 1.0 - smoothstep(0.30, 0.58, wet);
+	float alpine_rock = smoothstep(-850.0, -40.0, z - snowline) *
+		(0.18 + 0.46 * ridge + 0.32 * exposed_face);
+	surface = mix(surface, vec3(104.0, 101.0, 91.0) + detail * 24.0, alpine_rock);
+	surface = mix(surface, vec3(125.0, 111.0, 91.0) + detail * 23.0, plateau * parched * 0.54);
+	float polar_frost = (1.0 - smoothstep(-23.0, -8.0, t + 2.0 * n1)) *
+		smoothstep(0.76, 0.95, abs(n.y));
+	surface = mix(surface, vec3(159.0, 166.0, 164.0) + 7.0 * n2, 0.86 * polar_frost);
+	// Dry tablelands keep bands of exposed stone. Humid, cold tablelands retain snow
+	// between the high points. Steep faces expose rock even above the snowline.
+	float snow = alpine * (1.0 - exposed_face * 0.78) * (1.0 - 0.46 * plateau * parched);
+	surface = mix(surface, vec3(201.0, 207.0, 207.0) + detail * 10.0, snow * 0.96);
+	vec2 water = textureGrad(optical_water, uv, dx, dy).rg;
+	float turbidity = clamp(0.12 + 0.43 * (1.0 - wet) + 0.15 * (1.0 - smoothstep(80.0, 1000.0, z)), 0.0, 1.0);
+	float cover = water.r * (0.28 + 0.68 * smoothstep(0.02, 0.60, water.r)) *
+		(0.13 + 0.87 * smoothstep(-15.0, -1.0, t));
+	surface = mix(surface, mix(vec3(26.0, 39.0, 38.0), vec3(79.0, 74.0, 57.0), turbidity), cover);
+	// Patchy shallow mist over moist lowlands. The weather switch also clears this layer.
+	float lowland = (1.0 - smoothstep(60.0, 420.0, z)) * smoothstep(0.63, 0.84, wet);
+	float mild = smoothstep(-5.0, 10.0, t) * (1.0 - smoothstep(24.0, 35.0, t));
+	float fog = lowland * mild * low_haze * smoothstep(-0.16, 0.44, n1 + n2 * 0.5);
+	surface = mix(surface, vec3(117.0, 129.0, 127.0), 0.17 * fog);
+	float rocky = textureGrad(optical_coast, uv, dx, dy).r;
+	float shelf = (1.0 - smoothstep(0.18, 0.77, rocky)) * mix(0.35, 1.0, wet);
+	float shoal = clamp(0.46 * exp(min(0.0, z) / 57.0) + shelf * exp(min(0.0, z) / 370.0), 0.0, 1.0);
+	vec3 ocean = vec3(16.0, 31.0, 42.0) + 3.0 * (1.0 - 2.0 * n.y * n.y);
+	ocean += vec3(32.0, 39.0, 33.0) * shoal + n1 * (0.7 + 2.5 * shoal);
+	ocean = mix(ocean, vec3(100.0, 96.0, 76.0), water.g * 0.68);
+	water_ice = (1.0 - smoothstep(-24.0, -15.5, t + 4.5 * (wet - 0.52) + n2 * 2.0)) *
+		smoothstep(0.77, 0.965, abs(n.y)) * 0.74;
+	float ice_breaks = texture(noise3d, n * 16.0 + optical_phase).r;
+	water_ice *= mix(0.71, 1.0, smoothstep(0.30, 0.68, ice_breaks + n1 * 0.18));
+	ocean = mix(ocean, vec3(142.0, 154.0, 157.0) + n2 * 8.0, water_ice);
+	vec3 rgb = mix(ocean, surface, coast);
+	float luma = dot(rgb, vec3(0.23, 0.66, 0.11));
+	return (mix(vec3(luma), rgb, 0.76) * 0.93 + vec3(1.5, 2.0, 2.2)) / 255.0;
+}
+
+vec3 optical_display(vec3 rgb) {
+	return OUTPUT_IS_SRGB ? rgb : to_linear(rgb);
+}
+"""
+
 ## Clouds: two layers carried by latitude winds and cross-faded so the bands never smear for
 ## good, a slow drift through the noise so the cover keeps changing, and storms that twist it.
 const CLOUDS_GLSL: String = """
+uniform sampler2D cloud_pattern : filter_linear_mipmap, repeat_enable;
 uniform float weather_time = 0.0;
 uniform float coverage = 0.5;
 uniform vec4 storms[3];
@@ -309,7 +439,7 @@ float cloud_density(vec3 p, float t) {
 	for (int i = 0; i < 3; i++) {
 		storm = max(storm, cyclone(p, storms[i], storm_radius[i], t));
 		float d = acos(clamp(dot(p, storms[i].xyz), -1.0, 1.0));
-		float k = max(0.0, 1.0 - d / (storm_radius[i] * 1.6));
+		float k = max(0.0, 1.0 - d / max(0.0001, storm_radius[i] * 1.6));
 		q = normalize(turn_about(q, storms[i].xyz, storms[i].w * k * k * 1.6));
 	}
 	// Domain warping (1.11 F): the noise is read through a slowly drifting noise of its own, so
@@ -319,6 +449,24 @@ float cloud_density(vec3 p, float t) {
 		texture(noise3d, w + vec3(0.71, 0.29, 0.17)).r) - 0.5;
 	q = normalize(q + warp * 0.07);
 	float lat = asin(clamp(q.y, -1.0, 1.0));
+	if (optical_v3) {
+		// Two passages through a latitude wind crossfade; the active weather systems turn the layer locally.
+		float period_cloud = 240.0;
+		float phase0_cloud = fract(t / period_cloud);
+		float phase1_cloud = fract(t / period_cloud + 0.5);
+		float drift = zonal_wind(lat) * period_cloud * 0.045;
+		vec2 c = vec2(atan(q.x, q.z) / 6.2831853 + 0.5 + optical_phase.x + t * 0.000085
+			+ 0.017 * sin(lat * 2.0), clamp(0.5 - lat / 3.14159265, 0.0005, 0.9995));
+		vec2 dcx = dFdx(c); dcx.x -= round(dcx.x);
+		vec2 dcy = dFdy(c); dcy.x -= round(dcy.x);
+		float a = textureGrad(cloud_pattern, c + vec2(drift * phase0_cloud, 0.0), dcx, dcy).r;
+		float b = textureGrad(cloud_pattern, c + vec2(drift * phase1_cloud, 0.0), dcx, dcy).r;
+		float cloud = mix(a, b, abs(2.0 * phase0_cloud - 1.0));
+		// Near the source composite's polar pinch, reduce the loss of cloud structure.
+		cloud -= smoothstep(0.91, 0.997, abs(q.y)) * (0.08 + 0.27 * cloud_fbm(q * 2.4));
+		cloud = pow(smoothstep(0.16, 0.85, cloud + (coverage - 0.5) * 0.26), 1.35);
+		return max(cloud * 0.76, storm * 0.84);
+	}
 	float period = 90.0;
 	float phase0 = fract(t / period);
 	float phase1 = fract(t / period + 0.5);
@@ -526,6 +674,8 @@ uniform float halo_cold = 1.6;
 varying vec3 local_point;
 """
 		+ GEOGRAPHY_GLSL
+		+ OPTICAL_SETTINGS_GLSL
+		+ OPTICAL_SURFACE_GLSL
 		+ LOOKUP_GLSL
 		+ TOWN_LIGHTS_GLSL
 		+ """
@@ -543,7 +693,7 @@ void fragment() {
 	float lat = degrees(asin(clamp(n.y, -1.0, 1.0)));
 	float n1 = texture(noise3d, n * 1.7).r * 2.0 - 1.0;
 	float n2 = texture(noise3d, n * 9.3 + vec3(0.37)).r * 2.0 - 1.0;
-	float h = geo_height(g.a) + n2 * 0.004;
+	float h = geo_height(g.a) + (optical_v3 ? 0.0 : n2 * 0.004);
 	float t = g.r * 100.0 - 50.0 + season * sign(lat) * 7.0 * abs(lat) / 90.0;
 	float coast = smoothstep(-0.0015, 0.0015, h);
 	// Terraforming (1.9): each stage moves the land 1 C toward the comfortable band, adds rain
@@ -553,7 +703,13 @@ void fragment() {
 	vec3 sea = mix(sea_color(h, n1), vec3(0.08, 0.36, 0.52), 0.06 * terraform);
 	vec3 base = mix(sea, land_color(h, tt, wet, g.b, n1, n2), coast);
 	float ice = ice_cover(lat, n1, n2, ice_latitude + (1.0 - coast) * 2.0, season);
-	base = to_linear(mix(base, ice_color(n2), ice));
+	vec4 terrain = vec4(0.0);
+	if (optical_v3) {
+		terrain = optical_relief(uv, ddx_uv, ddy_uv, n, h * 4300.0);
+		base = optical_albedo(uv, ddx_uv, ddy_uv, n, h, tt, wet, g.b, n1, n2, coast, terrain, ice);
+	} else {
+		base = to_linear(mix(base, ice_color(n2), ice));
+	}
 	// Relief from the height field, lit by the real sun.
 	vec2 texel = 1.0 / vec2(textureSize(atlas, 0));
 	float he = geo_height(textureGrad(atlas, uv + vec2(texel.x, 0.0), ddx_uv, ddy_uv).a);
@@ -566,6 +722,11 @@ void fragment() {
 	float gy = (hn - hs) / (2.0 * 3.14159265 * texel.y);
 	float land = smoothstep(0.0, 0.012, h) * (1.0 - ice * 0.6);
 	vec3 surface = normalize(n - (east * gx + north * gy) * 0.06 * relief * land);
+	if (optical_v3) {
+		vec3 grade = east * terrain.x + north * terrain.y;
+		surface = normalize(n - 17.0 * grade / (1.0 + 9.0 * length(grade)) *
+			relief * smoothstep(8.0, 220.0, h * 4300.0));
+	}
 	vec3 light_dir = normalize(sun_local);
 	float facing = dot(n, light_dir);
 	float day = mix(1.0, smoothstep(-0.1, 0.16, facing), day_night);
@@ -573,15 +734,21 @@ void fragment() {
 	vec3 lit = base * (0.15 + 0.95 * diffuse);
 	vec3 night = base * vec3(0.1, 0.12, 0.17) + vec3(0.004, 0.006, 0.012);
 	vec3 color = mix(night, lit, day);
+	if (optical_v3) {
+		float incidence = max(dot(surface, light_dir), 0.0);
+		float lit_day = mix(0.135 + 0.61 * pow(incidence, 0.57) + 0.36 * day,
+			0.89 + 0.11 * incidence, 1.0 - day_night);
+		color = optical_display(base * lit_day * vec3(1.01, 1.0, 0.98));
+	}
 	float twilight = exp(-facing * facing / 0.006) * day_night;
-	color += vec3(0.2, 0.07, 0.02) * twilight * 0.12;
+	color += vec3(0.2, 0.07, 0.02) * twilight * (optical_v3 ? 0.022 : 0.12);
 	// Sun glint on open water.
 	vec3 water_normal = normalize(n + (east * n2 + north * n1) * 0.01);
 	vec3 view_dir = normalize(camera_local - local_point);
 	vec3 halfway = normalize(light_dir + view_dir);
 	float spec = pow(max(dot(water_normal, halfway), 0.0), 400.0) * 0.4;
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
-	color += vec3(1.0, 0.92, 0.78) * spec * (1.0 - coast) * (1.0 - ice) * day;
+	color += vec3(1.0, 0.92, 0.78) * spec * (optical_v3 ? 0.13 : 1.0) * (1.0 - coast) * (1.0 - ice) * day;
 	// The colony's lights after sunset (light_field.gd), their halo from a coarser mip of the same
 	// map, which also merges them smoothly as the camera pulls back. The halo answers by its
 	// 0.7th power: a coarse mip averages a small town's few lights over hundreds of texels, and a
@@ -631,6 +798,7 @@ uniform float night_lights = 1.0;
 varying vec3 local_point;
 """
 		+ LOOKUP_GLSL
+		+ OPTICAL_SETTINGS_GLSL
 		+ CLOUDS_GLSL
 		+ """
 void vertex() {
@@ -644,10 +812,16 @@ void fragment() {
 	float day = mix(1.0, smoothstep(-0.16, 0.2, facing), day_night);
 	vec3 color = mix(vec3(0.035, 0.045, 0.07), vec3(0.93, 0.95, 0.98), day);
 	color *= 0.86 + 0.14 * (1.0 - density);
+	if (optical_v3) {
+		float sun = pow(max(0.0, facing), 0.57);
+		color = (vec3(16.0, 19.0, 23.0) + vec3(174.0, 174.0, 170.0) * sun +
+			vec3(38.0, 37.0, 35.0) * day) / 255.0;
+		if (!OUTPUT_IS_SRGB) { color = pow(color, vec3(2.2)); }
+	}
 	// A warm edge along the terminator, and on the night side the towns' light on the clouds'
 	// undersides (1.11 F).
 	float twilight = exp(-facing * facing / 0.006) * day_night;
-	color = mix(color, vec3(1.0, 0.52, 0.26), twilight * 0.42);
+	color = mix(color, vec3(1.0, 0.52, 0.26), twilight * (optical_v3 ? 0.035 : 0.42));
 	vec2 town = texture(lights, sphere_uv(p), 3.0).rg;
 	float below = (town.r + town.g * 0.6) * (1.0 - day) * night_lights;
 	color += vec3(1.0, 0.72, 0.4) * below * 0.55;
@@ -662,6 +836,7 @@ static func _atmosphere_code() -> String:
 	return """
 shader_type spatial;
 render_mode unshaded, blend_add, cull_back, depth_draw_never;
+uniform bool optical_v3 = false;
 uniform vec3 sun_local = vec3(0.6, 0.3, 0.7);
 uniform float day_night = 1.0;
 varying vec3 local_point;
@@ -677,7 +852,10 @@ void fragment() {
 	float twilight = exp(-facing * facing / 0.025) * day_night;
 	vec3 color = mix(vec3(0.13, 0.46, 0.85), vec3(0.95, 0.42, 0.16), twilight * 0.55);
 	ALBEDO = color * (0.1 + 0.9 * lit) * rim;
-	ALPHA = rim * 0.55;
+	if (optical_v3) {
+		ALBEDO = vec3(0.15, 0.26, 0.33) * (0.15 + 0.85 * lit) * rim;
+	}
+	ALPHA = rim * (optical_v3 ? 0.28 : 0.55);
 }
 """
 
@@ -701,6 +879,8 @@ uniform float cloud_opacity = 0.22;
 uniform float terraform = 0.0;
 """
 		+ GEOGRAPHY_GLSL
+		+ OPTICAL_SETTINGS_GLSL
+		+ OPTICAL_SURFACE_GLSL
 		+ CLOUDS_GLSL
 		+ TOWN_LIGHTS_GLSL
 		+ """
@@ -711,7 +891,7 @@ void fragment() {
 	vec3 n = vec3(cos(radians(lat)) * sin(radians(lon)), sin(radians(lat)), cos(radians(lat)) * cos(radians(lon)));
 	float n1 = texture(noise3d, n * 1.7).r * 2.0 - 1.0;
 	float n2 = texture(noise3d, n * 9.3 + vec3(0.37)).r * 2.0 - 1.0;
-	float h = geo_height(g.a) + n2 * 0.004;
+	float h = geo_height(g.a) + (optical_v3 ? 0.0 : n2 * 0.004);
 	float t = g.r * 100.0 - 50.0 + season * sign(lat) * 7.0 * abs(lat) / 90.0;
 	float coast = smoothstep(-0.0015, 0.0015, h);
 	// Terraforming (1.9): each stage moves the land 1 C toward the comfortable band, adds rain
@@ -720,7 +900,14 @@ void fragment() {
 	float wet = min(1.0, g.g * (1.0 + 0.05 * terraform) + 0.03 * terraform);
 	vec3 sea = mix(sea_color(h, n1), vec3(0.08, 0.36, 0.52), 0.06 * terraform);
 	vec3 base = mix(sea, land_color(h, tt, wet, g.b, n1, n2), coast);
-	base = mix(base, ice_color(n2), ice_cover(lat, n1, n2, ice_latitude + (1.0 - coast) * 2.0, season));
+	vec4 terrain = vec4(0.0);
+	if (optical_v3) {
+		terrain = optical_relief(UV, dFdx(UV), dFdy(UV), n, h * 4300.0);
+		float sea_ice;
+		base = optical_albedo(UV, dFdx(UV), dFdy(UV), n, h, tt, wet, g.b, n1, n2, coast, terrain, sea_ice);
+	} else {
+		base = mix(base, ice_color(n2), ice_cover(lat, n1, n2, ice_latitude + (1.0 - coast) * 2.0, season));
+	}
 	// Cartographic hill shading from the north-west.
 	vec2 texel = 1.0 / vec2(textureSize(atlas, 0));
 	float gx = geo_height(texture(atlas, UV + vec2(texel.x, 0.0)).a);
@@ -729,7 +916,13 @@ void fragment() {
 	gy -= geo_height(texture(atlas, UV + vec2(0.0, texel.y)).a);
 	float shade = clamp(1.0 + (-gx + gy) * 9.0 * smoothstep(0.0, 0.012, h), 0.7, 1.3);
 	vec3 color = to_linear(base) * 0.92 * shade;
-	float cloud = cloud_density(n, weather_time) * cloud_opacity;
+	if (optical_v3) {
+		float facing_nw = dot(terrain.xy, vec2(0.76, -0.65));
+		float hill = 24.0 * facing_nw / (1.0 + 44.0 * abs(facing_nw));
+		float land_relief = smoothstep(8.0, 220.0, h * 4300.0);
+		color = optical_display(base * (1.0 + hill * land_relief));
+	}
+	float cloud = cloud_density(n, weather_time) * cloud_opacity * (optical_v3 ? 0.22 : 1.0);
 	color *= 1.0 - cloud * 0.25;
 	float facing = dot(n, normalize(sun_local));
 	float dark = (1.0 - smoothstep(-0.08, 0.12, facing)) * day_night;

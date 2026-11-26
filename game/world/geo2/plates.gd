@@ -7,6 +7,8 @@ extends RefCounted
 ## that recipe. Without a character the numbers are those of CC-GEO-2.0, so its worlds stay as saved.
 
 const SeedGeo = preload("res://world/seed_geography.gd")
+const Natural = preload("res://world/geo2/natural_relief.gd")
+const NATURAL_VERSION := "CC-GEO-2.3"
 
 const OCEAN_PLATES: Array[int] = [4, 8]
 const BELT_WIDTH: float = 0.075
@@ -39,15 +41,22 @@ const CC_GEO_2_0_RECIPE: Dictionary = {
 }
 
 static var _active: Dictionary = {}
+static var _by_version: Dictionary = {}
 
 
 ## The context bound to a seed by the last world built from it. Read-only, shared with threads.
-static func context(seed_value: int) -> Dictionary:
+static func context(seed_value: int, version: String = "") -> Dictionary:
+	if not version.is_empty():
+		return _by_version[version][seed_value]
 	return _active[seed_value]
 
 
-static func activate(seed_value: int, ctx: Dictionary) -> void:
+static func activate(seed_value: int, ctx: Dictionary, version: String = "") -> void:
 	_active[seed_value] = ctx
+	if not version.is_empty():
+		if not _by_version.has(version):
+			_by_version[version] = {}
+		_by_version[version][seed_value] = ctx
 
 
 static func is_active(seed_value: int) -> bool:
@@ -97,7 +106,7 @@ static func _recipe(rules: Dictionary, planet: Dictionary) -> Dictionary:
 
 ## Everything drawn from the seed, before the sea level is known.
 static func build_context(
-	seed_value: int, attempt: int, rules: Dictionary, planet: Dictionary = {}
+	seed_value: int, attempt: int, rules: Dictionary, planet: Dictionary = {}, version: String = ""
 ) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = (seed_value * 131 + attempt) * 1000003 + 0x2C2
@@ -153,6 +162,9 @@ static func build_context(
 	ctx.blob_weight = blobs.weight
 	ctx.continent_count = continent_count
 	_add_plates(rng, ctx, centers)
+	if version == NATURAL_VERSION:
+		ctx.version = version
+		Natural.configure(ctx)
 	return ctx
 
 
@@ -175,6 +187,8 @@ static func describe(ctx: Dictionary) -> Dictionary:
 	}
 	if ctx.has("character"):
 		description.character = ctx.character
+	if ctx.get("version", "") == NATURAL_VERSION:
+		description.schema = "plates-2.3"
 	return description
 
 
@@ -381,6 +395,12 @@ static func _ridge(q: Vector3, ctx: Dictionary) -> float:
 
 ## The value compared with the sea level, and its parts. The grid pass uses it to find the level.
 static func raw_height(p: Vector3, noise: FastNoiseLite, ctx: Dictionary) -> Dictionary:
+	var rough := -1.0
+	var fields := Vector4.ZERO
+	if ctx.get("version", "") == NATURAL_VERSION:
+		fields = Natural.margin_fields(p, noise)
+		rough = smoothstep(-0.8, 0.82, 0.82 * fields.y + 0.23 * fields.z)
+		p = Natural.displace(p, fields, rough, noise)
 	var q: Vector3 = _warp(p, noise, float(ctx.warp))
 	var ridge: float = _ridge(q, ctx)
 	if ridge > 0.0:
@@ -391,6 +411,15 @@ static func raw_height(p: Vector3, noise: FastNoiseLite, ctx: Dictionary) -> Dic
 	var broad: float = noise.get_noise_3dv(p * 3.6 + Vector3(4, 1, 8))
 	var medium: float = noise.get_noise_3dv(p * 11.0 + Vector3(-4, 12, 2))
 	var fine: float = noise.get_noise_3dv(p * 37.0 + Vector3(7, -2, 9))
+	if rough >= 0.0:
+		# Sedimentary provinces retain the continental shape while resistant bedrock breaks
+		# into promontories and islands. Both affect the sea-level solve and local drainage.
+		var quiet := (1.0 - rough) * (1.0 - smoothstep(0.02, 0.30, ridge))
+		var coast_detail := medium * lerpf(0.075, 0.025, quiet) + fine * lerpf(0.044, 0.006, quiet)
+		return {
+			"raw": land + broad * float(ctx.broad) + coast_detail + ridge * RAW_RIDGE,
+			"ridge": ridge, "q": q, "fields": fields, "rocky_coast": rough,
+		}
 	return {
 		"raw": land + broad * float(ctx.broad) + medium * 0.075 + fine * 0.024 + ridge * RAW_RIDGE,
 		"ridge": ridge,
@@ -415,6 +444,7 @@ static func finish_sample(
 ) -> Dictionary:
 	var coast: float = float(parts.raw) - float(ctx.sea_level)
 	var ridge: float = maxf(float(parts.ridge), 0.0)
+	var natural: bool = parts.has("rocky_coast")
 	var height: float
 	if coast > 0.0:
 		var detail: float = noise.get_noise_3dv(p * 9.0)
@@ -426,15 +456,28 @@ static func finish_sample(
 			)
 			* float(ctx.elevation_scale)
 		)
+		if natural:
+			var shore_uplift := smoothstep(0.0, lerpf(0.17, 0.024, parts.rocky_coast), coast)
+			height = (coast * HEIGHT_PER_COAST + shore_uplift * (
+				ridge * HEIGHT_PER_RIDGE + maxf(detail, 0.0) * HEIGHT_PER_DETAIL
+			)) * float(ctx.elevation_scale)
 	else:
 		var offshore: float = clampf(-coast / 0.26, 0.0, 1.0)
 		var abyss: float = 0.86 + noise.get_noise_3dv(p * 5.0 + Vector3(19, -6, 4)) * 0.42
 		height = (
 			-maxf(8.0, float(ctx.ocean_depth_m) * pow(offshore, 1.7) * abyss) / METRES_PER_HEIGHT
 		)
+	var relief := Vector2.ZERO
+	if natural:
+		relief = Natural.elevations(p, ctx, parts.fields, height * METRES_PER_HEIGHT, ridge)
+		height = relief.x / METRES_PER_HEIGHT
 	var temperature: float = temperature_at(lat, height, p, noise, ctx)
 	var rainfall: float = rainfall_at(lat, lon, ridge, p, noise, ctx)
-	return {
+	if natural:
+		var fields: Vector4 = parts.fields
+		temperature += 0.95 * fields.x
+		rainfall = clampf(0.70 * rainfall + 0.19 + 0.10 * fields.x + 0.058 * fields.w - 0.033 * relief.y, 0.04, 0.98)
+	var result := {
 		"height": height,
 		"temperature": temperature,
 		"rainfall": rainfall,
@@ -445,6 +488,9 @@ static func finish_sample(
 		"ocean_depth_m": maxf(0.0, -height * METRES_PER_HEIGHT),
 		"ridge": ridge,
 	}
+	if natural:
+		result.rocky_coast = parts.rocky_coast
+	return result
 
 
 static func temperature_at(
@@ -471,6 +517,13 @@ static func rainfall_at(
 	var from_east: bool = absf(lat) < 30.0 or absf(lat) > 60.0
 	var upwind_lon: float = lon + (UPWIND_DEGREES if from_east else -UPWIND_DEGREES)
 	var upwind: float = maxf(_ridge(SeedGeo.unit(lat, upwind_lon), ctx), 0.0)
+	if ctx.get("version", "") == NATURAL_VERSION:
+		# Westerlies emerge gradually between the trade winds and polar easterlies. Sample
+		# the same warped belts from both directions to avoid a zonal step in the rain shadow.
+		var westerlies := smoothstep(23.0, 37.0, absf(lat)) * (1.0 - smoothstep(53.0, 67.0, absf(lat)))
+		var east := _warp(SeedGeo.unit(lat, lon + UPWIND_DEGREES), noise, ctx.warp)
+		var west := _warp(SeedGeo.unit(lat, lon - UPWIND_DEGREES), noise, ctx.warp)
+		upwind = lerpf(maxf(0.0, _ridge(east, ctx)), maxf(0.0, _ridge(west, ctx)), westerlies)
 	return clampf(
 		(
 			float(ctx.rainfall_base)

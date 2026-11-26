@@ -12,6 +12,12 @@ static func data() -> Dictionary:
 	return Rules.read("tutorial")
 
 
+## The same tutorial bay has a different road network in the new geography.
+static func partner_site(world: Dictionary) -> int:
+	var rules := data()
+	return int(rules.partner_site if world.get("version", "") == "CC-GEO-2.3" else rules.legacy_partner_site)
+
+
 static func new_context() -> Dictionary:
 	return {
 		"camera_moved": false,

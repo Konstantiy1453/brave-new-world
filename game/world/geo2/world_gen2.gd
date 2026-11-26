@@ -9,13 +9,14 @@ const Hydrology = preload("res://world/hydrology.gd")
 const SeedGeo = preload("res://world/seed_geography.gd")
 const Rules = preload("res://simulation/rules.gd")
 
-const VERSION: String = "CC-GEO-2.2"
+const VERSION: String = "CC-GEO-2.3"
 ## 1.7.0 saves are bound to this one: same seed, same terrain, so it must never change.
 const FROZEN_VERSION: String = "CC-GEO-2.0"
 ## Bump when the same seed would generate a different world: disk caches are keyed on it.
 const REVISION: int = 5
 const SOFTER_CLIMATE_ATTEMPT: int = 5
 const SOFTER_LAYOUT_ATTEMPT: int = 8
+const RESCUE_ATTEMPTS: int = 8
 const GW: int = 144
 const GH: int = 72
 const RADIUS_KM: Array[float] = [730.0, 1000.0, 1430.0]
@@ -30,16 +31,20 @@ static func rules_for(version: String) -> Dictionary:
 		return _version_rules[version]
 	var base: Dictionary = Rules.read("geography")
 	var merged: Dictionary = base
-	if base.overrides.has(version):
+	# 2.3 changes the terrain surface. Economy, size and site rules remain those of 2.2.
+	var rules_version: String = "CC-GEO-2.2" if version == VERSION else version
+	if base.overrides.has(rules_version):
 		merged = base.duplicate(false)
-		for key: String in base.overrides[version]:
-			merged[key] = base.overrides[version][key]
+		for key: String in base.overrides[rules_version]:
+			merged[key] = base.overrides[rules_version][key]
 		merged.erase("frozen_roads")
 	_version_rules[version] = merged
 	return merged
 
 
 static func generate(seed_input: Variant, size_id: int, version: String = VERSION) -> Dictionary:
+	if version == VERSION and not Plates.Natural.initialize():
+		return {"error": "无法读取 CC-GEO-2.3 高程样本文件。"}
 	var seed_value: int = SeedGeo.normalize_seed(seed_input)
 	var size: int = clampi(size_id, 0, 2)
 	var rules: Dictionary = rules_for(version)
@@ -55,9 +60,13 @@ static func generate(seed_input: Variant, size_id: int, version: String = VERSIO
 	var attempts: int = int(rules.attempts)
 	if not planet.is_empty():
 		attempts = int(rules.planet_types.attempts)
+	if version == VERSION:
+		# Same requested seed. Extra deterministic sub-seeds use the softened layout and
+		# the same erosion and drainage, even when the first batch has no viable harbour.
+		attempts += RESCUE_ATTEMPTS
 	for attempt: int in range(attempts):
 		var ctx: Dictionary = Plates.build_context(
-			seed_value, attempt, rules, _softened(planet, attempt)
+			seed_value, attempt, rules, _softened(planet, attempt), version
 		)
 		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
 		world.radius_km = _radius(rules, size)
@@ -68,24 +77,49 @@ static func generate(seed_input: Variant, size_id: int, version: String = VERSIO
 		_finish_grid(world, noise)
 		SiteGen.place(world, rules, ctx, attempt)
 		var check: Dictionary = SiteGen.validate(world, rules)
+		if version == VERSION and bool(check.ok):
+			check = _final_sites(world, ctx, noise, rules)
 		if bool(check.ok):
 			return _accept(world, ctx, check, rejected, false)
 		rejected.append({"attempt": attempt, "reason": "playability", "value": check.pairs.size()})
-		if fallback.is_empty():
-			fallback = {"world": world, "ctx": ctx}
+		var n_pairs: int = check.pairs.size()
+		if fallback.is_empty() or (version == VERSION and n_pairs > int(fallback.get("pairs", -1))):
+			fallback = {"world": world, "ctx": ctx, "pairs": n_pairs}
 	# Nothing passed. Carve a fertile basin near the best start of the first usable world.
 	if fallback.is_empty():
 		var ctx: Dictionary = Plates.build_context(
-			seed_value, attempts, rules, _softened(planet, attempts)
+			seed_value, attempts, rules, _softened(planet, attempts), version
 		)
 		var world: Dictionary = _terrain(seed_value, size, ctx, noise, seed_input, version)
 		world.radius_km = _radius(rules, size)
 		_finish_grid(world, noise)
 		SiteGen.place(world, rules, ctx, attempts)
 		fallback = {"world": world, "ctx": ctx}
+	if version == VERSION:
+		var resolved := _final_sites(fallback.world, fallback.ctx, noise, rules)
+		if not fallback.world.has("optical_drainage"):
+			return {"error": "CC-GEO-2.3 的水系未生成，无法确认可用的登陆点。"}
+		if bool(resolved.ok):
+			return _accept(fallback.world, fallback.ctx, resolved, rejected, false)
 	SiteGen.carve_basin(fallback.world, rules)
 	var carved: Dictionary = SiteGen.validate(fallback.world, rules)
+	if version == VERSION and not bool(carved.ok):
+		return {"error": "此种子的 CC-GEO-2.3 地图未通过登陆点和交通验收，请更换种子。"}
 	return _accept(fallback.world, fallback.ctx, carved, rejected, true)
+
+
+## Resolve the full drainage only for terrain that can support a game. Then the final sites,
+## local building slots, water supply and economic risks use exactly the routed network.
+static func _final_sites(
+	world: Dictionary, ctx: Dictionary, noise: FastNoiseLite, rules: Dictionary
+) -> Dictionary:
+	if not world.has("optical_drainage"):
+		Hydrology.prepare_optical(world, ctx)
+		if not world.has("optical_drainage"):
+			return {"ok": false, "pairs": []}
+		_attributes(world, noise)
+		SiteGen.place(world, rules, ctx, int(ctx.attempt))
+	return SiteGen.validate(world, rules)
 
 
 static func _radius(rules: Dictionary, size: int) -> float:
@@ -109,7 +143,7 @@ static func _softened(planet: Dictionary, attempt: int) -> Dictionary:
 static func _accept(
 	world: Dictionary, ctx: Dictionary, check: Dictionary, rejected: Array, carved: bool
 ) -> Dictionary:
-	Plates.activate(int(world.seed), ctx)
+	Plates.activate(int(world.seed), ctx, str(world.version))
 	# The validator puts the best start first, so numbers are given out last.
 	if world.has("character"):
 		for site: Dictionary in world.regions:
