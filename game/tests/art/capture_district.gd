@@ -9,6 +9,7 @@ extends SceneTree
 ##   xvfb-run -a godot --path game --rendering-method gl_compatibility --script
 ##     res://tests/art/capture_district.gd -- --out=<folder> [--seed=260129] [--days=1200]
 ##     [--size=1920x1080] [--hours=day,dusk] [--views=overview,settlement,verge,rocks]
+##     [--save=<file>: play once and keep the colony there, or load it when it exists]
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -33,7 +34,8 @@ var options: Dictionary = {
 	"views": "overview,settlement,verge,rocks",
 	"region": "",
 	"day_height": "0.6",
-	"dusk_height": "0.07",
+	"dusk_height": "0.3",
+	"night_height": "-0.3",
 }
 var map: Node3D
 var folder: String = ""
@@ -54,14 +56,24 @@ func run() -> void:
 	folder = ProjectSettings.globalize_path(str(options.out))
 	DirAccess.make_dir_recursive_absolute(folder)
 	var sim: RefCounted = Sim.new()
-	sim.new_game(int(options.seed), "capital", 1, "normal")
-	var bot: RefCounted = Bot.new()
-	bot.begin(sim, int(options.seed))
-	for _day: int in range(int(options.days)):
-		bot.on_day()
-		sim.tick()
-		if str(sim.state.status) == "failed" or sim.state.settlements.is_empty():
-			break
+	var saved: String = str(options.get("save", ""))
+	if saved != "" and FileAccess.file_exists(saved):
+		var refused: String = sim.load_game(saved)
+		if refused != "":
+			report.failures.append("load: " + refused)
+	else:
+		sim.new_game(int(options.seed), "capital", 1, "normal")
+		var bot: RefCounted = Bot.new()
+		bot.begin(sim, int(options.seed))
+		for _day: int in range(int(options.days)):
+			bot.on_day()
+			sim.tick()
+			if str(sim.state.status) == "failed" or sim.state.settlements.is_empty():
+				break
+		if saved != "":
+			var refused: String = sim.save_game(saved)
+			if refused != "":
+				report.failures.append("save: " + refused)
 	if sim.state.settlements.is_empty():
 		report.failures.append("no settlement")
 		_finish()
@@ -92,6 +104,7 @@ func run() -> void:
 		"people": int(town.get("population", 0)),
 		"buildings": town.get("buildings", []).size(),
 		"region_entry_ms": entry_ms,
+		"fringe_ms": int(map.get("fringe_ms")),
 	}
 	var targets: Dictionary = _targets(sim, region)
 	report.targets = {}
@@ -128,12 +141,21 @@ func _targets(sim: RefCounted, region: int) -> Dictionary:
 			count += 1
 	if count > 0:
 		town /= count
-	var key: int = map.district_key(region)
-	var street: Vector2 = DistrictPlan.warp(Vector2(map._town_offset(), 1.5), key)
-	var beyond: Vector2 = DistrictPlan.warp(Vector2(map._town_offset(), 2.5), key)
-	var along: Vector2 = (beyond - street).normalized()
-	var side := Vector2(-along.y, along.x)
-	var verge: Vector2 = street + side * (4.3 + 2.0) * DistrictPlan.UNIT
+	# The verge: beside the road paving nearest the middle of town, looking along it.
+	var verge: Vector2 = town
+	var along := Vector2(0.0, 1.0)
+	var nearest: float = INF
+	for entry: Array in map.town_streets.edges:
+		if int(entry[2]) != 0:
+			continue
+		var path: PackedVector2Array = entry[0]
+		for index: int in range(path.size() - 1):
+			var d: float = path[index].distance_to(town)
+			if d < nearest:
+				nearest = d
+				along = (path[index + 1] - path[index]).normalized()
+				var side := Vector2(-along.y, along.x)
+				verge = path[index] + side * (float(entry[1]) + 5.0 * DistrictPlan.UNIT)
 	var rock: Vector2 = Vector2(town.x + 14.0, town.y - 9.0)
 	if map.has_method("rock_spots"):
 		var spots: Array = map.rock_spots()

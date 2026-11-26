@@ -83,6 +83,9 @@ var ground: Callable
 ## Paved footprints drawn, as [polyline (bent, units), half width (units)], for the shoulders'
 ## mask and for keeping rocks and plants off the paving.
 var paved: Array = []
+## The paving's outer edges by class for the ground's shoulders (district_ground.gd `fringe`):
+## [bent polyline (units), half width to the edge (units), class index].
+var edges: Array = []
 
 
 func _init(height: Callable) -> void:
@@ -105,11 +108,13 @@ func street(points: PackedVector2Array, kind: String) -> void:
 		"walk":
 			_ribbon(path, "walk", -half, half)
 			paved.append([path, half * DistrictPlan.UNIT])
+			edges.append([points, half * DistrictPlan.UNIT, 2])
 		"yard":
 			_ribbon(path, "yard", -half, half)
 			_ribbon(path, "gravel", half, half + SHOULDER_M * 2.0)
 			_ribbon(path, "gravel", -half - SHOULDER_M * 2.0, -half)
 			paved.append([path, half * DistrictPlan.UNIT])
+			edges.append([points, (half + SHOULDER_M * 2.0) * DistrictPlan.UNIT, 1])
 		_:
 			_ribbon(path, "asphalt", -half, half)
 			_ribbon(path, "gutter", -half, -half + GUTTER_M)
@@ -121,10 +126,13 @@ func street(points: PackedVector2Array, kind: String) -> void:
 				_ribbon(path, "edge", -half - .18, -half)
 				_centre_line(path)
 				paved.append([path, (half + FOOTWAY_M) * DistrictPlan.UNIT])
+				edges.append([points, (half + .18) * DistrictPlan.UNIT, 0])
+				edges.append([points, (half + FOOTWAY_M) * DistrictPlan.UNIT, 2])
 			else:
 				_ribbon(path, "gravel", half - .03, half + SHOULDER_M)
 				_ribbon(path, "gravel", -half - SHOULDER_M, -half + .03)
 				paved.append([path, (half + SHOULDER_M) * DistrictPlan.UNIT])
+				edges.append([points, (half + SHOULDER_M) * DistrictPlan.UNIT, 0])
 
 
 ## The meshes, one per surface that has any strip, under `parent`.

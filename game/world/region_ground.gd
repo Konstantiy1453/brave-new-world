@@ -6,6 +6,7 @@ extends "res://world/building_models.gd"
 const Rules = preload("res://simulation/rules.gd")
 const DistrictPlan = preload("res://world/district/district_plan.gd")
 const WorldGen2 = preload("res://world/geo2/world_gen2.gd")
+const DistrictGround = preload("res://world/district/district_ground.gd")
 ## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
 const OLD_FIELD: Dictionary = {
 	"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0, "rows": 2
@@ -64,6 +65,18 @@ const INLAND_DATA_FLOOR: float = 0.0004
 const INLAND_SWELL: float = 0.6
 const TOWN_CALM: Vector2 = Vector2(10.0, 22.0)
 const TOWN_PULL: float = 0.65
+## CC-GEO-2.3 towns (1.12, `_settle_town`): full calm within TOWN_SETTLE.x units of a plot, none past
+## TOWN_SETTLE.y; the share of hills and hollows taken off the broad lie, and of the broad slope
+## eased toward the town's level; the broad lie's blur radius in field cells (three box passes);
+## the lattice the distance to the plots is kept on; and the fade to nothing at the field's edge.
+const TOWN_SETTLE: Vector2 = Vector2(5.0, 20.0)
+const TOWN_RELIEF_EASE: float = 0.85
+const TOWN_SLOPE_EASE: float = 0.5
+## A hollow below the sea's level away from open water is raised this far over it (`_fill_hollows`).
+const HOLLOW_LIFT: float = 0.2
+const TOWN_BROAD_CELLS: int = 12
+const TOWN_CALM_CELL: float = 2.0
+const TOWN_EDGE_FADE: float = 7.0
 ## The ground leaves the sea's flat surface steeply (`_clear_waterline`), because ground and water
 ## within the depth buffer's precision of each other flicker as the camera moves: within
 ## WATERLINE_BAND of the sea's level, heights move away from it by up to WATERLINE_LIP on a smooth
@@ -94,6 +107,11 @@ var tree_count: int = int(OLD_FIELD.trees)
 var gate_reach: float = float(OLD_FIELD.gate)
 var rows_per_frame: int = int(OLD_FIELD.rows)
 var height_field := PackedFloat32Array()
+## A generated world's ground material, the region's own (district_ground.gd): the town's streets
+## give it their shoulders once drawn.
+var ground_material: ShaderMaterial
+## Vertices of the last landscape raised out of inland hollows of the sea (`_fill_hollows`).
+var hollows_filled: int = 0
 var forest_field := PackedFloat32Array()
 var field_has_sea: bool = false
 ## Terrace level per visible plot, keyed by its slot on the plot grid: Vector3(x, level, z).
@@ -880,6 +898,8 @@ func _build_landscape(token: int) -> bool:
 				if _on_pad(xs[inner_x + APRON_RINGS], zs[inner_z + APRON_RINGS]):
 					fixed[index] = 1
 		_limit_steps(relief, columns, rows, fixed)
+	if field_has_sea and natural:
+		hollows_filled = _fill_hollows(relief, xs, zs, sea_level())
 	if field_has_sea:
 		_clear_waterline(relief, sea_level(), WATERLINE_LIP_23 if natural else WATERLINE_LIP)
 	for inner_z: int in range(field_res + 1):
@@ -915,7 +935,10 @@ func _build_landscape(token: int) -> bool:
 	var terrain := MeshInstance3D.new()
 	terrain.name = "Landscape"
 	terrain.mesh = st.commit()
-	terrain.material_override = _terrain_material(bool(reg.river))
+	ground_material = DistrictGround.material(bool(reg.river))
+	mats["district_ground"] = ground_material
+	terrain_shader = ground_material
+	terrain.material_override = ground_material
 	surface.add_child(terrain)
 	_build_river()
 	_build_sea()
@@ -987,7 +1010,10 @@ func _shape_relief(
 			await get_tree().process_frame
 			if token != region_load_token:
 				return false
-	_calm_town(relief, xs, zs, sea)
+	if str(world.version) == WorldGen2.VERSION:
+		_settle_town(relief, xs, zs, sea)
+	else:
+		_calm_town(relief, xs, zs, sea)
 	return true
 
 
@@ -1074,6 +1100,183 @@ func _calm_town(
 			var weight: float = (1.0 - smoothstep(TOWN_CALM.x, TOWN_CALM.y, distance)) * TOWN_PULL
 			var index: int = row * columns + column
 			relief[index] = lerpf(relief[index], level, weight)
+
+
+## CC-GEO-2.3 (1.12): the town stands on gentle ground, as the approved district does, while the
+## hills beyond keep their height. Over the plot grid, fading out between TOWN_SETTLE.x and
+## TOWN_SETTLE.y units past the nearest plot, land keeps the broad lie of the relief (a wide blur
+## of the field) with only 1 - TOWN_RELIEF_EASE of the hills and hollows on it, and that broad lie
+## eases TOWN_SLOPE_EASE of the way toward the town's own level. The sea, the beach band and the
+## ground beside water are left as they were, so every coast, river and lake stays where it is.
+func _settle_town(
+	relief: PackedFloat32Array, xs: PackedFloat32Array, zs: PackedFloat32Array, sea: float
+) -> void:
+	var columns: int = xs.size()
+	var side: int = field_res + 1
+	var broad := PackedFloat32Array()
+	broad.resize(side * side)
+	for inner_z: int in range(side):
+		for inner_x: int in range(side):
+			broad[inner_z * side + inner_x] = relief[
+				(inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
+			]
+	for _pass: int in range(3):
+		_box_blur(broad, side, true)
+		_box_blur(broad, side, false)
+	var calm: PackedFloat32Array = _town_calm(xs, zs)
+	var level_sum: float = 0.0
+	var level_weight: float = 0.0
+	for inner_z: int in range(side):
+		for inner_x: int in range(side):
+			var weight: float = calm[inner_z * side + inner_x]
+			var lie: float = broad[inner_z * side + inner_x]
+			if weight > 0.5 and lie > sea:
+				level_sum += lie * weight
+				level_weight += weight
+	if level_weight <= 0.0:
+		return
+	var level: float = level_sum / level_weight
+	# Settled land never sinks under the beach band's foot, nor lower than it was.
+	var lowest: float = sea + WATERLINE_BAND
+	for inner_z: int in range(side):
+		for inner_x: int in range(side):
+			var weight: float = calm[inner_z * side + inner_x]
+			if weight <= 0.0:
+				continue
+			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
+			var height: float = relief[index]
+			weight *= smoothstep(sea + WATERLINE_BAND * 0.5, sea + WATERLINE_BAND * 2.0, height)
+			var x: float = xs[inner_x + APRON_RINGS]
+			var z: float = zs[inner_z + APRON_RINGS]
+			if weight <= 0.0 or is_finite(_water_height_at(x, z, 2.2)):
+				continue
+			var lie: float = broad[inner_z * side + inner_x]
+			var eased: float = lerpf(lie, level, TOWN_SLOPE_EASE * weight)
+			var settled: float = eased + (height - lie) * (1.0 - TOWN_RELIEF_EASE * weight)
+			relief[index] = maxf(settled, minf(height, lowest))
+
+
+## A coast's sea reaches inland only where it is open water (1.12): ground below the sea's level
+## that no path of such ground joins to the landscape's outer edge is a hollow, not a bay, and is
+## raised just clear of the sea, so no pond of sea shows inland. Beds of rivers and lakes keep
+## their depth (their own water covers them).
+func _fill_hollows(
+	relief: PackedFloat32Array, xs: PackedFloat32Array, zs: PackedFloat32Array, sea: float
+) -> int:
+	var columns: int = xs.size()
+	var rows: int = zs.size()
+	var open := PackedByteArray()
+	open.resize(relief.size())
+	var queue := PackedInt32Array()
+	for row: int in range(rows):
+		for column: int in range(columns):
+			if row != 0 and column != 0 and row != rows - 1 and column != columns - 1:
+				continue
+			var index: int = row * columns + column
+			if relief[index] < sea and open[index] == 0:
+				open[index] = 1
+				queue.append(index)
+	var head: int = 0
+	while head < queue.size():
+		var here: int = queue[head]
+		head += 1
+		var row: int = here / columns
+		var column: int = here % columns
+		for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var c: int = column + step.x
+			var r: int = row + step.y
+			if c < 0 or r < 0 or c >= columns or r >= rows:
+				continue
+			var there: int = r * columns + c
+			if open[there] == 0 and relief[there] < sea:
+				open[there] = 1
+				queue.append(there)
+	var filled: int = 0
+	for row: int in range(rows):
+		for column: int in range(columns):
+			var index: int = row * columns + column
+			if open[index] == 1 or relief[index] >= sea:
+				continue
+			if is_finite(_water_height_at(xs[column], zs[row], 2.0)):
+				continue
+			relief[index] = sea + HOLLOW_LIFT
+			filled += 1
+	return filled
+
+
+## How much each vertex of the field belongs to the town (1 on the plot grid, 0 well beyond it and
+## at the field's edge), from the distance to the nearest visible plot or the landing pods, kept
+## on a lattice of TOWN_CALM_CELL units and read bilinearly so the weight has no steps.
+func _town_calm(xs: PackedFloat32Array, zs: PackedFloat32Array) -> PackedFloat32Array:
+	var side: int = field_res + 1
+	var calm := PackedFloat32Array()
+	calm.resize(side * side)
+	var nearest: Dictionary = {}
+	var reach: float = TOWN_SETTLE.y + TOWN_CALM_CELL * 2.0
+	for id: Variant in plot_levels:
+		var centre: Vector2 = plot_levels[id].centre
+		var low := Vector2i(
+			floori((centre.x - reach) / TOWN_CALM_CELL), floori((centre.y - reach) / TOWN_CALM_CELL)
+		)
+		var high := Vector2i(
+			ceili((centre.x + reach) / TOWN_CALM_CELL), ceili((centre.y + reach) / TOWN_CALM_CELL)
+		)
+		for lz: int in range(low.y, high.y + 1):
+			for lx: int in range(low.x, high.x + 1):
+				var key := Vector2i(lx, lz)
+				var d: float = (Vector2(lx, lz) * TOWN_CALM_CELL).distance_to(centre)
+				if d < float(nearest.get(key, INF)):
+					nearest[key] = d
+	for inner_z: int in range(side):
+		var z: float = zs[inner_z + APRON_RINGS]
+		for inner_x: int in range(side):
+			var x: float = xs[inner_x + APRON_RINGS]
+			var fx: float = x / TOWN_CALM_CELL
+			var fz: float = z / TOWN_CALM_CELL
+			var lx: int = floori(fx)
+			var lz: int = floori(fz)
+			var tx: float = fx - lx
+			var tz: float = fz - lz
+			var far: float = TOWN_SETTLE.y + TOWN_CALM_CELL * 2.0
+			var d: float = lerpf(
+				lerpf(
+					float(nearest.get(Vector2i(lx, lz), far)),
+					float(nearest.get(Vector2i(lx + 1, lz), far)),
+					tx
+				),
+				lerpf(
+					float(nearest.get(Vector2i(lx, lz + 1), far)),
+					float(nearest.get(Vector2i(lx + 1, lz + 1), far)),
+					tx
+				),
+				tz
+			)
+			var edge: float = maxf(absf(x) - half_width, absf(z) - half_depth)
+			calm[inner_z * side + inner_x] = (
+				(1.0 - smoothstep(TOWN_SETTLE.x, TOWN_SETTLE.y, d))
+				* (1.0 - smoothstep(-TOWN_EDGE_FADE, -1.0, edge))
+			)
+	return calm
+
+
+## A running-sum box blur of TOWN_BROAD_CELLS along the rows (or columns) of a square grid, the
+## ends held at their edge values.
+static func _box_blur(values: PackedFloat32Array, side: int, along_rows: bool) -> void:
+	var radius: int = TOWN_BROAD_CELLS
+	var line := PackedFloat32Array()
+	line.resize(side)
+	for lane: int in range(side):
+		for step: int in range(side):
+			line[step] = values[lane * side + step] if along_rows else values[step * side + lane]
+		var total: float = 0.0
+		for offset: int in range(-radius, radius + 1):
+			total += line[clampi(offset, 0, side - 1)]
+		var span: float = float(radius * 2 + 1)
+		for step: int in range(side):
+			var at: int = lane * side + step if along_rows else step * side + lane
+			values[at] = total / span
+			total += line[clampi(step + radius + 1, 0, side - 1)]
+			total -= line[clampi(step - radius, 0, side - 1)]
 
 
 static func _blur_colors(values: PackedColorArray, columns: int, rows: int) -> void:

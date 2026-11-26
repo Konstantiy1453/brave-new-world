@@ -5,6 +5,15 @@ extends "res://world/region_view.gd"
 ## building is drawn at its metric size, the reviewed kinds from their high-detail models near the
 ## camera, and the paving at metric widths. Older worlds keep region_view.gd's town.
 
+## The ground round the town reads as the approved close ground this far past its buildings, in
+## units (district_ground.gd).
+const TOWN_GROUND_MARGIN: float = 8.0
+
+## Where the town's buildings stand (bent, units), for the ground's close soil; and how long the
+## last town's shoulders took to draw, in milliseconds.
+var town_spots := PackedVector2Array()
+var fringe_ms: int = 0
+
 
 ## A generated world's town in metres (1.12): every building on its plot's lot (district_plan.gd)
 ## at its metric size, the reviewed kinds in their high-detail models near the camera, the plot
@@ -22,6 +31,7 @@ func _build_town(settlement: Dictionary, offset: float) -> void:
 	var stops: Array = []
 	var pools: Array = []
 	var street_ends := Vector2(-12.0, 12.0)
+	town_spots.clear()
 	# Each lane runs from the main street out to its furthest building on either side.
 	var lane_reach: Dictionary = {}
 	if int(settlement.get("base_housing", 0)) > 0:
@@ -32,6 +42,7 @@ func _build_town(settlement: Dictionary, offset: float) -> void:
 		)
 		_build_base_housing(offset, int(settlement.base_housing), camp > 0.0)
 		var pods: Vector2 = _pods_position(offset)
+		town_spots.append(pods)
 		var reach: Dictionary = _access(pods)
 		stops.append(
 			{
@@ -62,6 +73,7 @@ func _build_town(settlement: Dictionary, offset: float) -> void:
 		var lit: bool = LightField.home_lit(b, roles, shares)
 		var art: Dictionary = ModelArt.kind_entry(str(b.kind))
 		var at: Vector2 = lot.pos
+		town_spots.append(at)
 		var yaw: float = float(lot.yaw)
 		var size: Vector2 = lot.size
 		var model := MeshInstance3D.new()
@@ -176,6 +188,31 @@ func _finish_town_streets() -> void:
 	paving.name = "TownPaving"
 	buildings_root.add_child(paving)
 	town_streets.commit(paving)
+	_dress_ground()
+
+
+## The ground's shoulders along the paving just drawn, and its close soil over the town's extent.
+func _dress_ground() -> void:
+	if ground_material == null:
+		return
+	var started: int = Time.get_ticks_msec()
+	DistrictGround.set_fringe(ground_material, DistrictGround.fringe(town_streets.edges))
+	fringe_ms = Time.get_ticks_msec() - started
+	var centre := Vector2(_town_offset(), 0.0)
+	var reach := Vector2.ONE * TOWN_GROUND_MARGIN * 1.5
+	var level: float = _ground(centre.x, centre.y)
+	if not town_spots.is_empty():
+		var low := Vector2(INF, INF)
+		var high := Vector2(-INF, -INF)
+		var total: float = 0.0
+		for spot: Vector2 in town_spots:
+			low = low.min(spot)
+			high = high.max(spot)
+			total += _ground(spot.x, spot.y)
+		centre = (low + high) * 0.5
+		reach = (high - low) * 0.5 + Vector2.ONE * TOWN_GROUND_MARGIN
+		level = total / town_spots.size()
+	DistrictGround.set_town(ground_material, centre, reach, level)
 
 
 ## A reviewed kind's high-detail model over the game's own, the one shown near the camera and the

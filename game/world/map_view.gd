@@ -71,6 +71,9 @@ void fragment() {
 """
 ## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
 ## that hides the landscape's far edge: it begins and is complete this far from the eye.
+## A generated region's daylight ambient (1.12): the approved district's sky fill.
+const REGION_DAY_AMBIENT: Color = Color("b6c9de")
+const REGION_AMBIENT_ENERGY: float = 0.58
 const REGION_DAY_AIR: Color = Color("6b8291")
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
@@ -763,7 +766,7 @@ func _apply_sky() -> void:
 	if atmosphere_shader != null:
 		atmosphere_shader.set_shader_parameter("sun_local", sun)
 		atmosphere_shader.set_shader_parameter("day_night", night_value)
-	for key: String in ["terrain_ground_true", "terrain_ground_false"]:
+	for key: String in ["terrain_ground_true", "terrain_ground_false", "district_ground"]:
 		if mats.has(key):
 			mats[key].set_shader_parameter("weather_time", sky.weather_time)
 			mats[key].set_shader_parameter("cloud_shadow", 0.35 if weather_enabled else 0.0)
@@ -880,6 +883,16 @@ func _aim_region_sun() -> void:
 	if fill_light != null:
 		fill_light.light_energy = lerpf(.85, .18, daylight)
 	var dusk: float = smoothstep(-0.12, 0.04, height) * (1.0 - smoothstep(0.04, 0.3, height))
+	if not world.is_empty() and Geo.is_generated(str(world.version)):
+		# The approved district's light (1.12, region/preview.gd): a warm low sun over a bright
+		# sky-blue ambient, so shade on the ground keeps its colour.
+		var low: float = 1.0 - smoothstep(0.25, 0.6, height)
+		sun_light.light_color = Color("ffad6b").lerp(Color("ffce9e"), smoothstep(0.02, 0.2, height))
+		sun_light.light_color = sun_light.light_color.lerp(Color("f6ecd1"), 1.0 - low)
+		sun_light.light_energy *= lerpf(1.0, 0.86, low * smoothstep(0.04, 0.2, height))
+		if environment != null:
+			environment.ambient_light_color = NIGHT_AMBIENT.lerp(REGION_DAY_AMBIENT, daylight)
+			environment.ambient_light_energy = lerpf(.62, REGION_AMBIENT_ENERGY, daylight)
 	_region_air(daylight, dusk * 0.55)
 
 
