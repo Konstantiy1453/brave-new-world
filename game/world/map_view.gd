@@ -74,7 +74,14 @@ void fragment() {
 ## A generated region's daylight ambient (1.12): the approved district's sky fill.
 const REGION_DAY_AMBIENT: Color = Color("b6c9de")
 const REGION_AMBIENT_ENERGY: float = 0.58
-const REGION_DAY_AIR: Color = Color("6b8291")
+const REGION_DAY_AIR: Color = Color("9cadbb")
+## The evening haze and sky of the approved district (1.12, region/preview.gd `set_hour`), the
+## day's and night's sky overhead, and the exposure a generated region is drawn at.
+const REGION_EVENING_AIR: Color = Color("a9a5ad")
+const REGION_SKY_DAY: Color = Color("4e6f98")
+const REGION_SKY_EVENING: Color = Color("435b85")
+const REGION_SKY_NIGHT: Color = Color("04070e")
+const REGION_EXPOSURE: float = 1.02
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
 const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
@@ -111,6 +118,8 @@ const TIMELAPSE_DISTANCE: float = 10.3
 var timelapse: Dictionary = {}
 var environment: Environment
 var fill_light: DirectionalLight3D
+## A generated region's sky (`_region_air`).
+var region_sky: ProceduralSkyMaterial
 var star_field: MultiMeshInstance3D
 ## Deep space behind the globe (1.10.1): a dome far beyond the stars with the galaxy's band, dust
 ## lanes and faint nebulae, and the planet's own star, a large glare in the sun's real direction.
@@ -378,6 +387,7 @@ func show_region(id: int) -> void:
 		local_lakes = entry.lakes.duplicate(true)
 		height_field = entry.heights
 		forest_field = entry.forests
+		climate_field = entry.get("climate", PackedVector2Array())
 	else:
 		surface = Node3D.new()
 		surface.name = "RegionalSurface_" + str(id)
@@ -415,6 +425,7 @@ func show_region(id: int) -> void:
 			"lakes": local_lakes.duplicate(true),
 			"heights": height_field,
 			"forests": forest_field,
+			"climate": climate_field,
 			"terraces": terrace_signature(id),
 		}
 	signature = _building_signature()
@@ -889,17 +900,18 @@ func _aim_region_sun() -> void:
 		var low: float = 1.0 - smoothstep(0.25, 0.6, height)
 		sun_light.light_color = Color("ffad6b").lerp(Color("ffce9e"), smoothstep(0.02, 0.2, height))
 		sun_light.light_color = sun_light.light_color.lerp(Color("f6ecd1"), 1.0 - low)
-		sun_light.light_energy *= lerpf(1.0, 0.86, low * smoothstep(0.04, 0.2, height))
+		sun_light.light_energy *= lerpf(1.0, 0.76, low * smoothstep(0.04, 0.2, height))
 		if environment != null:
 			environment.ambient_light_color = NIGHT_AMBIENT.lerp(REGION_DAY_AMBIENT, daylight)
 			environment.ambient_light_energy = lerpf(.62, REGION_AMBIENT_ENERGY, daylight)
-	_region_air(daylight, dusk * 0.55)
+	var evening: float = smoothstep(0.0, 0.1, height) * (1.0 - smoothstep(0.18, 0.5, height))
+	_region_air(daylight, dusk * 0.55, evening)
 
 
 ## A generated region stands under its own sky: the horizon takes the time of day and the far
 ## landscape fades into it, so no edge of the ground shows. The globe, the flat map and older
 ## worlds keep the dark of space and the stars.
-func _region_air(daylight: float, dusk: float) -> void:
+func _region_air(daylight: float, dusk: float, evening: float = 0.0) -> void:
 	var landscape: bool = (
 		mode == "region" and not world.is_empty() and Geo.is_generated(str(world.version))
 	)
@@ -909,9 +921,38 @@ func _region_air(daylight: float, dusk: float) -> void:
 		return
 	environment.fog_enabled = landscape
 	if not landscape:
+		environment.background_mode = Environment.BG_COLOR
+		environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+		environment.tonemap_exposure = 1.0
+		environment.tonemap_white = 1.0
 		return
-	var air: Color = REGION_NIGHT_AIR.lerp(REGION_DAY_AIR, daylight).lerp(REGION_DUSK_AIR, dusk)
+	var air: Color = (
+		REGION_NIGHT_AIR
+		. lerp(REGION_DAY_AIR, daylight)
+		. lerp(REGION_EVENING_AIR, evening)
+		. lerp(REGION_DUSK_AIR, dusk)
+	)
 	environment.background_color = air
+	# The approved district's evening (region/preview.gd): a graded sky whose horizon is the haze
+	# the far ground fades into, under ACES with its exposure and white point.
+	if region_sky == null:
+		region_sky = ProceduralSkyMaterial.new()
+		region_sky.sky_curve = 0.12
+		region_sky.sun_angle_max = 2.0
+		region_sky.use_debanding = true
+		environment.sky = Sky.new()
+		environment.sky.sky_material = region_sky
+	region_sky.sky_top_color = (REGION_SKY_NIGHT.lerp(REGION_SKY_DAY, daylight).lerp(
+		REGION_SKY_EVENING, evening
+	))
+	region_sky.sky_horizon_color = air
+	region_sky.ground_horizon_color = air
+	region_sky.ground_bottom_color = air.darkened(0.35)
+	environment.background_mode = Environment.BG_SKY
+	environment.fog_sky_affect = 0.0
+	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
+	environment.tonemap_exposure = REGION_EXPOSURE
+	environment.tonemap_white = 4.0
 	environment.fog_mode = Environment.FOG_MODE_DEPTH
 	environment.fog_light_color = air
 	environment.fog_light_energy = 1.0

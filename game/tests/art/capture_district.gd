@@ -105,6 +105,8 @@ func run() -> void:
 		"buildings": town.get("buildings", []).size(),
 		"region_entry_ms": entry_ms,
 		"fringe_ms": int(map.get("fringe_ms")),
+		"nature": map.get("nature_counts"),
+		"hollows_filled": int(map.get("hollows_filled")),
 	}
 	var targets: Dictionary = _targets(sim, region)
 	report.targets = {}
@@ -157,14 +159,25 @@ func _targets(sim: RefCounted, region: int) -> Dictionary:
 				var side := Vector2(-along.y, along.x)
 				verge = path[index] + side * (float(entry[1]) + 5.0 * DistrictPlan.UNIT)
 	var rock: Vector2 = Vector2(town.x + 14.0, town.y - 9.0)
-	if map.has_method("rock_spots"):
-		var spots: Array = map.rock_spots()
-		var best: float = INF
-		for spot: Vector2 in spots:
-			var d: float = spot.distance_to(town)
-			if d > 6.0 and d < best:
-				best = d
-				rock = spot
+	# The rocks: the largest weathered boulder within 40 units of the middle of town.
+	var nature: Node = map.surface.get_node_or_null("DistrictNature")
+	var largest: float = 0.0
+	if nature != null:
+		for batch: Node in nature.get_children():
+			var label: String = str(batch.name)
+			if not label.ends_with("_near") or not batch is MultiMeshInstance3D:
+				continue
+			var kind: int = int(label.get_slice("_", 1))
+			if kind < 8 or kind > 11:
+				continue
+			var group: MultiMesh = (batch as MultiMeshInstance3D).multimesh
+			for index: int in range(group.instance_count):
+				var placed: Transform3D = group.get_instance_transform(index)
+				var spot := Vector2(placed.origin.x, placed.origin.z)
+				var size: float = placed.basis.x.length()
+				if spot.distance_to(town) < 40.0 and size > largest:
+					largest = size
+					rock = spot
 	return {
 		"overview": town,
 		"settlement": town,
@@ -174,9 +187,13 @@ func _targets(sim: RefCounted, region: int) -> Dictionary:
 	}
 
 
+## The approved views are lit from behind the camera (views.json and preview.gd's sun: about 165
+## degrees between the view and the sun); each view here turns the same way to the site's own sun,
+## the verge along the stretch of road nearest the middle of town that best runs away from it.
 func _view(view: String, targets: Dictionary, hour: String) -> void:
 	var target: Vector2 = targets.get(view, targets.overview)
-	map.camera_pivot = Vector3(target.x, map._ground(target.x, target.y), target.y)
+	var to_sun: Vector3 = map.sun_light.global_basis.z
+	var sun_yaw: float = atan2(to_sun.x, to_sun.z)
 	if view == "overview":
 		map.local_distance = 67.0
 		map.local_pitch = 0.75
@@ -185,10 +202,13 @@ func _view(view: String, targets: Dictionary, hour: String) -> void:
 		var spec: Array = VIEWS[view]
 		map.local_distance = float(spec[0]) * DistrictPlan.UNIT
 		map.local_pitch = deg_to_rad(float(spec[1]))
-		map.local_yaw = 0.68
+		map.local_yaw = sun_yaw + deg_to_rad(15.0)
 		if view == "verge":
-			var heading: Vector2 = targets.verge_heading
-			map.local_yaw = atan2(-heading.x, -heading.y) + 0.5
+			var road: Array = _verge_along(targets.overview, Vector2(to_sun.x, to_sun.z))
+			target = road[0]
+			var away: Vector2 = road[1]
+			map.local_yaw = atan2(-away.x, -away.y)
+	map.camera_pivot = Vector3(target.x, map._ground(target.x, target.y), target.y)
 	map.smooth_yaw = map.local_yaw
 	map.smooth_pitch = map.local_pitch
 	map.smooth_distance = map.local_distance
@@ -217,6 +237,29 @@ func _view(view: String, targets: Dictionary, hour: String) -> void:
 		)
 	)
 	print("CAPTURE ", name)
+
+
+## A point five metres off a road near the middle of town, on a stretch running away from the sun,
+## and that stretch's heading away from it.
+func _verge_along(town: Vector2, to_sun: Vector2) -> Array:
+	var best: float = -INF
+	var spot: Vector2 = town
+	var heading := Vector2(0.0, 1.0)
+	var sun: Vector2 = to_sun.normalized()
+	for entry: Array in map.town_streets.edges:
+		if int(entry[2]) != 0:
+			continue
+		var path: PackedVector2Array = entry[0]
+		for index: int in range(path.size() - 1):
+			var along: Vector2 = (path[index + 1] - path[index]).normalized()
+			var away: Vector2 = along if along.dot(sun) < 0.0 else -along
+			var score: float = -away.dot(sun) * 3.0 - path[index].distance_to(town) / 20.0
+			if score > best:
+				best = score
+				heading = away
+				var side := Vector2(-along.y, along.x)
+				spot = path[index] + side * (float(entry[1]) + 5.0 * DistrictPlan.UNIT)
+	return [spot, heading]
 
 
 ## The sky turned so the sun stands `height` (sine of its elevation) over the site's horizon, in

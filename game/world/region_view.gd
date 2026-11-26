@@ -426,6 +426,8 @@ func _build_colony() -> void:
 		# Survey lander is survey equipment, not an operating settlement.
 		_lander(buildings_root, Vector3(offset, _ground(offset, 0) + .1, 0))
 		_draw_free_plots({})
+		if Geo.is_generated(str(world.version)):
+			_build_wild_district()
 		return
 	if Geo.is_generated(str(world.version)):
 		_build_town(settlement, offset)
@@ -439,8 +441,6 @@ func _build_colony() -> void:
 	smoke_emitters.clear()
 	var stops: Array = []
 	var pools: Array = []
-	# Generated towns are laid out on the plot grid: lanes between the rows, spurs to each pad.
-	var lanes: bool = Geo.is_generated(str(world.version))
 	var street_ends := Vector2(-12.0, 12.0)
 	if int(settlement.get("base_housing", 0)) > 0:
 		var camp: float = float(
@@ -450,19 +450,7 @@ func _build_colony() -> void:
 		)
 		_build_base_housing(offset, int(settlement.base_housing), camp > 0.0)
 		var pods: Vector2 = _pods_position(offset)
-		if lanes:
-			var reach: Dictionary = _access(pods)
-			stops.append(
-				{
-					"end": reach.front,
-					"via": Vector2(pods.x, float(reach.lane)),
-					"z": float(reach.lane),
-					"kind": "base",
-					"active": true
-				}
-			)
-		else:
-			stops.append({"end": pods, "z": 0.0, "kind": "base", "active": true})
+		stops.append({"end": pods, "z": 0.0, "kind": "base", "active": true})
 	var roles: Dictionary = Rules.read("economy").buildings
 	var shares: Dictionary = LightField.housing_shares(settlement, roles)
 	var buildings: Array = settlement.get("buildings", [])
@@ -473,7 +461,6 @@ func _build_colony() -> void:
 		if str(roles.get(str(b.kind), {}).get("role", "")) in ["harbor", "seabed"]:
 			continue
 		var slot: Vector2 = _building_spot(i, b, offset)
-		var reach: Dictionary = _access(slot) if lanes and int(b.get("plot", -1)) >= 0 else {}
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0
 		var active: bool = b.get("enabled", true) and b.get("active", true) and complete
 		var lit: bool = LightField.home_lit(b, roles, shares)
@@ -487,44 +474,24 @@ func _build_colony() -> void:
 		model.position = Vector3(slot.x, _ground(slot.x, slot.y), slot.y)
 		model.set_meta("building_kind", str(b.kind))
 		buildings_root.add_child(model)
-		var yaw: float = _street_yaw(slot.x, offset) if reach.is_empty() else float(reach.yaw)
+		var yaw: float = _street_yaw(slot.x, offset)
 		if not art.is_empty():
 			_dress_building(model, b, art, active, complete, yaw, lit)
 		elif not complete:
 			_construction_frame(model)
-		if reach.is_empty():
-			_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
-			(
-				stops
-				. append(
-					{
-						"end": slot,
-						"z": slot.y,
-						"kind": str(b.kind),
-						"active": active,
-						"uid": int(b.get("uid", 0)),
-					}
-				)
+		_road(Vector3(offset, 0, slot.y), Vector3(slot.x, 0, slot.y))
+		(
+			stops
+			. append(
+				{
+					"end": slot,
+					"z": slot.y,
+					"kind": str(b.kind),
+					"active": active,
+					"uid": int(b.get("uid", 0)),
+				}
 			)
-		else:
-			var lane: float = float(reach.lane)
-			var front: Vector2 = reach.front
-			_road(Vector3(offset, 0, lane), Vector3(slot.x, 0, lane))
-			_road(Vector3(slot.x, 0, lane), Vector3(front.x, 0, front.y))
-			street_ends = Vector2(minf(street_ends.x, lane), maxf(street_ends.y, lane))
-			(
-				stops
-				. append(
-					{
-						"end": front,
-						"via": Vector2(slot.x, lane),
-						"z": lane,
-						"kind": str(b.kind),
-						"active": active,
-						"uid": int(b.get("uid", 0)),
-					}
-				)
-			)
+		)
 		if active and lit:
 			pools.append([model.position, 2.6])
 			var role: String = str(roles.get(str(b.kind), {}).get("role", ""))
@@ -571,6 +538,11 @@ func _build_town(_settlement: Dictionary, _offset: float) -> void:
 
 ## A generated town's traffic (region_town.gd): its vehicles and its bent streets.
 func _dress_traffic(_traffic: Traffic) -> void:
+	pass
+
+
+## A generated region's nature and ground without a town (region_town.gd).
+func _build_wild_district() -> void:
 	pass
 
 

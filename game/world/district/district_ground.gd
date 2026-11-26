@@ -16,7 +16,7 @@ const ENV_DIR: String = "res://assets/district/env/"
 ## The shoulders' mask: metres per texel, and the farthest distance from the paving it keeps
 ## (each channel holds the distance in metres over FRINGE_REACH_M, 1 beyond).
 const FRINGE_M_PER_TEXEL: float = 2.0
-const FRINGE_REACH_M: float = 8.0
+const FRINGE_REACH_M: float = 14.0
 ## Paving classes of the mask's channels, as soil07's bake (tools/bake_road_fringe.py): roads
 ## (asphalt, gutters, kerbs, gravel shoulders), service yards, and footways.
 const FRINGE_CLASSES: Array[String] = ["road", "yard", "walk"]
@@ -283,7 +283,25 @@ static func fringe(edges: Array) -> Dictionary:
 		"texture": ImageTexture.create_from_image(image),
 		"rect": Vector4(low.x, low.y, width * texel, height * texel),
 		"size": Vector2i(width, height),
+		"bytes": bytes,
 	}
+
+
+## Metres from a ground point to the nearest paving of any class, as the mask holds it (to the
+## nearest texel), FRINGE_REACH_M when further or outside it.
+static func paving_distance(mask: Dictionary, at: Vector2) -> float:
+	if mask.is_empty():
+		return FRINGE_REACH_M
+	var rect: Vector4 = mask.rect
+	var size: Vector2i = mask.size
+	var column: int = floori((at.x - rect.x) / rect.z * size.x)
+	var row: int = floori((at.y - rect.y) / rect.w * size.y)
+	if column < 0 or row < 0 or column >= size.x or row >= size.y:
+		return FRINGE_REACH_M
+	var bytes: PackedByteArray = mask.bytes
+	var index: int = (row * size.x + column) * 3
+	var code: int = mini(bytes[index], mini(bytes[index + 1], bytes[index + 2]))
+	return float(code) / 255.0 * FRINGE_REACH_M
 
 
 static func set_fringe(result: ShaderMaterial, mask: Dictionary) -> void:

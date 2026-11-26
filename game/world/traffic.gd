@@ -24,7 +24,9 @@ var speed: float = SPEED
 ## Road height at a ground point, bridges included.
 var surface_height: Callable
 var street_x: float = 0.0
-## [{"end": Vector2, "via": Vector2 (optional), "z": float, "kind": String, "active": bool}]
+## [{"end": Vector2, "via": Vector2 (optional), "approach": PackedVector2Array (optional: the
+## corners of an outlying stop's road in to its lane or the main street), "z": float, "kind": String,
+## "active": bool}]
 var stops: Array = []
 ## [{"end": Vector2, "junction": Vector2 (optional)}] route gates at the edge of the region.
 var gates: Array = []
@@ -189,8 +191,12 @@ static func stop_path(from: Dictionary, to: Dictionary, street: float) -> Packed
 	points.append(from.end)
 	if from.has("via"):
 		points.append(from.via)
+	points.append_array(from.get("approach", PackedVector2Array()))
 	points.append(Vector2(street, float(from.z)))
 	points.append(Vector2(street, float(to.z)))
+	var inward: PackedVector2Array = to.get("approach", PackedVector2Array())
+	for index: int in range(inward.size() - 1, -1, -1):
+		points.append(inward[index])
 	if to.has("via"):
 		points.append(to.via)
 	points.append(to.end)
@@ -200,10 +206,12 @@ static func stop_path(from: Dictionary, to: Dictionary, street: float) -> Packed
 ## Out to a route gate and back: by the gate's junction with the main street, when it has one.
 static func gate_path(from: Dictionary, gate: Dictionary, street: float) -> PackedVector2Array:
 	var junction: Vector2 = gate.get("junction", Vector2(street, 0.0))
+	var approach: PackedVector2Array = from.get("approach", PackedVector2Array())
 	var points := PackedVector2Array()
 	points.append(from.end)
 	if from.has("via"):
 		points.append(from.via)
+	points.append_array(approach)
 	points.append(Vector2(street, float(from.z)))
 	points.append(Vector2(street, junction.y))
 	points.append(junction)
@@ -211,6 +219,8 @@ static func gate_path(from: Dictionary, gate: Dictionary, street: float) -> Pack
 	points.append(junction)
 	points.append(Vector2(street, junction.y))
 	points.append(Vector2(street, float(from.z)))
+	for index: int in range(approach.size() - 1, -1, -1):
+		points.append(approach[index])
 	if from.has("via"):
 		points.append(from.via)
 	points.append(from.end)

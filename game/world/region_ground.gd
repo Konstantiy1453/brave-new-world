@@ -113,6 +113,8 @@ var ground_material: ShaderMaterial
 ## Vertices of the last landscape raised out of inland hollows of the sea (`_fill_hollows`).
 var hollows_filled: int = 0
 var forest_field := PackedFloat32Array()
+## Temperature (degrees) and rainfall at each field vertex of a generated world, for its nature.
+var climate_field := PackedVector2Array()
 var field_has_sea: bool = false
 ## Terrace level per visible plot, keyed by its slot on the plot grid: Vector3(x, level, z).
 ## Each pad graded into the ground (1.12): the oriented footprint of the building on its plot at
@@ -258,8 +260,12 @@ func _prepare_terraces() -> void:
 		if bool(plots[index].get("hidden", false)):
 			continue
 		_add_pad(index, plot_lot(selected_region, index, str(kinds.get(index, ""))))
+		if plot_levels.has(index):
+			plot_levels[index].built = kinds.has(index)
 	pods_spot = landing_spot(selected_region)
 	_add_pad(-1, slot_lot(pods_spot, "", -1))
+	if plot_levels.has(-1):
+		plot_levels[-1].built = true
 
 
 ## The kind standing on each plot of a region's town: {plot index: kind}.
@@ -345,6 +351,33 @@ static func _pad_distance(pad: Dictionary, at: Vector2) -> float:
 	var local: Vector2 = (at - Vector2(pad.centre)).rotated(float(pad.yaw))
 	var outside: Vector2 = (local.abs() - Vector2(pad.half)).max(Vector2.ZERO)
 	return outside.length()
+
+
+## Distance in units from a point to the nearest building's footprint (the pad without its
+## margin) or the landing camp; INF when none is within a pad's reach.
+func footprint_clearance(x: float, z: float) -> float:
+	var at := Vector2(x, z)
+	var best: float = INF
+	var margin: float = PAD_MARGIN_M * DistrictPlan.UNIT
+	for id: int in pad_bins.get(Vector2i(floori(x / PAD_BIN), floori(z / PAD_BIN)), []):
+		var pad: Dictionary = plot_levels[id]
+		if not bool(pad.get("built", false)):
+			continue
+		var local: Vector2 = (at - Vector2(pad.centre)).rotated(float(pad.yaw))
+		var outside: Vector2 = local.abs() - (Vector2(pad.half) - Vector2.ONE * margin)
+		best = minf(
+			best, outside.max(Vector2.ZERO).length() + minf(maxf(outside.x, outside.y), 0.0)
+		)
+	return best
+
+
+## The site's temperature (degrees) and rainfall at a point of the field (generated worlds).
+func climate_at(x: float, z: float) -> Vector2:
+	if climate_field.size() != (field_res + 1) * (field_res + 1):
+		return Vector2(14.0, 0.45)
+	var fx: int = clampi(roundi((x / field_width + 0.5) * field_res), 0, field_res)
+	var fz: int = clampi(roundi((z / field_depth + 0.5) * field_res), 0, field_res)
+	return climate_field[fz * (field_res + 1) + fx]
 
 
 ## The nearest dry cell of the plot grid, off the main street, that no plot has been given.
@@ -822,6 +855,8 @@ func _build_landscape(token: int) -> bool:
 	ridges.resize(vertices.size())
 	var forests := PackedFloat32Array()
 	forests.resize((field_res + 1) * (field_res + 1))
+	var climate := PackedVector2Array()
+	climate.resize(forests.size())
 	var inland: bool = not bool(reg.get("coast", false))
 	terrain_unique_samples = 0
 	for row: int in range(rows):
@@ -848,6 +883,9 @@ func _build_landscape(token: int) -> bool:
 			if inner:
 				data.b = 1.0 if is_finite(_water_height_at(x, z, 1.9)) else 0.0
 				forests[inner_z * (field_res + 1) + inner_x] = _forest_chance(g)
+				climate[inner_z * (field_res + 1) + inner_x] = Vector2(
+					float(g.temperature), float(g.rainfall) if bool(g.land) else 0.0
+				)
 			else:
 				data.b = 0.0
 			colors[index] = data
@@ -908,6 +946,7 @@ func _build_landscape(token: int) -> bool:
 			heights[inner_z * (field_res + 1) + inner_x] = relief[index]
 	height_field = heights
 	forest_field = forests
+	climate_field = climate
 	for row: int in range(rows):
 		for column: int in range(columns):
 			var index: int = row * columns + column
@@ -942,7 +981,7 @@ func _build_landscape(token: int) -> bool:
 	surface.add_child(terrain)
 	_build_river()
 	_build_sea()
-	_build_nature()
+	# A generated world's nature is drawn with its town, clear of the paving (district_nature.gd).
 	return true
 
 
