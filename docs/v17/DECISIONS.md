@@ -1626,3 +1626,24 @@ factories, so the game's cycle and the payback bands stay as they are.
   district credits; the root README is the developers' and goes with the source.
 - In a generated district the free plots' patches and deposit stones show only with the placement
   marks, while building.
+- Play draws a district within a frame budget, not the approved still frames' limits: measured on a
+  populated save (37 buildings), those limits cost 10.2 M primitives and 1,497 draws at the
+  settlement camera. Boulders draw their near meshes to 120 m (Boulder 01 a 12,000-triangle play
+  mesh; the 56,540 scan only in comparison captures), field meshes to 600 m, their chip meshes
+  beyond; toe stones to 200 m; branches to 300 m; shrubs' stems to 200 m and crowns to 700 m; fine
+  grass to 150 m; 45% of rock points become boulders; a generated district's shadows reach 1.6
+  camera distances. The settlement camera then draws 3.7 M primitives in 561 draws.
+- Boulder 01's reduced meshes are rebuilt seam-aware and with the scan's clockwise winding: the
+  first reduction merged across UV seams and turned every face around, so its field and chip
+  meshes were drawn inside-out (seen in the close-range comparison, fixed before release).
+- `v19_payback` misses on CC-GEO-2.3 worlds (the light ore mine 56 days, band 70-150; the
+  processor 113, band 120-300). 1.12 integrates terrain and settlement art and does not rebalance
+  the economy; the miss is reported, not hidden by pinning the suite to 2.2 worlds.
+- A capital placed at a coordinate is founded whenever the ground panel showed ✓. The panel asks for
+  room to expand (a landmass of at least 16 cells); the founding asked for a generated site on the
+  same landmass, or sea links, which a placed site never has. On CC-GEO-2.3 seed 3, four of the
+  kit's six clicks fell on islands of 16-45 cells with no generated site: ✓ on the panel, then a
+  refusal. The founding now judges a placed site by the panel's rule (`Placement.can_expand`);
+  `v110_placement` founds on three such landmasses. The 1.10 rule's coast clause is still inert (it
+  reads `sea_partners` from the base geography rules, which carry it only for CC-GEO-2.2 and later
+  worlds' generation); letting a coast alone qualify is a rule change, not this release's.

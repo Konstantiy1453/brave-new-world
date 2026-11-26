@@ -86,7 +86,7 @@ static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 	var contract: String = Origins.founding_refusal(sim, bool(report.get("coast", false)))
 	if bool(report.first) and contract != "":
 		return contract
-	if bool(report.first) and not _can_expand(sim, report):
+	if bool(report.first) and not can_expand(sim, report):
 		return "这里既没有陆路能到的其他地点，也不靠海，以后无法建立第二处据点"
 	return ""
 
@@ -184,12 +184,13 @@ static func _km(sim: RefCounted, degrees: float) -> float:
 
 
 ## A capital must be able to reach a second town: by sea from a coast, or overland on a landmass
-## with room for another district.
-static func _can_expand(sim: RefCounted, report: Dictionary) -> bool:
-	if bool(report.coast) and bool(sim.progression_geo().validator.get("sea_partners", false)):
+## with room for another district. `ground` is a ground report or a site placed at a coordinate
+## (both carry `coast` and `landmass`); the founding judges a placed site by this same rule.
+static func can_expand(sim: RefCounted, ground: Dictionary) -> bool:
+	if bool(ground.coast) and bool(sim.progression_geo().validator.get("sea_partners", false)):
 		return true
 	var sizes: Array = sim.geo.get("landmass_sizes", [])
-	var landmass: int = int(report.landmass)
+	var landmass: int = int(ground.landmass)
 	if landmass < 0 or landmass >= sizes.size():
 		return false
 	return int(sizes[landmass]) >= int(rules(sim).expansion_cells)

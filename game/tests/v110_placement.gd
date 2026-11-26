@@ -35,6 +35,7 @@ func check(ok: bool, label: String) -> void:
 func run() -> void:
 	_regression_and_two_capitals()
 	_refusals()
+	_panel_agrees()
 	_expeditions()
 	_shared_deposit()
 	print(
@@ -163,6 +164,41 @@ func _refusals() -> void:
 		)
 
 
+## What the ground panel accepts, the founding accepts (1.12): ground on a landmass with no
+## generated site, accepted for its room to expand, founds a capital. The founding used to ask for
+## a generated site beside it, and refused the panel's ✓ (seed 3's islands on CC-GEO-2.3).
+func _panel_agrees() -> void:
+	var probe: RefCounted = _game()
+	var generated: Array = []
+	for reg: Dictionary in probe.state.world.regions:
+		generated.append(int(reg.get("landmass", -1)))
+	var points: Array = []
+	var landmasses: Array = []
+	var width: int = int(probe.geo.grid_width)
+	for index: int in range(probe.geo.grid.size()):
+		var lat: float = 90.0 - (float(index / width) + 0.5) * 2.5
+		var lon: float = (float(index % width) + 0.5) * 2.5 - 180.0
+		var view: Dictionary = probe.Placement.view(probe, lat, lon)
+		var landmass: int = int(view.get("landmass", -1))
+		if str(view.refusal) != "" or landmass in generated or landmass in landmasses:
+			continue
+		landmasses.append(landmass)
+		points.append([lat, lon])
+		if points.size() == 3:
+			break
+	check(
+		not points.is_empty(),
+		"accepted ground on landmasses without a generated site: %s" % str(points)
+	)
+	for point: Array in points:
+		var sim: RefCounted = _game()
+		var refusal: String = sim.act("settle_at", {"lat": point[0], "lon": point[1]})
+		check(
+			refusal == "" and sim.state.settlements.size() == 1,
+			"the panel's ✓ at %.2f, %.2f founds the capital: %s" % [point[0], point[1], refusal]
+		)
+
+
 ## The first grid cell centre whose ground report meets `test`.
 func _find(sim: RefCounted, test: Callable) -> Array:
 	var width: int = int(sim.geo.grid_width)
@@ -206,8 +242,13 @@ func _expeditions() -> void:
 		sim.state.contract.licences = licences
 	for coastal: bool in [false, true]:
 		# The first expedition establishes a town and changes the minimum separation for the next one.
-		var target: Array = _destination(sim, capital_point, true, capital_region) if coastal else inland
-		check(not target.is_empty(), "a reachable coastal destination" if coastal else "a reachable inland destination")
+		var target: Array = (
+			_destination(sim, capital_point, true, capital_region) if coastal else inland
+		)
+		check(
+			not target.is_empty(),
+			"a reachable coastal destination" if coastal else "a reachable inland destination"
+		)
 		if target.is_empty():
 			continue
 		var view: Dictionary = sim.Placement.view(sim, target[0], target[1], capital_region)

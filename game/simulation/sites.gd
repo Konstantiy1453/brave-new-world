@@ -845,7 +845,12 @@ static func _can_expand_from(sim: RefCounted, region: int) -> bool:
 	if WorldGen.is_generated(str(sim.geo.version)):
 		var site: Dictionary = sim.state.world.regions[region]
 		var ships: bool = bool(site.get("sea_links", false)) and bool(site.get("coast", false))
-		return ships or not site.neighbors.is_empty()
+		if ships or not site.neighbors.is_empty():
+			return true
+		# A site founded at a coordinate is judged as the ground panel judged it before the founding
+		# (`Placement.view`): a later town can be placed anywhere on its landmass, not only on a
+		# generated site.
+		return bool(site.get("placed", false)) and sim.Placement.can_expand(sim, site)
 	for other: Variant in sim.state.world.candidates:
 		if int(other) != region:
 			if WorldGen.new().route(sim.geo, region, int(other), true).reachable:
