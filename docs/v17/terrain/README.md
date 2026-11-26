@@ -3,8 +3,9 @@
 Every game frame here was taken from the running game (source project, Linux, GL Compatibility on
 llvmpipe software rendering, 1920 x 1080) by `game/tests/art/capture_district.gd`,
 `capture_world_23.gd` and `capture_boulder_lods.gd`. Evidence label: screenshot viewed. The approved
-frames are the handoff's (`docs/handoff/approved-terrain-region/reference`). Forward+ frames of the
-same views are in the release evidence (see `PROGRESS.md`).
+frames are the handoff's (`docs/handoff/approved-terrain-region/reference`). The `fplus` files are
+the same views in Forward+ (the game's 高画质 setting: SSAO, glow, soft shadows), rendered on
+lavapipe software Vulkan.
 
 Two played colonies, both CC-GEO-2.3, both built by the balanced bot from a new expedition:
 
@@ -27,6 +28,8 @@ site's own sun as the approved views are lit (sun about 17 degrees up, behind th
 | `hours_<site>_*.webp` | | the game's day, evening and night, left to right |
 | `cmp_world_eight_seeds.webp` | approved eight-world contact sheet | the game's satellite map of the same eight seeds (review driver, full daylight) |
 | `globe_snow_260130.webp` | | seed 260130 on the globe (top) and the satellite map (bottom), the two reviewed snow sites |
+| `cmp_fplus_coast_*.webp`, `hours_fplus_coast_settlement.webp` | as above | the coastal colony in Forward+ |
+| `world_compat_vs_fplus_260130.webp` | Compatibility | Forward+: seed 260130's globe by day and at dusk, and its satellite map |
 | `boulder_01_details.webp` | | Boulder 01: approved 56,540-triangle scan, the 12,000 play mesh, 2,000 field and 220 chip, left to right |
 
 Whole-frame mean RGB (0-255), approved / coast / inland: settlement 95,95,87 / 120,118,97 /
@@ -35,6 +38,10 @@ By band, the coast's near ground is within about 10% of the approved frames' (ve
 70,65,43 approved, 68,70,39 game; rocks 67,66,40 and 72,75,41); its far field is paler (settlement
 second fifth 97,96,88 approved, 138,137,120 game), where the approved views have wooded hills
 and the game's haze. The inland site is a desert, not the approved temperate meadow.
+
+Forward+, approved / coast: settlement 95,95,87 / 123,113,89; verge 102,97,85 / 110,102,76;
+rocks 77,73,51 / 104,91,51. Its light is softer and its greens more muted, nearer the approved
+frames' tone than Compatibility; its ground is warmer (less blue).
 
 Known differences: the paved road reads warmer than the approved grey asphalt under the game's
 warm ambient light; Boulder 01 reads paler under the frontal evening sun; the live district has
