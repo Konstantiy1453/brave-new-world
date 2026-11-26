@@ -4,6 +4,8 @@ extends "res://world/building_models.gd"
 ## Everything placed on the ground afterwards reads the height field (region_view.gd).
 
 const Rules = preload("res://simulation/rules.gd")
+const DistrictPlan = preload("res://world/district/district_plan.gd")
+const WorldGen2 = preload("res://world/geo2/world_gen2.gd")
 ## Older worlds keep the field they were drawn on, to the vertex; towns on newer ones need more room.
 const OLD_FIELD: Dictionary = {
 	"res": 86, "width": 57.0, "depth": 47.0, "trees": 160, "gate": 24.0, "rows": 2
@@ -26,6 +28,12 @@ const APRON_LATITUDE: float = 88.0
 ## Every plot is a level pad graded into the slope: flat to PAD_FLAT from its centre, back to the
 ## natural ground by PAD_BLEND along a smooth curve, so no wall or mesa is cut.
 const PAD_FLAT: float = 2.35
+## The flat margin round a footprint and the blend back into the land, in metres; a free plot's
+## pad; and the cell pads are binned by, in units.
+const PAD_MARGIN_M: float = 22.0
+const PAD_BLEND_M: float = 46.0
+const FREE_PAD_M: float = 70.0
+const PAD_BIN: float = 3.0
 const PAD_BLEND: float = 5.2
 ## A pad never sits lower than this above the sea.
 const PAD_ABOVE_SEA: float = 0.35
@@ -63,6 +71,13 @@ const TOWN_PULL: float = 0.65
 ## continuous and odd, so every shoreline stays where the ground put it (a fixed lift would snap the
 ## coast to the grid). Pads stand higher, at PAD_ABOVE_SEA, and keep their level.
 const WATERLINE_LIP: float = 0.1
+## CC-GEO-2.3's relief comes from measured terrain: flatter coastal plains take a stronger lip,
+## its steepest steps are eased to STEP_LIMIT between neighbouring field vertices, and an inland
+## river bed stays above the sea's level (1.12).
+const WATERLINE_LIP_23: float = 0.15
+const STEP_LIMIT: float = 1.45
+const STEP_PASSES: int = 6
+const INLAND_BED: float = 0.03
 const WATERLINE_REACH: float = 0.05
 const WATERLINE_BAND: float = 0.3
 ## Detail fades out over the coarse far rings of the landscape, past the field's edge.
@@ -82,7 +97,13 @@ var height_field := PackedFloat32Array()
 var forest_field := PackedFloat32Array()
 var field_has_sea: bool = false
 ## Terrace level per visible plot, keyed by its slot on the plot grid: Vector3(x, level, z).
+## Each pad graded into the ground (1.12): the oriented footprint of the building on its plot at
+## its drawn place (district_plan.gd), or a free plot's default, flat over the footprint and a
+## margin wider than one cell of the ground, so a building's ground is exactly level.
+## {id: {"centre": Vector2, "half": Vector2, "yaw": float, "level": float}}
 var plot_levels: Dictionary = {}
+## Pads by PAD_BIN cell, for the ground's lookups.
+var pad_bins: Dictionary = {}
 var terrace_region: int = -1
 ## Generated worlds: the landing pods stand on the nearest cell of the plot grid that holds no
 ## plot, so no building is ever put down on top of them.
@@ -117,6 +138,28 @@ func _ground(x: float, z: float) -> float:
 		lerpf(height_field[row], height_field[row + 1], tx),
 		lerpf(height_field[next], height_field[next + 1], tx),
 		tz
+	)
+
+
+## The ground as its mesh draws it: the same triangles (each cell split from its +x corner to its
+## +z corner), so paving laid a few centimetres above it never dips under (1.12).
+func _mesh_ground(x: float, z: float) -> float:
+	if height_field.size() != (field_res + 1) * (field_res + 1):
+		return _sample_ground(x, z)
+	var fx: float = clampf((x / field_width + 0.5) * field_res, 0.0, field_res - 0.001)
+	var fz: float = clampf((z / field_depth + 0.5) * field_res, 0.0, field_res - 0.001)
+	var ix: int = int(fx)
+	var iz: int = int(fz)
+	var tx: float = fx - ix
+	var tz: float = fz - iz
+	var row: int = iz * (field_res + 1) + ix
+	var next: int = row + field_res + 1
+	if tx + tz <= 1.0:
+		var h00: float = height_field[row]
+		return h00 + (height_field[row + 1] - h00) * tx + (height_field[next] - h00) * tz
+	var h11: float = height_field[next + 1]
+	return (
+		h11 + (height_field[next] - h11) * (1.0 - tx) + (height_field[row + 1] - h11) * (1.0 - tz)
 	)
 
 
@@ -187,23 +230,103 @@ func sea_level() -> float:
 ## ground they were drawn with, to the vertex.
 func _prepare_terraces() -> void:
 	plot_levels.clear()
+	pad_bins.clear()
 	terrace_region = selected_region
 	if not Geo.is_generated(str(world.version)):
 		return
-	var taken: Dictionary = {}
-	for plot: Dictionary in world.regions[selected_region].get("plots", []):
-		taken[_slot_key(float(plot.x), float(plot.z))] = true
-		if bool(plot.get("hidden", false)):
+	var kinds: Dictionary = plot_kinds(selected_region)
+	var plots: Array = world.regions[selected_region].get("plots", [])
+	for index: int in range(plots.size()):
+		if bool(plots[index].get("hidden", false)):
 			continue
-		_add_terrace(float(plot.x), float(plot.z))
+		_add_pad(index, plot_lot(selected_region, index, str(kinds.get(index, ""))))
 	pods_spot = landing_spot(selected_region)
-	_add_terrace(pods_spot.x, pods_spot.y)
+	_add_pad(-1, slot_lot(pods_spot, "", -1))
 
 
-func _add_terrace(x: float, z: float) -> void:
-	var ll := _local_coordinate(x, z)
+## The kind standing on each plot of a region's town: {plot index: kind}.
+func plot_kinds(region: int) -> Dictionary:
+	var kinds: Dictionary = {}
+	for s: Dictionary in state.get("settlements", []):
+		if int(s.get("region", -1)) != region:
+			continue
+		for b: Dictionary in s.get("buildings", []):
+			if int(b.get("plot", -1)) >= 0:
+				kinds[int(b.plot)] = str(b.kind)
+	return kinds
+
+
+## The seed of a region's bend (district_plan.gd): the world's seed and the region.
+func district_key(region: int = -1) -> int:
+	var at: int = selected_region if region < 0 else region
+	return int(world.get("seed", 0)) * 131 + at * 7919
+
+
+## A building's drawn lot on a plot (district_plan.gd `lot`), bent: where it stands, which way it
+## faces, its footprint in units, the front of its footprint and its lane.
+func plot_lot(region: int, plot: int, kind: String) -> Dictionary:
+	var plots: Array = world.regions[region].get("plots", [])
+	if plot < 0 or plot >= plots.size():
+		return {}
+	return slot_lot(Vector2(float(plots[plot].x), float(plots[plot].z)), kind, plot, region)
+
+
+func slot_lot(slot: Vector2, kind: String, key: int, region: int = -1) -> Dictionary:
+	var seed_value: int = district_key(region)
+	var reach: Dictionary = DistrictPlan.access(slot)
+	var lot: Dictionary = DistrictPlan.lot(
+		slot, float(reach.lane), float(reach.yaw), kind, key, seed_value
+	)
+	if kind == "":
+		lot.size = Vector2.ONE * FREE_PAD_M * DistrictPlan.UNIT
+	var plain: Vector2 = lot.pos
+	lot.slot = slot
+	lot.plain = plain
+	lot.plain_front = lot.front
+	lot.plain_yaw = float(lot.yaw)
+	lot.pos = DistrictPlan.warp(plain, seed_value)
+	lot.yaw = DistrictPlan.bent_yaw(plain, float(lot.yaw), seed_value)
+	lot.front = DistrictPlan.warp(lot.front, seed_value)
+	return lot
+
+
+func _add_pad(id: int, lot: Dictionary) -> void:
+	if lot.is_empty():
+		return
+	var centre: Vector2 = lot.pos
+	var half: Vector2 = Vector2(lot.size) * 0.5 + Vector2.ONE * PAD_MARGIN_M * DistrictPlan.UNIT
+	var ll := _local_coordinate(centre.x, centre.y)
 	var g: Dictionary = Geo.sample_geo(ll.x, ll.y, noise, str(world.version))
-	plot_levels[_slot_key(x, z)] = Vector3(x, _relief_from_geo(x, z, g, ll), z)
+	plot_levels[id] = {
+		"centre": centre,
+		"half": half,
+		"yaw": float(lot.yaw),
+		"level": _relief_from_geo(centre.x, centre.y, g, ll),
+	}
+	var reach: float = half.length() + PAD_BLEND_M * DistrictPlan.UNIT
+	var low := Vector2i(floori((centre.x - reach) / PAD_BIN), floori((centre.y - reach) / PAD_BIN))
+	var high := Vector2i(floori((centre.x + reach) / PAD_BIN), floori((centre.y + reach) / PAD_BIN))
+	for bz: int in range(low.y, high.y + 1):
+		for bx: int in range(low.x, high.x + 1):
+			var key := Vector2i(bx, bz)
+			if not pad_bins.has(key):
+				pad_bins[key] = []
+			pad_bins[key].append(id)
+
+
+## Whether a point lies on any pad's flat.
+func _on_pad(x: float, z: float) -> bool:
+	for id: int in pad_bins.get(Vector2i(floori(x / PAD_BIN), floori(z / PAD_BIN)), []):
+		if _pad_distance(plot_levels[id], Vector2(x, z)) <= 0.0:
+			return true
+	return false
+
+
+## Distance in units from a point to the outside of a pad's flat (zero on it).
+static func _pad_distance(pad: Dictionary, at: Vector2) -> float:
+	var local: Vector2 = (at - Vector2(pad.centre)).rotated(float(pad.yaw))
+	var outside: Vector2 = (local.abs() - Vector2(pad.half)).max(Vector2.ZERO)
+	return outside.length()
 
 
 ## The nearest dry cell of the plot grid, off the main street, that no plot has been given.
@@ -299,9 +422,10 @@ func terrace_signature(region: int) -> String:
 		return "old"
 	var visible: PackedStringArray = []
 	var plots: Array = world.regions[region].get("plots", [])
+	var kinds: Dictionary = plot_kinds(region)
 	for index: int in range(plots.size()):
 		if not bool(plots[index].get("hidden", false)):
-			visible.append(str(index))
+			visible.append("%d%s" % [index, ":" + str(kinds[index]) if kinds.has(index) else ""])
 	return ",".join(visible)
 
 
@@ -309,32 +433,44 @@ static func _slot_key(x: float, z: float) -> Vector2i:
 	return Vector2i(roundi(x / SLOT_SPACING), roundi(z / SLOT_SPACING))
 
 
-## The ground graded toward the nearby plots' pads: exactly level on a pad, and between pads a
-## weighted mean of their levels that leans on the nearest one, eased back into the natural
-## slope by PAD_BLEND. Plots are a slot apart, so only neighbours can reach.
+## The ground graded toward the nearby pads: exactly level on a pad, and between pads a weighted
+## mean of their levels that leans on the nearest one, eased back into the natural slope over
+## PAD_BLEND_M.
 func _terraced(x: float, z: float, height: float) -> float:
 	if plot_levels.is_empty():
 		return height
-	var here: Vector2i = _slot_key(x, z)
+	var at := Vector2(x, z)
+	var ids: Array = pad_bins.get(Vector2i(floori(x / PAD_BIN), floori(z / PAD_BIN)), [])
+	var blend: float = PAD_BLEND_M * DistrictPlan.UNIT
 	var weights: float = 0.0
 	var levels: float = 0.0
 	var strongest: float = 0.0
-	for dz: int in [-1, 0, 1]:
-		for dx: int in [-1, 0, 1]:
-			var key := Vector2i(here.x + dx, here.y + dz)
-			if not plot_levels.has(key):
-				continue
-			var plot: Vector3 = plot_levels[key]
-			var d: float = Vector2(x - plot.x, z - plot.z).length()
-			if d <= PAD_FLAT:
-				return plot.y
-			if d >= PAD_BLEND:
-				continue
-			var reach: float = 1.0 - _smoother(PAD_FLAT, PAD_BLEND, d)
-			var weight: float = reach / pow(maxf(d - PAD_FLAT, 0.05), 2.0)
-			weights += weight
-			levels += weight * plot.y
-			strongest = maxf(strongest, reach)
+	# On a building's own footprint its pad's level; on overlapping margins the pad the point is
+	# deepest inside.
+	var margin: float = PAD_MARGIN_M * DistrictPlan.UNIT
+	var flat: float = INF
+	var deepest: float = -INF
+	for id: int in ids:
+		var pad: Dictionary = plot_levels[id]
+		var local: Vector2 = (at - Vector2(pad.centre)).rotated(float(pad.yaw))
+		var depth: float = minf(pad.half.x - absf(local.x), pad.half.y - absf(local.y))
+		if depth >= margin:
+			return float(pad.level)
+		if depth >= 0.0 and depth > deepest:
+			deepest = depth
+			flat = float(pad.level)
+	if is_finite(flat):
+		return flat
+	for id: int in ids:
+		var pad: Dictionary = plot_levels[id]
+		var d: float = _pad_distance(pad, at)
+		if d >= blend:
+			continue
+		var reach: float = 1.0 - _smoother(0.0, blend, d)
+		var weight: float = reach / pow(maxf(d, 0.05), 2.0)
+		weights += weight
+		levels += weight * float(pad.level)
+		strongest = maxf(strongest, reach)
 	if weights <= 0.0:
 		return height
 	return lerpf(height, levels / weights, strongest)
@@ -346,37 +482,43 @@ static func _smoother(edge0: float, edge1: float, value: float) -> float:
 	return t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 
 
-## Each pad's level from the natural ground it stands on (the field before pads), averaged over
-## the pad so a single bump does not set it, and kept above the sea.
+## Each pad's level from the natural ground under it (the field before pads), averaged over the
+## footprint so a single bump does not set it, and kept above the sea; neighbouring pads then lean
+## toward each other, so the steps between them stay low.
 func _level_pads() -> void:
 	var sea: float = sea_level()
-	for key: Vector2i in plot_levels:
-		var plot: Vector3 = plot_levels[key]
-		var total: float = _ground(plot.x, plot.z)
-		for step: int in range(6):
-			var at: Vector2 = (
-				Vector2(plot.x, plot.z) + Vector2.RIGHT.rotated(TAU * step / 6.0) * 1.5
-			)
-			total += _ground(at.x, at.y)
-		plot_levels[key] = Vector3(plot.x, maxf(total / 7.0, sea + PAD_ABOVE_SEA), plot.z)
-	# Neighbouring pads lean toward each other, so the steps between them stay low.
+	for id: int in plot_levels:
+		var pad: Dictionary = plot_levels[id]
+		var centre: Vector2 = pad.centre
+		var half: Vector2 = Vector2(pad.half) * 0.6
+		var total: float = 0.0
+		for sz: int in [-1, 0, 1]:
+			for sx: int in [-1, 0, 1]:
+				var at: Vector2 = (
+					centre + Vector2(sx * half.x, sz * half.y).rotated(-float(pad.yaw))
+				)
+				total += _ground(at.x, at.y)
+		pad.level = maxf(total / 9.0, sea + PAD_ABOVE_SEA)
+	var reach: float = DistrictPlan.SLOT_SPACING * 1.25
 	for _pass: int in range(PAD_RELAX_PASSES):
 		var relaxed: Dictionary = {}
-		for key: Vector2i in plot_levels:
-			var plot: Vector3 = plot_levels[key]
+		for id: int in plot_levels:
+			var pad: Dictionary = plot_levels[id]
 			var sum: float = 0.0
 			var count: int = 0
-			for offset: Vector2i in [
-				Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
-			]:
-				if plot_levels.has(key + offset):
-					sum += float(plot_levels[key + offset].y)
+			for other: int in plot_levels:
+				if other == id:
+					continue
+				var near: Dictionary = plot_levels[other]
+				if Vector2(near.centre).distance_to(pad.centre) <= reach:
+					sum += float(near.level)
 					count += 1
-			var level: float = plot.y
+			var level: float = float(pad.level)
 			if count > 0:
-				level = lerpf(plot.y, sum / count, PAD_RELAX)
-			relaxed[key] = Vector3(plot.x, maxf(level, sea + PAD_ABOVE_SEA), plot.z)
-		plot_levels = relaxed
+				level = lerpf(level, sum / count, PAD_RELAX)
+			relaxed[id] = maxf(level, sea + PAD_ABOVE_SEA)
+		for id: int in relaxed:
+			plot_levels[id].level = relaxed[id]
 
 
 func _water_height_at(x: float, z: float, margin: float = 1.0) -> float:
@@ -403,8 +545,10 @@ func _local_coordinate(x: float, z: float) -> Vector2:
 
 ## Worlds whose generator spreads plots further out get the larger field.
 func _fit_field() -> void:
-	var overrides: Dictionary = Rules.read("geography").get("overrides", {})
-	var rules: Dictionary = overrides.get(str(world.get("version", "")), {})
+	# The site rules a world was generated with (CC-GEO-2.3 keeps 2.2's plot grid), as the
+	# generator reads them.
+	var version: String = str(world.get("version", ""))
+	var rules: Dictionary = WorldGen2.rules_for(version) if Geo.is_generated(version) else {}
 	var field: Dictionary = WIDE_FIELD if rules.get("plots", {}).has("slot_x") else OLD_FIELD
 	field_res = int(field.res)
 	field_width = float(field.width)
@@ -695,6 +839,7 @@ func _build_landscape(token: int) -> bool:
 			if token != region_load_token:
 				return false
 	field_has_sea = not inland
+	var natural: bool = str(world.version) == WorldGen2.VERSION
 	if not await _shape_relief(relief, ridges, xs, zs, inland, token):
 		return false
 	# The ground's colours soften with it, so old shores leave no hard edge between patches.
@@ -708,6 +853,13 @@ func _build_landscape(token: int) -> bool:
 			relief[index] = _carve_water(
 				xs[inner_x + APRON_RINGS], zs[inner_z + APRON_RINGS], relief[index]
 			)
+			if natural and inland:
+				relief[index] = maxf(relief[index], sea_level() + INLAND_BED)
+	if natural:
+		_limit_steps(relief, columns, rows)
+	for inner_z: int in range(field_res + 1):
+		for inner_x: int in range(field_res + 1):
+			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
 			heights[inner_z * (field_res + 1) + inner_x] = relief[index]
 	# The pads take their level from the natural ground, then are graded into it.
 	height_field = heights
@@ -718,8 +870,18 @@ func _build_landscape(token: int) -> bool:
 			var x: float = xs[inner_x + APRON_RINGS]
 			var z: float = zs[inner_z + APRON_RINGS]
 			relief[index] = _terraced(x, z, relief[index])
+	if natural:
+		# Grading pads into rugged ground leaves no wall either; the pads themselves stay level.
+		var fixed := PackedByteArray()
+		fixed.resize(relief.size())
+		for inner_z: int in range(field_res + 1):
+			for inner_x: int in range(field_res + 1):
+				var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
+				if _on_pad(xs[inner_x + APRON_RINGS], zs[inner_z + APRON_RINGS]):
+					fixed[index] = 1
+		_limit_steps(relief, columns, rows, fixed)
 	if field_has_sea:
-		_clear_waterline(relief, sea_level())
+		_clear_waterline(relief, sea_level(), WATERLINE_LIP_23 if natural else WATERLINE_LIP)
 	for inner_z: int in range(field_res + 1):
 		for inner_x: int in range(field_res + 1):
 			var index: int = (inner_z + APRON_RINGS) * columns + inner_x + APRON_RINGS
@@ -846,13 +1008,52 @@ static func _shore(height: float, sea: float, inland: bool) -> float:
 ## Every shoreline crosses the water steeply, on the final ground (after the town's calm, the
 ## rivers and the pads): see WATERLINE_LIP. A smooth curve, the same above and below the sea, so
 ## the waterline keeps its place between the grid's vertices.
-static func _clear_waterline(relief: PackedFloat32Array, sea: float) -> void:
+static func _clear_waterline(
+	relief: PackedFloat32Array, sea: float, lip: float = WATERLINE_LIP
+) -> void:
 	for index: int in range(relief.size()):
 		var depth: float = relief[index] - sea
 		if absf(depth) >= WATERLINE_BAND:
 			continue
 		var fade: float = 1.0 - smoothstep(0.0, WATERLINE_BAND, absf(depth))
-		relief[index] += WATERLINE_LIP * tanh(depth / WATERLINE_REACH) * fade
+		relief[index] += lip * tanh(depth / WATERLINE_REACH) * fade
+
+
+## No walls: neighbouring vertices of the whole grid never differ by more than STEP_LIMIT; a
+## steeper step is eased from both sides over a few passes.
+static func _limit_steps(
+	relief: PackedFloat32Array, columns: int, rows: int, fixed: PackedByteArray = PackedByteArray()
+) -> void:
+	var held: bool = fixed.size() == relief.size()
+	for _pass: int in range(STEP_PASSES):
+		var eased: bool = false
+		for row: int in range(rows):
+			for column: int in range(columns):
+				var here: int = row * columns + column
+				for there: int in [
+					here + 1 if column + 1 < columns else -1,
+					here + columns if row + 1 < rows else -1
+				]:
+					if there < 0:
+						continue
+					var step: float = relief[there] - relief[here]
+					if absf(step) <= STEP_LIMIT:
+						continue
+					var excess: float = (absf(step) - STEP_LIMIT) * signf(step)
+					var pinned_here: bool = held and fixed[here] == 1
+					var pinned_there: bool = held and fixed[there] == 1
+					if pinned_here and pinned_there:
+						continue
+					if pinned_here:
+						relief[there] -= excess
+					elif pinned_there:
+						relief[here] += excess
+					else:
+						relief[here] += excess * 0.5
+						relief[there] -= excess * 0.5
+					eased = true
+		if not eased:
+			return
 
 
 ## The town's ground is pulled toward its own level, so plots sit on gentle land rather than on

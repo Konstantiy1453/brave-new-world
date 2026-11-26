@@ -1,4 +1,4 @@
-extends "res://world/region_view.gd"
+extends "res://world/region_town.gd"
 ## The flat equirectangular world map.
 
 const LABELLED_SITES: int = 8

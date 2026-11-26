@@ -9,6 +9,13 @@ const Consignments = preload("res://simulation/consignments.gd")
 const ARRIVAL_DAYS: int = 7
 const ModelArt = preload("res://world/model_art.gd")
 const Landmarks = preload("res://world/landmarks.gd")
+const DistrictArt = preload("res://world/district/district_art.gd")
+const DistrictStreets = preload("res://world/district/district_streets.gd")
+## Camera distance within which the reviewed buildings are drawn from their high-detail models,
+## in metres; beyond it the game's own models stand in at the same size (1.12).
+const NEAR_DETAIL_M: float = 700.0
+## The landing camp's width in metres in a generated town, pad included.
+const BASE_HOUSING_M: float = 46.0
 ## Landmarks around the town (`_landmark_spots`): rings in units from the town's centre, spots per
 ## ring, how far from plots and from each other, how far above the sea, how steep the ground may
 ## be across three units, and where the name floats.
@@ -111,6 +118,10 @@ const LEGACY_SLOTS: Array[Vector2] = [
 ]
 
 var baked_models: Dictionary = {}
+## The paving of a generated town (1.12, district_streets.gd), with the streets collected while
+## the town is built: [unbent polyline, kind].
+var town_streets: DistrictStreets
+var town_roads: Array = []
 var road_tool: SurfaceTool
 var road_sections: int = 0
 ## The living town of the region on show: vehicles, light pools, smoke.
@@ -329,6 +340,10 @@ func _draw_free_plots(settlement: Dictionary) -> void:
 		var color: Color = PLOT_COLORS.get(str(plot.get("resource", plot.kind)), Color.WHITE)
 		var x: float = float(plot.x)
 		var z: float = float(plot.z)
+		if town_streets != null:
+			var bent: Vector2 = plot_lot(selected_region, index, "").pos
+			x = bent.x
+			z = bent.y
 		var at := Vector3(x, _ground(x, z), z)
 		var spread := Basis.IDENTITY.scaled(Vector3(PLOT_MARK_RADIUS, 1.0, PLOT_MARK_RADIUS))
 		rings.append(
@@ -412,6 +427,10 @@ func _build_colony() -> void:
 		_lander(buildings_root, Vector3(offset, _ground(offset, 0) + .1, 0))
 		_draw_free_plots({})
 		return
+	if Geo.is_generated(str(world.version)):
+		_build_town(settlement, offset)
+		return
+	town_streets = null
 	_build_landmarks()
 	road_tool = SurfaceTool.new()
 	road_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -545,6 +564,16 @@ func _build_colony() -> void:
 	_build_traffic(stops, offset, int(settlement.get("region", 0)))
 
 
+## A generated world's town in metres (1.12): drawn by region_town.gd.
+func _build_town(_settlement: Dictionary, _offset: float) -> void:
+	pass
+
+
+## A generated town's traffic (region_town.gd): its vehicles and its bent streets.
+func _dress_traffic(_traffic: Traffic) -> void:
+	pass
+
+
 ## In the capital's district, the company's annual ship: a light high over the landing ground,
 ## brought down by `lower_company_ship` in the days before the ship is due (planet views alike).
 func _build_company_ship(settlement: Dictionary, offset: float) -> void:
@@ -594,6 +623,9 @@ func _build_base_housing(offset: float, capacity: int, lit: bool = true) -> void
 	root.name = "LandingLivingCapsules"
 	root.set_meta("base_housing", capacity)
 	var spot: Vector2 = _pods_position(offset)
+	if town_streets != null:
+		spot = DistrictPlan.warp(spot, district_key())
+		root.scale = Vector3.ONE * BASE_HOUSING_M * DistrictPlan.UNIT / 5.2
 	root.position = Vector3(spot.x, _ground(spot.x, spot.y), spot.y)
 	buildings_root.add_child(root)
 	var pods: MeshInstance3D = ModelArt.instance(
@@ -754,7 +786,15 @@ func _build_road_gate(route: Dictionary, offset: float) -> void:
 
 ## Service roads follow the height field; the same path crosses channels as a raised bridge.
 ## All sections of a town go into one mesh.
+## A generated town's road (region_town.gd).
+func _town_road(_a: Vector3, _b: Vector3) -> void:
+	pass
+
+
 func _road(a: Vector3, b: Vector3) -> void:
+	if town_streets != null:
+		_town_road(a, b)
+		return
 	var count: int = maxi(1, ceili(a.distance_to(b) / 1.6))
 	for i in range(count):
 		_road_section(a.lerp(b, float(i) / count), a.lerp(b, float(i + 1) / count))
@@ -1379,10 +1419,13 @@ func _dress_building(
 	active: bool,
 	complete: bool,
 	yaw: float,
-	lit: bool = true
+	lit: bool = true,
+	width: float = 0.0
 ) -> void:
 	var id: String = str(art.model)
 	var scale: float = float(art.get("scale", 1.0))
+	# A generated town draws every building at its metric width (1.12, district_plan.gd).
+	var metric: bool = width > 0.0
 	var great: bool = (
 		Rules.read("economy").buildings.get(str(building.kind), {}).get("role", "") == "great"
 	)
@@ -1391,7 +1434,7 @@ func _dress_building(
 		var site: String = str(art.get("construction", ""))
 		own_site = site != "" and ModelArt.mesh(site) != null
 		id = site if own_site else "construction"
-		if not own_site:
+		if not own_site and not metric:
 			scale = 1.2 if great else 1.0
 	elif art.has("ore") and _plot_depleted(building):
 		id = "depleted_" + str(art.ore)
@@ -1403,6 +1446,9 @@ func _dress_building(
 	var dressed: MeshInstance3D = ModelArt.instance(id, material_for)
 	if dressed == null:
 		return
+	if metric:
+		var own: Vector3 = ModelArt.model_size(id)
+		scale = width / maxf(maxf(own.x, own.z), 0.001)
 	dressed.rotation.y = yaw
 	dressed.scale = Vector3.ONE * scale
 	# Seated on the pad top; a pit's floor on the ground.
@@ -1425,8 +1471,12 @@ func _dress_building(
 			func(slot: String) -> Material: return _art_material(slot, {}, true)
 		)
 		if crane != null:
-			crane.position = Vector3(-1.6, 0, 1.9).rotated(Vector3.UP, yaw)
+			crane.position = (
+				Vector3(-1.6, 0, 1.9).rotated(Vector3.UP, yaw) * (scale if metric else 1.0)
+			)
 			crane.rotation.y = yaw
+			if metric:
+				crane.scale = Vector3.ONE * scale
 			model.add_child(crane)
 
 
@@ -1484,6 +1534,7 @@ func _build_traffic(stops: Array, offset: float, region: int) -> void:
 		"bus": _vehicle_mesh("bus"),
 	}
 	traffic.surface_height = _road_height
+	_dress_traffic(traffic)
 	traffic.street_x = offset
 	traffic.stops = stops
 	traffic.gates = region_gates.duplicate()

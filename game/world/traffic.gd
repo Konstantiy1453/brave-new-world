@@ -13,6 +13,14 @@ const MAX_VEHICLES: int = 14
 
 ## Mesh per vehicle kind: "truck", "van", "bus".
 var vehicle_meshes: Dictionary = {}
+## A generated town's vehicles (1.12): a node per kind, front to +z, at its metric size; when set
+## it is used before `vehicle_meshes`.
+var vehicle_factory: Callable
+## A generated town bends its plot grid (district_plan.gd `warp`): trips run on the grid and
+## vehicles are drawn where the bent streets are.
+var warp: Callable
+var keep_right: float = KEEP_RIGHT
+var speed: float = SPEED
 ## Road height at a ground point, bridges included.
 var surface_height: Callable
 var street_x: float = 0.0
@@ -40,9 +48,7 @@ func setup(seed_value: int, count: int) -> void:
 		return
 	for index: int in range(mini(count, MAX_VEHICLES)):
 		var kind: String = _pick_kind(index)
-		var body := MeshInstance3D.new()
-		body.mesh = vehicle_meshes.get(kind, vehicle_meshes.values()[0])
-		body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var body: Node3D = _body(kind)
 		add_child(body)
 		var vehicle: Dictionary = {
 			"node": body,
@@ -66,10 +72,8 @@ func setup(seed_value: int, count: int) -> void:
 
 ## A vehicle that runs one fixed route back and forth: `run` {"from", "to"} stop indices.
 func _add_shuttle(kind: String, name_text: String, run: Dictionary) -> void:
-	var body := MeshInstance3D.new()
+	var body: Node3D = _body(kind)
 	body.name = name_text
-	body.mesh = vehicle_meshes.get(kind, vehicle_meshes.values()[0])
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(body)
 	var vehicle: Dictionary = {
 		"node": body,
@@ -88,10 +92,8 @@ func _add_shuttle(kind: String, name_text: String, run: Dictionary) -> void:
 
 ## The ore truck: out from the mine to the cargo station, back empty, and again.
 func _add_ore_truck() -> void:
-	var body := MeshInstance3D.new()
+	var body: Node3D = _body("truck")
 	body.name = "OreTruck"
-	body.mesh = vehicle_meshes.get("truck", vehicle_meshes.values()[0])
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(body)
 	var vehicle: Dictionary = {
 		"node": body,
@@ -107,6 +109,18 @@ func _add_ore_truck() -> void:
 	_place(vehicle)
 
 
+## A vehicle's node: the town's own model of the kind, else its mesh.
+func _body(kind: String) -> Node3D:
+	if vehicle_factory.is_valid():
+		var made: Variant = vehicle_factory.call(kind)
+		if made is Node3D:
+			return made
+	var body := MeshInstance3D.new()
+	body.mesh = vehicle_meshes.get(kind, vehicle_meshes.values()[0])
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return body
+
+
 func vehicle_count() -> int:
 	return _vehicles.size()
 
@@ -120,7 +134,7 @@ func advance(delta: float) -> void:
 			vehicle.wait = float(vehicle.wait) - step
 			continue
 		var total: float = float(vehicle.lengths[vehicle.lengths.size() - 1])
-		vehicle.at = float(vehicle.at) + step * SPEED
+		vehicle.at = float(vehicle.at) + step * speed
 		if float(vehicle.at) >= total:
 			vehicle.at = total
 			_place(vehicle)
@@ -230,11 +244,14 @@ func _place(vehicle: Dictionary) -> void:
 	var flat: Vector2 = a.lerp(b, t)
 	var heading: Vector2 = (b - a).normalized() if a.distance_to(b) > 0.001 else Vector2.RIGHT
 	# Keep right: the right of a heading (x, z) on this ground is (-z, x).
-	flat += Vector2(-heading.y, heading.x) * KEEP_RIGHT
+	flat += Vector2(-heading.y, heading.x) * keep_right
 	var ahead: Vector2 = flat + heading * 0.4
+	if warp.is_valid():
+		flat = warp.call(flat)
+		ahead = warp.call(ahead)
 	var here := Vector3(flat.x, _height(flat) + RIDE_HEIGHT, flat.y)
 	var there := Vector3(ahead.x, _height(ahead) + RIDE_HEIGHT, ahead.y)
-	var node: MeshInstance3D = vehicle.node
+	var node: Node3D = vehicle.node
 	node.position = here
 	if here.distance_to(there) > 0.001:
 		node.look_at(there, Vector3.UP, true)

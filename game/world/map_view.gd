@@ -79,6 +79,14 @@ const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
 ## 7 units above it, so nothing comes this close; the depth buffer is ten times finer than with the
 ## globe's 0.05, and ground and water no longer flicker where they meet.
 const REGION_NEAR: float = 0.5
+## The district camera (1.12): it comes down to about 17 m from its target for the ground's
+## close view, its near plane and side offset scaling with its distance; the default view keeps
+## its 1.11 framing.
+const REGION_CLOSEST: float = 1.0
+const REGION_FARTHEST: float = 140.0
+const REGION_ZOOM_STEP: float = 1.12
+const REGION_LOWEST_PITCH: float = 0.08
+const REGION_OFFSET_DISTANCE: float = 67.0
 const SUN_ENERGY: float = 1.12
 ## Pixels around a marker that a hover shows its name for (and a click picked before 1.10).
 const HOVER_RADIUS: float = 43.0
@@ -137,7 +145,9 @@ func setup(data: Dictionary) -> void:
 	hovered_region = -1
 	world = data
 	if space_dome != null:
-		(space_dome.material_override as ShaderMaterial).set_shader_parameter("optical_sky", _uses_optical_geography())
+		(space_dome.material_override as ShaderMaterial).set_shader_parameter(
+			"optical_sky", _uses_optical_geography()
+		)
 	flat_user_zoomed = false
 	flat_center = Vector2.ZERO
 	noise = FastNoiseLite.new()
@@ -425,7 +435,7 @@ func orbit(dx: float, dy: float) -> void:
 		planet_pitch = clampf(planet_pitch + dy * .004, -1.25, 1.25)
 	else:
 		local_yaw -= dx * .005
-		local_pitch = clampf(local_pitch + dy * .004, .25, 1.35)
+		local_pitch = clampf(local_pitch + dy * .004, REGION_LOWEST_PITCH, 1.35)
 
 
 func zoom(amount: float) -> void:
@@ -437,7 +447,9 @@ func zoom(amount: float) -> void:
 		sky.hold_spin()
 		planet_distance = clampf(planet_distance + amount * .65, 7.0, 15.8)
 	else:
-		local_distance = clampf(local_distance + amount * 3.5, 31.0, 140.0)
+		local_distance = clampf(
+			local_distance * pow(REGION_ZOOM_STEP, amount), REGION_CLOSEST, REGION_FARTHEST
+		)
 
 
 func pan(dx: float, dy: float) -> void:
@@ -458,6 +470,9 @@ func pan(dx: float, dy: float) -> void:
 	camera_pivot += (-right.normalized() * dx + up.normalized() * dy) * local_distance * .0012
 	camera_pivot.x = clampf(camera_pivot.x, -36.0, 36.0)
 	camera_pivot.z = clampf(camera_pivot.z, -26.0, 26.0)
+	# Close to the ground the target follows it, so the camera never sinks into a hill.
+	if local_distance < 12.0:
+		camera_pivot.y = _ground(camera_pivot.x, camera_pivot.z)
 
 
 ## The site marker under a screen position, among those the filter shows, within `radius` pixels.
@@ -796,7 +811,13 @@ func _update_camera(weight: float) -> void:
 	)
 	camera.position = camera_pivot + direction * smooth_distance
 	camera.look_at(camera_pivot, Vector3.UP)
-	camera.h_offset = .68 if mode == "planet" else 4.0
+	camera.h_offset = (
+		.68
+		if mode == "planet"
+		else 4.0 * clampf(smooth_distance / REGION_OFFSET_DISTANCE, 0.0, 1.0)
+	)
+	if mode == "region":
+		camera.near = clampf(smooth_distance * 0.02, 0.01, REGION_NEAR)
 	_aim_sun()
 
 

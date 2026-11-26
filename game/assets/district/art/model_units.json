@@ -1,0 +1,19 @@
+{
+  "apartment": 0.0741,
+  "civic_center": 0.0606,
+  "clinic": 0.1053,
+  "commerce": 0.1111,
+  "crew_quarters": 0.0645,
+  "depot": 0.0909,
+  "farm": 0.1212,
+  "habitat": 0.1345,
+  "lab": 0.1156,
+  "power": 0.1143,
+  "processor": 0.0985,
+  "school": 0.0513,
+  "smelter": 0.1176,
+  "vehicle_bus": 0.11,
+  "vehicle_truck": 0.11,
+  "vehicle_van": 0.11,
+  "water": 0.1111
+}

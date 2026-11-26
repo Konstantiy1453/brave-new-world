@@ -15,11 +15,6 @@ const SEED: int = 260129
 const KINDS: Array[String] = [
 	"habitat", "power", "water", "farm", "mine_ore", "processor", "lab", "mine_copper", "habitat"
 ]
-## A pad's radius, and how close a vehicle's path may come to a building it is not serving: the
-## lane is half a slot out, less the keep-right offset and a margin.
-const PAD: float = 2.3
-const CLEAR_OTHER: float = 2.7
-const CLEAR_OWN: float = 2.5
 ## Ground steps between neighbouring field vertices: anywhere, and near the town.
 const MAX_STEP: float = 1.6
 const MAX_TOWN_STEP: float = 0.8
@@ -229,26 +224,43 @@ func _inland(map: Node3D, sim: RefCounted) -> void:
 	)
 
 
-func _plot_points(sim: RefCounted, site: int) -> Array:
-	var plots: Array = sim.state.world.regions[site].plots
-	var points: Array = []
+## Each building's footprint as the town draws it (1.12, district_plan.gd via the map's
+## `plot_lot`): bent centre, half size, yaw; and the same unbent, as the traffic's paths run.
+func _footprints(map: Node3D, sim: RefCounted, site: int) -> Array:
+	var out: Array = []
 	for building: Dictionary in sim.settlement(site).buildings:
 		var plot: int = int(building.get("plot", -1))
-		if plot >= 0:
-			points.append(Vector2(float(plots[plot].x), float(plots[plot].z)))
-	return points
+		if plot < 0:
+			continue
+		var lot: Dictionary = map.plot_lot(site, plot, str(building.kind))
+		(
+			out
+			. append(
+				{
+					"centre": lot.pos,
+					"yaw": float(lot.yaw),
+					"plain": lot.plain,
+					"plain_yaw": float(lot.plain_yaw),
+					"half": Vector2(lot.size) * 0.5,
+				}
+			)
+		)
+	return out
 
 
 func _pads(map: Node3D, sim: RefCounted, site: int) -> void:
-	var points: Array = _plot_points(sim, site)
-	check(points.size() >= 6, "the town has buildings on plots (%d)" % points.size())
+	var feet: Array = _footprints(map, sim, site)
+	check(feet.size() >= 6, "the town has buildings on plots (%d)" % feet.size())
 	var worst: float = 0.0
-	for centre: Vector2 in points:
+	for foot: Dictionary in feet:
+		var centre: Vector2 = foot.centre
 		var level: float = map._ground(centre.x, centre.y)
-		for step: int in range(8):
-			var at: Vector2 = centre + Vector2.RIGHT.rotated(TAU * step / 8.0) * PAD
-			worst = maxf(worst, absf(map._ground(at.x, at.y) - level))
-	check(worst < 0.05, "every pad is level to its edge (worst %.3f)" % worst)
+		for sz: int in [-1, 0, 1]:
+			for sx: int in [-1, 0, 1]:
+				var local := Vector2(sx * foot.half.x, sz * foot.half.y)
+				var at: Vector2 = centre + local.rotated(-float(foot.yaw))
+				worst = maxf(worst, absf(map._ground(at.x, at.y) - level))
+	check(worst < 0.05, "every footprint is level to its edge (worst %.3f)" % worst)
 
 
 func _pods(map: Node3D, sim: RefCounted, site: int) -> void:
@@ -264,50 +276,43 @@ func _routes(map: Node3D, sim: RefCounted, site: int) -> void:
 	check(traffic != null and not traffic.stops.is_empty(), "the town has traffic stops")
 	if traffic == null:
 		return
-	var buildings: Array = _plot_points(sim, site)
-	buildings.append(map._pods_position(0.0))
+	var feet: Array = _footprints(map, sim, site)
 	var paths: Array = []
 	for from: Dictionary in traffic.stops:
 		for to: Dictionary in traffic.stops:
-			paths.append([from, to, Traffic.stop_path(from, to, traffic.street_x)])
+			paths.append(Traffic.stop_path(from, to, traffic.street_x))
 		for gate: Dictionary in traffic.gates:
-			paths.append([from, from, Traffic.gate_path(from, gate, traffic.street_x)])
+			paths.append(Traffic.gate_path(from, gate, traffic.street_x))
 	var crossings: PackedStringArray = []
-	for entry: Array in paths:
-		var points: PackedVector2Array = entry[2]
-		var served: Array = [_served(entry[0], buildings), _served(entry[1], buildings)]
+	for points: PackedVector2Array in paths:
 		for index: int in range(points.size() - 1):
-			var a: Vector2 = points[index]
-			var b: Vector2 = points[index + 1]
-			for centre: Vector2 in buildings:
-				var limit: float = CLEAR_OWN if served.has(centre) else CLEAR_OTHER
-				if _distance(centre, a, b) < limit - 0.001:
-					crossings.append("%s-%s near %s" % [a, b, centre])
+			for foot: Dictionary in feet:
+				if _enters(foot, points[index], points[index + 1]):
+					crossings.append(
+						"%s-%s through %s" % [points[index], points[index + 1], foot.plain]
+					)
 	check(
 		crossings.is_empty(), "no route passes through a building %s" % str(crossings.slice(0, 4))
 	)
 	var inside: int = 0
 	for stop: Dictionary in traffic.stops:
-		for centre: Vector2 in buildings:
-			if Vector2(stop.end).distance_to(centre) < PAD:
+		for foot: Dictionary in feet:
+			if _enters(foot, stop.end, stop.end):
 				inside += 1
 	check(inside == 0, "no vehicle waits inside a building (%d)" % inside)
 
 
-## The building a stop serves: the one whose pad its spur ends at.
-func _served(stop: Dictionary, buildings: Array) -> Vector2:
-	var best: Vector2 = Vector2.INF
-	for centre: Vector2 in buildings:
-		if Vector2(stop.end).distance_to(centre) < Vector2(stop.end).distance_to(best):
-			best = centre
-	return best
-
-
-static func _distance(point: Vector2, a: Vector2, b: Vector2) -> float:
-	var t: float = clampf(
-		(point - a).dot(b - a) / maxf(a.distance_squared_to(b), 0.000001), 0.0, 1.0
-	)
-	return point.distance_to(a.lerp(b, t))
+## Whether a segment of an unbent path enters a footprint (shrunk by a tenth of a unit, so a spur
+## may end at its front).
+func _enters(foot: Dictionary, a: Vector2, b: Vector2) -> bool:
+	var half: Vector2 = Vector2(foot.half) - Vector2.ONE * 0.1
+	var steps: int = maxi(1, ceili(a.distance_to(b) / 0.05))
+	for step: int in range(steps + 1):
+		var at: Vector2 = a.lerp(b, float(step) / steps)
+		var local: Vector2 = (at - Vector2(foot.plain)).rotated(float(foot.plain_yaw))
+		if absf(local.x) < half.x and absf(local.y) < half.y:
+			return true
+	return false
 
 
 func _revealed(map: Node3D, sim: RefCounted, site: int) -> void:
@@ -332,8 +337,10 @@ func _revealed(map: Node3D, sim: RefCounted, site: int) -> void:
 	while map.region_busy:
 		await process_frame
 	check(map.region_build_count == builds + 1, "a plot found since is cut into the ground")
-	var centre := Vector2(float(plots[hidden].x), float(plots[hidden].z))
-	var edge: Vector2 = centre + Vector2(PAD, 0.0)
+	# A free plot's pad as the town draws it (1.12): bent, its default footprint level.
+	var lot: Dictionary = map.plot_lot(site, hidden, "")
+	var centre: Vector2 = lot.pos
+	var edge: Vector2 = centre + (Vector2(lot.size) * 0.5).rotated(-float(lot.yaw))
 	check(
 		absf(map._ground(edge.x, edge.y) - map._ground(centre.x, centre.y)) < 0.05,
 		"and its pad is level"
