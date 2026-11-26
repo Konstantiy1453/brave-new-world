@@ -82,6 +82,8 @@ const REGION_SKY_DAY: Color = Color("4e6f98")
 const REGION_SKY_EVENING: Color = Color("435b85")
 const REGION_SKY_NIGHT: Color = Color("04070e")
 const REGION_EXPOSURE: float = 1.12
+## A generated district's shadows reach this many camera distances, and at least this far (units).
+const REGION_SHADOW_REACH: Vector2 = Vector2(1.6, 14.0)
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
 const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
@@ -832,6 +834,12 @@ func _update_camera(weight: float) -> void:
 	)
 	if mode == "region":
 		camera.near = clampf(smooth_distance * 0.02, 0.01, REGION_NEAR)
+		# Shadows reach as far as the view needs (1.12): a metric district is wide, and every
+		# caster in reach is drawn again for each shadow split.
+		if sun_light != null and not world.is_empty() and Geo.is_generated(str(world.version)):
+			sun_light.directional_shadow_max_distance = clampf(
+				smooth_distance * REGION_SHADOW_REACH.x, REGION_SHADOW_REACH.y, 110.0
+			)
 	_aim_sun()
 
 

@@ -5,7 +5,7 @@ extends RefCounted
 ## climate and ground: trees as far as the planet grows forest there, scrub, grass and stone where
 ## it is dry, nothing in water or at the sea's edge, and everything clear of the live town's paving
 ## and buildings. Out on steep, high or far ground the earlier preview's layered outcrops stand in
-## for the boulders. Every batch covers one SECTOR_M square, so its draw limits hold per sector.
+## for the boulders. Batches cover squares of the field, so their draw limits hold per square.
 ## Positions are in district units; the meshes are in metres (district_plan.gd).
 
 const DistrictIO = preload("res://world/district/district_io.gd")
@@ -26,16 +26,26 @@ const OUTCROP_SHARE: Array[float] = [0.85, 0.93, 0.65]
 const SOURCE_SCALE: float = 2.4
 ## Candidate points per square kilometre of field (terrain07.gd: 78,200 over a 2.17 km square).
 const CANDIDATES_PER_KM2: float = 16600.0
-## Draw limits in metres: the boulders' detailed meshes (rock07.gd), their toe stones, the trees'
-## branches, the tussocks and the fine grass; and the side of the square each batch covers.
-const ROCK_NEAR_M: float = 210.0
-const CHIP_M: float = 405.0
-const BRANCH_M: float = 650.0
+## Draw limits in metres for play (the approved still frames drew boulders' scans to 210 m, toe
+## stones to 405 m and everything else to the horizon; a living district is drawn at 60 frames a
+## second): boulders' near meshes, then their field meshes, then their toe-stone meshes far out;
+## toe stones; trees' branches (crowns to the horizon); shrubs' stems and crowns; tussocks; fine
+## grass. Near details batch by NEAR_SECTOR_M squares so their limits hold per sector; crowns and
+## outcrops by FAR_SECTOR_M, for fewer draws.
+const ROCK_NEAR_M: float = 120.0
+const ROCK_FIELD_M: float = 600.0
+const CHIP_M: float = 200.0
+const BRANCH_M: float = 300.0
+const SHRUB_M: float = 200.0
+const SHRUB_CROWN_M: float = 700.0
 const TUSSOCK_M: float = 700.0
-const FINE_GRASS_M: float = 260.0
-const SECTOR_M: float = 150.0
-## The kinds of batch, by id: three trees, shrubs, tussocks, three outcrops, four boulders, four
-## toe stones and five tufts of fine grass.
+const FINE_GRASS_M: float = 150.0
+const NEAR_SECTOR_M: float = 75.0
+const FAR_SECTOR_M: float = 300.0
+## The share of rock points that become weathered boulders in play (the rest stay open ground).
+const BOULDER_SHARE: float = 0.45
+## The kinds of batch, by id: three trees' branches, shrubs' stems, tussocks, three outcrops, four
+## boulders, four toe stones, five tufts of fine grass, three trees' crowns and shrubs' crowns.
 const KIND_TREE: int = 0
 const KIND_SHRUB: int = 3
 const KIND_TUSSOCK: int = 4
@@ -43,6 +53,8 @@ const KIND_OUTCROP: int = 5
 const KIND_BOULDER: int = 8
 const KIND_CHIP: int = 12
 const KIND_GRASS: int = 16
+const KIND_CROWN: int = 21
+const KIND_SHRUB_CROWN: int = 24
 ## The town's core holds this share of its buildings; density and grass are measured from it.
 const CORE_SHARE: float = 0.7
 ## Tussocks give way to fine grass this far past the core, in metres (lowgrass.gd: 430-640 m).
@@ -68,6 +80,9 @@ void fragment() {
 }
 """
 
+## For comparison captures only: draw Boulder 01's approved 56,540-triangle scan near the camera,
+## as the approved frames did, in place of its 12,000-triangle play mesh.
+static var approved_closeups: bool = false
 static var _meshes: Dictionary = {}
 static var _materials: Dictionary = {}
 
@@ -228,10 +243,12 @@ class Scatter:
 		return foot_m >= reach_m
 
 	func add(kind: int, p: Vector2, placed: Transform3D, tint: Color) -> void:
+		var far: bool = kind >= KIND_CROWN or (kind >= KIND_OUTCROP and kind < KIND_BOULDER)
+		var sector: float = FAR_SECTOR_M if far else NEAR_SECTOR_M
 		var key := Vector3i(
 			kind,
-			floori(p.x * DistrictPlan.METRES_PER_UNIT / SECTOR_M),
-			floori(p.y * DistrictPlan.METRES_PER_UNIT / SECTOR_M)
+			floori(p.x * DistrictPlan.METRES_PER_UNIT / sector),
+			floori(p.y * DistrictPlan.METRES_PER_UNIT / sector)
 		)
 		if not bag.has(key):
 			bag[key] = []
@@ -338,9 +355,11 @@ class Scatter:
 					var placed := Transform3D(Basis(Vector3.UP, yaw).scaled(size * unit), at)
 					if kind == "tree":
 						add(KIND_TREE + variant, p, placed, tint)
+						add(KIND_CROWN + variant, p, placed, tint)
 						counts.trees += 1
 					else:
 						add(KIND_SHRUB, p, placed, tint)
+						add(KIND_SHRUB_CROWN, p, placed, tint)
 						counts.shrubs += 1
 				"tussock":
 					# Fine grass near the town, sparser beyond it: the source tussock reads as a
@@ -349,7 +368,7 @@ class Scatter:
 						rng.randf() < 1.0 - smoothstep(FINE_ZONE_M.x, FINE_ZONE_M.y, past)
 					)
 					if near_town or rng.randf() < FAR_GRASS_SHARE:
-						counts.fine_grass += fine_grass(p, 5 if near_town else 2)
+						counts.fine_grass += fine_grass(p, 4 if near_town else 2)
 				"rock":
 					rock(p, level, scale, yaw, variant, far_m, past, tint)
 
@@ -391,6 +410,8 @@ class Scatter:
 			)
 			add(KIND_OUTCROP + variant, p, placed, tint)
 			counts.outcrops += 1
+			return
+		if rng.randf() > BOULDER_SHARE:
 			return
 		var turn: int = rock_turns[variant]
 		rock_turns[variant] += 1
@@ -559,6 +580,7 @@ class Scatter:
 			var basis := Basis(Vector3.UP, turn).scaled(Vector3.ONE * size * SOURCE_SCALE * unit)
 			var at := Vector3(p.x, height(p.x, p.y) - .12 * size * SOURCE_SCALE * unit, p.y)
 			add(KIND_TREE + variant, p, Transform3D(basis, at), Color(.76, .83, .74))
+			add(KIND_CROWN + variant, p, Transform3D(basis, at), Color(.76, .83, .74))
 			counts.trees += 1
 			placed.append(p)
 			if placed.size() >= 3:
@@ -595,14 +617,17 @@ static func _commit(parent: Node3D, bag: Dictionary) -> void:
 		if kind < KIND_SHRUB:
 			var source: String = "CC_TREE_SOURCE_%02d" % (kind - KIND_TREE)
 			var branches: ArrayMesh = _env_mesh(source + "_BRANCH_NETWORK")
-			_batch(parent, label, list, branches, _bark(), 0.0, BRANCH_M)
-			var crown: ArrayMesh = _env_mesh(source + "_CURVED_LEAF_CROWN_SPRAYS")
-			_batch(parent, label + "_crown", list, crown, _leaves())
+			_batch(parent, label, list, branches, _bark(), 0.0, BRANCH_M, false)
 		elif kind == KIND_SHRUB:
 			var stems: ArrayMesh = _env_mesh("CC_SHRUB_SOURCE_BRANCH_NETWORK")
-			_batch(parent, label, list, stems, _bark(), 0.0, BRANCH_M)
+			_batch(parent, label, list, stems, _bark(), 0.0, SHRUB_M, false)
+		elif kind >= KIND_CROWN and kind < KIND_SHRUB_CROWN:
+			var source: String = "CC_TREE_SOURCE_%02d" % (kind - KIND_CROWN)
+			var crown: ArrayMesh = _env_mesh(source + "_CURVED_LEAF_CROWN_SPRAYS")
+			_batch(parent, label, list, crown, _leaves())
+		elif kind == KIND_SHRUB_CROWN:
 			var leaves: ArrayMesh = _env_mesh("CC_SHRUB_SOURCE_CURVED_LEAF_CROWN_SPRAYS")
-			_batch(parent, label + "_crown", list, leaves, _leaves())
+			_batch(parent, label, list, leaves, _leaves(), 0.0, SHRUB_CROWN_M)
 		elif kind == KIND_TUSSOCK:
 			var tuft: ArrayMesh = _env_mesh("CC_GRASS_SOURCE")
 			var straw: StandardMaterial3D = _plain("tussock", "898155", true)
@@ -612,18 +637,13 @@ static func _commit(parent: Node3D, bag: Dictionary) -> void:
 			_batch(parent, label, list, ridge, _plain("outcrop", "827e70", false))
 		elif kind < KIND_CHIP:
 			var rock: String = ROCK_KEYS[kind - KIND_BOULDER]
-			_batch(
-				parent,
-				label + "_near",
-				list,
-				_rock_mesh(rock, "near"),
-				_stone(rock),
-				0.0,
-				ROCK_NEAR_M
-			)
-			_batch(
-				parent, label + "_field", list, _rock_mesh(rock, "field"), _stone(rock), ROCK_NEAR_M
-			)
+			var near: ArrayMesh = _rock_mesh(rock, _near_detail(rock))
+			var stone: ShaderMaterial = _stone(rock)
+			_batch(parent, label + "_near", list, near, stone, 0.0, ROCK_NEAR_M)
+			var field: ArrayMesh = _rock_mesh(rock, "field")
+			_batch(parent, label + "_field", list, field, stone, ROCK_NEAR_M, ROCK_FIELD_M)
+			var far: ArrayMesh = _rock_mesh(rock, "chip")
+			_batch(parent, label + "_far", list, far, stone, ROCK_FIELD_M, 0.0, false)
 		elif kind < KIND_GRASS:
 			var chip: String = ROCK_KEYS[kind - KIND_CHIP]
 			_batch(parent, label, list, _rock_mesh(chip, "chip"), _stone(chip), 0.0, CHIP_M, false)
@@ -631,6 +651,14 @@ static func _commit(parent: Node3D, bag: Dictionary) -> void:
 			var tufts: ArrayMesh = _fine_grass_mesh(kind - KIND_GRASS)
 			var material: ShaderMaterial = _fine_grass_material()
 			_batch(parent, label, list, tufts, material, 0.0, FINE_GRASS_M, false)
+
+
+## The near mesh a boulder plays with: Boulder 01's 12,000-triangle play mesh, or its approved
+## scan when a comparison capture asks for it; the other rocks' approved near meshes as they are.
+static func _near_detail(rock: String) -> String:
+	if rock == "boulder_01" and not approved_closeups:
+		return "near_game"
+	return "near"
 
 
 static func _batch(
