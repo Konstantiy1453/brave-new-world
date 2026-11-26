@@ -1,5 +1,5 @@
 extends RefCounted
-## The district's nature (1.12): revision 07's trees, shrubs, dry tussocks, fine grass and weathered
+## The district's nature (1.12): revision 07's trees, shrubs, fine dry grass and weathered
 ## boulders with their toe stones (docs/handoff/approved-terrain-region/region/assets/surface07:
 ## terrain07.gd, rock07.gd, lowgrass.gd) over a generated world's field, from the site's own
 ## climate and ground: trees as far as the planet grows forest there, scrub, grass and stone where
@@ -47,6 +47,8 @@ const KIND_GRASS: int = 16
 const CORE_SHARE: float = 0.7
 ## Tussocks give way to fine grass this far past the core, in metres (lowgrass.gd: 430-640 m).
 const FINE_ZONE_M: Vector2 = Vector2(120.0, 320.0)
+## Beyond it, this share of grass points still gets a clump or two.
+const FAR_GRASS_SHARE: float = 0.5
 ## Kinds of building with lived-in grounds, where small groves stand at the side (terrain07.gd).
 const DWELLINGS: Array[String] = [
 	"commerce", "clinic", "lab", "school", "apartment", "habitat", "civic_center", "crew_quarters"
@@ -341,13 +343,13 @@ class Scatter:
 						add(KIND_SHRUB, p, placed, tint)
 						counts.shrubs += 1
 				"tussock":
-					if rng.randf() < 1.0 - smoothstep(FINE_ZONE_M.x, FINE_ZONE_M.y, past):
-						counts.fine_grass += fine_grass(p)
-						continue
-					var size := Vector3.ONE * scale * SOURCE_SCALE
-					var placed := Transform3D(Basis(Vector3.UP, yaw).scaled(size * unit), at)
-					add(KIND_TUSSOCK, p, placed, tint)
-					counts.tussocks += 1
+					# Fine grass near the town, sparser beyond it: the source tussock reads as a
+					# solid lump at the district's close cameras, so it is not drawn (1.12).
+					var near_town: bool = (
+						rng.randf() < 1.0 - smoothstep(FINE_ZONE_M.x, FINE_ZONE_M.y, past)
+					)
+					if near_town or rng.randf() < FAR_GRASS_SHARE:
+						counts.fine_grass += fine_grass(p, 5 if near_town else 2)
 				"rock":
 					rock(p, level, scale, yaw, variant, far_m, past, tint)
 
@@ -460,13 +462,13 @@ class Scatter:
 
 	## Small clumps of fine dry grass round a point near the town (lowgrass.gd), fewer per point
 	## than the still preview's.
-	func fine_grass(p: Vector2) -> int:
+	func fine_grass(p: Vector2, most: int = 5) -> int:
 		var unit: float = DistrictPlan.UNIT
 		var yaw: float = rng.randf() * TAU
 		var axis := Vector2(cos(yaw), sin(yaw))
 		var across := Vector2(-axis.y, axis.x)
 		var span: float = rng.randf_range(.75, 2.8)
-		var count: int = rng.randi_range(2, 5)
+		var count: int = rng.randi_range(mini(2, most), most)
 		var made: int = 0
 		for j: int in range(count):
 			var offset_m: Vector2 = (

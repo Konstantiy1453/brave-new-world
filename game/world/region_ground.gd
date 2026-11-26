@@ -858,6 +858,9 @@ func _build_landscape(token: int) -> bool:
 	var climate := PackedVector2Array()
 	climate.resize(forests.size())
 	var inland: bool = not bool(reg.get("coast", false))
+	# Where the planet has sea but the region draws land (coastal plains, filled hollows), the
+	# ground takes the site's own climate: the planet keeps no rain over its sea (1.12).
+	var site: Dictionary = Geo.sample_geo(float(reg.lat), float(reg.lon), noise, str(world.version))
 	terrain_unique_samples = 0
 	for row: int in range(rows):
 		var z: float = zs[row]
@@ -879,12 +882,20 @@ func _build_landscape(token: int) -> bool:
 			var shown: float = float(g.height)
 			if inland:
 				shown = maxf(shown, INLAND_DATA_FLOOR)
-			var data: Color = Shaders.encode(shown, float(g.temperature), float(g.rainfall), 0.0)
+			var weather: Dictionary = g if bool(g.land) or not bool(site.land) else site
+			var data: Color = Shaders.encode(
+				shown, float(weather.temperature), float(weather.rainfall), 0.0
+			)
 			if inner:
 				data.b = 1.0 if is_finite(_water_height_at(x, z, 1.9)) else 0.0
-				forests[inner_z * (field_res + 1) + inner_x] = _forest_chance(g)
+				forests[inner_z * (field_res + 1) + inner_x] = _forest_chance(weather)
 				climate[inner_z * (field_res + 1) + inner_x] = Vector2(
-					float(g.temperature), float(g.rainfall) if bool(g.land) else 0.0
+					lerpf(
+						float(site.temperature),
+						float(weather.temperature),
+						DistrictGround.SITE_LOCAL
+					),
+					lerpf(float(site.rainfall), float(weather.rainfall), DistrictGround.SITE_LOCAL)
 				)
 			else:
 				data.b = 0.0
@@ -975,6 +986,8 @@ func _build_landscape(token: int) -> bool:
 	terrain.name = "Landscape"
 	terrain.mesh = st.commit()
 	ground_material = DistrictGround.material(bool(reg.river))
+	if bool(site.land):
+		DistrictGround.set_site(ground_material, float(site.temperature), float(site.rainfall))
 	mats["district_ground"] = ground_material
 	terrain_shader = ground_material
 	terrain.material_override = ground_material

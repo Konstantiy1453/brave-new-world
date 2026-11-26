@@ -72,8 +72,8 @@ void fragment() {
 ## The air over a generated region: the horizon colour by day, at dusk and at night, and the haze
 ## that hides the landscape's far edge: it begins and is complete this far from the eye.
 ## A generated region's daylight ambient (1.12): the approved district's sky fill.
-const REGION_DAY_AMBIENT: Color = Color("b6c9de")
-const REGION_AMBIENT_ENERGY: float = 0.58
+const REGION_DAY_AMBIENT: Color = Color("c9c8c2")
+const REGION_AMBIENT_ENERGY: float = 0.8
 const REGION_DAY_AIR: Color = Color("9cadbb")
 ## The evening haze and sky of the approved district (1.12, region/preview.gd `set_hour`), the
 ## day's and night's sky overhead, and the exposure a generated region is drawn at.
@@ -81,7 +81,7 @@ const REGION_EVENING_AIR: Color = Color("a9a5ad")
 const REGION_SKY_DAY: Color = Color("4e6f98")
 const REGION_SKY_EVENING: Color = Color("435b85")
 const REGION_SKY_NIGHT: Color = Color("04070e")
-const REGION_EXPOSURE: float = 1.02
+const REGION_EXPOSURE: float = 1.12
 const REGION_DUSK_AIR: Color = Color("8a6b5b")
 const REGION_NIGHT_AIR: Color = Color("070b13")
 const REGION_HAZE: Vector2 = Vector2(150.0, 430.0)
@@ -900,7 +900,7 @@ func _aim_region_sun() -> void:
 		var low: float = 1.0 - smoothstep(0.25, 0.6, height)
 		sun_light.light_color = Color("ffad6b").lerp(Color("ffce9e"), smoothstep(0.02, 0.2, height))
 		sun_light.light_color = sun_light.light_color.lerp(Color("f6ecd1"), 1.0 - low)
-		sun_light.light_energy *= lerpf(1.0, 0.76, low * smoothstep(0.04, 0.2, height))
+		sun_light.light_energy *= lerpf(1.0, 0.86, low * smoothstep(0.04, 0.2, height))
 		if environment != null:
 			environment.ambient_light_color = NIGHT_AMBIENT.lerp(REGION_DAY_AMBIENT, daylight)
 			environment.ambient_light_energy = lerpf(.62, REGION_AMBIENT_ENERGY, daylight)

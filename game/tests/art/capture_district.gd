@@ -10,6 +10,8 @@ extends SceneTree
 ##     res://tests/art/capture_district.gd -- --out=<folder> [--seed=260129] [--days=1200]
 ##     [--size=1920x1080] [--hours=day,dusk] [--views=overview,settlement,verge,rocks]
 ##     [--save=<file>: play once and keep the colony there, or load it when it exists]
+## The approved views are lit from behind the camera; each view here turns the same way to the
+## site's own sun. Diagnostics: --hide_sea, --no_fringe, --no_terrain_shadow, --probe_pixel=x:y.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -108,6 +110,16 @@ func run() -> void:
 		"nature": map.get("nature_counts"),
 		"hollows_filled": int(map.get("hollows_filled")),
 	}
+	if str(options.get("no_terrain_shadow", "")) == "true":
+		var land: Node = map.surface.get_node_or_null("Landscape")
+		if land is GeometryInstance3D:
+			(land as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if str(options.get("no_fringe", "")) == "true":
+		map.ground_material.set_shader_parameter("fringe_rect", Vector4.ZERO)
+	if str(options.get("hide_sea", "")) == "true":
+		for node: Node in map.surface.find_children("*", "MeshInstance3D", false, false):
+			if (node as MeshInstance3D).mesh is PlaneMesh:
+				(node as MeshInstance3D).visible = false
 	var targets: Dictionary = _targets(sim, region)
 	report.targets = {}
 	for key: String in targets:
@@ -159,25 +171,38 @@ func _targets(sim: RefCounted, region: int) -> Dictionary:
 				var side := Vector2(-along.y, along.x)
 				verge = path[index] + side * (float(entry[1]) + 5.0 * DistrictPlan.UNIT)
 	var rock: Vector2 = Vector2(town.x + 14.0, town.y - 9.0)
-	# The rocks: the largest weathered boulder within 40 units of the middle of town.
+	# The rocks: the largest weathered boulder within 40 units of the middle of town with no tree
+	# or shrub within 35 m, so nothing stands between it and the camera.
 	var nature: Node = map.surface.get_node_or_null("DistrictNature")
 	var largest: float = 0.0
+	var plants: Array[Vector2] = []
+	var boulders: Array = []
 	if nature != null:
 		for batch: Node in nature.get_children():
 			var label: String = str(batch.name)
-			if not label.ends_with("_near") or not batch is MultiMeshInstance3D:
+			if not batch is MultiMeshInstance3D or label.ends_with("_crown"):
 				continue
 			var kind: int = int(label.get_slice("_", 1))
-			if kind < 8 or kind > 11:
-				continue
 			var group: MultiMesh = (batch as MultiMeshInstance3D).multimesh
 			for index: int in range(group.instance_count):
 				var placed: Transform3D = group.get_instance_transform(index)
 				var spot := Vector2(placed.origin.x, placed.origin.z)
-				var size: float = placed.basis.x.length()
-				if spot.distance_to(town) < 40.0 and size > largest:
-					largest = size
-					rock = spot
+				if kind <= 3:
+					plants.append(spot)
+				elif kind >= 8 and kind <= 11 and label.ends_with("_near"):
+					boulders.append([spot, placed.basis.x.length()])
+	for entry: Array in boulders:
+		var spot: Vector2 = entry[0]
+		if spot.distance_to(town) > 40.0 or float(entry[1]) <= largest:
+			continue
+		var clear: bool = true
+		for plant: Vector2 in plants:
+			if plant.distance_to(spot) < 35.0 * DistrictPlan.UNIT:
+				clear = false
+				break
+		if clear:
+			largest = float(entry[1])
+			rock = spot
 	return {
 		"overview": town,
 		"settlement": town,
@@ -203,6 +228,8 @@ func _view(view: String, targets: Dictionary, hour: String) -> void:
 		map.local_distance = float(spec[0]) * DistrictPlan.UNIT
 		map.local_pitch = deg_to_rad(float(spec[1]))
 		map.local_yaw = sun_yaw + deg_to_rad(15.0)
+		if view == "settlement":
+			map.local_yaw = _town_facing(target, sun_yaw, map.local_distance)
 		if view == "verge":
 			var road: Array = _verge_along(targets.overview, Vector2(to_sun.x, to_sun.z))
 			target = road[0]
@@ -218,6 +245,8 @@ func _view(view: String, targets: Dictionary, hour: String) -> void:
 	for _frame: int in range(4):
 		await process_frame
 	await RenderingServer.frame_post_draw
+	if str(options.get("probe_pixel", "")) != "":
+		_probe_pixel(str(options.probe_pixel))
 	var image: Image = root.get_texture().get_image()
 	var name: String = "%s_%s" % [view, hour]
 	image.save_png(folder + "/" + name + ".png")
@@ -237,6 +266,30 @@ func _view(view: String, targets: Dictionary, hour: String) -> void:
 		)
 	)
 	print("CAPTURE ", name)
+
+
+## Of the turns within 60 degrees of the sun's, the one whose view takes in most of the town's
+## buildings (from the camera's foot to twice its distance beyond the target), so the settlement
+## view looks over the town rather than over open ground or water.
+func _town_facing(target: Vector2, sun_yaw: float, distance: float) -> float:
+	var best: float = sun_yaw
+	var best_count: int = -1
+	for step: int in range(-6, 7):
+		var yaw: float = sun_yaw + deg_to_rad(10.0 * step)
+		var back := Vector2(sin(yaw), cos(yaw))
+		var camera: Vector2 = target + back * distance
+		var count: int = 0
+		for spot: Vector2 in map.town_spots:
+			var ahead: Vector2 = spot - camera
+			var along: float = ahead.dot(-back)
+			if along < distance * 0.2 or along > distance * 3.0:
+				continue
+			if absf(ahead.dot(Vector2(-back.y, back.x))) < along * 0.45:
+				count += 1
+		if count > best_count:
+			best_count = count
+			best = yaw
+	return best
 
 
 ## A point five metres off a road near the middle of town, on a stretch running away from the sun,
@@ -293,3 +346,35 @@ func _show_overlays(on: bool) -> void:
 	for overlay: Variant in [map.get("marker_root"), map.get("weather_root")]:
 		if overlay is Node3D and is_instance_valid(overlay):
 			(overlay as Node3D).visible = on
+
+
+## Diagnostics: what stands under a pixel ("x:y" in the window's pixels).
+func _probe_pixel(pixel: String) -> void:
+	var at := Vector2(float(pixel.get_slice(":", 0)), float(pixel.get_slice(":", 1)))
+	var origin: Vector3 = map.camera.project_ray_origin(at)
+	var direction: Vector3 = map.camera.project_ray_normal(at)
+	var hit := Vector3.ZERO
+	for step: int in range(4000):
+		var p: Vector3 = origin + direction * step * 0.02
+		if p.y <= map._ground(p.x, p.z):
+			hit = p
+			break
+	print(
+		"PROBE pixel ",
+		at,
+		" hit ",
+		hit,
+		" ground ",
+		map._ground(hit.x, hit.z),
+		" sea ",
+		map.sea_level()
+	)
+	print("PROBE camera ", map.camera.global_position, " sun ", map.sun_light.global_basis.z)
+	for node: Node in map.find_children("*", "GeometryInstance3D", true, false):
+		var shape := node as GeometryInstance3D
+		if not shape.is_visible_in_tree():
+			continue
+		var box: AABB = shape.get_aabb()
+		box = shape.global_transform * box
+		if box.grow(0.05).has_point(hit) and box.size.length() < 400.0:
+			print("PROBE covers ", shape.get_path(), " ", shape.get_class(), " size ", box.size)

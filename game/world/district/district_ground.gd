@@ -20,6 +20,9 @@ const FRINGE_REACH_M: float = 14.0
 ## Paving classes of the mask's channels, as soil07's bake (tools/bake_road_fringe.py): roads
 ## (asphalt, gutters, kerbs, gravel shoulders), service yards, and footways.
 const FRINGE_CLASSES: Array[String] = ["road", "yard", "walk"]
+## The share of the planet's own climate variation across a region that its ground shows; the rest
+## is the site's (`site_climate`).
+const SITE_LOCAL: float = 0.3
 
 const GROUND_SHADER: String = """
 shader_type spatial;
@@ -39,6 +42,9 @@ uniform vec4 fringe_rect = vec4(0.0);
 uniform float metres_per_unit = 16.6;
 uniform vec4 town = vec4(0.0, 0.0, 30.0, 24.0);
 uniform float town_level = 0.0;
+// The site's own temperature (degrees) and rainfall: a district is a few kilometres across, so its
+// climate is the site's, with only SITE_LOCAL of the planet's variation across the region.
+uniform vec2 site_climate = vec2(14.0, 0.45);
 varying vec4 data;
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -82,8 +88,8 @@ void fragment() {
 	float n1 = texture(noise3d, world_pos * 0.035).r * 2.0 - 1.0;
 	float n2 = texture(noise3d, world_pos * 0.21 + vec3(0.37)).r * 2.0 - 1.0;
 	float h = geo_height(data.a);
-	float t = data.r * 100.0 - 50.0;
-	float rain = data.g;
+	float t = mix(site_climate.x, data.r * 100.0 - 50.0, SITE_LOCAL);
+	float rain = mix(site_climate.y, data.g, SITE_LOCAL);
 	// The site's climate: 07's palette is a dry temperate meadow, so other sites shift from it.
 	// Turf thins out in dry and cold places; bare ground bleaches toward sand where it is dry and
 	// warm, and greys where it is cold.
@@ -158,7 +164,9 @@ void fragment() {
 	local *= 1. - .60 * smoothstep(5., 37., (world_pos.y - town_level) * metres_per_unit);
 	vec3 ground = mix(old_base, close_color, local);
 	// The globe's high ground, snow and shores, as land_color draws them.
-	float rock = smoothstep(0.22, 0.44, h + n2 * 0.035);
+	// The town stands on settled ground: the globe's high-ground rock shows round it, not on its
+	// meadow (steep ground still turns to stone through `stone`).
+	float rock = smoothstep(0.22, 0.44, h + n2 * 0.035) * (1.0 - 0.8 * local);
 	ground = mix(ground, exposed * (1.0 + 0.12 * strata), rock * 0.85);
 	float snow = max(smoothstep(0.6, 0.8, h + n2 * 0.05 - t * 0.004),
 		smoothstep(-6.0, -13.0, t + n1 * 2.5));
@@ -207,9 +215,9 @@ static var _textures: Dictionary = {}
 static func material(river: bool) -> ShaderMaterial:
 	if _shader == null:
 		_shader = Shader.new()
-		_shader.code = (GROUND_SHADER.replace("GEOGRAPHY", Shaders.GEOGRAPHY_GLSL).replace(
-			"FRINGE_REACH", "%.1f" % FRINGE_REACH_M
-		))
+		var code: String = GROUND_SHADER.replace("GEOGRAPHY", Shaders.GEOGRAPHY_GLSL)
+		code = code.replace("FRINGE_REACH", "%.1f" % FRINGE_REACH_M)
+		_shader.code = code.replace("SITE_LOCAL", "%.2f" % SITE_LOCAL)
 	var result := ShaderMaterial.new()
 	result.shader = _shader
 	result.set_shader_parameter("noise3d", Shaders.noise_texture())
@@ -221,6 +229,11 @@ static func material(river: bool) -> ShaderMaterial:
 	result.set_shader_parameter("old_rock", _texture(ENV_DIR + "rock_basecolor.jpg"))
 	result.set_shader_parameter("metres_per_unit", DistrictPlan.METRES_PER_UNIT)
 	return result
+
+
+## The site's own climate: its temperature in degrees and its rainfall.
+static func set_site(result: ShaderMaterial, temperature: float, rainfall: float) -> void:
+	result.set_shader_parameter("site_climate", Vector2(temperature, rainfall))
 
 
 ## The town's extent for the close ground: the middle of its buildings, the half extents of their
