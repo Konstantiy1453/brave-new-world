@@ -11,7 +11,8 @@ extends SceneTree
 ##     [--size=1920x1080] [--hours=day,dusk] [--views=overview,settlement,verge,rocks]
 ##     [--save=<file>: play once and keep the colony there, or load it when it exists]
 ## The approved views are lit from behind the camera; each view here turns the same way to the
-## site's own sun. Diagnostics: --hide_sea, --no_fringe, --no_terrain_shadow, --probe_pixel=x:y.
+## site's own sun. --approved_closeups=false draws Boulder 01's play mesh instead of its approved
+## scan. Diagnostics: --hide_sea, --no_fringe, --no_terrain_shadow, --probe_pixel=x:y.
 
 const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
@@ -19,6 +20,7 @@ const Map = preload("res://world/map_view.gd")
 const Bot = preload("res://tests/balance/bots/balanced_bot.gd")
 const DistrictPlan = preload("res://world/district/district_plan.gd")
 const Geo = preload("res://world/world_gen.gd")
+const DistrictNature = preload("res://world/district/district_nature.gd")
 
 ## [distance m, pitch degrees, fov] of the approved views (views.json, metres).
 const VIEWS: Dictionary = {
@@ -82,6 +84,9 @@ func run() -> void:
 		return
 	var capital: Dictionary = sim.state.settlements[0]
 	var region: int = int(options.region) if str(options.region) != "" else int(capital.region)
+	# Comparison captures draw Boulder 01's approved scan near the camera, as the approved frames did.
+	DistrictNature.approved_closeups = str(options.get("approved_closeups", "true")) == "true"
+	report.approved_closeups = DistrictNature.approved_closeups
 	map = Map.new()
 	root.add_child(map)
 	map.setup(sim.geo)
