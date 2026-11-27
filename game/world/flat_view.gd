@@ -154,18 +154,7 @@ func _flat_label(
 
 ## Whether a site passes the player's filter. Settled and selected sites always show.
 func _marker_shown(reg: Dictionary) -> bool:
-	if int(reg.id) == selected_region or _is_settled(int(reg.id)):
-		return true
-	match marker_filter:
-		"all":
-			return true
-		"ore", "copper", "crystal":
-			return float(reg.deposits.get(marker_filter, 0.0)) >= MARKER_RICH_TONNES[marker_filter]
-		"farm":
-			return float(reg.fertility) >= MARKER_RICH_FERTILITY
-		"coast":
-			return bool(reg.get("coast", false))
-	return str(reg.get("archetype", "")) == marker_filter
+	return _is_settled(int(reg.id))
 
 
 func _is_settled(id: int) -> bool:
@@ -175,44 +164,13 @@ func _is_settled(id: int) -> bool:
 	return false
 
 
-## Names stay readable with forty sites: only the selected, hovered, settled and the richest.
+## Named towns are the only persistent site markers on both projections.
 func _labelled_sites() -> Array:
-	var ranked: Array = []
-	for reg in world.regions:
+	var regions: Array = []
+	for reg: Dictionary in world.regions:
 		if _marker_shown(reg):
-			ranked.append(reg)
-	ranked.sort_custom(
-		func(a: Dictionary, b: Dictionary) -> bool:
-			var sa: float = _site_rank(a)
-			var sb: float = _site_rank(b)
-			return int(a.id) < int(b.id) if sa == sb else sa > sb
-	)
-	# Candidates are named only while the player is choosing where to land, or filtering the map
-	# for a site; after that, the settled, selected and hovered sites keep their names.
-	var choosing: bool = state.get("settlements", []).is_empty() or marker_filter != "all"
-	var labelled: Array = []
-	for reg: Dictionary in ranked:
-		var id: int = int(reg.id)
-		if (
-			id == selected_region
-			or id == hovered_region
-			or _is_settled(id)
-			or (choosing and labelled.size() < LABELLED_SITES)
-		):
-			labelled.append(reg)
-	return labelled
-
-
-func _site_rank(reg: Dictionary) -> float:
-	var id: int = int(reg.id)
-	if id == selected_region or id == hovered_region:
-		return INF
-	if _is_settled(id):
-		return 1.0e12
-	var value: float = float(reg.fertility) * 40000.0
-	for good: String in ["ore", "copper", "crystal"]:
-		value += float(reg.deposits.get(good, 0.0)) * float(GOOD_WEIGHT[good])
-	return value
+			regions.append(reg)
+	return regions
 
 
 ## Tries the spots around a marker until a label fits without touching one already placed.
@@ -241,7 +199,7 @@ func _update_flat_markers() -> void:
 	for child in flat_marker_root.get_children():
 		flat_marker_root.remove_child(child)
 		child.queue_free()
-	_draw_flat_footprints()
+	_draw_flat_climate()
 	var labelled: Dictionary = {}
 	for reg: Dictionary in _labelled_sites():
 		labelled[int(reg.id)] = true
@@ -324,22 +282,8 @@ func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
 	if int(reg.id) == selected_region:
 		color = Color("fff2bd")
 	var point := _flat_point(reg.lat, reg.lon)
-	var ring: Array[Vector3] = []
-	for i in range(41):
-		var angle := float(i) / 40.0 * TAU
-		ring.append(
-			(
-				point
-				+ (
-					Vector3(cos(angle), sin(angle), 0)
-					* (.085 if int(reg.id) == selected_region else .055)
-				)
-			)
-		)
 	var holder := Node3D.new()
 	flat_marker_root.add_child(holder)
-	_line(holder, ring, color, .8)
-	_sphere(holder, point, .025, _marker_material(color), 8, 4)
 	if not with_label:
 		return
 	var text: String = _site_name(reg, settled)
@@ -348,30 +292,6 @@ func _flat_marker(reg: Dictionary, with_label: bool, placed: Array) -> void:
 
 func _marker_material(color: Color) -> StandardMaterial3D:
 	return _mat("marker" + color.to_html(), color, 0, 1, 1.3)
-
-
-## Built-up area and farmland on the flat map: colonies visibly spread as they grow.
-func _draw_flat_footprints() -> void:
-	for settlement in state.get("settlements", []):
-		var reg: Dictionary = world.regions[int(settlement.region)]
-		var sizes: Dictionary = _footprint_sizes(settlement)
-		var point := _flat_point(reg.lat, reg.lon) + Vector3(0, 0, -.004)
-		if float(sizes.farmland) > 0.0:
-			_disc(
-				flat_marker_root,
-				point,
-				Vector3.BACK,
-				float(sizes.farmland) * .3,
-				_footprint_mat("farm")
-			)
-		_disc(
-			flat_marker_root,
-			point + Vector3(0, 0, .002),
-			Vector3.BACK,
-			float(sizes.town) * .3,
-			_footprint_mat("town")
-		)
-	_draw_flat_climate()
 
 
 func _draw_flat_climate() -> void:

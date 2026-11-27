@@ -187,6 +187,8 @@ static func _optical_texture(path: String) -> Texture2D:
 
 
 func _bind_optical(material: ShaderMaterial, surface_layer: bool, atmosphere_layer: bool) -> void:
+	if atmosphere_layer:
+		material.set_shader_parameter("cyclone_pattern", preload("res://assets/terrain_v3/maysak_clouds.webp"))
 	var enabled := _uses_optical_geography()
 	material.set_shader_parameter("optical_v3", enabled)
 	if not enabled:

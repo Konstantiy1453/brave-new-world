@@ -77,7 +77,7 @@ func run():
 	var point = map._flat_point(world.regions[1].lat, world.regions[1].lon)
 	var picked = map.pick_region(map.camera.unproject_position(point))
 	check(picked == 1 and selected == [1], "flat projected region click")
-	check(map.flat_marker_root.get_child_count() == 6, "six authoritative candidate markers")
+	check(map.flat_marker_root.get_child_count() == 2, "both towns are marked and candidate sites are hidden")
 	check(
 		map.flat_transport_root.get_child_count() + map.flat_mover_root.get_child_count() >= 2,
 		"route and real shipment projected"

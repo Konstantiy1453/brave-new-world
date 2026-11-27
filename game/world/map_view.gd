@@ -1258,6 +1258,9 @@ func _crossfade_lights() -> void:
 	var shares: Vector2 = TownForms.weights(
 		smooth_distance, Rules.read("progression").get("lights", {})
 	)
+	# Street blocks stay legible up close; individual facility lights are the remaining share.
+	shares.y = 0.64 + shares.y * 0.36
+	shares.x = 1.0 - shares.y
 	if form_weights.distance_to(shares) < 0.005:
 		return
 	form_weights = shares

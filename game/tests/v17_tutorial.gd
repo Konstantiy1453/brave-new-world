@@ -367,21 +367,20 @@ func _pages() -> void:
 	game.start_game()
 	game.close_modal()
 	await process_frame
-	game.selected = 1
-	game.refresh_sidebar()
+	var r: Dictionary = game.sim.geo.regions[0]
+	game.select_ground({"lat": r.lat, "lon": r.lon, "precision": 0.1, "view": "planet"})
 	var names: PackedStringArray = _labels(game.sidebar)
-	check(_contains(names, "轨道估算"), "the site card says how good its figures are")
-	check(_contains(names, "建设费 ×"), "and what building here costs")
-	check(game.ui.find_child("SettleButton", true, false) != null, "and offers to settle")
+	check(_contains(names, "轨道观测"), "the picked ground shows orbital observations")
+	check(_contains(names, "可建设地块"), "and the building plots available")
+	check(game.ui.find_child("SettleGroundButton", true, false) != null, "and offers to found on the picked ground")
+	game.clear_ground()
 	game.selected = 0
 	game.act("settle", {"site": 0})
-	game.refresh_sidebar()
-	game.selected = 1
-	game.refresh_sidebar()
+	var next: Dictionary = game.sim.geo.regions[1]
+	game.select_ground({"lat": next.lat, "lon": next.lon, "precision": 0.1, "view": "flat"})
 	names = _labels(game.sidebar)
-	check(
-		_contains(names, "天 · ¥"), "the card shows road days and cost from the nearest settlement"
-	)
+	check(_contains(names, "最近的据点"), "picked ground shows the nearest departure settlement")
+	game.clear_ground()
 	game.selected = 0
 	game.refresh_sidebar()
 	game.open_page("build")

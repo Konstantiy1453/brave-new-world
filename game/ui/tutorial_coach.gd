@@ -322,6 +322,11 @@ func note_camera() -> void:
 	context.camera_moved = true
 
 
+func note_ground(lat: float, lon: float) -> void:
+	if active():
+		context.sites_viewed[Vector2i(roundi(lat * 100.0), roundi(lon * 100.0))] = true
+
+
 func note_site(site: int) -> void:
 	context.sites_viewed[site] = true
 

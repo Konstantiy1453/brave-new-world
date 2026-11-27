@@ -1,8 +1,8 @@
 config_version=5
 
 [application]
-config/name="殖民契约 · COLONY CHARTER 1.12.3"
-config/version="1.12.3"
+config/name="殖民契约 · COLONY CHARTER 1.12.4"
+config/version="1.12.4"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ColonyCharter/v111"
 config/project_settings_override="user://graphics_override.cfg"

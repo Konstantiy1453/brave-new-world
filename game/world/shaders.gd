@@ -169,32 +169,17 @@ vec2 town_glow(vec2 d, vec4 town, vec4 style, vec4 shape, vec4 roads, float pixe
 			reach = max(reach, exp(-gap * gap));
 		}
 	}
-	for (int k = 0; k < 10; k++) {
-		if (float(k) >= 1.0 + 1.5 * level) {
-			break;
-		}
-		float bearing = seed * 2.3 + float(k) * 2.39996;
-		vec2 way = vec2(cos(bearing), sin(bearing));
-		if (coastal > 0.5 && dot(way, sea) > 0.1) {
-			way = reflect(way, sea);
-			bearing = atan(way.y, way.x);
-		}
-		float span = 0.85 + 0.4 * town_hash(vec2(seed, float(k) + 9.0));
-		float along = dot(q, way);
-		float off = dot(q, vec2(-way.y, way.x)) + 0.08 * (town_noise(vec2(along * 5.0, seed + float(k) * 1.7)) - 0.5);
-		float dashes = step(0.3, town_noise(vec2(along * 14.0, seed * 0.3 + float(k))));
-		float line = town_line(abs(off), 0.008, pixel_q) * step(0.0, along) * dashes;
-		road = max(road, 0.6 * line * (1.0 - smoothstep(span * 0.75, span, along)));
-		float gap = angle_gap(theta, bearing) / 0.14;
-		reach = max(reach, 0.6 * exp(-gap * gap) * (span - 0.85) * 2.5);
-	}
-	// The built-up area: a ragged round, a little out along the roads; a coastal town reaches
-	// inland, and the coastline (the globe's land mask) cuts it.
-	float inland = coastal * max(0.0, -dot(q / max(r, 0.0001), sea));
-	float ragged = town_fbm(q * 2.4 + seed) - 0.5;
-	float fine = town_noise(q * 8.0 + seed * 3.1) - 0.5;
-	float edge = (0.82 + 0.32 * ragged + 0.1 * fine + 0.25 * reach) * (1.0 + 0.3 * inland);
-	float inside = 1.0 - smoothstep(edge * 0.82, edge, r);
+	// Joined blocks grow from the landing quarter along the local street axes. The
+	// long axis follows the shore on coastal sites. The atlas clips lights at water.
+	vec2 axis = coastal > 0.5 ? vec2(-sea.y, sea.x) : vec2(cos(seed), sin(seed));
+	vec2 across = vec2(-axis.y, axis.x);
+	vec2 district = vec2(dot(q, axis), dot(q, across));
+	district.y += 0.16 * sin(district.x * 3.2 + seed);
+	float street_edge = town_noise(floor(district * 5.0) + seed) - 0.5;
+	vec2 offset = district - vec2(0.11, -0.08);
+	float blocks = pow(pow(abs(offset.x) / 1.13, 3.3) + pow(abs(offset.y) / mix(0.79, 0.57, coastal), 3.3), 1.0 / 3.3);
+	float edge = 0.88 + street_edge * 0.25 + 0.09 * reach;
+	float inside = 1.0 - smoothstep(edge - 0.13, edge + 0.05, blocks);
 	// Dense in the middle, thinning out, with dark patches (parks, yards, water).
 	float patches = smoothstep(0.25, 0.6, town_fbm(q * 3.1 + seed * 1.3));
 	float density = inside * (0.15 + 0.85 * exp(-r * r * 3.0)) * (0.3 + 0.7 * patches);
@@ -203,9 +188,9 @@ vec2 town_glow(vec2 d, vec4 town, vec4 style, vec4 shape, vec4 roads, float pixe
 	float turn = seed * 2.39 + 0.7 * step(0.5, town_noise(q * 1.6 + seed * 5.0));
 	float minor = street_grid(d, STREET_CELL, turn, seed, density, pixel, 0.1);
 	float major = street_grid(d, STREET_CELL * 4.0, turn + 0.15, seed + 11.0, min(1.0, density * 1.4), pixel, 0.04);
-	float lit = minor * 0.55 + major * 0.42 + density * 0.06 + road * 0.5;
+	float lit = minor * 0.66 + major * 0.51 + density * 0.08 + road * 0.18;
 	// The white-hot core at the centre; on the coast it sits by the water.
-	vec2 c = q - sea * 0.2 * coastal;
+	vec2 c = q - 0.13 * axis - sea * 0.12 * coastal;
 	float core = exp(-dot(c, c) * 70.0) * (0.35 + 0.35 * grown);
 	float shine = style.x * (1.0 - landing);
 	float warm = (lit * (1.0 - style.y) + core * 0.8) * shine + spark * 0.8 * landing * style.x;
@@ -318,7 +303,9 @@ vec3 optical_albedo(vec2 uv, vec2 dx, vec2 dy, vec3 n, float h, float t, float w
 	detail = mix(detail, optical_sample(3.0, q * 1.24), dry);
 	detail = mix(detail, optical_sample(5.0, p * 1.38), cold);
 	detail = mix(detail, optical_sample(4.0, q * 1.53), rock);
-	surface += vec3(1.04, 1.0, 0.80) * (detail * 41.0 + n2 * 3.0);
+	float fine_detail = mix(optical_sample(2.0, q * 2.35 + vec2(0.28,0.17)),
+		optical_sample(4.0, p * 2.05), rock);
+	surface += vec3(1.04, 1.0, 0.80) * (detail * 45.0 + fine_detail * 11.0 + n2 * 3.0);
 	// The world temperature already contains a 28 °C / 4300 m lapse. Recover its
 	// sea-level value before comparing elevation with a regional snowline (metres).
 	float background_t = t + max(z, 0.0) * (28.0 / 4300.0);
@@ -384,6 +371,7 @@ uniform float weather_time = 0.0;
 uniform float coverage = 0.5;
 uniform vec4 storms[3];
 uniform float storm_radius[3];
+uniform sampler2D cyclone_pattern : filter_linear_mipmap, repeat_disable;
 
 vec3 turn_y(vec3 p, float a) {
 	float c = cos(a);
@@ -411,25 +399,21 @@ float zonal_wind(float lat) {
 	return -cos(3.0 * lat) * 0.004 + 0.0005;
 }
 
-// A tropical cyclone: two spiral arms around a clear eye. The arms are drawn, not wound, so
-// they can turn for ever without tightening into rings.
+// Sample the observed Maysak cloud shield in the local tangent plane. Reflect southern
+// storms and let the outflow turn at a different speed from the eyewall.
 float cyclone(vec3 p, vec4 storm, float reach, float t) {
-	float power = storm.w;
-	vec3 centre = storm.xyz;
-	float d = acos(clamp(dot(p, centre), -1.0, 1.0));
-	if (abs(power) < 0.001 || d > reach) {
-		return 0.0;
-	}
-	float r = d / reach;
-	vec3 e1 = normalize(cross(centre, abs(centre.y) < 0.95 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
-	vec3 e2 = cross(centre, e1);
-	float theta = atan(dot(p, e2), dot(p, e1));
-	float turn = sign(power);
-	float arms = cos(2.0 * (theta + turn * (3.0 * log(r + 0.04) - t * 0.09)));
-	float body = smoothstep(0.0, 0.85, arms * 0.5 + 0.5 - r * 0.6) * (1.0 - smoothstep(0.55, 1.0, r));
-	float wall = exp(-(r - 0.1) * (r - 0.1) / 0.003);
-	float eye = smoothstep(0.035, 0.075, r);
-	return clamp((body + wall) * eye * abs(power), 0.0, 1.0);
+	float strength = abs(storm.w);
+	float angle = acos(clamp(dot(p, storm.xyz), -1.0, 1.0));
+	if (strength < 0.001 || angle >= reach) { return 0.0; }
+	vec3 north = abs(storm.y) < 0.98 ? vec3(0.0,1.0,0.0) : vec3(0.0,0.0,1.0);
+	vec3 east = normalize(cross(north, storm.xyz));
+	vec2 local = vec2(dot(p,east), -dot(p,cross(storm.xyz,east))) / max(sin(reach),0.001);
+	local.x *= sign(storm.w);
+	float radius = length(local);
+	float phase = t * 0.005 + (1.0 - strength) * 0.36 + radius * 0.27;
+	local = mat2(vec2(cos(phase),sin(phase)),vec2(-sin(phase),cos(phase))) * local;
+	float envelope = texture(cyclone_pattern, local * 0.5 + 0.5).r;
+	return envelope * smoothstep(0.0, 0.7, strength);
 }
 
 float cloud_density(vec3 p, float t) {
@@ -941,6 +925,9 @@ void fragment() {
 	vec2 halo = pow(max(gather / 7.0, vec2(0.0)), vec2(0.7));
 	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.2 + halo.r * halo_warm);
 	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.8 + halo.g * halo_cold);
+	vec2 pixel_span = fwidth(UV) * vec2(360.0,180.0);
+	vec2 streets = town_lights(lat, lon, max(pixel_span.x,pixel_span.y)) * coast;
+	glow = glow * 0.30 + streets.x * vec3(1.75,1.12,0.53) + streets.y * vec3(1.01,1.25,1.48);
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
 """

@@ -296,6 +296,7 @@ func _update_town_forms() -> void:
 		far_lights.update(far)
 	town_lights = TownForms.uniforms(towns, world, rules)
 	_apply_town_lights(globe_shader)
+	_apply_town_lights(flat_shader)
 
 
 ## Each settled town's landing camp in district units, as the district stands its pods: found once
@@ -448,56 +449,19 @@ func _globe_marker(reg: Dictionary, with_label: bool) -> void:
 	var c := Color("e8c77f") if settled else Color("76e5d6")
 	if int(reg.id) == selected_region:
 		c = Color("fff0b9")
-	var dot := _sphere(
-		root, point, .036 if settled else .025, _mat("marker" + c.to_html(), c, 0, 1, 1.6), 12, 6
-	)
-	dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var ring_points: Array[Vector3] = []
-	var normal := point.normalized()
-	var tangent := normal.cross(Vector3.UP).normalized()
-	var bitangent := normal.cross(tangent).normalized()
-	for k in range(41):
-		var angle := float(k) / 40.0 * TAU
-		ring_points.append(
-			(
-				(
-					(normal * 3.058 + tangent * cos(angle) * .074 + bitangent * sin(angle) * .074)
-					. normalized()
-				)
-				* 3.058
-			)
-		)
-	_line(root, ring_points, c, .85)
 	if with_label:
 		var label := Label3D.new()
 		label.text = _site_name(reg, settled)
 		label.font = label_font
 		label.font_size = 48
-		label.pixel_size = .0028
-		label.position = point + Vector3(0, .15, 0)
+		label.pixel_size = .00165
+		label.position = point + Vector3(0, .12, 0)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.no_depth_test = true
 		label.modulate = c
 		label.outline_modulate = Color("091621")
 		label.outline_size = 8
 		root.add_child(label)
-	if not settled:
-		return
-	var sizes: Dictionary = _footprint_sizes(_settlement_at(int(reg.id)))
-	if float(sizes.farmland) > 0.0:
-		_disc(root, normal * 3.0205, normal, float(sizes.farmland), _globe_footprint_mat("farm"))
-	_disc(root, normal * 3.021, normal, float(sizes.town), _globe_footprint_mat("town"))
-
-
-## The flat map's footprint colours, fading on the night side of the globe.
-func _globe_footprint_mat(kind: String) -> ShaderMaterial:
-	var key: String = "globe_footprint_" + kind
-	if not mats.has(key):
-		var material := ShaderMaterial.new()
-		material.shader = Shaders.shader("footprint")
-		material.set_shader_parameter("tint", _footprint_mat(kind).albedo_color)
-		mats[key] = material
-	return mats[key]
 
 
 func _settlement_at(id: int) -> Dictionary:

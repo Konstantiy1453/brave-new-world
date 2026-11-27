@@ -899,6 +899,7 @@ func click_map(position: Vector2) -> void:
 
 func select_ground(point: Dictionary) -> void:
 	ground = point.duplicate()
+	coach.note_ground(float(point.lat), float(point.lon))
 	ground_from = -1
 	naming_ground = false
 	map.set_ground(ground)

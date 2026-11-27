@@ -44,6 +44,10 @@ static func region(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.panel(g, b)
 		return
+	if g.settlement().is_empty() and not g.coach.active() and g.sim.geo.has("grid_width"):
+		D.label(b, "选择落脚点", 24, D.INK)
+		D.label(b, "点击球面或平铺地图上的陆地，查看当地水源、地形和矿产。", 16, D.MUTED)
+		return
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
 	var title = D.row(b)
@@ -58,28 +62,23 @@ static func region(g, b):
 		kind_words = str(Labels.SITE_KIND_NAMES.get(g.settlement().kind, "")) + "  ·  "
 	D.label(b, "%s%s  ·  %.1f°C" % [kind_words, r.terrain, r.temperature], 16, D.MUTED)
 	var site_names: Array = []
+	var ids: Array[int] = []
 	for reg in g.sim.state.world.regions:
-		site_names.append(Labels.site_label(reg))
-	var pickers = D.row(b)
-	var chooser = D.option(
-		pickers,
-		"RegionChooser",
-		site_names,
-		g.selected,
-		func(id):
-			g.select_region(id)
-			if g.local_view:
-				g.map.show_region(id)
-			else:
-				g.map.focus_region(id)
-	)
-	var filter = _site_filter(g, pickers)
-	chooser.size_flags_stretch_ratio = 1.6
-	for picker: OptionButton in [chooser, filter]:
-		D.font_size(picker, 15)
-		picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		picker.clip_text = true
-		picker.custom_minimum_size = Vector2(60, 34)
+		if not g.sim.settlement(int(reg.id)).is_empty() or not g.sim.geo.has("grid_width"):
+			ids.append(int(reg.id))
+			site_names.append(Labels.site_label(reg))
+	if ids.size() > 1:
+		var chooser = D.option(b, "RegionChooser", site_names, maxi(0, ids.find(g.selected)),
+			func(index):
+				var id: int = ids[index]
+				g.select_region(id)
+				if g.local_view:
+					g.map.show_region(id)
+				else:
+					g.map.focus_region(id)
+		)
+		D.font_size(chooser, 15)
+		chooser.clip_text = true
 	var known: Dictionary = g.sim.site_view(g.selected)
 	var s: Dictionary = g.settlement()
 	if s.is_empty():
@@ -92,6 +91,8 @@ static func region(g, b):
 static func region_actions(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.actions(g, b)
+		return
+	if g.settlement().is_empty() and not g.coach.active() and g.sim.geo.has("grid_width"):
 		return
 	var known: Dictionary = g.sim.site_view(g.selected)
 	if g.settlement().is_empty():
@@ -483,21 +484,6 @@ static func _building_row(g, b, s: Dictionary, index: int):
 	)
 	D.font_size(clear, 13)
 	clear.custom_minimum_size.y = 28
-
-
-static func _site_filter(g, b) -> OptionButton:
-	var names: Array = []
-	for row: Array in Labels.SITE_FILTERS:
-		names.append(row[1])
-	return D.option(
-		b,
-		"SiteFilter",
-		names,
-		g.site_filter,
-		func(id):
-			g.site_filter = id
-			g.map.set_marker_filter(Labels.SITE_FILTERS[id][0])
-	)
 
 
 ## Reserves with their uncertainty, in tonnes: a range until the site is surveyed well enough.
