@@ -174,6 +174,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 	sim.state = candidate
 	sim.geo = bound
 	sim.blobs = new_blobs
+	sim.Logistics.restore_transport(sim)
 	# The effects cache belongs to the game it was built for (research.gd `bonus`).
 	sim.tech_effects_count = -1
 	sim.AnnualReport.update_open_targets(sim)

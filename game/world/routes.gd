@@ -5,7 +5,6 @@ extends RefCounted
 ## every variant and are cached per world.
 
 const HIGH_GROUND: float = 0.38
-const SEA_SPEED_KM_PER_DAY: float = 340.0
 ## The shuttle flies: a straight hop drawn with this many points, no terrain in the way.
 const AIR: String = "shuttle"
 const AIR_POINTS: int = 12
@@ -90,8 +89,8 @@ static func find(
 	var high: int = maxi(a, b)
 	# Cells, not site numbers: the validator renumbers sites after its first routes.
 	var cache_key: String = (
-		"%s|%d|%d|%s"
-		% [terrain.key, int(regions[low].grid_index), int(regions[high].grid_index), variant]
+		"%s|%d|%d|%s|%d"
+		% [terrain.key, int(regions[low].grid_index), int(regions[high].grid_index), variant, rules[variant].hash()]
 	)
 	if not _results.has(cache_key):
 		_results[cache_key] = _search(world, terrain, low, high, variant, rules)

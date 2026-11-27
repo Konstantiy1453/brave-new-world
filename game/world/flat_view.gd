@@ -31,15 +31,11 @@ const FLAT_WIDTH: float = 18.0
 const FLAT_HEIGHT: float = 9.0
 ## A ship's call at a working quay (1.10): in, at the berth, out and away, over these game days.
 const SHIP_DAYS: float = 3.0
-## Where in its call a ship is on the day of its town's latest sea cargo: alongside the quay.
-const SHIP_BERTH_PHASE: float = 0.45
-const SHIP_LIGHT: Color = Color("d6f1ff")
 ## The ship light against a cargo dot: its size and its glow. At the berth it lies this share of its
 ## line out from the quay, so it reads beside the quay's lamps instead of summing with them into
 ## one white spot (the 1.10.1 night captures).
 const SHIP_LIGHT_SIZE: float = 0.7
 const SHIP_LIGHT_GLOW: float = 0.55
-const SHIP_BERTH_OFFSET: float = 0.18
 ## The company's annual ship (1.11 D): it comes down over the capital in the days before it is due
 ## and stays on the ground while the year's report waits for a signature.
 const COMPANY_SHIP_DESCENT_DAYS: float = 4.0
@@ -58,10 +54,9 @@ const ANOMALY_COLORS: Dictionary = {
 	"cobalt": Color("6f86e8"),
 }
 
-## Cargo markers placed every frame along their route, between the daily updates.
-var globe_movers: Array = []
-var flat_movers: Array = []
-## The ship lights at working quays, placed every frame from the game clock.
+const SeaLane = preload("res://world/sea_lane.gd")
+var sea_lane := SeaLane.new()
+## Only the annual report ship has a moving marker on these two maps.
 var globe_ships: Array = []
 var flat_ships: Array = []
 
@@ -378,125 +373,102 @@ func _update_flat_transport() -> void:
 		for child in root.get_children():
 			root.remove_child(child)
 			child.queue_free()
-	flat_movers.clear()
 	for route: Dictionary in state.get("roads", []):
 		if not bool(route.get("retired", false)):
 			_draw_road_on_flat(route)
-	_place_movers(flat_movers, sky.day_fraction)
 	flat_ships = _ship_movers(true)
 	place_ships(flat_ships, sky.day_fraction)
 
 
-func _draw_road_on_flat(route: Dictionary) -> void:
+## Convert old cell paths and current coordinates into the same display geometry on both maps.
+func _route_coordinates(route: Dictionary) -> Array[Vector2]:
+	if str(route.get("variant", "")) == "sea":
+		var regions: Array = state.get("world", {}).get("regions", world.get("regions", []))
+		var a: int = int(route.get("a", -1))
+		var b: int = int(route.get("b", -1))
+		if a < 0 or b < 0 or a >= regions.size() or b >= regions.size():
+			return []
+		sea_lane.setup(geography_atlas)
+		return sea_lane.coordinates(
+			Vector2(regions[a].lat, regions[a].lon), Vector2(regions[b].lat, regions[b].lon)
+		)
+	var points: Array[Vector2] = []
+	for ll: Variant in route.get("coordinates", []):
+		points.append(Vector2(float(ll[0]), float(ll[1])))
+	if points.is_empty():
+		for cell: int in route.get("path", []):
+			points.append(Geo.cell_coordinate(cell))
+	return points
+
+
+func _route_color(route: Dictionary) -> Color:
 	var day: int = int(state.get("day", 0))
-	var route_color := Color("e7bb75")
-	if str(route.get("variant", "")) == "shuttle":
-		route_color = SHUTTLE_COLOR
+	if Geo.road_blocked(route, day):
+		return Color("b47561")
 	if Geo.road_building(route, day):
-		route_color = Color("8fa1a8")
-	elif Geo.road_blocked(route, day):
-		route_color = Color("d77963")
-	var coordinates: Array = route.get("coordinates", []).duplicate()
-	if coordinates.is_empty():
-		for index in route.get("path", []):
-			var ll: Vector2 = Geo.cell_coordinate(int(index))
-			coordinates.append([ll.x, ll.y])
-	var points: Array[Vector3] = []
+		return Color("86959c")
+	match str(route.get("variant", "")):
+		"sea":
+			return Color("96c7d8")
+		"shuttle":
+			return SHUTTLE_COLOR
+	return Color("aa8053")
+
+
+func _draw_road_on_flat(route: Dictionary) -> void:
 	var segment: Array[Vector3] = []
-	for ll in coordinates:
-		var point := _flat_point(float(ll[0]), float(ll[1])) + Vector3(0, 0, .02)
-		if not segment.is_empty() and absf(point.x - segment.back().x) > 9:
-			_line(flat_transport_root, segment, route_color, 1.1)
-			segment.clear()
+	var color: Color = _route_color(route)
+	var sea: bool = str(route.get("variant", "")) == "sea"
+	for ll: Vector2 in _route_coordinates(route):
+		var point := _flat_point(ll.x, ll.y) + Vector3(0, 0, 0.02)
+		if not segment.is_empty() and absf(point.x - segment.back().x) > FLAT_WRAP_JUMP:
+			var previous: Vector3 = segment.back()
+			var edge: float = FLAT_WIDTH * (0.5 if previous.x > 0.0 else -0.5)
+			var unwrapped := point + Vector3(signf(edge) * FLAT_WIDTH, 0, 0)
+			var span: float = unwrapped.x - previous.x
+			var fraction: float = 0.0 if is_zero_approx(span) else (edge - previous.x) / span
+			var cut := previous.lerp(unwrapped, fraction)
+			segment.append(cut)
+			_draw_route_segment(flat_transport_root, segment, color, sea, true)
+			segment = [Vector3(-edge, cut.y, cut.z)]
 		segment.append(point)
-		points.append(point)
-	_line(flat_transport_root, segment, route_color, 1.1)
-	var lifted: Array[Vector3] = []
+	_draw_route_segment(flat_transport_root, segment, color, sea, true)
+
+
+## Sea fragments use the same atlas as the planet surface, including the antimeridian.
+func _draw_route_segment(holder: Node3D, points: Array[Vector3], color: Color, sea: bool, flat_map: bool) -> void:
+	if points.size() < 2:
+		return
+	var key := "route_%s_%s_%s" % [color.to_html(), sea, flat_map]
+	if not mats.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = preload("res://world/transport_route.gdshader")
+		material.set_shader_parameter("tint", color)
+		material.set_shader_parameter("sea", sea)
+		material.set_shader_parameter("flat_map", flat_map)
+		material.set_shader_parameter("road_lamps", not sea and color == Color("aa8053"))
+		mats[key] = material
+	var material: ShaderMaterial = mats[key]
+	if sea:
+		material.set_shader_parameter("atlas", geography_atlas)
+	var mesh := ImmediateMesh.new()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP, material)
 	for point: Vector3 in points:
-		lifted.append(point + Vector3(0, 0, .03))
-	for shipment in state.get("shipments", []):
-		if points.is_empty() or int(shipment.get("road", 0)) != int(route.get("id", 0)):
-			continue
-		var marker := _sphere(
-			flat_mover_root if flat_mover_root != null else flat_transport_root,
-			lifted[0],
-			CARGO_DOT_FLAT,
-			_mat("flatshipment", Color("fff0bd"), 0, 1, CARGO_GLOW),
-			8,
-			4
-		)
-		flat_movers.append(_mover(marker, lifted, shipment, route, FLAT_WRAP_JUMP))
+		mesh.surface_add_vertex(point)
+	mesh.surface_end()
+	var line := MeshInstance3D.new()
+	line.mesh = mesh
+	line.name = "SeaRoute" if sea else "LandRoute"
+	line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	holder.add_child(line)
 
 
-## A cargo marker and the path it follows. Lengths skip wrap jumps, so a marker leaps the
-## antimeridian on the flat map instead of crossing the whole sheet.
-func _mover(
-	node: Node3D, points: Array[Vector3], shipment: Dictionary, route: Dictionary, jump: float
-) -> Dictionary:
-	var lengths := PackedFloat32Array([0.0])
-	for index: int in range(1, points.size()):
-		var step: float = points[index - 1].distance_to(points[index])
-		lengths.append(lengths[index - 1] + (0.0 if step > jump else step))
-	return {
-		"node": node,
-		"points": points,
-		"lengths": lengths,
-		"remaining": float(shipment.get("remaining", 1)),
-		"total": maxf(float(shipment.get("total_days", 1)), 1.0),
-		"reverse": int(shipment.get("from", -1)) == int(route.get("b", -2)),
-	}
-
-
-## A light for each ship calling at a working quay, on the line the district's ship sails
-## (`ship_line`): on the flat map or on the globe.
 func _ship_movers(flat: bool) -> Array:
-	var found: Array = []
 	var holder: Node3D = flat_mover_root if flat else mover_root
-	if holder == null or not is_instance_valid(holder):
-		return found
-	var economy: Dictionary = Rules.read("economy")
-	var buildings: Dictionary = economy.buildings
-	var call_days: int = int(economy.get("bay", {}).get("ship_call_days", 30))
-	for s: Dictionary in state.get("settlements", []):
-		var region: int = int(s.get("region", -1))
-		if region < 0 or region >= world.get("regions", []).size():
-			continue
-		if not bool(world.regions[region].get("coast", false)):
-			continue
-		if not LightField.quay_working(state, s, buildings):
-			continue
-		# A ship calls only with cargo: a harbour that has moved none yet has an empty berth.
-		if not Consignments.ship_calling(state, s, call_days):
-			continue
-		_fit_field()
-		var line: Array = ship_line(region)
-		if line.size() < 2:
-			continue
-		var ends: Array[Vector3] = []
-		for ll: Vector2 in line:
-			ends.append(
-				(
-					_flat_point(ll.x, ll.y) + Vector3(0, 0, .05)
-					if flat
-					else Geo.unit_point(ll.x, ll.y) * 3.05
-				)
-			)
-		var light := _sphere(
-			holder,
-			ends[0],
-			(CARGO_DOT_FLAT if flat else CARGO_DOT_GLOBE) * SHIP_LIGHT_SIZE,
-			_mat("ship_light", SHIP_LIGHT, 0, 1, CARGO_GLOW * SHIP_LIGHT_GLOW),
-			8,
-			4
-		)
-		var cargo_day: float = float(s.get("sea_cargo", {}).get("day", float(region) * 0.37))
-		var phase: float = SHIP_BERTH_PHASE * SHIP_DAYS - cargo_day
-		var berth: Vector3 = ends[1].lerp(ends[0], SHIP_BERTH_OFFSET)
-		found.append({"node": light, "from": ends[0], "to": berth, "phase": phase})
+	if not is_instance_valid(holder):
+		return []
 	var company: Dictionary = _company_ship(flat, holder)
-	if not company.is_empty():
-		found.append(company)
-	return found
+	return [] if company.is_empty() else [company]
 
 
 ## The company ship's light over the capital, while it is coming down or waiting on the ground;
@@ -536,57 +508,15 @@ func _company_ship(flat: bool, holder: Node3D) -> Dictionary:
 	}
 
 
-## Each ship light where its call has got to: in from the offing over the first third of its
-## days, at the berth, out again, then away beyond the horizon. From the game clock alone, so a
-## capture or a replay shows the same.
+## The annual ship descends only around its report date.
 func place_ships(ships: Array, fraction: float) -> void:
 	var day: float = float(state.get("day", 0)) + fraction
 	for entry: Dictionary in ships:
 		if not is_instance_valid(entry.node):
 			continue
-		var node: Node3D = entry.node
-		if entry.has("descent"):
-			var span: Array = entry.descent
-			var length: float = maxf(0.01, float(span[1]) - float(span[0]))
-			var down: float = clampf((day - float(span[0])) / length, 0.0, 1.0)
-			node.visible = true
-			node.position = entry.from.lerp(entry.to, smoothstep(0.0, 1.0, down))
-			continue
-		var phase: float = fposmod(day + float(entry.phase), SHIP_DAYS) / SHIP_DAYS
-		var from: Vector3 = entry.from
-		var to: Vector3 = entry.to
-		node.visible = phase < 0.92
-		if phase < 0.34:
-			node.position = from.lerp(to, smoothstep(0.0, 1.0, phase / 0.34))
-		elif phase < 0.58:
-			node.position = to
-		else:
-			node.position = to.lerp(from, smoothstep(0.0, 1.0, (phase - 0.58) / 0.34))
-
-
-## Glides every cargo marker to where it is part-way through the day.
-func _place_movers(movers: Array, fraction: float) -> void:
-	for mover: Dictionary in movers:
-		if not is_instance_valid(mover.node):
-			continue
-		var node: Node3D = mover.node
-		var done: float = clampf(
-			1.0 - (float(mover.remaining) - fraction) / float(mover.total), 0.0, 1.0
-		)
-		if bool(mover.reverse):
-			done = 1.0 - done
-		var points: Array[Vector3] = mover.points
-		var lengths: PackedFloat32Array = mover.lengths
-		var target: float = done * lengths[lengths.size() - 1]
-		var index: int = 0
-		while index < lengths.size() - 2 and lengths[index + 1] < target:
-			index += 1
-		var span: float = lengths[index + 1] - lengths[index] if lengths.size() > 1 else 0.0
-		if span <= 0.0:
-			node.position = points[mini(index + 1, points.size() - 1)]
-			continue
-		var t: float = (target - lengths[index]) / span
-		node.position = points[index].lerp(points[index + 1], t)
+		var span: Array = entry.descent
+		var down: float = inverse_lerp(float(span[0]), float(span[1]), day)
+		entry.node.position = entry.from.lerp(entry.to, smoothstep(0.0, 1.0, down))
 
 
 func _build_global_water(parent: Node3D, flat: bool) -> void:

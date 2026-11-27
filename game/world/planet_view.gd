@@ -218,6 +218,7 @@ func _poll_atlas_job() -> void:
 			atlas_refining = false
 			if pending_atlas.get("key", "") == atlas_job.key:
 				pending_atlas.clear()
+			_update_transport()
 			atlas_refined.emit()
 		print(
 			"MAP_ATLAS_REFINED ms=", last_refinement_ms, " key=", str(atlas_job.key).sha256_text()
@@ -516,47 +517,29 @@ func _update_transport() -> void:
 		for child in root.get_children():
 			root.remove_child(child)
 			child.queue_free()
-	globe_movers.clear()
 	for r: Dictionary in state.get("roads", []):
 		if not bool(r.get("retired", false)):
 			_draw_road_on_globe(r)
-	_place_movers(globe_movers, sky.day_fraction)
 	globe_ships = _ship_movers(false)
 	place_ships(globe_ships, sky.day_fraction)
 
 
-func _road_color(r: Dictionary) -> Color:
-	var day: int = int(state.get("day", 0))
-	if Geo.road_building(r, day):
-		return Color("8fa1a8")
-	if Geo.road_blocked(r, day):
-		return Color("d77963")
-	return SHUTTLE_COLOR if str(r.get("variant", "")) == "shuttle" else Color("e9bf71")
-
-
-func _draw_road_on_globe(r: Dictionary) -> void:
-	var coordinates: Array = r.get("coordinates", []).duplicate()
-	if coordinates.is_empty():
-		for index in r.get("path", []):
-			var ll: Vector2 = Geo.cell_coordinate(int(index))
-			coordinates.append([ll.x, ll.y])
+func _draw_road_on_globe(route: Dictionary) -> void:
+	var coordinates: Array[Vector2] = _route_coordinates(route)
+	var sea: bool = str(route.get("variant", "")) == "sea"
+	var lift: float = SHUTTLE_ARC if str(route.get("variant", "")) == "shuttle" else 0.0
 	var points: Array[Vector3] = []
-	# A shuttle line flies: it arcs up from both pads instead of lying on the ground.
-	var lift: float = SHUTTLE_ARC if str(r.get("variant", "")) == "shuttle" else 0.0
-	for index: int in range(coordinates.size()):
-		var ll: Array = coordinates[index]
-		var along: float = float(index) / maxf(1.0, float(coordinates.size() - 1))
-		points.append(Geo.unit_point(float(ll[0]), float(ll[1])) * (3.048 + lift * sin(PI * along)))
-	_line(transport_root, points, _road_color(r), 1.5)
-	for shipment in state.get("shipments", []):
-		if points.is_empty() or int(shipment.get("road", 0)) != int(r.get("id", 0)):
-			continue
-		var marker := _sphere(
-			mover_root if mover_root != null else transport_root,
-			points[0],
-			CARGO_DOT_GLOBE,
-			_mat("shipment", Color("ffedc2"), 0, 1, CARGO_GLOW),
-			8,
-			4
-		)
-		globe_movers.append(_mover(marker, points, shipment, r, INF))
+	for index: int in range(coordinates.size() - 1):
+		var a: Vector2 = coordinates[index]
+		var b: Vector2 = coordinates[index + 1]
+		b.y = a.y + wrapf(b.y - a.y, -180.0, 180.0)
+		var steps: int = maxi(1, ceili(a.distance_to(b)))
+		for step: int in range(steps):
+			var t := float(step) / steps
+			var point: Vector2 = a.lerp(b, t)
+			var along: float = (float(index) + t) / (coordinates.size() - 1)
+			points.append(Geo.unit_point(point.x, point.y) * (3.004 + lift * sin(PI * along)))
+	if not coordinates.is_empty():
+		var last: Vector2 = coordinates.back()
+		points.append(Geo.unit_point(last.x, last.y) * 3.004)
+	_draw_route_segment(transport_root, points, _route_color(route), sea, false)

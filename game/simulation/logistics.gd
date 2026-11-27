@@ -123,7 +123,7 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 	elif sim.settlement(a).is_empty() or sim.settlement(b).is_empty():
 		refusal = "两端都要是已建立的据点"
 	elif _link_blocks(sim, a, b, variant):
-		refusal = "两地已有运输连接"
+		refusal = "两地已有同类运输线路"
 	if refusal == "" and float(sim.state.cash) < float(found.cost):
 		refusal = "路线投资需要 %.0f 资金" % float(found.cost)
 	if refusal == "" and _terminal_store(sim, a, b).is_empty():
@@ -142,12 +142,35 @@ static func quote(sim: RefCounted, a: int, b: int, variant: String) -> Dictionar
 	return found
 
 
-## A road or sea route may be built where only a shuttle line flies; a shuttle needs the pair free.
+## Layouts of one road compete for the same corridor; land, sea and air have separate terminals.
+static func _mode(variant: String) -> String:
+	return variant if variant in [Keys.ROUTE_SEA, Keys.ROUTE_SHUTTLE] else "land"
+
+
 static func _link_blocks(sim: RefCounted, a: int, b: int, variant: String) -> bool:
-	var existing: Dictionary = road_between(sim, a, b)
-	if existing.is_empty():
-		return false
-	return variant == Keys.ROUTE_SHUTTLE or not is_shuttle(existing)
+	for road: Dictionary in sim.state.roads:
+		if (int(road.a) == a and int(road.b) == b) or (int(road.a) == b and int(road.b) == a):
+			if _mode(str(road.get("variant", "valley"))) == _mode(variant):
+				return true
+	return false
+
+
+## Re-rate existing sea terminals at their installed level. Consignments already at sea
+## keep the day of arrival written on their manifest.
+static func restore_transport(sim: RefCounted) -> void:
+	for road: Dictionary in sim.state.roads:
+		if is_shuttle(road):
+			road.erase("retired")
+		if not is_sea(road) or int(road.get("sea_profile", 0)) >= 1:
+			continue
+		var spec: Dictionary = sim.config.roads[Keys.ROUTE_SEA]
+		var steps: Array = level_steps(sim, road)
+		road.capacity = int(spec.capacity)
+		road.days = maxi(int(spec.min_days), ceili(float(road.distance) / float(spec.speed_km_per_day)))
+		for i in range(1, mini(link_level(road), steps.size())):
+			road.capacity = roundi(float(road.capacity) * float(steps[i].capacity))
+			road.days = maxi(1, int(road.days) + int(steps[i].days))
+		road.sea_profile = 1
 
 
 ## Whichever end has the materials builds the terminals: a new outpost may have none to spare.
@@ -182,6 +205,8 @@ static func connect_road(
 	r.erase("refusal")
 	r.erase("closure_chance")
 	r.id = sim.state.roads.size()
+	if is_sea(r):
+		r.sea_profile = 1
 	# Nothing moves on a road until it is finished.
 	r.ready_day = int(sim.state.day) + int(r.build_days)
 	r.blocked_until = int(r.ready_day)
@@ -357,8 +382,23 @@ static func incoming(sim: RefCounted, region: int, resource: String, within: int
 
 
 static func dispatch(sim: RefCounted) -> void:
-	for r: Dictionary in sim.state.roads:
-		_dispatch_road(sim, r)
+	var spare: Dictionary = {}
+	var capacity: Dictionary = {}
+	for road: Dictionary in sim.state.roads:
+		road.sent_today = 0.0
+		if bool(road.get("retired", false)) or WorldGen.road_blocked(road, int(sim.state.day)):
+			continue
+		var pair := Vector2i(mini(road.a, road.b), maxi(road.a, road.b))
+		var cap := _road_capacity(sim, road)
+		capacity[road.id] = cap
+		spare[pair] = float(spare.get(pair, 0.0)) + cap
+	for road: Dictionary in sim.state.roads:
+		if not capacity.has(road.id):
+			continue
+		var pair := Vector2i(mini(road.a, road.b), maxi(road.a, road.b))
+		var cap: float = capacity[road.id]
+		spare[pair] = maxf(0.0, float(spare[pair]) - cap)
+		_dispatch_road(sim, road, cap, float(spare[pair]))
 
 
 static func _road_capacity(sim: RefCounted, r: Dictionary) -> float:
@@ -401,11 +441,9 @@ static func _factory_need(sim: RefCounted, s: Dictionary, resource: String) -> f
 	return daily * FACTORY_STOCK_DAYS
 
 
-static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
-	r.sent_today = 0.0
-	if bool(r.get("retired", false)) or WorldGen.road_blocked(r, int(sim.state.day)):
-		return
-	var cap: float = _road_capacity(sim, r)
+## Split even a small consignment between the available modes, in proportion to spare
+## capacity. Each later mode sees what the earlier ones actually loaded and paid for.
+static func _dispatch_road(sim: RefCounted, r: Dictionary, cap: float, other_capacity: float) -> void:
 	var spec: Dictionary = sim.config.roads[str(r.get("variant", "valley"))]
 	var fee_factor: float = float(spec.get("fee_factor", 1.0))
 	for resource in DISPATCH_ORDER:
@@ -414,8 +452,8 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			var dst: Dictionary = sim.settlement(pair[1])
 			if src.arrival > 0 or dst.arrival > 0:
 				continue
-			# Never send back along a road what is on its way here along that same road.
-			if _arriving_by(sim, int(r.id), int(src.region), resource):
+			# Never send the same good back towards a neighbour already sending it here.
+			if _arriving_from(sim, int(dst.region), int(src.region), resource):
 				continue
 			var reserve: float = float(sim.config.economy.export_reserve.get(resource, 0.0))
 			var target: float = reserve
@@ -452,7 +490,8 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			var deficit: float = maxf(
 				0.0, target - float(dst.stock[resource]) - incoming(sim, int(dst.region), resource)
 			)
-			var amount: float = minf(cap, minf(surplus, deficit))
+			var share: float = cap / maxf(0.000001, cap + other_capacity)
+			var amount: float = minf(cap, minf(surplus, deficit) * share)
 			var trip_days: int = road_days(sim, r)
 			var fee: float = (
 				float(sim.config.economy.transport_unit_cost)
@@ -460,7 +499,7 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 				* fee_factor
 				* maxf(1.0, float(trip_days) / float(sim.config.economy.transport_reference_days))
 			)
-			amount = minf(amount, float(sim.state.cash) / fee)
+			amount = minf(amount, float(sim.state.cash) * share / fee)
 			if amount <= 0.001:
 				continue
 			src.stock[resource] -= amount
@@ -487,10 +526,10 @@ static func _dispatch_road(sim: RefCounted, r: Dictionary) -> void:
 			r.sent_today += amount
 
 
-static func _arriving_by(sim: RefCounted, road: int, region: int, resource: String) -> bool:
+static func _arriving_from(sim: RefCounted, source: int, region: int, resource: String) -> bool:
 	for cargo: Dictionary in sim.state.shipments:
 		if (
-			int(cargo.get("road", -1)) == road
+			int(cargo.from) == source
 			and int(cargo.to) == region
 			and str(cargo.resource) == resource
 		):
@@ -503,6 +542,7 @@ static func reserved(sim: RefCounted, s: Dictionary) -> Dictionary:
 	for key in Keys.RESOURCES:
 		result[key] = EventsV2.reserved(sim, int(s.region), key)
 	var region: int = int(s.region)
+	var allocated: Dictionary = {}
 	for r: Dictionary in sim.state.roads:
 		if region != int(r.a) and region != int(r.b):
 			continue
@@ -527,9 +567,12 @@ static func reserved(sim: RefCounted, s: Dictionary) -> Dictionary:
 				target = 12.0
 			elif dst.port_capacity > 0:
 				target = 80.0
-			result[key] += minf(
-				cap, maxf(0, target - float(dst.stock[key]) - incoming(sim, dest, key))
-			)
+			if not allocated.has(dest):
+				allocated[dest] = {}
+			var previous: float = float(allocated[dest].get(key, 0.0))
+			var reserve: float = minf(cap, maxf(0.0, target - float(dst.stock[key]) - incoming(sim, dest, key) - previous))
+			allocated[dest][key] = previous + reserve
+			result[key] += reserve
 	return result
 
 
@@ -572,10 +615,6 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 	var day: int = int(sim.state.day)
 	if bool(r.get("retired", false)):
 		return
-	if is_shuttle(r) and _ground_link_open(sim, r):
-		r.retired = true
-		sim._log("%s ↔ %s 已有道路或航线，穿梭机航线停飞，不再收养护费。" % [_place_name(sim, r.a), _place_name(sim, r.b)])
-		return
 	if WorldGen.road_building(r, day):
 		# A road a crew builds moves on only on a day a crew works at it (crews.gd).
 		if bool(r.get("crew_built", false)) and not Crews.road_worked(sim, r):
@@ -609,20 +648,6 @@ static func _road_day(sim: RefCounted, r: Dictionary) -> void:
 		EventsV2.trigger(sim, "rockfall", int(r.a))
 
 
-## A finished road or sea route between the two ends of this shuttle line.
-static func _ground_link_open(sim: RefCounted, shuttle: Dictionary) -> bool:
-	for r: Dictionary in sim.state.roads:
-		if is_shuttle(r) or WorldGen.road_building(r, int(sim.state.day)):
-			continue
-		var same: bool = (
-			int(r.a) == int(shuttle.a) and int(r.b) == int(shuttle.b)
-			or int(r.a) == int(shuttle.b) and int(r.b) == int(shuttle.a)
-		)
-		if same:
-			return true
-	return false
-
-
 static func _place_name(sim: RefCounted, region: Variant) -> String:
 	return str(sim.state.world.regions[int(region)].name)
 
@@ -640,11 +665,16 @@ static func _construction_stock(sim: RefCounted, resource: String) -> float:
 ## A port town imports for them and a town on the way passes it along, so an outpost at the end
 ## of a chain can expand and eat without having to wait for a local surplus.
 static func _road_demand(
-	sim: RefCounted, s: Dictionary, resource: String, arrived_by: int = -1, hops: int = 0
+	sim: RefCounted, s: Dictionary, resource: String, arrived_by: int = -1, hops: int = 0,
+	visited: Dictionary = {}
 ) -> float:
 	if hops >= MAX_SUPPLY_HOPS:
 		return 0.0
 	var region: int = int(s.region)
+	visited[region] = true
+	if hops == 0 and arrived_by >= 0:
+		var inbound: Dictionary = sim.state.roads[arrived_by]
+		visited[int(inbound.b) if int(inbound.a) == region else int(inbound.a)] = true
 	var total: float = 0.0
 	for r: Dictionary in sim.state.roads:
 		if int(r.id) == arrived_by or (region != int(r.a) and region != int(r.b)):
@@ -652,9 +682,12 @@ static func _road_demand(
 		if WorldGen.road_blocked(r, int(sim.state.day)):
 			continue
 		var other_id: int = int(r.b) if region == int(r.a) else int(r.a)
+		if visited.has(other_id):
+			continue
 		var other: Dictionary = sim.settlement(other_id)
 		if other.is_empty() or int(other.arrival) > 0 or float(other.port_capacity) > 0.0:
 			continue
+		visited[other_id] = true
 		var wanted: float = 0.0
 		if resource == "food":
 			wanted = (
@@ -664,7 +697,7 @@ static func _road_demand(
 			)
 		else:
 			wanted = _construction_stock(sim, resource)
-		wanted += _road_demand(sim, other, resource, int(r.id), hops + 1)
+		wanted += _road_demand(sim, other, resource, int(r.id), hops + 1, visited)
 		total += maxf(
 			0.0, wanted - float(other.stock[resource]) - incoming(sim, other_id, resource)
 		)

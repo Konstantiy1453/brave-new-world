@@ -201,8 +201,6 @@ func setup(data: Dictionary) -> void:
 	sky.reset(int(world.seed), planet_yaw)
 	focus_site = -1
 	lights_signature = ""
-	globe_movers.clear()
-	flat_movers.clear()
 	globe_ships.clear()
 	flat_ships.clear()
 	_build_planet()
@@ -290,28 +288,14 @@ func _forms_signature() -> String:
 func _transport_signature() -> String:
 	var roads: Array = []
 	for road: Dictionary in state.get("roads", []):
-		roads.append([int(road.get("id", 0)), Geo.road_blocked(road, int(state.get("day", 0)))])
-	var moving: Array = []
-	for cargo: Dictionary in state.get("shipments", []):
-		moving.append([int(cargo.from), int(cargo.remaining), int(cargo.total_days)])
-	# A quay that starts work, and then its first cargo, bring its ship light.
-	var quays: Array = []
-	var economy: Dictionary = Rules.read("economy")
-	var calls: int = int(economy.get("bay", {}).get("ship_call_days", 30))
-	for place: Dictionary in state.get("settlements", []):
-		quays.append(LightField.quay_working(state, place, economy.buildings))
-		quays.append(Consignments.ship_calling(state, place, calls))
+		roads.append([road.get("id", 0), road.get("a", -1), road.get("b", -1),
+			road.get("variant", ""), road.get("retired", false),
+			Geo.road_building(road, int(state.get("day", 0))), Geo.road_blocked(road, int(state.get("day", 0)))])
 	# The company's annual ship: coming down, waiting for the report, gone (1.11 D).
 	var annual: Dictionary = state.get("annual", {})
 	var due: int = int(annual.get("next_ship", -1)) - int(state.get("day", 0))
-	quays.append(
-		[
-			not annual.get("pending", {}).is_empty(),
-			due >= 0 and due <= int(COMPANY_SHIP_DESCENT_DAYS),
-			int(annual.get("next_ship", -1))
-		]
-	)
-	return "%s|%s|%s" % [str(roads), str(moving), str(quays)]
+	return str([roads, not annual.get("pending", {}).is_empty(),
+		due >= 0 and due <= int(COMPANY_SHIP_DESCENT_DAYS), int(annual.get("next_ship", -1))])
 
 
 func show_planet() -> void:
@@ -680,11 +664,9 @@ func _process(delta: float) -> void:
 	if mode == "region" and surface != null and surface.visible:
 		_animate_region(delta)
 	elif mode == "planet":
-		_place_movers(globe_movers, sky.day_fraction)
 		place_ships(globe_ships, sky.day_fraction)
 		_place_weather_markers()
 	elif mode == "flat":
-		_place_movers(flat_movers, sky.day_fraction)
 		place_ships(flat_ships, sky.day_fraction)
 	if marker_root != null and is_instance_valid(marker_root) and planet.visible:
 		var toward: Vector3 = planet.to_local(camera.global_position).normalized()
@@ -740,7 +722,7 @@ func set_visual_options(spin: bool, day_night: bool, weather: bool) -> void:
 
 
 ## The complete transport diagram on the globe and the flat map. Off, the night shows only what
-## lights a route: where it leaves town, junctions and the cargo moving on it.
+## lights a route: the town entrances, junctions and fixed roadside lamps.
 func set_route_overlay(on: bool) -> void:
 	routes_shown = on
 	flat_ghosts_dirty = true

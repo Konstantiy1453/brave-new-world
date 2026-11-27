@@ -51,7 +51,7 @@ func run():
 		not required_refinement or responsive_frames > 10,
 		"new-seed detail refinement leaves frame loop responsive"
 	)
-	var route = gen.route(world, 0, 1)
+	var route = {"variant": "road", "coordinates": [[world.regions[0].lat, world.regions[0].lon], [world.regions[1].lat, world.regions[1].lon]]}
 	map.sync_state(
 		{
 			"settlements":
@@ -59,7 +59,7 @@ func run():
 				{"region": 0, "base_housing": 80, "buildings": []},
 				{"region": 1, "base_housing": 40, "buildings": []}
 			],
-			"route": route,
+			"roads": [route],
 			"shipments": [{"from": 0, "to": 1, "remaining": 3, "total_days": 8}],
 			"enterprise": {}
 		}
@@ -79,8 +79,8 @@ func run():
 	check(picked == 1 and selected == [1], "flat projected region click")
 	check(map.flat_marker_root.get_child_count() == 2, "both towns are marked and candidate sites are hidden")
 	check(
-		map.flat_transport_root.get_child_count() + map.flat_mover_root.get_child_count() >= 2,
-		"route and real shipment projected"
+		map.flat_transport_root.get_child_count() >= 1 and map.flat_mover_root.get_child_count() == 0,
+		"static freight route stays visible without a moving shipment light"
 	)
 	await shot("world_flat_v15_fixture")
 	map.zoom(-3)

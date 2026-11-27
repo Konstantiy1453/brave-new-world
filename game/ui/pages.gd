@@ -1107,7 +1107,7 @@ static func transport(g, b):
 		b,
 		(
 			"星球很大：路要一公里一公里地修，常常要几个月。货物在装车时离开起点仓库，在运输天数结束后才进入终点；"
-			+ "运力有限，陆路不会穿海。两地都靠海时，可以在两端各建一座小型货运码头开辟航线。"
+			+ "两地可同时开通公路与海运，按各线剩余运力分货。海运载量更大、航行更慢；两端的沿海据点可建小型货运码头开航。"
 			+ "建成的线路还能升级：公路先铺装、再拓宽为四车道干线；码头可扩建为中型、大型。"
 		),
 		18,
@@ -1130,13 +1130,19 @@ static func transport(g, b):
 	D.label(b, "累计运输 " + Labels.t(float(state.get("transported_total", 0))), 18, D.TEAL)
 	D.label(b, "在途批次  /  " + str(state.shipments.size()), 20)
 	for sh in state.shipments:
+		var route_name: String = "远征补给"
+		var route_id: int = int(sh.get("road", -1))
+		if route_id >= 0 and route_id < state.roads.size():
+			var variant: String = str(state.roads[route_id].get("variant", "valley"))
+			route_name = str(g.sim.config.roads[variant].name)
 		D.label(
 			b,
 			(
-				"%s → %s   %s %s  /  还有 %d 天抵达"
+				"%s → %s · %s · %s %s  /  还有 %d 天抵达"
 				% [
 					state.world.regions[int(sh.from)].name,
 					state.world.regions[int(sh.to)].name,
+					route_name,
 					RES.get(sh.resource, sh.resource),
 					Labels.t(float(sh.amount)),
 					sh.remaining

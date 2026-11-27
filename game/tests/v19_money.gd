@@ -894,19 +894,12 @@ func _shuttle() -> void:
 	var ground: Dictionary = sim.state.roads.back()
 	for _day: int in range(int(ground.build_days) + 2):
 		sim.tick()
-	check(bool(line.get("retired", false)), "when the road opens the shuttle stands down")
-	check(
-		int(sim.Logistics.road_between(sim, home, near).get("id", -1)) == int(ground.id),
-		"and the road is the link between the two"
-	)
-	var upkeep_before: float = _ledger_today(sim, "road.upkeep")
+	check(not bool(line.get("retired", false)), "the shuttle and road can serve the same towns")
+	check(not sim.WorldGen.road_building(ground, int(sim.state.day)), "the road opens beside it")
 	sim.tick()
 	check(
-		_ledger_today(sim, "road.upkeep") <= float(ground.upkeep) + 0.001,
-		(
-			"the stood-down line costs no upkeep: %.1f then %.1f"
-			% [upkeep_before, _ledger_today(sim, "road.upkeep")]
-		)
+		is_equal_approx(_ledger_today(sim, "road.upkeep"), float(ground.upkeep) + float(line.upkeep)),
+		"both operating modes pay their daily upkeep"
 	)
 	var issues: Array = sim.audit()
 	check(issues.is_empty(), "the ledger balances: " + str(issues).left(300))

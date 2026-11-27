@@ -313,7 +313,7 @@ func _anchored(sim: RefCounted, camps: Dictionary) -> void:
 	)
 
 
-## The route diagram is an overlay: off, the lines go and the moving cargo stays.
+## The route diagram is an overlay; freight never produces its own moving light.
 func _overlay(map: Node3D) -> void:
 	map.set_route_overlay(false)
 	check(
@@ -321,8 +321,8 @@ func _overlay(map: Node3D) -> void:
 		"the transport diagram can be switched off"
 	)
 	check(
-		map.mover_root.visible and map.flat_mover_root.visible,
-		"while the cargo on the routes still moves"
+		map.mover_root.get_child_count() == 0 and map.flat_mover_root.get_child_count() == 0,
+		"with no moving freight lights on either map"
 	)
 	map.set_route_overlay(true)
 	check(map.transport_root.visible, "and back on")
@@ -371,52 +371,6 @@ func _harbour_views(sim: RefCounted, map: Node3D, coast: int) -> void:
 	sim._consume(town, "food", float(town.stock.food))
 	sim.tick()
 	map.sync_state(sim.state)
-	check(
-		map.globe_ships.size() == 1 and map.flat_ships.size() == 1,
-		(
-			"a ship light on the globe and on the flat map, with the cargo: %s"
-			% str(town.get("sea_cargo", {}))
-		)
-	)
-	if map.globe_ships.is_empty():
-		return
-	var line: Array = map.ship_line(coast)
-	var quay: Vector3 = Geo.unit_point(line[1].x, line[1].y) * 3.05
-	var offing: Vector3 = Geo.unit_point(line[0].x, line[0].y) * 3.05
-	var berth: Vector3 = quay.lerp(offing, map.SHIP_BERTH_OFFSET)
-	var ship: Dictionary = map.globe_ships[0]
-	check(
-		Vector3(ship.to).distance_to(berth) < 0.0001,
-		"berthing on the district's ship line, moored just out from the quay's lamps"
-	)
-	check(
-		float(map.SHIP_LIGHT_SIZE) < 1.0 and float(map.SHIP_LIGHT_GLOW) < 1.0,
-		"smaller and dimmer than a cargo dot, so it does not sum with the lamps into a white spot"
-	)
-	var worst: float = 0.0
-	var at_berth: bool = false
-	var away: bool = false
-	for step: int in range(int(map.SHIP_DAYS) * 24):
-		map.state.day = int(sim.state.day) + int(step / 24.0)
-		map.place_ships(map.globe_ships, float(step % 24) / 24.0)
-		var node: Node3D = ship.node
-		if not node.visible:
-			away = true
-			continue
-		var from: Vector3 = ship.from
-		var to: Vector3 = ship.to
-		var closest: Vector3 = Geometry3D.get_closest_point_to_segment(node.position, from, to)
-		worst = maxf(worst, closest.distance_to(node.position))
-		at_berth = at_berth or node.position.distance_to(to) < 0.0001
-	map.state.day = int(sim.state.day)
-	check(worst < 0.0001, "on its line in every frame (%.6f off at most)" % worst)
-	check(at_berth and away, "it berths, and it sails away beyond the horizon")
-	var reading: Dictionary = map.signal_reading(coast)
-	check(not reading.is_empty(), "the town has an offshore signal still to read")
-	var at: Vector2 = map.signal_point(coast)
-	var mark: Vector3 = Geo.unit_point(at.x, at.y) * 3.05
-	var drawn: bool = false
-	for child: Node in map.marker_root.get_children():
-		if child.has_meta("point") and Vector3(child.get_meta("point")).distance_to(mark) < 0.0001:
-			drawn = true
-	check(drawn, "and it is drawn on the globe where the district floats its buoy")
+	check(not town.get("sea_cargo", {}).is_empty(), "the harbour still carries freight")
+	check(map.globe_ships.is_empty() and map.flat_ships.is_empty(),
+		"working coastal freight has no moving light on the globe or the flat map")

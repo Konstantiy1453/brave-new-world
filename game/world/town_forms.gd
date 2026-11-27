@@ -224,18 +224,23 @@ static func far_image(
 	var glow: float = float(forms.get("road_light", 0.16))
 	var day: int = int(state.get("day", 0))
 	for road: Dictionary in state.get("roads", []):
-		if str(road.get("variant", "")) in ["sea", "shuttle"]:
+		if bool(road.get("retired", false)) or str(road.get("variant", "")) in ["sea", "shuttle"]:
 			continue
 		if int(road.get("ready_day", 0)) > day or int(road.get("blocked_until", -1)) >= day:
 			continue
-		for at: Vector2 in _along(road.get("coordinates", []), step):
+		var road_points: Array = road.get("coordinates", [])
+		var samples: Array = _along(road_points, step)
+		for index: int in range(samples.size()):
+			var at: Vector2 = samples[index]
 			var inside: bool = false
 			for region: int in [int(road.a), int(road.b)]:
 				if sizes.has(region):
 					var centre: Vector3 = sizes[region]
 					inside = inside or _arc(at, Vector2(centre.x, centre.y)) < centre.z * share
 			if not inside:
-				_add(image, at.x, at.y, glow, 0.0)
+				# A fine continuous road with fixed occasional brighter lamps.
+				var lamp: float = 2.4 if index % 27 == int(road.get("id", 0)) % 27 else 0.80
+				_add(image, at.x, at.y, glow * lamp, 0.0)
 	image.generate_mipmaps()
 	return image
 

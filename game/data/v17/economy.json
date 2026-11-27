@@ -1760,15 +1760,15 @@
       "closure_cost": 300.0
     },
     "sea": {
-      "capacity": 36,
+      "capacity": 72,
       "upkeep": 6.0,
       "closure_chance_per_day": 0.0,
       "closure_days": [
         0,
         0
       ],
-      "speed_km_per_day": 500.0,
-      "min_days": 3,
+      "speed_km_per_day": 220.0,
+      "min_days": 5,
       "base_cost": 6000.0,
       "cost_per_km": 0.5,
       "build_days": 60,

@@ -35,6 +35,7 @@
     {"name": "first_year_distrust", "script": "res://tests/first_year_distrust.gd", "success": "FIRST_YEAR_DISTRUST PASS"},
     {"name": "v112_event_feedback", "script": "res://tests/v112_event_feedback.gd", "success": "V112_EVENT_FEEDBACK checks=\\d+ failures=0"},
     {"name": "annual_commuting", "script": "res://tests/annual_commuting.gd", "success": "ANNUAL_COMMUTING PASS"},
+    {"name": "v112_multimodal", "script": "res://tests/v112_multimodal.gd", "success": "V112_MULTIMODAL checks=\\d+ failures=0"},
     {"name": "orbital_site_visibility", "script": "res://tests/orbital_site_visibility.gd", "success": "ORBITAL_SITE_VISIBILITY PASS"},
     {"name": "v111_annual", "script": "res://tests/v111_annual.gd", "success": "V111_ANNUAL_RESULT checks=\\d+ failures=0"},
     {"name": "v111_endings", "script": "res://tests/v111_endings.gd", "success": "V111_ENDINGS_RESULT checks=\\d+ failures=0"},
