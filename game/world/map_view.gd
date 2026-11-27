@@ -200,7 +200,11 @@ func setup(data: Dictionary) -> void:
 		planet_pitch = deg_to_rad(float(world.regions[0].lat))
 	sky.reset(int(world.seed), planet_yaw)
 	focus_site = -1
-	lights_signature = ""
+	timelapse = {}
+	settlement_atlas = SettlementLightAtlas.new()
+	night_lights = null
+	far_lights = null
+	road_light_layout = []
 	globe_ships.clear()
 	flat_ships.clear()
 	_build_planet()
@@ -228,16 +232,8 @@ func sync_state(data: Dictionary) -> void:
 	if transport_now != transport_signature:
 		transport_signature = transport_now
 		_update_transport()
-	# New night lights repaint the town forms too (planet_view `_update_night_lights`).
-	var lights_now: String = _lights_signature()
-	var forms_now: String = _forms_signature()
-	if lights_now != lights_signature:
-		lights_signature = lights_now
-		forms_signature = forms_now
+	if timelapse.is_empty():
 		_update_night_lights()
-	elif forms_now != forms_signature and timelapse.is_empty():
-		forms_signature = forms_now
-		_update_town_forms(_surveyed_lights())
 	_follow_weather()
 	if mode == "region" and not region_busy:
 		var new_signature := _building_signature()
@@ -272,17 +268,6 @@ func _marker_signature() -> String:
 		"%d|%s|%s|%s|%s"
 		% [selected_region, str(settled), marker_filter, str(_event_places()), str(signals)]
 	)
-
-
-## Towns and lit roads change the night side; a few dozen people more do not.
-func _lights_signature() -> String:
-	return LightField.signature(state, Rules.read("economy").buildings)
-
-
-## The planet-scale forms grow with each town's people between its light stages (1.11 G).
-func _forms_signature() -> String:
-	var towns: Array = TownForms.towns_now(state, world, Rules.read("economy").buildings)
-	return TownForms.signature(towns, Rules.read("progression").get("lights", {}))
 
 
 func _transport_signature() -> String:
@@ -640,7 +625,8 @@ func focus_region(id: int) -> void:
 func _track_focus() -> void:
 	if focus_site < 0 or focus_site >= world.regions.size():
 		return
-	var target: float = deg_to_rad(float(world.regions[focus_site].lon)) + sky.spin
+	var place: Dictionary = timelapse.get("capital", world.regions[focus_site])
+	var target: float = deg_to_rad(float(place.lon)) + sky.spin
 	planet_yaw = smooth_yaw + wrapf(target - smooth_yaw, -PI, PI)
 
 
@@ -658,8 +644,6 @@ func _process(delta: float) -> void:
 	if not timelapse.is_empty():
 		_step_timelapse(delta)
 	_update_camera(1.0 - exp(-delta * 9.0))
-	if mode == "planet" and timelapse.is_empty():
-		_crossfade_lights()
 	_apply_sky()
 	if mode == "region" and surface != null and surface.visible:
 		_animate_region(delta)
@@ -1226,7 +1210,10 @@ func play_timelapse(snapshots: Array, seconds: float) -> void:
 	}
 	show_planet()
 	focus_region(int(capital.region))
+	planet_pitch = deg_to_rad(float(capital.lat))
 	planet_distance = TIMELAPSE_DISTANCE
+	globe_shader.set_shader_parameter("road_visibility", 0.0)
+	_step_timelapse(0.0)
 	for root: Variant in [marker_root, weather_root, transport_root]:
 		if root is Node3D and is_instance_valid(root):
 			(root as Node3D).visible = false
@@ -1238,38 +1225,11 @@ func stop_timelapse() -> void:
 	timelapse = {}
 	_update_night_lights()
 	if globe_shader != null:
-		globe_shader.set_shader_parameter("far_lights", _far_lights_texture())
-	form_weights = Vector2(-1.0, -1.0)
-	_crossfade_lights()
+		globe_shader.set_shader_parameter("road_visibility", 1.0)
 	for root: Variant in [marker_root, weather_root]:
 		if root is Node3D and is_instance_valid(root):
 			(root as Node3D).visible = true
 	set_route_overlay(routes_shown)
-
-
-## The per-plot lights up close and the planet-scale town forms from the default distance out,
-## crossfaded by camera distance so the two never add up (1.11 G, town_forms.gd `weights`).
-func _crossfade_lights() -> void:
-	if globe_shader == null:
-		return
-	var shares: Vector2 = TownForms.weights(
-		smooth_distance, Rules.read("progression").get("lights", {})
-	)
-	# Street blocks stay legible up close; individual facility lights are the remaining share.
-	shares.y = 0.64 + shares.y * 0.36
-	shares.x = 1.0 - shares.y
-	if form_weights.distance_to(shares) < 0.005:
-		return
-	form_weights = shares
-	globe_shader.set_shader_parameter("plot_lights", shares.x)
-	globe_shader.set_shader_parameter("form_lights", shares.y)
-
-
-func _empty_far_lights() -> ImageTexture:
-	if not timelapse.has("far"):
-		var empty := Image.create(TownForms.FAR_WIDTH, TownForms.FAR_HEIGHT, true, Image.FORMAT_RG8)
-		timelapse.far = ImageTexture.create_from_image(empty)
-	return timelapse.far
 
 
 ## 0 to 1 through the time-lapse; -1 when none plays.
@@ -1291,13 +1251,7 @@ func _step_timelapse(delta: float) -> void:
 		float(snapshots[0].day), float(snapshots.back().day), timelapse_progress()
 	)
 	timelapse.day = day
-	town_lights = Timelapse.uniforms(Timelapse.towns_on(snapshots, day), world)
-	_apply_town_lights(globe_shader)
-	if globe_shader != null:
-		# Only the forms, and no strings of today's roads in the past.
-		globe_shader.set_shader_parameter("plot_lights", 0.0)
-		globe_shader.set_shader_parameter("form_lights", 1.0)
-		globe_shader.set_shader_parameter("far_lights", _empty_far_lights())
+	_set_settlement_lights(Timelapse.towns_on(snapshots, day))
 	sky.hold_spin()
 
 

@@ -1680,3 +1680,8 @@ factories, so the game's cycle and the payback bands stay as they are.
   capital has no deposit the bot can export from, so the licence never comes and the run ground
   on for three hours toward day 900. The expedition, arrival, building, save and reload still go
   through the interface; the capital check compares the capital with its own name.
+
+## 1.12.7 — Settlement night lights
+
+- Use the founding site kind to select the light progression. A mine in a residential town does not turn that town into a frontier camp.
+- Share one deterministic land-constrained plan across the orbital view, flat map and expedition replay so the same streets reappear as a town grows or a save is reloaded.

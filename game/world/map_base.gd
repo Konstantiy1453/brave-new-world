@@ -17,7 +17,7 @@ const CARGO_DOT_FLAT: float = 0.018
 const CARGO_GLOW: float = 1.2
 ## Added to a place's name on the maps while an event is open there.
 const EVENT_MARK: String = "  ·  通讯"
-const NightLights = preload("res://world/night_lights.gd")
+const SettlementLightAtlas = preload("res://world/settlement_light_atlas.gd")
 const LightField = preload("res://world/light_field.gd")
 const TownForms = preload("res://world/town_forms.gd")
 const Weather = preload("res://simulation/weather.gd")
@@ -63,7 +63,6 @@ var mover_root: Node3D
 var flat_mover_root: Node3D
 ## The flat map repeats east and west without end (1.10.1): copies of its content one map width to
 ## each side, refreshed when the map changes (`flat_ghosts_dirty`) and the view nears a seam.
-var flat_ghosts: Array = []
 var flat_ghosts_dirty: bool = true
 ## The complete transport diagram, an overlay the player switches on and off (1.10).
 var routes_shown: bool = true
@@ -74,18 +73,14 @@ var cloud_shader: ShaderMaterial
 var atmosphere_shader: ShaderMaterial
 var terrain_shader: ShaderMaterial
 var night_lights: ImageTexture
-## The settlements' night lights for the shaders (night_lights.gd town_uniforms).
-var town_lights: Dictionary = {}
-## Faint road strings and far facilities for the globe's planet-scale view (town_forms.gd).
+var settlement_atlas := SettlementLightAtlas.new()
+## Completed roads keep a separate light texture so that recorded towns can replay on their own.
 var far_lights: ImageTexture
-## The per-plot and form shares last given to the globe (town_forms.gd `weights`).
-var form_weights: Vector2 = Vector2(-1.0, -1.0)
+var road_light_layout: Array = []
 ## Landing camps found so far, by region (planet_view `landing_camps`).
 var camp_cache: Dictionary = {}
 ## Harbour quays found so far, by region (region_view `harbor_spot`).
 var harbor_cache: Dictionary = {}
-var lights_signature: String = ""
-var forms_signature: String = ""
 ## The visual clock: spin, sun, seasons, wind. Never part of the simulation.
 var sky: VisualClock = VisualClock.new()
 ## Player settings for the moving map; the defaults are what a new player sees.
@@ -214,18 +209,6 @@ func _cloud_coverage() -> float:
 	return clampf(0.3 + (rain - 0.3) * 1.2, 0.2, 0.8)
 
 
-## The night-side light map shared by the globe and the flat map; empty until towns exist.
-## Hands the settlements' lights to a map shader: on every update and to a shader built later.
-func _apply_town_lights(material: ShaderMaterial) -> void:
-	if material == null or town_lights.is_empty():
-		return
-	material.set_shader_parameter("towns", town_lights.towns)
-	material.set_shader_parameter("town_style", town_lights.styles)
-	material.set_shader_parameter("town_shape", town_lights.get("shapes", town_lights.styles))
-	material.set_shader_parameter("town_roads", town_lights.get("roads", town_lights.styles))
-	material.set_shader_parameter("town_count", int(town_lights.count))
-
-
 func _far_lights_texture() -> ImageTexture:
 	if far_lights == null:
 		var empty := Image.create(TownForms.FAR_WIDTH, TownForms.FAR_HEIGHT, true, Image.FORMAT_RG8)
@@ -235,7 +218,9 @@ func _far_lights_texture() -> ImageTexture:
 
 func _night_lights_texture() -> ImageTexture:
 	if night_lights == null:
-		night_lights = ImageTexture.create_from_image(NightLights.paint([]))
+		night_lights = ImageTexture.create_from_image(Image.create(
+			SettlementLightAtlas.WIDTH, SettlementLightAtlas.HEIGHT, true, Image.FORMAT_RGB8
+		))
 	return night_lights
 
 

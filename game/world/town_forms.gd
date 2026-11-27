@@ -1,13 +1,7 @@
 extends RefCounted
-## The colony's towns at planet scale after dark (1.11 G), in the forms of the user's concept sheet
-## 沿海与内陆的灯光形态 (docs/v17/lights/concept_light_forms.webp): a lit street grid round a warm,
-## white-hot core, the size fixed by the town's light stage (着陆点, 首批住区, 小镇, 区域中心,
-## 星球首府; progression.json `lights`) and growing with the town between stages. A coastal town
-## is cut by the real coastline (the globe shader's land mask) and spreads inland; an inland one
-## spreads outwards, with arms along the roads the player built. A facility far from its town is a
-## point of its own and a finished road a faint string of light (`far_image`). The globe shows these
-## at its default and far distances and the per-plot lights (light_field.gd) up close, crossfaded
-## by camera distance (`weights`). Display only: nothing here is saved or changes the game.
+## Extracts the current town locations and their development inputs for settlement_light_atlas.gd.
+## The separate, low-resolution road map carries the fixed lights on inter-settlement roads.
+## The earlier uniform and far-image helpers remain available to historical reference tools.
 
 const LightRecord = preload("res://simulation/light_record.gd")
 const LightField = preload("res://world/light_field.gd")
@@ -58,7 +52,7 @@ static func towns_now(state: Dictionary, world: Dictionary, buildings: Dictionar
 	return towns
 
 
-## The globe shader's arrays for these towns:
+## Legacy light-form uniform representation:
 ## towns[i] = (lat, lon, radius in degrees, seed), town_style[i] = (shine, cold share, level 0-4,
 ## frontier), town_shape[i] = (the way to the sea as east and north, zero inland, 0, 0) and
 ## town_roads[i] = up to four road bearings (radians from east, NO_ROAD when none).
@@ -221,14 +215,45 @@ static func far_image(
 			var at: Vector2 = LightField.plot_coordinate(world, regions[region], b, surveyed.get(region, {}))
 			if _arc(at, Vector2(centre.x, centre.y)) > centre.z * share:
 				_add(image, at.x, at.y, 0.0, float(forms.get("facility_point", 0.45)))
-	var step: float = float(forms.get("road_step_degrees", 0.25))
-	var glow: float = float(forms.get("road_light", 0.16))
-	var day: int = int(state.get("day", 0))
+	_draw_roads(image, lit_roads(state), sizes, forms)
+	image.generate_mipmaps()
+	return image
+
+
+static func lit_roads(state: Dictionary) -> Array:
+	var day := int(state.get("day", 0))
+	var roads: Array = []
 	for road: Dictionary in state.get("roads", []):
 		if bool(road.get("retired", false)) or str(road.get("variant", "")) in ["sea", "shuttle"]:
 			continue
-		if int(road.get("ready_day", 0)) > day or int(road.get("blocked_until", -1)) >= day:
-			continue
+		if int(road.get("ready_day", 0)) <= day and int(road.get("blocked_until", -1)) < day:
+			roads.append({"id": road.get("id", 0), "a": road.a, "b": road.b,
+				"coordinates": road.get("coordinates", [])})
+	return roads
+
+
+static func road_endpoints(towns: Array, rules: Dictionary) -> Dictionary:
+	var sizes: Dictionary = {}
+	var stages: Array = rules.get("stages", [])
+	for town: Dictionary in towns:
+		var stage := floori(LightRecord.town_level(stages, town))
+		sizes[int(town.region)] = Vector3(float(town.lat), float(town.lon), form_radius(stages, stage))
+	return sizes
+
+
+## Keep actual inter-settlement roads independent of the settlement's local lights.
+static func road_image(roads: Array, sizes: Dictionary, rules: Dictionary) -> Image:
+	var image := Image.create(FAR_WIDTH, FAR_HEIGHT, false, Image.FORMAT_RG8)
+	_draw_roads(image, roads, sizes, rules.get("forms", {}))
+	image.generate_mipmaps()
+	return image
+
+
+static func _draw_roads(image: Image, roads: Array, sizes: Dictionary, forms: Dictionary) -> void:
+	var step: float = float(forms.get("road_step_degrees", 0.25))
+	var glow: float = float(forms.get("road_light", 0.16))
+	var share: float = float(forms.get("remote_share", 0.8))
+	for road: Dictionary in roads:
 		var road_points: Array = road.get("coordinates", [])
 		var samples: Array = _along(road_points, step)
 		for index: int in range(samples.size()):
@@ -242,8 +267,6 @@ static func far_image(
 				# A fine continuous road with fixed occasional brighter lamps.
 				var lamp: float = 2.4 if index % 27 == int(road.get("id", 0)) % 27 else 0.80
 				_add(image, at.x, at.y, glow * lamp, 0.0)
-	image.generate_mipmaps()
-	return image
 
 
 ## What the forms depend on, to repaint only when it changes: each town's level to a twentieth

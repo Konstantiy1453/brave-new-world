@@ -72,7 +72,7 @@ func _build_flat() -> void:
 	material.set_shader_parameter("atlas", geography_atlas)
 	material.set_shader_parameter("noise3d", Shaders.noise_texture())
 	material.set_shader_parameter("lights", _night_lights_texture())
-	_apply_town_lights(material)
+	material.set_shader_parameter("far_lights", _far_lights_texture())
 	material.set_shader_parameter("ice_latitude", _ice_latitude())
 	material.set_shader_parameter("coverage", _cloud_coverage())
 	flat_shader = material
@@ -102,19 +102,16 @@ func _build_flat() -> void:
 ## Copies of the flat map's content one map width west and east (its moving cargo excepted), so a
 ## view across the 180° meridian shows the planet going on. Rebuilt only when the map has changed.
 func _refresh_flat_ghosts() -> void:
-	for ghost: Node3D in flat_ghosts:
-		if is_instance_valid(ghost):
-			ghost.get_parent().remove_child(ghost)
-			ghost.queue_free()
-	flat_ghosts.clear()
 	flat_ghosts_dirty = false
-	if flat_world == null or not is_instance_valid(flat_world):
+	if not is_instance_valid(flat_world):
 		return
 	var originals: Array = []
 	for child: Node in flat_world.get_children():
-		if child == flat_mover_root or child.has_meta("flat_ghost"):
-			continue
-		originals.append(child)
+		if child.has_meta("flat_ghost"):
+			flat_world.remove_child(child)
+			child.queue_free()
+		elif child != flat_mover_root:
+			originals.append(child)
 	for side: float in [-FLAT_WIDTH, FLAT_WIDTH]:
 		var ghost := Node3D.new()
 		ghost.set_meta("flat_ghost", true)
@@ -122,7 +119,6 @@ func _refresh_flat_ghosts() -> void:
 		flat_world.add_child(ghost)
 		for child: Node in originals:
 			ghost.add_child(child.duplicate())
-		flat_ghosts.append(ghost)
 
 
 func _flat_label(

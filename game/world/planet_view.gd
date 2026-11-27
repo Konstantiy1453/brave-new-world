@@ -82,8 +82,6 @@ func _build_planet() -> void:
 	globe_shader.set_shader_parameter("noise3d", Shaders.noise_texture())
 	globe_shader.set_shader_parameter("lights", _night_lights_texture())
 	globe_shader.set_shader_parameter("far_lights", _far_lights_texture())
-	form_weights = Vector2(-1.0, -1.0)
-	_apply_town_lights(globe_shader)
 	globe_shader.set_shader_parameter("ice_latitude", _ice_latitude())
 	var sphere := SphereMesh.new()
 	sphere.radius = 3
@@ -271,34 +269,27 @@ func _build_clouds() -> void:
 	cloud_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
-## The colony's lights for the night side (light_field.gd): every building at its plot, lit as it
-## is used, and the few lamps where roads leave town. Repainted only when what it shows has changed.
-func _update_night_lights() -> void:
-	var buildings: Dictionary = Rules.read("economy").buildings
-	var surveyed: Dictionary = _surveyed_lights()
-	var image: Image = NightLights.paint(
-		LightField.lights(state, world, buildings, landing_camps(), harbor_spots(), surveyed)
-	)
-	if night_lights == null:
-		night_lights = ImageTexture.create_from_image(image)
-	else:
-		night_lights.update(image)
-	_update_town_forms(surveyed)
-
-
-## The planet-scale forms (1.11 G), on the globe only: the flat map keeps the per-plot lights.
-func _update_town_forms(surveyed: Dictionary) -> void:
-	var buildings: Dictionary = Rules.read("economy").buildings
+## Both map projections and the cloud shell sample this same texture at any camera distance.
+func _set_settlement_lights(towns: Array) -> void:
 	var rules: Dictionary = Rules.read("progression").get("lights", {})
-	var towns: Array = TownForms.towns_now(state, world, buildings)
-	var far: Image = TownForms.far_image(state, world, buildings, towns, rules, surveyed)
-	if far_lights == null:
-		far_lights = ImageTexture.create_from_image(far)
-	else:
-		far_lights.update(far)
-	town_lights = TownForms.uniforms(towns, world, rules)
-	_apply_town_lights(globe_shader)
-	_apply_town_lights(flat_shader)
+	var image: Image = settlement_atlas.paint(world, towns, rules)
+	if image != null:
+		_night_lights_texture().update(image)
+
+
+func _update_night_lights() -> void:
+	var towns: Array = TownForms.towns_now(state, world, Rules.read("economy").buildings)
+	_set_settlement_lights(towns)
+	var rules: Dictionary = Rules.read("progression").get("lights", {})
+	var roads: Array = TownForms.lit_roads(state)
+	var layout: Array = []
+	var endpoints: Dictionary = {}
+	if not roads.is_empty():
+		endpoints = TownForms.road_endpoints(towns, rules)
+		layout = [roads, endpoints]
+	if layout != road_light_layout:
+		_far_lights_texture().update(TownForms.road_image(roads, endpoints, rules))
+		road_light_layout = layout.duplicate(true)
 
 
 ## The same occupied addresses that the regional mesh draws, indexed by building UID.

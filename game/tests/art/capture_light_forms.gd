@@ -1,15 +1,8 @@
 extends SceneTree
-## 1.11 G: the planet-scale light forms (world/town_forms.gd) beside the user's concept sheet
-## 沿海与内陆的灯光形态 (docs/v17/lights/concept_light_forms.webp).
-## STAGES: one town alone at each of the five light stages (progression.json `lights.stages`, at
-## the people and facilities of the stage's threshold), coastal and inland, on the world of --seed:
-## the globe at its default distance, straight down on the town at local midnight, clouds off. The
-## coastal town stands SHORE_GAP degrees from its shore, as the towns on the sheet do. These are
-## STAGED: the town is written into the globe's uniforms, not reached through play.
-## CROSSFADE (ordinary play): the balanced bot plays the colony for --days days; its capital at
-## local midnight from the planet distances across the crossfade (progression.json `lights.forms`),
-## each frame also taken with the lights off, so the light over the town can be measured: the
-## per-plot lights and the forms share it and never add up.
+## Captures the in-game globe at local midnight with map overlays hidden.
+## The staged set passes coastal and inland towns through the live settlement renderer at the
+## five simulation thresholds. The distance set plays a balanced colony and captures the same
+## settlement lights at each zoom, alongside a control frame with those lights disabled.
 ## Writes PNG frames and report.json to --out; tools/light_forms_sheet.py lays them out.
 ##   xvfb-run -a -s "-screen 0 3840x2160x24" godot --path game --rendering-driver opengl3
 ##     --script res://tests/art/capture_light_forms.gd -- --out=<folder> [--seed=260129]
@@ -102,7 +95,7 @@ func run() -> void:
 	quit(0 if report.failures.is_empty() else 1)
 
 
-## STAGED: each stage's threshold town, alone, coastal and inland.
+## One town at each upgrade threshold, viewed on real coastal and inland terrain.
 func _stages(sim: RefCounted) -> void:
 	var rules: Dictionary = Rules.read("progression").get("lights", {})
 	var places: Dictionary = {"coastal": _coastal_spot(sim.geo), "inland": _inland_spot(sim.geo)}
@@ -112,6 +105,7 @@ func _stages(sim: RefCounted) -> void:
 		if place.is_empty():
 			report.failures.append("no %s place on seed %s" % [kind, str(options.seed)])
 			continue
+		var previous := PackedByteArray()
 		for stage: Dictionary in rules.get("stages", []):
 			var town: Dictionary = {
 				"region": int(place.region),
@@ -124,8 +118,7 @@ func _stages(sim: RefCounted) -> void:
 				"roads": [],
 				"fade": 1.0,
 			}
-			var shown: Dictionary = TownForms.uniforms([town], sim.geo, rules)
-			_show_forms(shown)
+			map._set_settlement_lights([town])
 			_look_down(float(place.lat), float(place.lon), GLOBE_DEFAULT)
 			var name: String = "stage_%s_%s" % [kind, str(stage.id)]
 			var image: Image = await _shot(name)
@@ -133,14 +126,19 @@ func _stages(sim: RefCounted) -> void:
 			row.kind = kind
 			row.stage = str(stage.id)
 			row.stage_name = str(stage.name)
-			row.radius_degrees = float(shown.towns[0].z)
-			row.sea = [float(shown.shapes[0].x), float(shown.shapes[0].y)]
+			row.sea = place.get("sea", [0.0, 0.0])
 			row.light = _light(image, row)
+			var reach := ceili(float(row.pixels_per_degree) * MEASURE_RADIUS)
+			var box := Rect2i(roundi(row.x) - reach, roundi(row.y) - reach, reach * 2 + 1, reach * 2 + 1)
+			var pixels := image.get_region(box).get_data()
+			if pixels == previous:
+				report.failures.append("%s did not change the displayed settlement" % name)
+			previous = pixels
 			report.stages.append(row)
 			print("CAPTURE ", name, " light=", row.light)
 
 
-## ORDINARY PLAY: the balanced bot's colony, its capital from each crossfade distance.
+## The same live colony at each orbital camera distance.
 func _crossfade(sim: RefCounted) -> void:
 	var bot: RefCounted = Bot.new()
 	bot.begin(sim, int(options.seed))
@@ -164,40 +162,23 @@ func _crossfade(sim: RefCounted) -> void:
 		"lat": lat,
 		"lon": lon,
 	}
-	var rules: Dictionary = Rules.read("progression").get("lights", {})
 	for distance: float in CROSSFADE_DISTANCES:
 		_look_down(lat, lon, distance)
-		map.form_weights = Vector2(-1.0, -1.0)
+		map._update_night_lights()
 		var name: String = "crossfade_%s" % str(distance).replace(".", "_")
 		var lit: Image = await _shot(name)
 		var row: Dictionary = _framing(name, lat, lon)
 		row.distance = distance
-		var shares: Vector2 = TownForms.weights(distance, rules)
-		row.plot_share = shares.x
-		row.form_share = shares.y
+		row.plot_share = 0.0
+		row.form_share = 1.0
 		row.light = _light(lit, row)
-		map.globe_shader.set_shader_parameter("plot_lights", 0.0)
-		map.globe_shader.set_shader_parameter("form_lights", 0.0)
+		map._set_settlement_lights([])
 		var dark: Image = await _shot(name + "_dark")
 		row.dark = _light(dark, row)
 		row.town_light = float(row.light.mean) - float(row.dark.mean)
-		map.form_weights = Vector2(-1.0, -1.0)
+		map._update_night_lights()
 		report.crossfade.append(row)
-		print("CAPTURE ", name, " town_light=", row.town_light, " shares=", shares)
-
-
-## The forms of these towns on the globe, and nothing else lit.
-func _show_forms(shown: Dictionary) -> void:
-	var globe: ShaderMaterial = map.globe_shader
-	globe.set_shader_parameter("towns", shown.towns)
-	globe.set_shader_parameter("town_style", shown.styles)
-	globe.set_shader_parameter("town_shape", shown.shapes)
-	globe.set_shader_parameter("town_roads", shown.roads)
-	globe.set_shader_parameter("town_count", int(shown.count))
-	var empty := Image.create(TownForms.FAR_WIDTH, TownForms.FAR_HEIGHT, true, Image.FORMAT_RG8)
-	globe.set_shader_parameter("far_lights", ImageTexture.create_from_image(empty))
-	globe.set_shader_parameter("plot_lights", 0.0)
-	globe.set_shader_parameter("form_lights", 1.0)
+		print("CAPTURE ", name, " town_light=", row.town_light)
 
 
 ## The camera straight above a point at local midnight.

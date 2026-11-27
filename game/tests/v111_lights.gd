@@ -164,8 +164,8 @@ func _stages() -> void:
 		"people alone do not make a planetary capital (%d facilities)" % facilities
 	)
 	check(
-		str(stages[0].name) == "着陆点" and str(stages.back().name) == "星球首府",
-		"five stages, 着陆点 to 星球首府, as on the concept sheet"
+		str(stages[0].name) == "小居点" and str(stages.back().name) == "扩建后的星球殖民地首都",
+		"five stages from a small settlement to the expanded colony capital"
 	)
 
 
@@ -320,11 +320,11 @@ func _forms() -> void:
 	var code: String = Shaders.shader("globe").code
 	check(
 		(
-			code.contains("town_roads")
-			and code.contains("form_lights")
-			and code.contains("forms *= coast")
+			code.contains("settlement_emission(textureGrad(lights, uv, ddx_uv, ddy_uv).rgb) * coast")
+			and Shaders.shader("flat").code.contains("settlement_emission(texture(lights, UV).rgb) * coast")
+			and code.contains("road_visibility")
 		),
-		"the globe's shader draws the forms, cut by the coast, beside the plots"
+		"both map shaders sample the terrain-grown RGB lights and mask their coastline"
 	)
 
 

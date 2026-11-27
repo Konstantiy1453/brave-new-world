@@ -62,160 +62,11 @@ vec3 ice_color(float n2) {
 }
 """
 
-## Settlements at night at planet scale (1.11 G), in the forms of the user's concept sheet
-## 沿海与内陆的灯光形态 (docs/v17/lights/concept_light_forms.webp): two or three warm sparks at the
-## landing; then a lit street grid with brighter arterials and dark patches round a white-hot core
-## drawn out along the town's main axis, a ragged built-up edge that reaches out along the roads
-## the player built and a few arms of its own, more as the town grows. On the coast the arms turn
-## inland, the town reaches further inland, its core sits by the water, and the globe's land mask
-## cuts it at the real coastline. A few numbers per town (town_forms.gd); a street grid finer than a
-## screen pixel is drawn as its mean glow, not shimmer.
-const TOWN_LIGHTS_GLSL: String = """
-const int MAX_TOWNS = 48;
-// A block's side in degrees, the same in every town.
-const float STREET_CELL = 0.16;
-uniform vec4 towns[48];
-uniform vec4 town_style[48];
-uniform vec4 town_shape[48];
-uniform vec4 town_roads[48];
-uniform int town_count = 0;
-
-float town_hash(vec2 p) {
-	p = fract(p * vec2(234.34, 435.345));
-	p += dot(p, p + 34.23);
-	return fract(p.x * p.y);
-}
-
-float town_noise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	f = f * f * (3.0 - 2.0 * f);
-	float a = town_hash(i);
-	float b = town_hash(i + vec2(1.0, 0.0));
-	float c = town_hash(i + vec2(0.0, 1.0));
-	float d = town_hash(i + vec2(1.0, 1.0));
-	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}
-
-float town_fbm(vec2 p) {
-	return town_noise(p) * 0.55 + town_noise(p * 2.1 + 3.7) * 0.3 + town_noise(p * 4.3 + 7.1) * 0.15;
-}
-
-// The angle between two bearings, 0 to pi.
-float angle_gap(float a, float b) {
-	return abs(mod(a - b + 3.14159265, 6.2831853) - 3.14159265);
-}
-
-// The share of a pixel a line of half-width `half_width` lights at `distance` from its axis, all in
-// the same units, where a pixel is `pixel` of them: thinner than a pixel, it fades, not breaks up.
-float town_line(float distance, float half_width, float pixel) {
-	float w = max(half_width, pixel * 0.5);
-	return (half_width / w) * (1.0 - smoothstep(w * 0.5, w, distance));
-}
-
-// A street grid `cell` degrees apart, turned by `turn` and gently warped, each side of a block lit
-// by chance `lit`. Too fine for the pixel, it gives its average instead.
-float street_grid(vec2 d, float cell, float turn, float seed, float lit, float pixel, float half_width) {
-	vec2 s = vec2(cos(turn) * d.x - sin(turn) * d.y, sin(turn) * d.x + cos(turn) * d.y) / cell;
-	s += (vec2(town_noise(s * 0.21 + seed), town_noise(s * 0.21 + seed + 4.3)) - 0.5) * 1.3;
-	float px = pixel / cell;
-	float row = floor(s.y + 0.5);
-	float col = floor(s.x + 0.5);
-	float h = town_hash(vec2(floor(s.x), row) + seed);
-	float v = town_hash(vec2(col, floor(s.y)) + seed + 0.5);
-	float across = step(h, lit) * (0.55 + 0.45 * fract(h * 7.13)) * town_line(abs(s.y - row), half_width, px);
-	float along = step(v, lit) * (0.55 + 0.45 * fract(v * 7.13)) * town_line(abs(s.x - col), half_width, px);
-	return mix(max(across, along), lit * half_width * 2.9, smoothstep(0.35, 0.9, px));
-}
-
-// One settlement's warm and cold light at offset d (degrees east, north) from its centre, in the
-// forms of the concept sheet: a web of lit streets, brighter towards a small white-hot core, thin
-// roads leading out, a ragged edge.
-vec2 town_glow(vec2 d, vec4 town, vec4 style, vec4 shape, vec4 roads, float pixel) {
-	float radius = max(town.z, 0.0001);
-	float seed = town.w;
-	vec2 q = d / radius;
-	float r = length(q);
-	if (r > 1.7) {
-		return vec2(0.0);
-	}
-	float level = style.z;
-	float grown = clamp(level / 4.0, 0.0, 1.0);
-	vec2 sea = shape.xy;
-	float coastal = step(0.5, length(sea));
-	float theta = atan(q.y, q.x);
-	float pixel_q = pixel / radius;
-	// The landing: a few warm sparks and nothing more.
-	float spark = 0.0;
-	for (int k = 0; k < 3; k++) {
-		vec2 at = vec2(town_hash(vec2(seed, float(k))), town_hash(vec2(float(k) + 0.5, seed))) - 0.5;
-		vec2 off = q - at * 0.9;
-		spark += exp(-dot(off, off) * 40.0);
-	}
-	float landing = 1.0 - smoothstep(0.25, 1.0, level);
-	// Roads out of town as thin lines of light: the player's past the edge, then the town's own, more
-	// as it grows, turned inland on the coast. The built-up edge reaches a little out along them.
-	float road = 0.0;
-	float reach = 0.0;
-	for (int k = 0; k < 4; k++) {
-		float bearing = roads[k];
-		if (bearing < 9.0) {
-			vec2 way = vec2(cos(bearing), sin(bearing));
-			float along = dot(q, way);
-			float off = dot(q, vec2(-way.y, way.x)) + 0.03 * (town_noise(vec2(along * 5.0, seed + float(k))) - 0.5);
-			float line = town_line(abs(off), 0.012, pixel_q) * step(0.0, along);
-			road = max(road, line * (1.0 - smoothstep(1.3, 1.65, along)));
-			float gap = angle_gap(theta, bearing) / 0.16;
-			reach = max(reach, exp(-gap * gap));
-		}
-	}
-	// Joined blocks grow from the landing quarter along the local street axes. The
-	// long axis follows the shore on coastal sites. The atlas clips lights at water.
-	vec2 axis = coastal > 0.5 ? vec2(-sea.y, sea.x) : vec2(cos(seed), sin(seed));
-	vec2 across = vec2(-axis.y, axis.x);
-	vec2 district = vec2(dot(q, axis), dot(q, across));
-	district.y += 0.16 * sin(district.x * 3.2 + seed);
-	float street_edge = town_noise(floor(district * 5.0) + seed) - 0.5;
-	vec2 offset = district - vec2(0.11, -0.08);
-	float blocks = pow(pow(abs(offset.x) / 1.13, 3.3) + pow(abs(offset.y) / mix(0.79, 0.57, coastal), 3.3), 1.0 / 3.3);
-	float edge = 0.88 + street_edge * 0.25 + 0.09 * reach;
-	float inside = 1.0 - smoothstep(edge - 0.13, edge + 0.05, blocks);
-	// Dense in the middle, thinning out, with dark patches (parks, yards, water).
-	float patches = smoothstep(0.25, 0.6, town_fbm(q * 3.1 + seed * 1.3));
-	float density = inside * (0.15 + 0.85 * exp(-r * r * 3.0)) * (0.3 + 0.7 * patches);
-	// The streets: block sides and, four blocks apart, main streets, each district on a heading of
-	// its own; a block is the same size in every town.
-	float turn = seed * 2.39 + 0.7 * step(0.5, town_noise(q * 1.6 + seed * 5.0));
-	float minor = street_grid(d, STREET_CELL, turn, seed, density, pixel, 0.1);
-	float major = street_grid(d, STREET_CELL * 4.0, turn + 0.15, seed + 11.0, min(1.0, density * 1.4), pixel, 0.04);
-	float lit = minor * 0.66 + major * 0.51 + density * 0.08 + road * 0.18;
-	// The white-hot core at the centre; on the coast it sits by the water.
-	vec2 c = q - 0.13 * axis - sea * 0.12 * coastal;
-	float core = exp(-dot(c, c) * 70.0) * (0.35 + 0.35 * grown);
-	float shine = style.x * (1.0 - landing);
-	float warm = (lit * (1.0 - style.y) + core * 0.8) * shine + spark * 0.8 * landing * style.x;
-	float cold = (lit * style.y + core * 0.6) * shine + spark * 0.15 * landing * style.x;
-	return vec2(warm, cold);
-}
-
-// Every settlement's light at a point on the map; pixel is the screen pixel in degrees.
-vec2 town_lights(float lat, float lon, float pixel) {
-	vec2 light = vec2(0.0);
-	for (int i = 0; i < MAX_TOWNS; i++) {
-		if (i >= town_count) {
-			break;
-		}
-		vec4 town = towns[i];
-		float east = lon - town.y;
-		east -= 360.0 * floor(east / 360.0 + 0.5);
-		vec2 d = vec2(east * cos(radians(town.x)), lat - town.x);
-		float reach = town.z * 1.7;
-		if (abs(d.y) > reach || abs(d.x) > reach) {
-			continue;
-		}
-		light += town_glow(d, town, town_style[i], town_shape[i], town_roads[i], pixel);
-	}
-	return light;
+## Preserve the generator's warm/cool street palette as sub-pixel roads merge at orbital scale.
+const SETTLEMENT_EMISSION_GLSL: String = """
+vec3 settlement_emission(vec3 light) {
+	float peak = max(light.r, max(light.g, light.b));
+	return light * (1.65 * pow(max(peak, 0.002), -0.30));
 }
 """
 
@@ -647,21 +498,15 @@ uniform float season = 0.0;
 uniform float relief = 1.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
-// The per-plot lights' share (light_field.gd) and the planet-scale forms' share (town_forms.gd):
-// the globe crossfades them by camera distance, adding up to one; the time-lapse shows only forms.
-uniform float plot_lights = 1.0;
-uniform float form_lights = 0.0;
-// Faint strings along finished roads and points of far facilities, for the forms' view.
 uniform sampler2D far_lights : filter_linear_mipmap, repeat_enable;
-uniform float halo_warm = 2.2;
-uniform float halo_cold = 1.6;
+uniform float road_visibility = 1.0;
 varying vec3 local_point;
 """
 		+ GEOGRAPHY_GLSL
 		+ OPTICAL_SETTINGS_GLSL
 		+ OPTICAL_SURFACE_GLSL
 		+ LOOKUP_GLSL
-		+ TOWN_LIGHTS_GLSL
+		+ SETTLEMENT_EMISSION_GLSL
 		+ """
 void vertex() {
 	local_point = VERTEX;
@@ -733,35 +578,9 @@ void fragment() {
 	float spec = pow(max(dot(water_normal, halfway), 0.0), 400.0) * 0.4;
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
 	color += vec3(1.0, 0.92, 0.78) * spec * (optical_v3 ? 0.13 : 1.0) * (1.0 - coast) * (1.0 - ice) * day;
-	// The colony's lights after sunset (light_field.gd), their halo from a coarser mip of the same
-	// map, which also merges them smoothly as the camera pulls back. The halo answers by its
-	// 0.7th power: a coarse mip averages a small town's few lights over hundreds of texels, and a
-	// linear halo left it a few specks from orbit while a city would saturate.
-	vec2 point_light = textureGrad(lights, uv, ddx_uv, ddy_uv).rg;
-	// A round halo: the centre and a ring of six taps of a coarser mip, about six pixels out.
-	vec2 spread = (abs(ddx_uv) + abs(ddy_uv)) * 4.0;
-	vec2 gather = textureGrad(lights, uv, ddx_uv * 4.0, ddy_uv * 4.0).rg;
-	for (int k = 0; k < 6; k++) {
-		vec2 step_uv = vec2(cos(float(k) * 1.0472), sin(float(k) * 1.0472)) * spread;
-		gather += textureGrad(lights, uv + step_uv, ddx_uv * 4.0, ddy_uv * 4.0).rg;
-	}
-	vec2 halo = pow(max(gather / 7.0, vec2(0.0)), vec2(0.7));
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
-	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.6 + halo.r * halo_warm);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 3.0 + halo.g * halo_cold);
-	glow *= plot_lights;
-	// The planet-scale town forms (TOWN_LIGHTS_GLSL, town_forms.gd), cut by the coastline, with the
-	// faint road strings and far facilities beside them (1.11 G).
-	if (form_lights > 0.001) {
-		float pixel = max(length(ddx_uv * vec2(360.0, 180.0)), length(ddy_uv * vec2(360.0, 180.0)));
-		vec2 forms = town_count > 0 ? town_lights(lat, degrees(atan(n.x, n.z)), pixel) : vec2(0.0);
-		forms *= coast;
-		vec2 far = textureGrad(far_lights, uv, ddx_uv, ddy_uv).rg;
-		vec2 far_halo = textureGrad(far_lights, uv, ddx_uv * 3.0, ddy_uv * 3.0).rg;
-		vec3 shown = vec3(1.0, 0.7, 0.36) * (forms.x * 1.8 + far.r * 2.4 + far_halo.r * 0.8);
-		shown += vec3(0.72, 0.86, 1.0) * (forms.y * 1.5 + far.g * 2.4 + far_halo.g * 0.8);
-		glow += shown * form_lights;
-	}
+	vec3 glow = settlement_emission(textureGrad(lights, uv, ddx_uv, ddy_uv).rgb) * coast;
+	glow += vec3(1.0, 0.70, 0.36) * textureGrad(far_lights, uv, ddx_uv, ddy_uv).r * 2.4 * road_visibility;
 	ALBEDO = color + glow * dark;
 }
 """
@@ -806,9 +625,8 @@ void fragment() {
 	// undersides (1.11 F).
 	float twilight = exp(-facing * facing / 0.006) * day_night;
 	color = mix(color, vec3(1.0, 0.52, 0.26), twilight * (optical_v3 ? 0.035 : 0.42));
-	vec2 town = texture(lights, sphere_uv(p), 3.0).rg;
-	float below = (town.r + town.g * 0.6) * (1.0 - day) * night_lights;
-	color += vec3(1.0, 0.72, 0.4) * below * 0.55;
+	vec3 town = texture(lights, sphere_uv(p), 3.0).rgb;
+	color += town * (1.0 - day) * night_lights * 0.55;
 	ALBEDO = color;
 	ALPHA = density * opacity * mix(0.6, 1.0, day);
 }
@@ -857,8 +675,7 @@ uniform float ice_latitude = 76.0;
 uniform float season = 0.0;
 uniform float day_night = 1.0;
 uniform float night_lights = 1.0;
-uniform float halo_warm = 2.0;
-uniform float halo_cold = 1.5;
+uniform sampler2D far_lights : filter_linear_mipmap, repeat_enable;
 uniform float cloud_opacity = 0.22;
 uniform float terraform = 0.0;
 """
@@ -866,7 +683,7 @@ uniform float terraform = 0.0;
 		+ OPTICAL_SETTINGS_GLSL
 		+ OPTICAL_SURFACE_GLSL
 		+ CLOUDS_GLSL
-		+ TOWN_LIGHTS_GLSL
+		+ SETTLEMENT_EMISSION_GLSL
 		+ """
 void fragment() {
 	vec4 g = texture(atlas, UV);
@@ -913,21 +730,8 @@ void fragment() {
 	// Night as the globe has it (1.10): the sea darkest, the land just legible, the lights clear.
 	color *= 1.0 - dark * 0.8;
 	color = mix(color, vec3(0.88, 0.9, 0.94) * mix(1.0, 0.45, dark), cloud);
-	// The colony's lights (light_field.gd): small bright cores and a restrained halo from a coarser
-	// mip, which also merges them as the map zooms out; round and by a power, as on the globe.
-	vec2 point_light = texture(lights, UV).rg;
-	vec2 spread = vec2(0.0012, 0.0024);
-	vec2 gather = textureLod(lights, UV, 2.0).rg;
-	for (int k = 0; k < 6; k++) {
-		vec2 step_uv = vec2(cos(float(k) * 1.0472), sin(float(k) * 1.0472)) * spread;
-		gather += textureLod(lights, UV + step_uv, 2.0).rg;
-	}
-	vec2 halo = pow(max(gather / 7.0, vec2(0.0)), vec2(0.7));
-	vec3 glow = vec3(1.0, 0.7, 0.36) * (point_light.r * 3.2 + halo.r * halo_warm);
-	glow += vec3(0.72, 0.86, 1.0) * (point_light.g * 2.8 + halo.g * halo_cold);
-	vec2 pixel_span = fwidth(UV) * vec2(360.0,180.0);
-	vec2 streets = town_lights(lat, lon, max(pixel_span.x,pixel_span.y)) * coast;
-	glow = glow * 0.30 + streets.x * vec3(1.75,1.12,0.53) + streets.y * vec3(1.01,1.25,1.48);
+	vec3 glow = settlement_emission(texture(lights, UV).rgb) * coast;
+	glow += vec3(1.0, 0.70, 0.36) * texture(far_lights, UV).r * 2.4;
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
 """

@@ -175,16 +175,16 @@
     }
   },
   "lights": {
-    "units": "the colony's lights over time (1.11 G): a snapshot every snapshot_days of game time; a town's light stage is the highest whose population (people) and facilities (finished buildings other than homes) it both has; names as on the user's concept sheet 沿海与内陆的灯光形态; timelapse_seconds the night time-lapse at an ending, in real seconds; stages[].radius_degrees the planet-scale form's radius at that stage, in degrees of arc, in the proportions of the sheet's five panels (着陆点 0.09, 首批住区 0.25, 小镇 0.49, 区域中心 0.76 of the capital's width), and shine its brightness; between stages a town's form grows with its level (the stage plus the way to the next); forms: near_distance and far_distance the globe camera distances between which the per-plot lights (near) give way to the forms (far), the two weights adding to one; neighbour_share caps a form's radius at that share of the distance to the nearest other town; remote_roles the roles of the facilities that stand apart (mines, harbours, seabed platforms, weather stations): one farther from its town than remote_share of the form's radius is a point of its own (facility_point bright), and every other building is part of its town's form; road_light the brightness of the faint string along a finished road, a light every road_step_degrees (under half a texel of the far texture, so the string is unbroken); cold_share the share of a form's light that is cold work light",
+    "units": "snapshot_days counts game days between records. timelapse_seconds is the ending replay duration. Residential settlements progress when both population and completed non-housing facilities reach a stage threshold. Frontier outposts stay at the first stage. radius_degrees is angular radius on the globe and shine is relative brightness. near_distance and far_distance are camera distances for the blend between local lighting and the orbital lights. neighbour_share limits the radius around adjacent settlements.",
     "snapshot_days": 90,
     "snapshots_kept": 64,
     "timelapse_seconds": 20.0,
     "stages": [
-      {"id": "landing", "name": "着陆点", "population": 0, "facilities": 0, "radius_degrees": 0.25, "shine": 0.55},
-      {"id": "first_homes", "name": "首批住区", "population": 50, "facilities": 4, "radius_degrees": 0.65, "shine": 0.7},
-      {"id": "town", "name": "小镇", "population": 200, "facilities": 12, "radius_degrees": 1.27, "shine": 0.85},
-      {"id": "regional_centre", "name": "区域中心", "population": 600, "facilities": 25, "radius_degrees": 1.98, "shine": 1.0},
-      {"id": "capital", "name": "星球首府", "population": 1500, "facilities": 45, "radius_degrees": 2.6, "shine": 1.1}
+      {"id": "landing", "name": "小居点", "population": 0, "facilities": 0, "radius_degrees": 0.25, "shine": 0.55},
+      {"id": "first_homes", "name": "区域城市", "population": 50, "facilities": 4, "radius_degrees": 0.65, "shine": 0.7},
+      {"id": "town", "name": "殖民都会", "population": 200, "facilities": 12, "radius_degrees": 1.27, "shine": 0.85},
+      {"id": "regional_centre", "name": "星球殖民地首都", "population": 600, "facilities": 25, "radius_degrees": 1.98, "shine": 1.0},
+      {"id": "capital", "name": "扩建后的星球殖民地首都", "population": 1500, "facilities": 45, "radius_degrees": 2.6, "shine": 1.1}
     ],
     "forms": {
       "near_distance": 7.6,

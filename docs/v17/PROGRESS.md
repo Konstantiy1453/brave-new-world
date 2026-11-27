@@ -1,5 +1,11 @@
 # Colony Charter — Progress
 
+## 1.12.7 — Terrain-aware settlement lights (2026-11-27)
+
+Residential settlements grow from their actual landing coordinates in five stages. Frontier camps keep the landing-stage lights throughout the expedition. The globe, flat map and quarterly replay use the same terrain-aware plan. Existing saves reconstruct the plan from their world and settlement coordinates.
+
+Windows Godot 4.5.1 ran the placement, site visibility, extraction-stage, light-record and save checks. An additional four-seed sweep founded 51 towns away from the suggested sites and compared all five projected stages, the dry-land mask and the fixed frontier lights. The Windows executable reopened a day-1260 expedition with three settlements, entered its regional view, saved a copy and loaded that copy. The Annex VII regression still rejects `after-1.10.1.save` because its world fingerprint differs. A direct load produced the same rejection on 1.12.6.
+
 ## 1.12.0 — approved terrain and settlement (branch `v17-terrain`, 2026-11-26)
 
 The request: integrate the approved terrain and settlement handoff (`codex/approved-terrain-and-region`

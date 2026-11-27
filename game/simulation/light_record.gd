@@ -1,8 +1,8 @@
 extends RefCounted
 ## The colony's lights over time (1.11 G). Every quarter (`progression.json` `lights`
 ## `snapshot_days`) a snapshot of each founded settlement as the planet-scale lights draw it: where
-## it stands, its light stage (着陆点, 首批住区, 小镇, 区域中心, 星球首府: the highest whose people and
-## facilities it both has), its people and facilities, whether it is on the coast, and the towns
+## it stands, its light stage (a city's people and completed facilities determine its stage;
+## a frontier outpost keeps its original work camp), its people and facilities, its coast, and the towns
 ## its finished roads reach. The night time-lapse at an ending plays them back from the landing.
 ## State only: the views draw it. A save from before 1.11 starts its record on the day it loads.
 
@@ -16,6 +16,20 @@ static func rules(sim: RefCounted) -> Dictionary:
 static func ensure_state(state: Dictionary) -> void:
 	if not state.has("lights"):
 		state.lights = {"snapshots": [], "next_day": 0}
+
+
+## Saves through 1.12.6 recorded a city's population stage even for frontier outposts.
+## Site kinds are fixed at founding, so a record without a kind can recover it from its site.
+static func restore_frontier_stages(state: Dictionary) -> void:
+	var frontier_by_region: Dictionary = {}
+	for site: Dictionary in state.settlements:
+		frontier_by_region[int(site.region)] = site.get("kind", "") == Keys.SITE_FRONTIER
+	for frame: Dictionary in state.lights.snapshots:
+		for town: Dictionary in frame.towns:
+			if not town.has("frontier"):
+				town.frontier = frontier_by_region.get(int(town.region), false)
+			if town.frontier:
+				town.stage = 0
 
 
 ## A snapshot on the first day with a settlement, then every `snapshot_days`.
@@ -72,7 +86,16 @@ static func facility_count(buildings: Dictionary, s: Dictionary) -> int:
 
 ## The index of the highest light stage whose people and facilities the town both has.
 static func stage_of(sim: RefCounted, s: Dictionary) -> int:
+	if s.get("kind", "") == Keys.SITE_FRONTIER:
+		return 0
 	return stage_index(rules(sim).get("stages", []), float(s.population), facilities(sim, s))
+
+
+## The shared visual level for a live town record or an interpolated quarterly record.
+static func town_level(stages: Array, town: Dictionary) -> float:
+	if town.get("frontier", false):
+		return 0.0
+	return stage_level(stages, float(town.population), float(town.facilities))
 
 
 static func stage_index(stages: Array, people: float, count: float) -> int:
@@ -84,8 +107,7 @@ static func stage_index(stages: Array, people: float, count: float) -> int:
 	return stage
 
 
-## The stage and how far the town has come towards the next one, as one number (2.5: half way
-## from 小镇 to 区域中心), so a town's lights grow with it instead of jumping at each threshold.
+## The stage plus progress toward its next population and facility thresholds.
 static func stage_level(stages: Array, people: float, count: float) -> float:
 	var stage: int = stage_index(stages, people, count)
 	if stage + 1 >= stages.size():
@@ -135,6 +157,8 @@ static func audit(sim: RefCounted) -> Array:
 		for town: Dictionary in snap.towns:
 			if int(town.stage) < 0 or int(town.stage) >= maxi(1, stages):
 				errors.append("light stage out of range")
+			if town.get("frontier", false) and int(town.stage) != 0:
+				errors.append("frontier light stage exceeds its work camp")
 	if last >= 0 and int(record.next_day) <= last:
 		errors.append("next light snapshot before the last")
 	return errors
