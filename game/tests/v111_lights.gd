@@ -320,8 +320,9 @@ func _forms() -> void:
 	var code: String = Shaders.shader("globe").code
 	check(
 		(
-			code.contains("settlement_emission(textureGrad(lights, uv, ddx_uv, ddy_uv).rgb) * coast")
-			and Shaders.shader("flat").code.contains("settlement_emission(texture(lights, UV).rgb) * coast")
+			code.contains("textureGrad(lights,")
+			and code.contains("settlement_emission(uv, ddx_uv, ddy_uv) * coast")
+			and Shaders.shader("flat").code.contains("settlement_emission(UV, dFdx(UV), dFdy(UV)) * coast")
 			and code.contains("road_visibility")
 		),
 		"both map shaders sample the terrain-grown RGB lights and mask their coastline"

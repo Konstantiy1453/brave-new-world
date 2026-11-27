@@ -281,6 +281,8 @@ static func _paint(
 	var sequence := PackedInt32Array()
 	sequence.resize(SIZE * SIZE)
 	sequence.fill(-1)
+	var block_contrast := PackedFloat32Array()
+	block_contrast.resize(SIZE * SIZE)
 	var histogram := PackedInt32Array()
 	histogram.resize((limits[4] + 1) * 32)
 	# Offset the block outlines by less than half a parcel. Neighbour links and
@@ -312,13 +314,14 @@ static func _paint(
 				col += 2
 			var tx := posmod(floori(streets.x + 3.2 * sin(streets.y * .065)), 48)
 			var ty := posmod(floori(streets.y + 2.5 * sin(streets.x * .059)), 48)
-			var sample := _block_mip.get_pixel(24 * col + tx / 2, 24 * form + ty / 2).lerp(
-				_samples.get_pixel(48 * col + tx, 48 * form + ty), .35
-			)
+			var coarse := _block_mip.get_pixel(24 * col + tx / 2, 24 * form + ty / 2)
+			var fine := _samples.get_pixel(48 * col + tx, 48 * form + ty)
+			var sample := coarse.lerp(fine, .35)
 			var glow := 2.3 if col < 2 else 2.85
 			var dist2 := float(p.distance_squared_to(origin))
 			var landing := exp(-dist2 / 2.0)
 			var pos := y * SIZE + x
+			block_contrast[pos] = _street_contrast(streets, coarse, fine, district, form)
 			rgb[3 * pos] = clampi(roundi(255.0 * maxf(sample.r * glow, .95 * landing)), 0, 255)
 			rgb[3 * pos + 1] = clampi(roundi(255.0 * maxf(sample.g * glow, .78 * landing)), 0, 255)
 			rgb[3 * pos + 2] = clampi(roundi(255.0 * maxf(sample.b * glow, .46 * landing)), 0, 255)
@@ -345,7 +348,35 @@ static func _paint(
 		occupied += added
 	if occupied < count * 0.85 or (occupied >= 5 and stages.has(0)):
 		_rephase_bank(origin, sequence, rgb, limits, occupied, births)
+	# Assign the original terrain-constrained growth phases before colouring the
+	# lit blocks. The founding camp and its work lamps keep their simple pattern.
+	for pos in births.size():
+		if births[pos] > 0 and births[pos] < 5:
+			for c in 3:
+				rgb[3 * pos + c] = clampi(roundi(rgb[3 * pos + c] * block_contrast[pos]), 0, 255)
 	return occupied <= 32
+
+
+## Resolve some of the original street material inside the brighter districts.
+## Street spacing and bends follow the local block orientation.
+static func _street_contrast(streets: Vector2, coarse: Color, fine: Color, district: int, form: int) -> float:
+	var detail := clampf((fine.r + .06) / (coarse.r + .06), .48, 1.55)
+	var along := streets.x + 2.4 * sin(streets.y * .075) + 1.2 * sin(streets.y * .17)
+	var width := 12.5 + 1.6 * sin(float(district))
+	var gap := absf(fposmod(along, width) - width * .5)
+	var lane := 1.0 - smoothstep(.35, 1.55, gap)
+	var cross_street := streets.y + 2.5 * sin(streets.x * .095 + float(district))
+	var crossing := absf(fposmod(cross_street, 18.5) - 9.25)
+	var cross_lane := (1.0 - smoothstep(.30, 1.4, crossing)) * smoothstep(.1, .55, fine.r)
+	var bright := smoothstep(.07, .28, coarse.r)
+	# Resolve lamp groups inside broad highlights from a second sample of the
+	# approved urban core for this terrain. Sparse outskirts keep their diffuse light.
+	var u := posmod(floori(1.12 * streets.x + .17 * streets.y + 17.0), 48)
+	var v := posmod(floori(.95 * streets.y + 11.0), 48)
+	var lamps := _samples.get_pixel(u, 48 * form + v).r
+	var groups := lerpf(.30, 1.75, smoothstep(.075, .215, lamps))
+	var local_detail := lerpf(1.0, groups, smoothstep(.045, .19, coarse.r))
+	return local_detail * lerpf(1.0, detail, .92) * (1.15 - bright * maxf(.74 * lane, .63 * cross_lane))
 
 
 ## An island, a narrow riverbank or a mountain terrace can run out of connected

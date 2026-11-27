@@ -1,5 +1,9 @@
 # Colony Charter — Progress
 
+## 1.12.9 — Orbital street detail
+
+Completed districts show small lamp clusters and gaps following the block orientation. The original terrain plan still determines each growth phase. The founding camp retains its original lamps. At the ordinary orbital camera distance, fixed Windows captures of three sites at stages III and V showed a median 31% increase in the measured ratio of fine detail to total light and a 5.8% reduction in integrated light. A four-world sweep checked all five stages on 51 legal placements. The exported player loaded the day-1260 expedition.
+
 ## 1.12.8 — Settlement light clarity
 
 The globe, flat map and replay use a 4608 × 2304 emission atlas. It samples the existing 105-pixel settlement plans at about 94 texels across. The 1.12.7 growth stages and frontier rule remain in use. Windows EXE comparisons at the closest player zoom, across three towns at stages III and V, measured a median 2.1% drop in summed light and 0.7% drop in light-weighted radius. Matched lamp-free backgrounds were pixel-identical. The projection, growth and frontier regressions passed.

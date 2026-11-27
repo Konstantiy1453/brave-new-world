@@ -2,7 +2,7 @@ extends RefCounted
 ## Projects the light generator's local east/north images onto the world's equirectangular map.
 const Generator = preload("res://world/settlement_light_generator.gd")
 const LightRecord = preload("res://simulation/light_record.gd")
-const WIDTH := 4608
+const WIDTH := 6144
 const HEIGHT := WIDTH / 2
 
 var _stamps: Dictionary = {}

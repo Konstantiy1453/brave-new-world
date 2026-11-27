@@ -1689,3 +1689,7 @@ factories, so the game's cycle and the payback bands stay as they are.
 ## 1.12.8 — Settlement light clarity
 
 - Increase both axes of the settlement emission atlas by 12.5% to retain more detail from the original street samples at orbital zoom. Keep the existing mipmaps for distant settlements.
+
+## 1.12.9 — Orbital street detail
+
+- Apply local street contrast after assigning settlement growth phases and retain mip filtering at long viewing distances.

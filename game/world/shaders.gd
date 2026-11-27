@@ -64,7 +64,15 @@ vec3 ice_color(float n2) {
 
 ## Preserve the generator's warm/cool street palette as sub-pixel roads merge at orbital scale.
 const SETTLEMENT_EMISSION_GLSL: String = """
-vec3 settlement_emission(vec3 light) {
+vec3 settlement_emission(vec2 uv, vec2 dx, vec2 dy) {
+	vec2 atlas_size = vec2(textureSize(lights, 0));
+	float footprint = max(length(dx * atlas_size), length(dy * atlas_size));
+	// Keep magnified lamps distinct, then hand over to the usual mip chain in the distance.
+	vec2 f = fract(uv * atlas_size - 0.5);
+	vec2 eased = f * f * (3.0 - 2.0 * f);
+	vec2 sample_uv = uv + (eased - f) * (0.62 * (1.0 - smoothstep(0.65, 1.6, footprint))) / atlas_size;
+	float filter_width = mix(0.72, 1.0, smoothstep(2.6, 5.5, footprint));
+	vec3 light = textureGrad(lights, sample_uv, dx * filter_width, dy * filter_width).rgb;
 	float peak = max(light.r, max(light.g, light.b));
 	return light * (1.65 * pow(max(peak, 0.002), -0.30));
 }
@@ -579,7 +587,7 @@ void fragment() {
 	spec += pow(max(dot(n, halfway), 0.0), 30.0) * 0.025;
 	color += vec3(1.0, 0.92, 0.78) * spec * (optical_v3 ? 0.13 : 1.0) * (1.0 - coast) * (1.0 - ice) * day;
 	float dark = (1.0 - smoothstep(-0.06, 0.1, facing)) * day_night * night_lights;
-	vec3 glow = settlement_emission(textureGrad(lights, uv, ddx_uv, ddy_uv).rgb) * coast;
+	vec3 glow = settlement_emission(uv, ddx_uv, ddy_uv) * coast;
 	glow += vec3(1.0, 0.70, 0.36) * textureGrad(far_lights, uv, ddx_uv, ddy_uv).r * 2.4 * road_visibility;
 	ALBEDO = color + glow * dark;
 }
@@ -730,7 +738,7 @@ void fragment() {
 	// Night as the globe has it (1.10): the sea darkest, the land just legible, the lights clear.
 	color *= 1.0 - dark * 0.8;
 	color = mix(color, vec3(0.88, 0.9, 0.94) * mix(1.0, 0.45, dark), cloud);
-	vec3 glow = settlement_emission(texture(lights, UV).rgb) * coast;
+	vec3 glow = settlement_emission(UV, dFdx(UV), dFdy(UV)) * coast;
 	glow += vec3(1.0, 0.70, 0.36) * texture(far_lights, UV).r * 2.4;
 	ALBEDO = color + glow * dark * night_lights * (1.0 - cloud * 0.6);
 }
