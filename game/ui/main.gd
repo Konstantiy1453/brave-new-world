@@ -108,7 +108,7 @@ var modal_feedback: Label
 var selected: int = 0
 var research_team: Dictionary = {}
 var site_filter: int = 0
-var announced_event: int = 0
+var announced_event_nodes: Dictionary = {}
 var build_category: String = "all"
 var build_plots: Dictionary = {}
 ## The facility the construction page shows in detail; the first listed one when it is not listed.
@@ -546,7 +546,7 @@ func _watch_events() -> void:
 		return
 	if newest == event_seen:
 		return
-	var start: int = rows.size() - 1
+	var start: int = 0
 	for index: int in range(rows.size() - 1, -1, -1):
 		if str(rows[index].get("instance_id", "")) == event_seen:
 			start = index + 1
@@ -717,7 +717,9 @@ func advance_time(delta: float):
 		):
 			forced_pause(true)
 			open_page("company")
-		_announce_new_event()
+		if current_page == "events":
+			populate_current_page()
+		_announce_new_events()
 		coach.on_day()
 		if event_pause_required() and not forced_page_open():
 			forced_pause(true)
@@ -768,19 +770,31 @@ static func _crew_count(state: Dictionary) -> int:
 	return total
 
 
-## Notices do not stop the game, so each one gets a line on screen when it arrives.
-func _announce_new_event() -> void:
-	var serial: int = int(sim.state.get("events_v2", {}).get("next_id", 0))
-	if serial == announced_event:
+## A draw can open several stories on one day, and later chapters keep the same instance ID.
+## Remember the pending chapter of each story, so a deferred or unchanged offer stays quiet.
+func _announce_new_events() -> void:
+	var pending: Dictionary = {}
+	var titles: Array[String] = []
+	var needs_pause: bool = false
+	for inst: Dictionary in sim.state.get("events_v2", {}).get("instances", []):
+		if inst.status != "pending":
+			continue
+		pending[inst.instance_id] = inst.node
+		if announced_event_nodes.get(inst.instance_id, "") == inst.node:
+			continue
+		var chapter: Dictionary = Events.definitions().definitions[inst.definition_id].nodes[inst.node]
+		titles.append(str(chapter.title))
+		needs_pause = needs_pause or bool(inst.pause_required)
+	announced_event_nodes = pending
+	if titles.is_empty() or current_page == "events":
 		return
-	announced_event = serial
-	var pending: Variant = sim.state.get("event", {})
-	if (
-		pending is Dictionary
-		and not pending.is_empty()
-		and not bool(pending.get("pause_required", true))
-	):
-		toast("新通讯：" + str(pending.get("title", "")) + "（左侧通讯事件）")
+	if needs_pause and not forced_page_open():
+		forced_pause(true)
+		open_page("events")
+		return
+	var title: String = titles.pop_front()
+	titles.append("点击查看通讯并选择方案")
+	_post_notice("EventArrival", D.NEUTRAL, "◆ 新通讯", title, titles, "events", EVENT_NOTICE_SECONDS)
 
 
 func event_pause_required() -> bool:
@@ -1212,6 +1226,7 @@ func act(action: String, args: Dictionary = {}):
 	refresh()
 	populate_current_page()
 	toast(err if not err.is_empty() else "指令已执行。")
+	_announce_new_events()
 	return err
 
 
@@ -1606,7 +1621,7 @@ func _begin_world(
 	build_plots = {}
 	build_selected = ""
 	expanded_kinds = {}
-	announced_event = 0
+	announced_event_nodes.clear()
 	_hide_overlay()
 	return true
 
@@ -1631,6 +1646,8 @@ func load_path(path: String):
 	close_modal()
 	refresh()
 	toast("完整存档已恢复；按空格继续经营。")
+	announced_event_nodes.clear()
+	_announce_new_events()
 
 
 func export_state_json():
@@ -1664,6 +1681,7 @@ func career_action(action: String, args: Dictionary = {}):
 		toast(error)
 		return
 	if action in ["handover", "restart"]:
+		announced_event_nodes.clear()
 		selected = 0
 		local_view = false
 		paused = true

@@ -8057,6 +8057,7 @@
               "pay": 4500,
               "tech_gift": "fast_freighters",
               "ending": "高速货轮入列",
+              "goods_scope": "colony",
               "goods_cost": {
                 "parts": 30
               }

@@ -317,7 +317,7 @@ static func money_scale(sim) -> float:
 
 
 static func _pay(sim, option: Dictionary) -> float:
-	return float(option.get("pay", 0.0)) * money_scale(sim)
+	return roundf(float(option.get("pay", 0.0)) * money_scale(sim))
 
 
 static func _reward(sim, option: Dictionary) -> float:
@@ -434,6 +434,17 @@ static func _choice(inst: Dictionary, id: String) -> Dictionary:
 	return {}
 
 
+## Fleet purchases can draw on the colony's warehouses. Local projects use their own stock.
+## Spend at the event's host first, then use other places in settlement order.
+static func _goods_stores(sim, host: Dictionary, option: Dictionary) -> Array[Dictionary]:
+	var stores: Array[Dictionary] = [host]
+	if option.get("goods_scope", "local") == "colony":
+		for place: Dictionary in sim.state.settlements:
+			if int(place.region) != int(host.region):
+				stores.append(place)
+	return stores
+
+
 static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 	var s: Dictionary = sim.settlement(int(inst.target_region))
 	if s.is_empty():
@@ -441,13 +452,21 @@ static func _reason(sim, inst: Dictionary, option: Dictionary) -> String:
 	if option.is_empty():
 		return "未知选项"
 	if float(sim.state.cash) < _pay(sim, option):
-		return "公共资金不足：需要 %.0f" % _pay(sim, option)
+		return "公共资金不足：需要 ¥ %d，现有 ¥ %d" % [ceili(_pay(sim, option)), floori(sim.state.cash)]
 	var colony_reason: String = _colony_reason(sim, s, option)
 	if colony_reason != "":
 		return colony_reason
 	for resource in option.get("goods_cost", {}):
-		if float(s.stock.get(resource, 0)) < float(option.goods_cost[resource]):
-			return "本地库存不足：" + str(resource)
+		var available: float = 0.0
+		for store: Dictionary in _goods_stores(sim, s, option):
+			available += float(store.stock.get(resource, 0))
+		var required: float = float(option.goods_cost[resource])
+		if available < required:
+			var scope: String = "全殖民地" if option.get("goods_scope") == "colony" else str(sim.state.world.regions[int(s.region)].name)
+			return "%s库存不足：%s需要 %d t，现有 %d t" % [
+				scope, sim.config.resources.get(resource, resource),
+				ceili(sim.tonnes(required)), floori(sim.tonnes(available))
+			]
 	if option.get("requires_survey", false) and not bool(inst.variables.get("surveyed", false)):
 		return "需要完成水线实测"
 	if option.get("sell_rights", false) and bool(inst.variables.get("rights_sold", false)):
@@ -581,7 +600,14 @@ static func _apply(sim, inst: Dictionary, option: Dictionary, automatic: bool) -
 		"public", "external", _pay(sim, option), "event.pay", false, str(inst.instance_id)
 	)
 	for key in option.get("goods_cost", {}):
-		sim._consume(s, str(key), float(option.goods_cost[key]))
+		var remaining: float = float(option.goods_cost[key])
+		for store: Dictionary in _goods_stores(sim, s, option):
+			var taken: float = minf(remaining, float(store.stock.get(key, 0.0)))
+			if taken > 0.0:
+				sim._consume(store, str(key), taken)
+				remaining -= taken
+			if remaining <= 0.0:
+				break
 	if option.has("reward"):
 		sim._transfer(
 			"external", "public", _reward(sim, option), "event.reward", false, str(inst.instance_id)
@@ -1062,7 +1088,7 @@ static func _description(
 ) -> String:
 	var parts: Array = []
 	if option.has("pay"):
-		parts.append("支出 %.0f" % _pay(sim, option))
+		parts.append("支出 %d" % ceili(_pay(sim, option)))
 	if option.has("reward"):
 		parts.append("一次性收入 %.0f" % _reward(sim, option))
 	if int(option.get("admit_workers", 0)) + int(option.get("admit_scientists", 0)) > 0:
@@ -1108,8 +1134,9 @@ static func _description(
 	for key in option.get("goods_cost", {}):
 		parts.append(
 			(
-				"消耗 %.0f t %s"
+				"%s消耗 %.0f t %s"
 				% [
+					"全殖民地" if option.get("goods_scope") == "colony" else "本地",
 					sim.tonnes(float(option.goods_cost[key])),
 					str(sim.config.resources.get(key, key))
 				]

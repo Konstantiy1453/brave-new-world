@@ -169,7 +169,8 @@ func _scenes(scene: Node, sim: RefCounted, site: int) -> void:
 	check(str(effect.get("label", "")) == "测试限速", "the effect keeps its label")
 	scene._watch_events()
 	await process_frame
-	check(scene.notices.get_child_count() == before + 1, "a new ending raises a card")
+	check(scene.notices.get_child_count() == before + 2, "both events closed in one frame raise cards")
+	check(_texts(scene.notices.get_child(-2)).contains("平静结束"), "the earlier ending is shown too")
 	var card: Node = scene.notices.get_child(scene.notices.get_child_count() - 1)
 	var text: String = ""
 	for label: Label in card.find_children("*", "Label", true, false):
@@ -177,7 +178,7 @@ func _scenes(scene: Node, sim: RefCounted, site: int) -> void:
 	check(text.contains(SCENE) and text.contains("封存星图"), "the card tells the ending and its scene")
 	check(text.contains("终章探针"), "under the event's title")
 	scene._watch_events()
-	check(scene.notices.get_child_count() == before + 1, "only once")
+	check(scene.notices.get_child_count() == before + 2, "each ending appears only once")
 	var timed: Dictionary = Events._open(sim, PROBE_ID, site)
 	Events.act(sim, {"instance_id": timed.instance_id, "choice": "defer"})
 	for _day: int in range(12):

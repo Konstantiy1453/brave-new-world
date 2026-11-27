@@ -174,11 +174,12 @@ static func events(g, b):
 		1 if stop_all else 0,
 		func(id): g.act("policy", {"event_pause": "all" if id == 1 else "critical"})
 	)
-	D.label(b, "决定节点暂停世界；选择“稍后处理”才会继续计时。调查占用科研人员，订单按真实交付结算。", 17, D.MUTED)
+	D.label(b, "已暂停的决定可选“稍后处理”以继续计时。调查占用科研人员，订单按实际交付结算。", 17, D.MUTED)
 	for node in v.get("pending", []):
 		var c = D.card(b)
 		var notice: bool = str(node.get("kind", "decision")) == "notice"
 		D.label(c, ("通知 · " if notice else "决定 · ") + str(node.get("title", "通讯")), 22, D.GOLD)
+		D.label(c, "发生地点：" + str(g.sim.state.world.regions[int(node.target_region)].name), 16, D.TEAL)
 		D.label(c, str(node.get("text", "")), 18)
 		D.label(
 			c,
@@ -201,6 +202,8 @@ static func events(g, b):
 			)
 			bt.disabled = not bool(choice.get("enabled", true))
 			bt.tooltip_text = str(choice.get("reason", ""))
+			if bt.disabled:
+				D.label(c, bt.tooltip_text, 16, D.GOLD)
 	if v.get("pending", []).is_empty():
 		D.label(b, "目前没有需要答复的节点。", 20)
 	for node in v.get("active", []):
