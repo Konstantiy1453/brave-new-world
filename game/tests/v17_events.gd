@@ -394,6 +394,7 @@ func _effects_reach_the_systems() -> void:
 	checked.tick()
 	check(is_equal_approx(Events.modifier(checked, 0, "mine"), 0.95), "a clinic halves the flu")
 	var audit_sim: RefCounted = make()
+	audit_sim.state.day = 360  # The first-year distrust exemption has ended.
 	var audit: Dictionary = open(audit_sim, "company_audit")
 	var trust: float = float(audit_sim.state.company.distrust)
 	choose(audit_sim, audit, "ignore")
