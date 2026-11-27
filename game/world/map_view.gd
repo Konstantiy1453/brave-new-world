@@ -155,6 +155,7 @@ func setup(data: Dictionary) -> void:
 			_clear_node(entry.surface)
 	region_cache.clear()
 	camp_cache.clear()
+	parcel_surveys.clear()
 	harbor_cache.clear()
 	selected_region = 0
 	signature = ""
@@ -392,6 +393,17 @@ func show_region(id: int) -> void:
 		region_cache[id] = entry
 		surface = entry.surface
 		region_ground = entry.ground
+		field_width = entry.span.x
+		field_depth = entry.span.y
+		field_res = int(entry.res)
+		half_width = field_width * 0.5
+		half_depth = field_depth * 0.5
+		field_has_sea = bool(entry.sea)
+		plot_levels = entry.pads.duplicate(true)
+		pad_bins = entry.pad_bins.duplicate(true)
+		pods_spot = entry.camp
+		terrace_region = id
+		ground_material = entry.material
 		local_river_segments = entry.rivers.duplicate(true)
 		local_lakes = entry.lakes.duplicate(true)
 		height_field = entry.heights
@@ -430,6 +442,9 @@ func show_region(id: int) -> void:
 		region_cache[id] = {
 			"surface": surface,
 			"ground": region_ground,
+			"span": Vector2(field_width, field_depth), "res": field_res, "sea": field_has_sea,
+			"pads": plot_levels.duplicate(true), "pad_bins": pad_bins.duplicate(true),
+			"camp": pods_spot, "material": ground_material,
 			"rivers": local_river_segments.duplicate(true),
 			"lakes": local_lakes.duplicate(true),
 			"heights": height_field,

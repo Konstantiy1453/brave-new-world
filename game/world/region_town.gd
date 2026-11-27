@@ -79,7 +79,7 @@ func _build_town(settlement: Dictionary, offset: float) -> void:
 		var lot: Dictionary = (
 			plot_lot(selected_region, plot, str(b.kind))
 			if plot >= 0
-			else slot_lot(_building_spot(i, b, offset), str(b.kind), 1000 + i)
+			else unplotted_lot(selected_region, i, str(b.kind))
 		)
 		var complete: bool = int(b.get("remaining", b.get("days_left", 0))) <= 0
 		var active: bool = b.get("enabled", true) and b.get("active", true) and complete

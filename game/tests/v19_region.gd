@@ -156,6 +156,28 @@ func _waterline(map: Node3D, sim: RefCounted) -> void:
 		while map.region_busy:
 			await process_frame
 	check(map.field_has_sea, "a coastal site draws the sea")
+	check(map.local_river_segments.is_empty(), "regional water omits river ribbons")
+	var region: int = map.selected_region
+	var plots: Array = sim.state.world.regions[region].plots
+	var lowest: float = INF
+	var wet: bool = false
+	for index: int in range(plots.size()):
+		# The school is the widest approved model. Its whole rotated footprint needs dry ground
+		# even on an unoccupied parcel, before construction and terrain grading.
+		var lot: Dictionary = map.plot_lot(region, index, "school")
+		for row: int in range(-2, 3):
+			for column: int in range(-2, 3):
+				var local: Vector2 = Vector2(column, row) * Vector2(lot.size) / 4.0
+				var at: Vector2 = lot.pos + local.rotated(-float(lot.yaw))
+				lowest = minf(lowest, map._mesh_ground(at.x, at.y) - map.sea_level())
+				wet = wet or is_finite(map._water_height_at(at.x, at.y))
+	check(lowest > 0.02 and not wet, "all coastal parcels keep the largest footprint ashore")
+	var harbor: Dictionary = map.harbor_spot(region)
+	if not harbor.is_empty():
+		var shore: Vector2 = harbor.shore
+		var berth: Vector2 = map._ship_ends(harbor, 1.0)[0]
+		check(map._mesh_ground(shore.x, shore.y) > map.sea_level(), "quay building stands ashore")
+		check(map._mesh_ground(berth.x, berth.y) < map.sea_level(), "the berth is in open water")
 	var res: int = map.field_res
 	var field: PackedFloat32Array = map.height_field
 	var sea: float = map.sea_level()

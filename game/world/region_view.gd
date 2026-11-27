@@ -259,6 +259,8 @@ func _landmark_spots(count: int) -> Array[Vector3]:
 			if not clear:
 				continue
 			var height: float = _ground(at.x, at.y)
+			if Geo.is_generated(str(world.version)) and footprint_clearance(at.x, at.y) < LANDMARK_PLOT_CLEARANCE:
+				continue
 			if height < floor_height or is_finite(_water_height_at(at.x, at.y, 1.2)):
 				continue
 			var rise: float = 0.0
@@ -966,6 +968,27 @@ func harbor_spot(region: int) -> Dictionary:
 	if harbor_cache.has(region):
 		return harbor_cache[region]
 	var reg: Dictionary = world.regions[region]
+	if Geo.is_generated(str(world.version)) and bool(reg.get("coast", false)):
+		var survey: Dictionary = _district_survey(region)
+		var shore: Dictionary = survey.shore
+		var outward: Vector2 = shore.out
+		# The landside warehouse stands back from the waterline. Only the pier extends seaward.
+		var best_shore: Dictionary = {}
+		for side: float in [0.0, -5.0, 5.0, -10.0, 10.0, -16.0, 16.0]:
+			var tangent: Vector2 = outward.orthogonal() * side
+			var edge: Vector2 = tangent + outward * DistrictLayout.shore_depth(tangent, shore)
+			var ahead: Vector2 = tangent + outward.orthogonal() * 0.3
+			var next: Vector2 = ahead + outward * DistrictLayout.shore_depth(ahead, shore)
+			var normal: Vector2 = -(next - edge).normalized().orthogonal()
+			var dry: Vector2 = edge - normal * 1.45
+			var clear: float = INF
+			for parcel: Vector2 in survey.plots:
+				clear = minf(clear, parcel.distance_to(dry))
+			var cost: float = dry.length() + maxf(0.0, 6.0 - clear) * 12.0
+			if best_shore.is_empty() or cost < float(best_shore.cost):
+				best_shore = {"cost": cost, "shore": dry, "heading": normal}
+		harbor_cache[region] = best_shore
+		return best_shore
 	var plots: Array = []
 	for plot: Dictionary in reg.get("plots", []):
 		plots.append(Vector2(float(plot.x), float(plot.z)))
@@ -1439,6 +1462,14 @@ func _dress_building(
 	dressed.scale = Vector3.ONE * scale
 	# Seated on the pad top; a pit's floor on the ground.
 	dressed.position.y = .08 + _pit_depth(art, complete)
+	if metric and complete and id == str(art.model) and DistrictPlan.REVIEWED_M.has(str(building.kind)):
+		# Both distance levels occupy the approved footprint and have the same roof height.
+		var size: Vector2 = DistrictPlan.footprint(str(building.kind))
+		var bounds: AABB = dressed.mesh.get_aabb()
+		var tall: float = float(DistrictPlan.REVIEWED_HEIGHT_M[str(building.kind)]) * DistrictPlan.UNIT
+		dressed.scale = Vector3(size.x, tall, size.y) / bounds.size
+		var pivot := Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
+		dressed.position = -(dressed.basis * pivot)
 	model.add_child(dressed)
 	if complete and id == str(art.model):
 		var addons: Array = art.get("addons", [])

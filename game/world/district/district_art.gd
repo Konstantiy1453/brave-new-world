@@ -105,14 +105,8 @@ static func building(kind: String, lit: bool) -> Node3D:
 	var item := MeshInstance3D.new()
 	item.mesh = mesh
 	var bounds: AABB = mesh.get_aabb()
-	var widest: float = maxf(bounds.size.x, bounds.size.z)
-	var width: float = maxf(DistrictPlan.footprint(kind).x, DistrictPlan.footprint(kind).y)
-	if kind in DistrictPlan.REVIEWED_LONGEST:
-		width = float(DistrictPlan.REVIEWED_LONGEST[kind]) * DistrictPlan.DISTRICT_SCALE
-		width *= DistrictPlan.UNIT
-	var factor: float = width / maxf(widest, 0.0001)
-	# Revision 06 widened the town, not the buildings' storeys.
-	item.scale = Vector3(factor, factor / DistrictPlan.DISTRICT_SCALE, factor)
+	var size: Vector2 = DistrictPlan.footprint(kind)
+	item.scale = Vector3(size.x, float(DistrictPlan.REVIEWED_HEIGHT_M[kind]) * DistrictPlan.UNIT, size.y) / bounds.size
 	item.rotation.y = PI
 	var pivot := Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
 	item.position = -(item.basis * pivot)

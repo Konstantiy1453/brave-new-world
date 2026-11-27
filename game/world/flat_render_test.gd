@@ -100,15 +100,10 @@ func run():
 		"region still available"
 	)
 	check(
-		map.local_river_segments.size() > 0, "real downhill world river clipped into farming region"
+		map.local_river_segments.is_empty(), "the region omits the retired river surface"
 	)
 	var local_origin: Vector2 = map._point_to_local(world.regions[1].lat, world.regions[1].lon)
 	check(local_origin.length() < .001, "rotated geography regional projection round trip")
-	var descending: bool = true
-	for segment in map.local_river_segments:
-		if segment.yb > segment.ya + .0001:
-			descending = false
-	check(descending, "rendered river height remains downstream monotone")
 	await shot("world_region_v15_fixture")
 	map.setup(world)
 	check(map.last_atlas_cached, "same-world atlas cache reused")

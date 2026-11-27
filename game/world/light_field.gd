@@ -60,7 +60,8 @@ static func lights(
 	world: Dictionary,
 	buildings: Dictionary,
 	camps: Dictionary = {},
-	shores: Dictionary = {}
+	shores: Dictionary = {},
+	surveyed_lights: Dictionary = {}
 ) -> Array:
 	var found: Array = []
 	for s: Dictionary in state.get("settlements", []):
@@ -68,7 +69,7 @@ static func lights(
 		if region < 0 or region >= world.get("regions", []).size():
 			continue
 		found.append_array(
-			settlement_lights(s, world, buildings, camps.get(region, Vector2(-6.0, 0.0)))
+			settlement_lights(s, world, buildings, camps.get(region, Vector2(-6.0, 0.0)), surveyed_lights.get(region, {}))
 		)
 		if not shores.get(region, {}).is_empty() and quay_working(state, s, buildings):
 			found.append_array(quay_lights(world, world.regions[region], shores[region]))
@@ -107,7 +108,8 @@ static func quay_lights(world: Dictionary, reg: Dictionary, spot: Dictionary) ->
 
 ## The lights of one town, from its landing camp and its buildings at their plots.
 static func settlement_lights(
-	s: Dictionary, world: Dictionary, buildings: Dictionary, camp: Vector2 = Vector2(-6.0, 0.0)
+	s: Dictionary, world: Dictionary, buildings: Dictionary, camp: Vector2 = Vector2(-6.0, 0.0),
+	surveyed: Dictionary = {}
 ) -> Array:
 	var reg: Dictionary = world.regions[int(s.region)]
 	var shares: Dictionary = housing_shares(s, buildings)
@@ -125,8 +127,8 @@ static func settlement_lights(
 				)
 			)
 	for b: Dictionary in s.get("buildings", []):
-		var spot: Vector2 = plot_point(reg, b)
 		var uid: int = int(b.get("uid", 0))
+		var spot: Vector2 = surveyed.get(uid, plot_point(reg, b))
 		# A harbour shines at its quay (`quay_lights`), not on a plot.
 		if str(buildings.get(str(b.kind), {}).get("role", "")) == "harbor":
 			continue

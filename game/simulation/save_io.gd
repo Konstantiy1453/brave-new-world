@@ -177,6 +177,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 	# The effects cache belongs to the game it was built for (research.gd `bonus`).
 	sim.tech_effects_count = -1
 	sim.AnnualReport.update_open_targets(sim)
+	_restore_enterprise_plot(sim)
 	var issues: Array = sim.audit()
 	if not issues.is_empty():
 		sim.state = old_state
@@ -185,6 +186,40 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 		return "存档不满足守恒约束：" + str(issues)
 	sim.Company.restore_first_year_exemption(sim)
 	return ""
+
+
+## Older saves can contain an operating private service whose final plot record was lost.
+## Restore only that identifiable record, on an unused general lot or a valid vacant land slot.
+static func _restore_enterprise_plot(sim: RefCounted) -> void:
+	var enterprise: Dictionary = sim.state.get("enterprise", {})
+	if enterprise.get("industry", "") != "service" or not sim.geo.has("plates"):
+		return
+	var region: int = int(enterprise.get("region", -1))
+	var town: Dictionary = sim.settlement(region)
+	if town.is_empty():
+		return
+	var site: Dictionary = sim.state.world.regions[region]
+	for b: Dictionary in town.buildings:
+		if b.kind != "service" or b.get("owner", "") != "private" or int(b.plot) != site.plots.size():
+			continue
+		var free: int = sim.Sites.find_plot(sim, region, "service")
+		if free >= 0:
+			b.plot = free
+			return
+		# This company already exists and owns its facility. Give it a surveyed extension
+		# beside an existing ordinary parcel. The regional layout allocates its dry footprint.
+		var used: Dictionary = {}
+		for plot: Dictionary in site.plots:
+			used[Vector2(float(plot.x), float(plot.z))] = true
+		for plot: Dictionary in site.plots:
+			if plot.kind != "general":
+				continue
+			var origin := Vector2(float(plot.x), float(plot.z))
+			for direction: Vector2 in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+				var at: Vector2 = origin + direction * 6.0
+				if at.x != 0.0 and not used.has(at):
+					site.plots.append({"kind": "general", "x": at.x, "z": at.y})
+					return
 
 
 static func validate(sim: RefCounted, candidate: Variant) -> String:

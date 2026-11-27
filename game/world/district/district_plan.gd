@@ -42,8 +42,23 @@ const REVIEWED_M: Dictionary = {
 	"apartment": Vector2(53.9811066, 43.1898920),
 	"civic_center": Vector2(60.6060561, 44.4344389),
 }
-## The longest side a reviewed farm is scaled by (its depth exceeds its width).
-const REVIEWED_LONGEST: Dictionary = {"farm": 31.2181188}
+## Storey heights of the fourteen approved meshes, measured in the same 06 scene.
+const REVIEWED_HEIGHT_M: Dictionary = {
+	"commerce": 10.271,
+	"depot": 18.488,
+	"smelter": 24.450,
+	"processor": 18.430,
+	"power": 17.098,
+	"lab": 14.548,
+	"farm": 10.245,
+	"water": 10.869,
+	"habitat": 12.346,
+	"school": 12.580,
+	"crew_quarters": 9.726,
+	"clinic": 8.161,
+	"apartment": 53.008,
+	"civic_center": 15.836,
+}
 ## Kinds that work goods: their lane is a works road and their spur a yard.
 const WORKS_ROLES: Array[String] = [
 	"factory", "depot", "port", "mine", "harvest", "power", "water", "scrubber", "foodworks"

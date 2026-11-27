@@ -275,7 +275,7 @@ func _build_clouds() -> void:
 func _update_night_lights() -> void:
 	var buildings: Dictionary = Rules.read("economy").buildings
 	var image: Image = NightLights.paint(
-		LightField.lights(state, world, buildings, landing_camps(), harbor_spots())
+		LightField.lights(state, world, buildings, landing_camps(), harbor_spots(), _surveyed_lights())
 	)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
@@ -297,6 +297,24 @@ func _update_town_forms() -> void:
 	town_lights = TownForms.uniforms(towns, world, rules)
 	_apply_town_lights(globe_shader)
 	_apply_town_lights(flat_shader)
+
+
+## The same occupied addresses that the regional mesh draws, indexed by building UID.
+func _surveyed_lights() -> Dictionary:
+	var surveyed: Dictionary = {}
+	if not Geo.is_generated(str(world.version)):
+		return surveyed
+	for colony: Dictionary in state.get("settlements", []):
+		var region: int = int(colony.region)
+		var spots: Dictionary = {}
+		for i: int in range(colony.buildings.size()):
+			var facility: Dictionary = colony.buildings[i]
+			var plot: int = int(facility.get("plot", -1))
+			var lot: Dictionary = plot_lot(region, plot, str(facility.kind)) if plot >= 0 else unplotted_lot(region, i, str(facility.kind))
+			if not lot.is_empty():
+				spots[int(facility.get("uid", 0))] = lot.pos
+		surveyed[region] = spots
+	return surveyed
 
 
 ## Each settled town's landing camp in district units, as the district stands its pods: found once

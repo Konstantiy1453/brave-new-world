@@ -4,6 +4,7 @@ extends "res://world/building_models.gd"
 ## Everything placed on the ground afterwards reads the height field (region_view.gd).
 
 const Rules = preload("res://simulation/rules.gd")
+const DistrictLayout = preload("res://world/district/district_layout.gd")
 const DistrictPlan = preload("res://world/district/district_plan.gd")
 const WorldGen2 = preload("res://world/geo2/world_gen2.gd")
 const DistrictGround = preload("res://world/district/district_ground.gd")
@@ -26,17 +27,11 @@ const APRON_REACH: float = 520.0
 const APRON_TRUE: float = 40.0
 const APRON_SPREAD: float = 0.22
 const APRON_LATITUDE: float = 88.0
-## River pieces meet when their ends lie this close (units); bends sharper than a hairpin keep
-## their own sides, and a mitre is at most 1/RIVER_MITRE_LIMIT of the river's width.
-const RIVER_JOINT: float = 0.001
-const RIVER_HAIRPIN: float = 0.2
-const RIVER_MITRE_LIMIT: float = 0.5
 ## CC-GEO-2.3's water (1.12) in the approved district's muted palette: greyer and deeper than the
 ## older districts' sea, lakes and rivers, which read as saturated cyan under its evening light.
 const NATURAL_WATER: Dictionary = {
 	"sea": Color("2f4b55"),
 	"lake": Color("35545b"),
-	"river": Color("2d454b"),
 }
 ## Every plot is a level pad graded into the slope: flat to PAD_FLAT from its centre, back to the
 ## natural ground by PAD_BLEND along a smooth curve, so no wall or mesa is cut.
@@ -108,13 +103,11 @@ const WATERLINE_BAND: float = 0.3
 ## Detail fades out over the coarse far rings of the landscape, past the field's edge.
 const DETAIL_FADE: Vector2 = Vector2(10.0, 60.0)
 const SLOT_SPACING: float = 6.0
-const RIVER_STEP: float = 0.5
 var field_res: int = int(OLD_FIELD.res)
 var field_width: float = float(OLD_FIELD.width)
 var field_depth: float = float(OLD_FIELD.depth)
 var half_width: float = field_width / 2.0
 var half_depth: float = field_depth / 2.0
-var river_steps: int = int(field_depth / RIVER_STEP)
 var tree_count: int = int(OLD_FIELD.trees)
 var gate_reach: float = float(OLD_FIELD.gate)
 var rows_per_frame: int = int(OLD_FIELD.rows)
@@ -137,6 +130,7 @@ var plot_levels: Dictionary = {}
 ## Pads by PAD_BIN cell, for the ground's lookups.
 var pad_bins: Dictionary = {}
 var terrace_region: int = -1
+var parcel_surveys: Dictionary = {}
 ## Generated worlds: the landing pods stand on the nearest cell of the plot grid that holds no
 ## plot, so no building is ever put down on top of them.
 var pods_spot: Vector2 = Vector2(-6.0, 0.0)
@@ -203,7 +197,6 @@ func _ground_from_geo(x: float, z: float, g: Dictionary, ll: Vector2) -> float:
 
 
 func _relief_from_geo(x: float, z: float, g: Dictionary, ll: Vector2) -> float:
-	var reg: Dictionary = world.regions[selected_region]
 	if not bool(g.land):
 		return (
 			-1.0 + float(g.height) * 30.0
@@ -217,22 +210,8 @@ func _relief_from_geo(x: float, z: float, g: Dictionary, ll: Vector2) -> float:
 	var d: float = Vector2(x, z).distance_to(town_center)
 	var blend: float = smoothstep(9.0, 18.0, d)
 	var height: float = lerpf(.25, raw, blend)
-	if reg.river and str(world.version) == "CC-GEO-1.4":
-		var river_x: float = (Geo.river_lon(ll.x) - float(reg.lon)) * 4.0
-		var river_dist: float = absf(x - river_x)
-		if river_dist < 2.8:
-			height = lerpf(-.55, height, smoothstep(.9, 2.8, river_dist))
-	elif str(world.version) != "CC-GEO-1.4":
+	if Geo.is_generated(str(world.version)):
 		var p := Vector2(x, z)
-		for segment in local_river_segments:
-			var a: Vector2 = segment.a
-			var b: Vector2 = segment.b
-			var t: float = clampf((p - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
-			var distance: float = p.distance_to(a.lerp(b, t))
-			var width: float = segment.width
-			if distance < width * 2:
-				var water: float = lerpf(segment.ya, segment.yb, t)
-				height = lerpf(water - .28, height, smoothstep(width * .72, width * 2, distance))
 		for lake in local_lakes:
 			var distance: float = p.distance_to(lake.center)
 			if distance < lake.radius * 1.25:
@@ -276,6 +255,18 @@ func _prepare_terraces() -> void:
 			plot_levels[index].built = kinds.has(index)
 	pods_spot = landing_spot(selected_region)
 	_add_pad(-1, slot_lot(pods_spot, "", -1))
+	for colony: Dictionary in state.get("settlements", []):
+		if int(colony.region) != selected_region:
+			continue
+		for i: int in range(colony.buildings.size()):
+			var facility: Dictionary = colony.buildings[i]
+			if int(facility.get("plot", -1)) >= 0:
+				continue
+			var role: String = str(Rules.read("economy").buildings.get(facility.kind, {}).get("role", ""))
+			if role in ["harbor", "seabed"]:
+				continue
+			_add_pad(-2 - i, unplotted_lot(selected_region, i, str(facility.kind)))
+			plot_levels[-2 - i].built = true
 	if plot_levels.has(-1):
 		plot_levels[-1].built = true
 
@@ -304,7 +295,24 @@ func plot_lot(region: int, plot: int, kind: String) -> Dictionary:
 	var plots: Array = world.regions[region].get("plots", [])
 	if plot < 0 or plot >= plots.size():
 		return {}
-	return slot_lot(Vector2(float(plots[plot].x), float(plots[plot].z)), kind, plot, region)
+	var slot := Vector2(float(plots[plot].x), float(plots[plot].z))
+	if Geo.is_generated(str(world.version)):
+		slot = _district_survey(region).plots[plot]
+	return slot_lot(slot, kind, plot, region)
+
+
+## Older facilities without a saved parcel use the same surveyed reserve as the landing camp.
+func unplotted_lot(region: int, index: int, kind: String) -> Dictionary:
+	var survey: Dictionary = _district_survey(region)
+	var rank: int = 0
+	for colony: Dictionary in state.get("settlements", []):
+		if int(colony.region) != region:
+			continue
+		for i: int in range(index):
+			if int(colony.buildings[i].get("plot", -1)) < 0:
+				rank += 1
+	var spots: Array = survey.spares
+	return slot_lot(spots[rank], kind, 1000 + index, region)
 
 
 func slot_lot(slot: Vector2, kind: String, key: int, region: int = -1) -> Dictionary:
@@ -400,6 +408,8 @@ func climate_at(x: float, z: float) -> Vector2:
 func landing_spot(region: int) -> Vector2:
 	if region < 0 or region >= world.get("regions", []).size():
 		return Vector2(-6.0, 0.0)
+	if Geo.is_generated(str(world.version)):
+		return _district_survey(region).camp
 	var reg: Dictionary = world.regions[region]
 	var taken: Dictionary = {}
 	for plot: Dictionary in reg.get("plots", []):
@@ -426,24 +436,6 @@ func landing_spot(region: int) -> Vector2:
 ## (`_prepare_local_rivers`): [kind, a or centre, b, width or radius].
 func _water_marks(reg: Dictionary) -> Array:
 	var marks: Array = []
-	for river: Dictionary in district_rivers:
-		var coordinates: Array = river.coordinates
-		for i in range(coordinates.size() - 1):
-			var a: Vector2 = _point_to_local_in(
-				reg, float(coordinates[i][0]), float(coordinates[i][1])
-			)
-			var b: Vector2 = _point_to_local_in(
-				reg, float(coordinates[i + 1][0]), float(coordinates[i + 1][1])
-			)
-			if a.distance_to(b) > 60:
-				continue
-			var clip := _clip_segment(a, b)
-			if clip.x < 0:
-				continue
-			var last: int = maxi(1, coordinates.size() - 1)
-			var wa: float = .45 + .18 * float(i) / last + .035 * sin(float(i) * .51)
-			var wb: float = .45 + .18 * float(i + 1) / last + .035 * sin(float(i + 1) * .51)
-			marks.append(["river", a.lerp(b, clip.x), a.lerp(b, clip.y), maxf(wa, wb)])
 	for lake: Dictionary in world.get("lakes", []):
 		var center: Vector2 = _point_to_local_in(reg, float(lake.lat), float(lake.lon))
 		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
@@ -461,6 +453,57 @@ static func _wet(marks: Array, point: Vector2, margin: float) -> bool:
 		if point.distance_to(a.lerp(b, t)) < float(mark[3]) * margin:
 			return true
 	return false
+
+
+## Reserve the entire rotated footprint before a saved or newly occupied plot is drawn.
+## The survey depends on all parcel IDs, including hidden and vacant ones, so later construction
+## keeps existing buildings, access roads and the coast in the same places.
+func _district_survey(region: int) -> Dictionary:
+	var reg: Dictionary = world.regions[region]
+	var plots: Array = reg.get("plots", [])
+	var reserve: int = 4
+	for colony: Dictionary in state.get("settlements", []):
+		if int(colony.region) == region:
+			var count: int = 0
+			for facility: Dictionary in colony.buildings:
+				if int(facility.get("plot", -1)) < 0:
+					count += 1
+			reserve = maxi(reserve, count)
+	if parcel_surveys.has(region) and parcel_surveys[region].plots.size() == plots.size() and parcel_surveys[region].spares.size() >= reserve:
+		return parcel_surveys[region]
+	var shore: Dictionary = {}
+	if bool(reg.get("coast", false)):
+		var direction := Vector2.ZERO
+		var shortest: float = INF
+		var nearest := Vector2.ZERO
+		for heading: int in range(20):
+			var axis := Vector2.RIGHT.rotated(TAU * heading / 20.0)
+			for reach: float in [4.0, 8.0, 14.0, 23.0, 35.0, 52.0]:
+				var ll := _coordinate_in(reg, axis.x * reach, axis.y * reach)
+				if bool(Geo.sample_geo(ll.x, ll.y, noise, str(world.version)).land):
+					continue
+				direction += axis / reach
+				if reach < shortest:
+					shortest = reach
+					nearest = axis
+				break
+		if direction.length_squared() < 0.0001:
+			direction = nearest if nearest != Vector2.ZERO else Vector2.RIGHT.rotated(district_key(region))
+		shore = {
+			"out": direction.normalized(), "reach": clampf(shortest, 14.0, 27.0),
+			"phase": Vector2(DistrictPlan._hash01(district_key(region), 31), DistrictPlan._hash01(district_key(region), 37)) * TAU
+		}
+	var lakes: Array = []
+	for lake: Dictionary in world.get("lakes", []):
+		var at: Vector2 = _point_to_local_in(reg, float(lake.lat), float(lake.lon))
+		lakes.append({"center": at, "radius": float(lake.get("radius_degrees", .45)) * 4.0})
+	var half := Vector2(59.0, 51.0)
+	var surveyed: Dictionary = DistrictLayout.survey(plots, shore, lakes, half, reserve)
+	while surveyed.is_empty():
+		half += Vector2.ONE * DistrictLayout.PARCEL_PITCH * 2.0
+		surveyed = DistrictLayout.survey(plots, shore, lakes, half, reserve)
+	parcel_surveys[region] = surveyed
+	return surveyed
 
 
 func _coordinate_in(reg: Dictionary, x: float, z: float) -> Vector2:
@@ -587,12 +630,6 @@ func _level_pads() -> void:
 func _water_height_at(x: float, z: float, margin: float = 1.0) -> float:
 	var point := Vector2(x, z)
 	var result: float = -INF
-	for segment in local_river_segments:
-		var a: Vector2 = segment.a
-		var b: Vector2 = segment.b
-		var t: float = clampf((point - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
-		if point.distance_to(a.lerp(b, t)) < float(segment.width) * margin:
-			result = maxf(result, lerpf(segment.ya, segment.yb, t))
 	for lake in local_lakes:
 		if point.distance_to(lake.center) < float(lake.radius) * margin:
 			result = maxf(result, lake.height)
@@ -618,7 +655,6 @@ func _fit_field() -> void:
 	field_depth = float(field.depth)
 	half_width = field_width / 2.0
 	half_depth = field_depth / 2.0
-	river_steps = int(field_depth / RIVER_STEP)
 	tree_count = int(field.trees)
 	gate_reach = float(field.gate)
 	rows_per_frame = int(field.rows)
@@ -656,6 +692,13 @@ func _clip_segment(a: Vector2, b: Vector2) -> Vector2:
 
 
 func _prepare_local_rivers() -> void:
+	if Geo.is_generated(str(world.version)):
+		var half: Vector2 = _district_survey(selected_region).half
+		half_width = half.x
+		half_depth = half.y
+		field_width = half.x * 2.0
+		field_depth = half.y * 2.0
+		field_res = maxi(field_res, ceili(field_width / 0.86))
 	local_river_segments.clear()
 	local_lakes.clear()
 	height_field = PackedFloat32Array()
@@ -663,47 +706,6 @@ func _prepare_local_rivers() -> void:
 	region_ground = float(Geo.sample_geo(reg.lat, reg.lon, noise, str(world.version)).height)
 	if str(world.version) == "CC-GEO-1.4":
 		return
-	var rivers: Array = district_rivers
-	for river_index in range(rivers.size()):
-		var river = rivers[river_index]
-		var coordinates: Array = river.coordinates
-		var heights: Array = river.heights
-		# Water only runs downhill: each point may not stand above the one upstream of it.
-		var water_level: float = INF
-		for i in range(coordinates.size() - 1):
-			var ca = coordinates[i]
-			var cb = coordinates[i + 1]
-			var a := _point_to_local(float(ca[0]), float(ca[1]))
-			var b := _point_to_local(float(cb[0]), float(cb[1]))
-			var ha: float = minf(water_level, _river_height(heights, i, ca))
-			var hb: float = minf(ha, _river_height(heights, i + 1, cb))
-			water_level = hb
-			if a.distance_to(b) > 60:
-				continue
-			var clip := _clip_segment(a, b)
-			if clip.x < 0:
-				continue
-			var wa: float = (
-				.45 + .18 * float(i) / maxi(1, coordinates.size() - 1) + .035 * sin(float(i) * .51)
-			)
-			var wb: float = (
-				.45
-				+ .18 * float(i + 1) / maxi(1, coordinates.size() - 1)
-				+ .035 * sin(float(i + 1) * .51)
-			)
-			local_river_segments.append(
-				{
-					"a": a.lerp(b, clip.x),
-					"b": a.lerp(b, clip.y),
-					"ya": _lift((lerpf(ha, hb, clip.x) - region_ground) * 30.0) + .04,
-					"yb": _lift((lerpf(ha, hb, clip.y) - region_ground) * 30.0) + .04,
-					"width": maxf(wa, wb),
-					"width_a": wa,
-					"width_b": wb,
-					"river_index": river_index
-				}
-			)
-	_join_river_segments()
 	for lake in world.get("lakes", []):
 		var center := _point_to_local(float(lake.lat), float(lake.lon))
 		var radius: float = float(lake.get("radius_degrees", .45)) * 4.0
@@ -713,36 +715,6 @@ func _prepare_local_rivers() -> void:
 		local_lakes.append(
 			{"center": center, "radius": radius, "height": _lift((h - region_ground) * 30.0) + .04}
 		)
-
-
-## Consecutive pieces of one river share their joint's side direction (a mitre), so a bend's outer
-## bank closes instead of showing a wedge between two quads (1.12).
-func _join_river_segments() -> void:
-	for segment: Dictionary in local_river_segments:
-		var side: Vector2 = (segment.b - segment.a).normalized().orthogonal()
-		segment.side_a = side
-		segment.side_b = side
-	for index: int in range(1, local_river_segments.size()):
-		var before: Dictionary = local_river_segments[index - 1]
-		var segment: Dictionary = local_river_segments[index]
-		if int(before.river_index) != int(segment.river_index):
-			continue
-		if (before.b as Vector2).distance_to(segment.a) > RIVER_JOINT:
-			continue
-		var own: Vector2 = segment.side_a
-		var mitre: Vector2 = (before.side_b as Vector2) + own
-		if mitre.length() < RIVER_HAIRPIN:
-			continue
-		mitre = mitre.normalized()
-		mitre /= maxf(mitre.dot(own), RIVER_MITRE_LIMIT)
-		before.side_b = mitre
-		segment.side_a = mitre
-
-
-func _river_height(heights: Array, index: int, ll: Array) -> float:
-	if index < heights.size():
-		return float(heights[index])
-	return float(Geo.sample_geo(float(ll[0]), float(ll[1]), noise, str(world.version)).height)
 
 
 func _forest_chance(g: Dictionary) -> float:
@@ -819,7 +791,7 @@ func _build_terrain(token: int) -> bool:
 	st.generate_normals()
 	var terrain := MeshInstance3D.new()
 	terrain.mesh = st.commit()
-	terrain.material_override = _terrain_material(bool(reg.river))
+	terrain.material_override = _terrain_material(false)
 	surface.add_child(terrain)
 	# Geological section of a floating regional cutaway, deliberately no debug grid.
 	var border := SurfaceTool.new()
@@ -851,7 +823,7 @@ func _build_terrain(token: int) -> bool:
 	skirt.mesh = border.commit()
 	skirt.material_override = _mat("strata", Color("283a3e"), .15, .95)
 	surface.add_child(skirt)
-	_build_river()
+	_build_lakes()
 	_build_sea()
 	_build_nature()
 	# Thin survey corner lights frame the playable terrain without a grid.
@@ -1022,14 +994,14 @@ func _build_landscape(token: int) -> bool:
 	var terrain := MeshInstance3D.new()
 	terrain.name = "Landscape"
 	terrain.mesh = st.commit()
-	ground_material = DistrictGround.material(bool(reg.river))
+	ground_material = DistrictGround.material(false)
 	if bool(site.land):
 		DistrictGround.set_site(ground_material, float(site.temperature), float(site.rainfall))
 	mats["district_ground"] = ground_material
 	terrain_shader = ground_material
 	terrain.material_override = ground_material
 	surface.add_child(terrain)
-	_build_river()
+	_build_lakes()
 	_build_sea()
 	# A generated world's nature is drawn with its town, clear of the paving (district_nature.gd).
 	return true
@@ -1068,6 +1040,7 @@ func _shape_relief(
 	ridged.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	ridged.fractal_octaves = 3
 	var sea: float = sea_level()
+	var shore: Dictionary = _district_survey(selected_region).shore if not inland else {}
 	for row: int in range(rows):
 		var z: float = zs[row]
 		for column: int in range(columns):
@@ -1094,6 +1067,9 @@ func _shape_relief(
 				h += (
 					(detail.get_noise_2d(x * 0.6 + 53.0, z * 0.6) + 0.6) * INLAND_SWELL * low * near
 				)
+			if not shore.is_empty():
+				var local_shore: float = DistrictLayout.shore_height(Vector2(x, z), shore, sea, h)
+				h = lerpf(local_shore, h, smoothstep(12.0, 100.0, beyond))
 			relief[index] = h
 		if row % (rows_per_frame * 4) == 0:
 			await get_tree().process_frame
@@ -1408,15 +1384,6 @@ static func _blur_columns(values: PackedFloat32Array, columns: int, rows: int) -
 ## Rivers and lakes cut their channels and basins into the shaped field.
 func _carve_water(x: float, z: float, height: float) -> float:
 	var p := Vector2(x, z)
-	for segment in local_river_segments:
-		var a: Vector2 = segment.a
-		var b: Vector2 = segment.b
-		var t: float = clampf((p - a).dot(b - a) / maxf(a.distance_squared_to(b), .001), 0, 1)
-		var distance: float = p.distance_to(a.lerp(b, t))
-		var width: float = segment.width
-		if distance < width * 2:
-			var water: float = lerpf(segment.ya, segment.yb, t)
-			height = lerpf(water - .28, height, smoothstep(width * .72, width * 2, distance))
 	for lake in local_lakes:
 		var distance: float = p.distance_to(lake.center)
 		if distance < lake.radius * 1.25:
@@ -1480,36 +1447,8 @@ func _terrain_material(river: bool) -> ShaderMaterial:
 	return mats[key]
 
 
-## One ribbon per river, so a winding channel is one mesh rather than one node per bend.
-func _build_river() -> void:
-	if str(world.version) == "CC-GEO-1.4":
-		if world.regions[selected_region].river:
-			_build_legacy_river()
-		return
-	var ribbons: Dictionary = {}
-	for segment in local_river_segments:
-		var key: int = int(segment.river_index)
-		if not ribbons.has(key):
-			var fresh := SurfaceTool.new()
-			fresh.begin(Mesh.PRIMITIVE_TRIANGLES)
-			ribbons[key] = fresh
-		var st: SurfaceTool = ribbons[key]
-		var a: Vector2 = segment.a
-		var b: Vector2 = segment.b
-		var normal: Vector2 = (b - a).normalized().orthogonal()
-		var side_a: Vector2 = (segment.get("side_a", normal) as Vector2) * float(segment.width_a)
-		var side_b: Vector2 = (segment.get("side_b", normal) as Vector2) * float(segment.width_b)
-		var aa := Vector3(a.x - side_a.x, segment.ya, a.y - side_a.y)
-		var ab := Vector3(a.x + side_a.x, segment.ya, a.y + side_a.y)
-		var ba := Vector3(b.x - side_b.x, segment.yb, b.y - side_b.y)
-		var bb := Vector3(b.x + side_b.x, segment.yb, b.y + side_b.y)
-		for vertex in [aa, ab, ba, ab, bb, ba]:
-			st.add_vertex(vertex)
-	var material: Material = _water_material("river", Color("224f59"))
-	for key: int in ribbons:
-		var st: SurfaceTool = ribbons[key]
-		st.generate_normals()
-		_mesh(surface, st.commit(), Vector3.ZERO, material)
+## Inland lakes retain their water surface. Rivers are shown on the global maps only.
+func _build_lakes() -> void:
 	for lake in local_lakes:
 		_cylinder(
 			surface,
@@ -1519,38 +1458,6 @@ func _build_river() -> void:
 			_water_material("lake", Color("2e798a")),
 			40
 		)
-
-
-func _build_legacy_river() -> void:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var reg: Dictionary = world.regions[selected_region]
-	for i in range(river_steps):
-		var z: float = -half_depth + i * RIVER_STEP
-		var nz: float = z + RIVER_STEP
-		var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0
-		var nx: float = (Geo.river_lon(float(reg.lat) - nz / 4.0) - float(reg.lon)) * 4.0
-		for v in [
-			Vector3(x - 1.35, -.24, z),
-			Vector3(x + 1.35, -.24, z),
-			Vector3(nx - 1.35, -.24, nz),
-			Vector3(x + 1.35, -.24, z),
-			Vector3(nx + 1.35, -.24, nz),
-			Vector3(nx - 1.35, -.24, nz)
-		]:
-			st.add_vertex(v)
-	st.generate_normals()
-	var river := MeshInstance3D.new()
-	river.mesh = st.commit()
-	river.material_override = _mat("river", Color("2a818b"), .42, .19)
-	surface.add_child(river)
-	for lane in [-.7, .25, .85]:
-		var points: Array[Vector3] = []
-		for i in range(river_steps):
-			var z: float = -half_depth + i * RIVER_STEP
-			var x: float = (Geo.river_lon(float(reg.lat) - z / 4.0) - float(reg.lon)) * 4.0 + lane
-			points.append(Vector3(x, -.225, z))
-		_line(surface, points, Color(.4, .7, .72, .4), .2)
 
 
 ## One plane at sea level; the terrain itself draws the shoreline where it rises through it.
