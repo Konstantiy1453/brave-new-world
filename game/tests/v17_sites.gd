@@ -503,7 +503,10 @@ func _roads_take_time() -> void:
 	sim._consume(sim.settlement(1), "food", float(sim.settlement(1).stock.food))
 	supply(sim, s, "food", 800.0)
 	sim.tick()
-	check(float(road.sent_today) > 0.0, "and carries goods")
+	var freight_in_transit: bool = sim.state.shipments.any(
+		func(cargo): return int(cargo.get("road", -1)) == int(road.id) and float(cargo.amount) > 0.0
+	)
+	check(freight_in_transit, "the finished road carries goods")
 	check(sim.audit().is_empty(), "road building passes the audit")
 
 
