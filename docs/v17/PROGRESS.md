@@ -1,5 +1,9 @@
 # Colony Charter — Progress
 
+## 1.12.8 — Settlement light clarity
+
+The globe, flat map and replay use a 4608 × 2304 emission atlas. It samples the existing 105-pixel settlement plans at about 94 texels across. The 1.12.7 growth stages and frontier rule remain in use. Windows EXE comparisons at the closest player zoom, across three towns at stages III and V, measured a median 2.1% drop in summed light and 0.7% drop in light-weighted radius. Matched lamp-free backgrounds were pixel-identical. The projection, growth and frontier regressions passed.
+
 ## 1.12.7 — Terrain-aware settlement lights (2026-11-27)
 
 Residential settlements grow from their actual landing coordinates in five stages. Frontier camps keep the landing-stage lights throughout the expedition. The globe, flat map and quarterly replay use the same terrain-aware plan. Existing saves reconstruct the plan from their world and settlement coordinates.

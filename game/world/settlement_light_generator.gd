@@ -6,8 +6,8 @@ extends RefCounted
 const Ground = preload("res://world/settlement_light_ground.gd")
 const BLOCKS = preload("res://assets/textures/settlement_light_blocks.webp")
 const GRID := 35
-## The shared 4K planetary atlas covers this stamp in ~83 texels. At 105
-## samples it retains sub-texel coverage without oversampling the plate field 4×.
+## The 105-sample local footprint leaves room to filter fine streets when
+## projecting them onto the shared planetary atlas.
 const BLOCK := 3
 const SIZE := GRID * BLOCK
 const HALF_SPAN := 3.65

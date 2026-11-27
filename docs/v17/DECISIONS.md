@@ -1685,3 +1685,7 @@ factories, so the game's cycle and the payback bands stay as they are.
 
 - Use the founding site kind to select the light progression. A mine in a residential town does not turn that town into a frontier camp.
 - Share one deterministic land-constrained plan across the orbital view, flat map and expedition replay so the same streets reappear as a town grows or a save is reloaded.
+
+## 1.12.8 — Settlement light clarity
+
+- Increase both axes of the settlement emission atlas by 12.5% to retain more detail from the original street samples at orbital zoom. Keep the existing mipmaps for distant settlements.
