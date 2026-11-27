@@ -58,7 +58,7 @@ static func view(
 ## What makes the ground itself unsuitable, in the order a player would want to hear it.
 static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 	var rule: Dictionary = rules(sim)
-	if not sim.state.status in ["planning", "active"]:
+	if not sim.state.status in ["planning", "active", "success"]:
 		return "本局已经结束，请读取存档或开始新局"
 	if not bool(report.land):
 		return "这里是海面，不能建立据点"
@@ -81,7 +81,7 @@ static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 			"离「%s」太近（%.0f km）：两处据点的地区会重叠，至少相隔 %.0f km"
 			% [str(nearest.name), float(nearest.km), _km(sim, float(rule.min_separation_degrees))]
 		)
-	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
+	if Contract.settlement_cap_reached(sim):
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
 	var contract: String = Origins.founding_refusal(sim, bool(report.get("coast", false)))
 	if bool(report.first) and contract != "":

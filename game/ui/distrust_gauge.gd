@@ -115,7 +115,7 @@ func show_pair(sim: RefCounted) -> void:
 	delta_label.add_theme_color_override(
 		"font_color", D.RED if delta > 0.0 else (D.TEAL if delta < 0.0 else D.MUTED)
 	)
-	var words: String = str(STAGE_NAMES.get(stage, stage))
+	var words: String = "首年豁免" if Company.first_year_exempt(sim) else str(STAGE_NAMES.get(stage, stage))
 	var left: int = int(company.get("deadline", -1)) - int(sim.state.get("day", 0))
 	if int(company.get("deadline", -1)) >= 0 and left >= 0:
 		words += " %d天" % left
@@ -150,7 +150,9 @@ func _explain(sim: RefCounted, company: Dictionary, value: float, words: String)
 	for source: Variant in company.get("sources", {}).values():
 		if float(source.get("rate", 0.0)) > 0.0:
 			lines.append("%+.2f /日 · %s" % [float(source.rate), str(source.reason)])
-	if lines.size() == 2:
+	if Company.first_year_exempt(sim):
+		lines.append("从第二年一月一日起，公司开始计入不信任。")
+	elif lines.size() == 2:
 		lines.append("现在没有履约风险，不信任每天慢慢回落。")
 	lines.append("点击查看公司关系页。")
 	return "\n".join(lines)

@@ -279,7 +279,7 @@ static func sign_report(sim: RefCounted, choices: Dictionary, automatic: bool = 
 			# Force majeure (1.11 F): a weather disaster's year is not held against this line.
 			result = "waived"
 			entry.outcomes[line] = result
-		if result == MISSED:
+		if result == MISSED and not sim.Company.first_year_exempt(sim):
 			entry.distrust = float(entry.distrust) + float(rule.get("miss_distrust", 0.0))
 		elif result == EXCEED:
 			entry.reward = float(entry.reward) + float(rule.get("exceed_reward", 0.0)) * scale
@@ -294,8 +294,7 @@ static func sign_report(sim: RefCounted, choices: Dictionary, automatic: bool = 
 	if float(entry.reward) > 0.0:
 		sim._transfer("external", "public", float(entry.reward), REWARD, false)
 		a.rewards_paid = float(a.rewards_paid) + float(entry.reward)
-	var c: Dictionary = sim.state.company
-	c.distrust = clampf(float(c.distrust) + float(entry.distrust), 0.0, 100.0)
+	sim.Company.apply_distrust(sim, float(entry.distrust))
 	a.targets = entry.next_targets.duplicate()
 	a.kpi_scale = 1.0
 	a.waivers = []
@@ -381,8 +380,7 @@ static func expose(sim: RefCounted) -> float:
 		a.gap[line] = 0.0
 	sim._public_expense(fine, FINE, "external")
 	a.fines_paid = float(a.fines_paid) + fine
-	var c: Dictionary = sim.state.company
-	c.distrust = clampf(float(c.distrust) + float(rule.get("exposure_distrust", 0.0)), 0.0, 100.0)
+	sim.Company.apply_distrust(sim, float(rule.get("exposure_distrust", 0.0)))
 	sim._log("账面差额被查实：罚款 ¥%.0f，差额清零，指标不变。" % fine)
 	sim.Company.letter(sim, "report_exposure", {"fine": "%.0f" % fine})
 	return fine

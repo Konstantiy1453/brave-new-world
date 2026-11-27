@@ -98,7 +98,7 @@ func _stages() -> void:
 	Contract.daily(last)
 	check(last.state.status == "success", "the last stage grants governor qualification")
 	check(int(last.state.success_day) == int(last.state.day), "award day recorded")
-	check(Contract.settlement_cap(last) >= 2, "award opens further settlements")
+	check(Contract.settlement_cap(last) == Contract.UNLIMITED_SETTLEMENTS, "award opens further settlements")
 	var taxed: float = float(last.state.company_tax_total)
 	last.act("build", {"region": 0, "kind": "mine_ore"})
 	for _i: int in range(int(last.config.buildings.mine_ore.days) + 30):
@@ -153,10 +153,11 @@ func _late_finish() -> void:
 
 func _licence_gate() -> void:
 	var sim: RefCounted = make()
-	var error: String = sim.act("settle", {"region": 1})
-	check(error.contains("许可"), "second settlement needs the licence: " + error)
-	sim.state.contract.licences.append("expedition")
-	check(sim.act("settle", {"region": 1}) == "", "the licence opens the second settlement")
+	check(sim.act("settle", {"region": 1}) == "", "stage one permits the second settlement")
+	var error: String = sim.act("settle", {"region": 2})
+	check(error.contains("许可"), "stage one refuses a third settlement: " + error)
+	sim.state.contract.stage = 2
+	check(not sim.Sites.settle_refusal(sim, 2).contains("许可"), "stage two permits a third")
 	check(int(sim.settlement(1).housing) == 24, "outpost landing housing")
 	check(int(sim.settlement(0).housing) == 60, "capital landing housing")
 

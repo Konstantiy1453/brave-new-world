@@ -720,9 +720,7 @@ static func _apply_colony(sim, s: Dictionary, option: Dictionary) -> void:
 	if option.has("set_wage"):
 		sim.state.policy.wage = float(option.set_wage)
 	if option.has("distrust"):
-		sim.state.company.distrust = clampf(
-			float(sim.state.company.distrust) + float(option.distrust), 0.0, 100.0
-		)
+		sim.Company.apply_distrust(sim, float(option.distrust))
 	if option.has("pollution"):
 		sim.Pollution.add_points(sim, float(option.pollution))
 	AnnualReport.apply_terms(sim, option)
@@ -1079,7 +1077,10 @@ static func _description(
 	if int(option.get("train_scientists", 0)) > 0:
 		parts.append("%d 名职工转为研究团队" % int(option.train_scientists))
 	if option.has("distrust"):
-		parts.append("公司不信任 %+.1f" % float(option.distrust))
+		if float(option.distrust) > 0.0 and sim.Company.first_year_exempt(sim):
+			parts.append("公司不信任：首年豁免")
+		else:
+			parts.append("公司不信任 %+.1f" % float(option.distrust))
 	if option.has("pollution"):
 		parts.append("星球污染 %+.0f" % float(option.pollution))
 	if option.has("research_lead"):

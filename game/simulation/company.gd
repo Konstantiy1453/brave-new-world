@@ -307,11 +307,37 @@ static func transition(sim, stage: String, days: int, letter_kind: String) -> vo
 	letter(sim, letter_kind)
 
 
+## Colony dates start at day zero: day year_days is the first day of year two.
+static func first_year_exempt(sim: RefCounted) -> bool:
+	return int(sim.state.day) < int(sim.progression.units.year_days)
+
+
+static func apply_distrust(sim: RefCounted, amount: float) -> void:
+	if amount > 0.0 and first_year_exempt(sim):
+		return
+	var company: Dictionary = sim.state.company
+	company.distrust = clampf(float(company.distrust) + amount, 0.0, 100.0)
+
+
+## An active save from before the exemption may already be under review. Keep its letters and aid.
+static func restore_first_year_exemption(sim: RefCounted) -> void:
+	if sim.state.status == "failed" or not first_year_exempt(sim):
+		return
+	var company: Dictionary = sim.state.company
+	company.distrust = 0.0
+	company.delta = 0.0
+	company.stage = "normal"
+	company.stage_day = 0
+	company.deadline = -1
+	company.stable = 0
+	company.sources.clear()
+
+
 static func tick(sim) -> void:
 	ensure(sim)
 	aid_tick(sim)
 	# Bought out or autonomous (1.11 E): the company no longer reviews the colony.
-	if sim.Endings.company_released(sim):
+	if first_year_exempt(sim) or sim.Endings.company_released(sim):
 		return
 	var c: Dictionary = sim.state.company
 	var cfg: Dictionary = sim.progression.company
@@ -362,7 +388,7 @@ static func tick(sim) -> void:
 		risk = 0.0
 	var level: float = float(c.distrust)
 	var moved: float = risk if risk > 0 else -float(cfg.recovery_per_day)
-	c.distrust = clampf(level + moved, 0.0, 100.0)
+	apply_distrust(sim, moved)
 	c.delta = float(c.distrust) - level
 	c.stable = int(c.stable) + 1 if risk <= 0 else 0
 	var days_in_stage: int = int(sim.state.day) - int(c.stage_day)
@@ -400,6 +426,8 @@ static func tick(sim) -> void:
 static func view(sim) -> Dictionary:
 	ensure(sim)
 	var c: Dictionary = sim.state.company.duplicate(true)
+	if first_year_exempt(sim):
+		c.summary = "首年不信任豁免：从第二年一月一日起，公司开始计入不信任并执行审查。"
 	c.offers = []
 	for key in sim.progression.company.offers:
 		var row: Dictionary = sim.progression.company.offers[key].duplicate(true)

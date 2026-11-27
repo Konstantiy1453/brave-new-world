@@ -4,6 +4,7 @@
     "time": "game day",
     "money": "account units",
     "share": "fraction 0-1",
+    "settlement_cap": "settlements including the capital, indexed by the active contract stage; -1 means unlimited",
     "routes": "goods units (100 t) moved, mined or carried by sea over the routes window; coastal_towns and mining_towns are counts",
     "techs_tier": "1.11 H: a stage goal techs_tier_<n> counts the technologies finished at tier n or above, gifts left out; calibrated with tests/balance/calibrate_techs.gd so the balanced bot meets them about when it met the old counts (5, 14, 24, 40 -> tier 2+ x1, x5, x13, tier 3+ x5); the eighty-technology milestone keeps its id and counts 49 of the 79 researchable"
   },
@@ -74,14 +75,7 @@
       "reward_cash": 6000.0
     }
   ],
-  "settlement_cap": {
-    "initial": 1,
-    "expedition": 2,
-    "third_settlement": 3,
-    "network": 5,
-    "self_reliance": 7,
-    "after_award": 12
-  },
+  "settlement_cap": [2, 3, 6, -1, -1],
   "stages": [
     {
       "id": "foothold",
@@ -207,7 +201,7 @@
       {
         "id": "review",
         "title": "评级、整改与介入",
-        "text": "甲方按不信任给出评级：低于 {rating_a_below} 为 A，低于 {review_threshold} 为 B，低于 {intervention_threshold} 为 C，其余为 D。乙方出现持续履约风险、不信任达到 {warning_threshold} 时，甲方发出提示函；达到 {review_threshold} 时进入整改期，期限 {review_days} 日；整改期满风险仍在的，甲方介入，期限 {intervention_days} 日；介入期满风险仍在的，甲方接管项目。"
+        "text": "项目首年免计公司不信任，自第二年起恢复计分。甲方按不信任给出评级：低于 {rating_a_below} 为 A，低于 {review_threshold} 为 B，低于 {intervention_threshold} 为 C，其余为 D。乙方出现持续履约风险、不信任达到 {warning_threshold} 时，甲方发出提示函；达到 {review_threshold} 时进入整改期，期限 {review_days} 日；整改期满风险仍在的，甲方介入，期限 {intervention_days} 日；介入期满风险仍在的，甲方接管项目。"
       },
       {
         "id": "share",

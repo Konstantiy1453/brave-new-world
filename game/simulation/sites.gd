@@ -623,7 +623,7 @@ static func settle_refusal(
 		return "请选择候选地区"
 	if not sim.settlement(region).is_empty():
 		return "此地区已经建立据点"
-	if sim.state.settlements.size() >= Contract.settlement_cap(sim):
+	if Contract.settlement_cap_reached(sim):
 		return "需要先完成合同阶段，取得下一处据点的远征许可"
 	if sim.state.settlements.is_empty():
 		var contract: String = Origins.founding_refusal(

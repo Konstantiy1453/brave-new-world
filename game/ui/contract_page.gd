@@ -252,8 +252,12 @@ static func _milestone(g, b, stage: Dictionary, current: int) -> void:
 	var rewards: PackedStringArray = []
 	if float(stage.reward_cash) > 0.0:
 		rewards.append("发展资金 ¥ %.0f" % float(stage.reward_cash))
+	var cap: int = Contract.stage_settlement_cap(g.sim, int(stage.stage))
+	D.label(card, "本阶段据点上限（含首府）：%s" % Labels.settlement_limit(cap), 16, D.MUTED)
 	if str(stage.licence) != "":
-		rewards.append(str(Labels.LICENCE_NAMES.get(stage.licence, stage.licence)))
+		var next_cap: int = Contract.stage_settlement_cap(g.sim, int(stage.stage) + 1)
+		if next_cap != cap:
+			rewards.append("下一阶段据点上限：%s" % Labels.settlement_limit(next_cap))
 	if int(stage.stage) == g.sim.Contract.STAGE_COUNT:
 		rewards.append("总督资格")
 	D.label(card, "奖励：" + "、".join(rewards), 16, D.MUTED)

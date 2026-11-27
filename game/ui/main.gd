@@ -326,6 +326,7 @@ func build_shell():
 	D.label(v, "指 挥 中 枢", D.CAPTION, D.MUTED, false)
 	for entry in [
 		["球面总览", "planet"],
+		["平铺地图", "flat"],
 		["星球档案", "world"],
 		["地区建设", "region"],
 		["设施清单", "buildings"],
@@ -1127,7 +1128,7 @@ func _refresh_top() -> Dictionary:
 	)
 	_set_cell_text(
 		"places",
-		"%d / %d" % [state.settlements.size(), Contract.settlement_cap(sim)],
+		"%d / %s" % [state.settlements.size(), Labels.settlement_limit(Contract.settlement_cap(sim))],
 		"",
 		0.0,
 		"已建立的据点 / 合同许可的上限"
@@ -1346,8 +1347,7 @@ func page_variant(page: String) -> String:
 
 ## The left navigation marks the open page, or the map view when no page is open.
 func _mark_nav() -> void:
-	# The flat map is a tool of the globe view (1.11 G): it has no button of its own.
-	var active: String = "planet" if map_mode == "flat" else map_mode
+	var active: String = map_mode
 	if local_view:
 		active = "region"
 	if is_instance_valid(overlay) and nav_buttons.has(current_page):

@@ -164,12 +164,6 @@ const STAGE_NAMES: Dictionary = {
 	"self_reliance": "第四阶段 · 自立",
 	"capital": "第五阶段 · 首府",
 }
-const LICENCE_NAMES: Dictionary = {
-	"expedition": "第二据点远征许可",
-	"third_settlement": "第三据点许可",
-	"network": "第四、第五据点许可",
-	"self_reliance": "第六、第七据点许可",
-}
 const ATTRACTIVENESS_PARTS: Dictionary = {
 	"beds": "住房",
 	"food": "食品保障",
@@ -188,6 +182,10 @@ const ATTRACTIVENESS_PARTS: Dictionary = {
 
 
 ## Text of one contract goal, with what it needs and the page that moves it.
+static func settlement_limit(cap: int) -> String:
+	return "不限" if cap < 0 else str(cap)
+
+
 static func goal(row: Dictionary) -> Dictionary:
 	var value: float = float(row.value)
 	var target: float = float(row.target)

@@ -146,9 +146,11 @@ func company_paths() -> void:
 	)
 	check(s.state.day > 50, "legacy debt boundary cannot skip review window")
 	var rescue = make()
+	var year: int = rescue.AnnualReport.year_days()
+	rescue.state.day = year
 	var liquidity: Dictionary = rescue.progression.company.offers.liquidity
 	rescue.state.company.stage = "review"
-	rescue.state.company.deadline = 40
+	rescue.state.company.deadline = year + 40
 	rescue.state.company.distrust = 55.0
 	rescue._transfer("public", "external", rescue.state.cash, "test low liquidity", false)
 	rescue._public_expense(100, "test overdue invoices", "external")
@@ -157,10 +159,10 @@ func company_paths() -> void:
 	check(rescue.act("company", {"offer": "liquidity"}) != "", "aid cannot repeat")
 	check(rescue.state.company.deadline == deadline, "repeat cannot extend deadline")
 	check(rescue.state.cash == 0, "aid not instant before shipment arrival")
-	rescue.state.day = 1
+	rescue.state.day = year + 1
 	C.tick(rescue)
 	check(rescue.state.cash == 0, "aid still in transit day one")
-	rescue.state.day = 2
+	rescue.state.day = year + 2
 	rescue.state.operating_net = 0
 	C.tick(rescue)
 	check(
@@ -172,7 +174,7 @@ func company_paths() -> void:
 		"external", "public", float(liquidity.repayment) + 2500.0, "test income", false
 	)
 	for day in range(3, int(liquidity.duration) + 60):
-		rescue.state.day = day
+		rescue.state.day = year + day
 		C.tick(rescue)
 	check(rescue.state.company.aid[0].status == "fulfilled", "aid principal and duration complete")
 	check(
@@ -187,10 +189,10 @@ func company_paths() -> void:
 	var own = make()
 	var stable: int = int(own.progression.company.stable_days)
 	own.state.company.stage = "review"
-	own.state.company.deadline = stable + 40
+	own.state.company.deadline = year + stable + 40
 	own.state.company.distrust = 60.0
 	for day in range(1, stable + 3):
-		own.state.day = day
+		own.state.day = year + day
 		C.tick(own)
 	check(
 		own.state.company.stage == "recovery" and own.state.company.aid.is_empty(),

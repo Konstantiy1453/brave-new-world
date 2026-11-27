@@ -871,7 +871,7 @@ func _next_site(reserve: float) -> Dictionary:
 
 func _second_settlement(reserve: float) -> void:
 	_connect_settlements(reserve)
-	if _saving_for_road() or sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
+	if _saving_for_road() or sim.Contract.settlement_cap_reached(sim):
 		return
 	var next: Dictionary = _next_site(reserve)
 	if not next.is_empty():
@@ -1078,7 +1078,7 @@ func _pressed_for_time(stage: int) -> bool:
 
 ## The contract asks for another connected town and the licence is there: that comes first.
 func _saving_for_settlement() -> bool:
-	if sim.state.settlements.size() >= sim.Contract.settlement_cap(sim):
+	if sim.Contract.settlement_cap_reached(sim):
 		return false
 	var stage: int = mini(int(sim.state.contract.stage), sim.Contract.STAGE_COUNT)
 	# Saving out of a thin income takes for ever; better to grow it first, unless time is short.

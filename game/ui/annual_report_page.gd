@@ -104,7 +104,10 @@ static func _explain(g, rule: Dictionary, actual: float, value: float, result: S
 	var words: PackedStringArray = [str(OUTCOME_NAMES[result])]
 	match result:
 		AnnualReport.MISSED:
-			words.append("不信任 +%s" % _number(float(rule.get("miss_distrust", 0.0))))
+			if g.sim.Company.first_year_exempt(g.sim):
+				words.append("不信任：首年豁免")
+			else:
+				words.append("不信任 +%s" % _number(float(rule.get("miss_distrust", 0.0))))
 		AnnualReport.EXCEED:
 			words.append("奖励 ¥%.0f" % (float(rule.get("exceed_reward", 0.0)) * scale))
 			words.append("不信任 −%s" % _number(float(rule.get("exceed_trust", 0.0))))

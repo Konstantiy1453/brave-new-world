@@ -338,16 +338,19 @@ func _deep_and_hidden() -> void:
 
 func _settlement_cap() -> void:
 	var sim: RefCounted = make()
-	check(Contract.settlement_cap(sim) == 1, "one settlement to begin with")
-	sim.state.contract.licences.append("expedition")
-	check(Contract.settlement_cap(sim) == 2, "the first licence allows a second")
-	sim.state.contract.licences.append("third_settlement")
-	check(Contract.settlement_cap(sim) == 3, "the second licence allows a third")
+	var expected: Array = [2, 3, 6, Contract.UNLIMITED_SETTLEMENTS, Contract.UNLIMITED_SETTLEMENTS]
+	for stage: int in range(1, Contract.STAGE_COUNT + 1):
+		sim.state.contract.stage = stage
+		var cap: int = int(expected[stage - 1])
+		check(Contract.settlement_cap(sim) == cap, "stage %d cap is %d" % [stage, cap])
+		var count: int = 13 if cap < 0 else cap - 1
+		while sim.state.settlements.size() < count:
+			sim.state.settlements.append({})
+		check(not Contract.settlement_cap_reached(sim), "stage %d has room at %d" % [stage, count])
+		sim.state.settlements.append({})
+		check(Contract.settlement_cap_reached(sim) == (cap >= 0), "stage %d boundary" % stage)
 	sim.state.status = "success"
-	check(
-		Contract.settlement_cap(sim) == int(sim.contract_rules.settlement_cap.after_award),
-		"the award lifts the limit"
-	)
+	check(not Contract.settlement_cap_reached(sim), "the governor retains unlimited settlements")
 
 
 ## Planets are 0.6, 1.0 and 1.3 Earth radii, and every distance is measured on that sphere.

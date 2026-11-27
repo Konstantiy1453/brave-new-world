@@ -283,14 +283,23 @@ func _column(scene: Node) -> void:
 	)
 	scene.navigate("planet")
 	check(scene.nav_buttons.planet.get_meta(D.META_SKIN) == "neutral|row_on", "and follows it")
-	scene.navigate("flat")
-	check(
-		(
-			not scene.nav_buttons.has("flat")
-			and scene.nav_buttons.planet.get_meta(D.META_SKIN) == "neutral|row_on"
-		),
-		"the flat map has no button of its own and belongs to the globe (1.11 G)"
-	)
+	var flat_button: Button = scene.ui.find_child("Nav_flat", true, false)
+	check(is_instance_valid(flat_button), "the main navigation offers the flat map")
+	if is_instance_valid(flat_button):
+		flat_button.pressed.emit()
+		check(
+			scene.map.mode == "flat" and flat_button.get_meta(D.META_SKIN) == "neutral|row_on",
+			"the flat map opens and its own navigation row is marked"
+		)
+	scene.nav_buttons.planet.pressed.emit()
+	check(scene.map.mode == "planet", "the globe can be reopened from the flat map")
+	scene.nav_buttons.world.pressed.emit()
+	var dossier_button: Button = scene.modal_box.find_child("WorldFlatMap", true, false)
+	check(is_instance_valid(dossier_button), "the planet dossier also offers the flat map")
+	if is_instance_valid(dossier_button):
+		dossier_button.pressed.emit()
+		check(scene.map.mode == "flat" and scene.overlay == null, "the dossier opens the flat map")
+	scene.close_modal()
 	scene.navigate("planet")
 	scene.column_open = true
 	scene.refresh_sidebar()

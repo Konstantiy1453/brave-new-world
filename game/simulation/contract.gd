@@ -12,6 +12,7 @@ const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
 const Research = preload("res://simulation/research.gd")
 const OperatingRoutes = preload("res://simulation/operating_routes.gd")
+const UNLIMITED_SETTLEMENTS: int = -1
 const STAGE_COUNT: int = 5
 const OLD_STAGE_COUNT: int = 3
 const MINING_GOODS: Array[String] = ["ore", "copper", "crystal", "nickel", "cobalt"]
@@ -121,15 +122,24 @@ static func overdue(sim: RefCounted) -> bool:
 	return int(sim.state.day) > deadline(sim, int(contract.stage))
 
 
+static func stage_settlement_cap(sim: RefCounted, stage: int) -> int:
+	return int(sim.contract_rules.settlement_cap[clampi(stage, 1, STAGE_COUNT) - 1])
+
+
 static func settlement_cap(sim: RefCounted) -> int:
-	var rules: Dictionary = sim.contract_rules.settlement_cap
-	var cap: int = int(rules.initial)
 	if sim.state.status == "success":
-		cap = int(rules.after_award)
-	else:
-		for licence: String in sim.state.contract.licences:
-			cap = maxi(cap, int(rules.get(licence, 0)))
-	return cap
+		return stage_settlement_cap(sim, STAGE_COUNT)
+	var stage: int = int(sim.state.contract.stage)
+	# Keep licences already recorded in a colony, including saves from older contracts.
+	for index: int in range(STAGE_COUNT - 1):
+		if sim.contract_rules.stages[index].licence in sim.state.contract.licences:
+			stage = maxi(stage, index + 2)
+	return stage_settlement_cap(sim, stage)
+
+
+static func settlement_cap_reached(sim: RefCounted) -> bool:
+	var cap: int = settlement_cap(sim)
+	return cap != UNLIMITED_SETTLEMENTS and sim.state.settlements.size() >= cap
 
 
 static func population_total(sim: RefCounted) -> int:

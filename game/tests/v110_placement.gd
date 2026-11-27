@@ -228,20 +228,11 @@ func _expeditions() -> void:
 	sim._transfer("external", "public", 200000.0, "TEST funds", false)
 	for good: String in ["materials", "parts", "food"]:
 		sim._produce(capital, good, 400.0, "TEST stock")
-	sim.state.contract.licences.append("expedition")
-	sim.state.contract.licences.append("network")
 	var inland: Array = _destination(sim, capital_point, false, capital_region)
-	if not inland.is_empty():
-		var licences: Array = sim.state.contract.licences.duplicate()
-		sim.state.contract.licences.clear()
-		var before: Dictionary = sim.Placement.view(sim, inland[0], inland[1])
-		check(
-			str(before.refusal).contains("远征许可"),
-			"before the expansion licence a second town is refused: " + str(before.refusal)
-		)
-		sim.state.contract.licences = licences
 	for coastal: bool in [false, true]:
 		# The first expedition establishes a town and changes the minimum separation for the next one.
+		if coastal:
+			sim.state.contract.stage = 2
 		var target: Array = (
 			_destination(sim, capital_point, true, capital_region) if coastal else inland
 		)
@@ -251,6 +242,11 @@ func _expeditions() -> void:
 		)
 		if target.is_empty():
 			continue
+		if coastal:
+			sim.state.contract.stage = 1
+			var refusal: String = sim.act("settle_at", {"lat": target[0], "lon": target[1]})
+			check(refusal.contains("许可"), "stage one blocks a third town on free ground")
+			sim.state.contract.stage = 2
 		var view: Dictionary = sim.Placement.view(sim, target[0], target[1], capital_region)
 		check(
 			(

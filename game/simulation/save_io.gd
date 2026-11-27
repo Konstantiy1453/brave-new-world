@@ -28,8 +28,8 @@ const HEADER_OFFSET: int = 8
 const CHECKPOINT_SUFFIX: String = ".ckpt-"
 const ARCHIVE_SUFFIX: String = ".arch"
 const RUN_STATUSES: Array[String] = ["planning", "active", "success", "failed"]
-## Generated sites and the ones players found at coordinates of their own choosing (1.10).
-const MAX_SITES: int = 96
+## A colony may add one player-chosen region for every new settlement.
+const MAX_GENERATED_SITES: int = 96
 
 
 ## Serializes on the calling thread. Returns everything a worker needs to finish the write.
@@ -182,6 +182,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 		sim.geo = old_geo
 		sim.blobs = old_blobs
 		return "存档不满足守恒约束：" + str(issues)
+	sim.Company.restore_first_year_exemption(sim)
 	return ""
 
 
@@ -452,7 +453,7 @@ static func _validate_world(candidate: Dictionary) -> String:
 		world.grid_width != WorldGen.GW
 		or world.grid_height != WorldGen.GH
 		or world.regions.is_empty()
-		or world.regions.size() > MAX_SITES
+		or world.regions.size() > MAX_GENERATED_SITES + candidate.settlements.size()
 	):
 		return "世界网格或地区数量不合法"
 	if not world.version in WorldGen.SUPPORTED_VERSIONS:
@@ -563,7 +564,7 @@ static func _settlement_shape(sim: RefCounted) -> Dictionary:
 static func _validate_settlements(
 	sim: RefCounted, candidate: Dictionary, site_count: int
 ) -> String:
-	if candidate.settlements.size() > int(sim.contract_rules.settlement_cap.after_award):
+	if candidate.settlements.size() > site_count:
 		return "据点数据不合法"
 	var settlement_shape: Dictionary = _settlement_shape(sim)
 	for s: Variant in candidate.settlements:

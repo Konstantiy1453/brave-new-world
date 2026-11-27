@@ -84,8 +84,7 @@ static func answer(sim: RefCounted, choice: String) -> String:
 	a.answer = choice
 	a.answered_day = int(sim.state.day)
 	sim.state.ending_lean = str(ANSWERS[choice])
-	var c: Dictionary = sim.state.company
-	c.distrust = clampf(float(c.distrust) + float(moves.get("distrust", 0.0)), 0.0, 100.0)
+	sim.Company.apply_distrust(sim, float(moves.get("distrust", 0.0)))
 	a.morale_shift = float(a.morale_shift) + float(moves.get("morale", 0.0))
 	if choice == "disclose":
 		a.disclosed = true
@@ -231,8 +230,7 @@ static func _find(sim: RefCounted, rule: Dictionary) -> void:
 		sim._log("地下的发现向居民公开：民心与科研各有所得。")
 		return
 	sim._transfer("external", "public", float(rule.get("find_cash", 0.0)), "annex.finds", false)
-	var c: Dictionary = sim.state.company
-	c.distrust = clampf(float(c.distrust) - float(rule.get("find_trust", 0.0)), 0.0, 100.0)
+	sim.Company.apply_distrust(sim, -float(rule.get("find_trust", 0.0)))
 	sim._log("地下的发现交给了公司：资金到账，公司更信任你。")
 
 

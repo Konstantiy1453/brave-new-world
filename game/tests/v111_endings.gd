@@ -141,6 +141,7 @@ func _answers() -> void:
 	var rule: Dictionary = Rules.read("contract").document.annex.answers
 	for id: String in ["comply", "maneuver", "disclose"]:
 		var sim: RefCounted = _colony()
+		sim.state.day = sim.AnnualReport.year_days()
 		_accept(sim, 4)
 		sim.state.company.distrust = 30.0
 		var mood: float = Population.morale(sim)
