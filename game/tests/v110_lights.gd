@@ -12,6 +12,7 @@ const Watchdog = preload("res://tests/support/watchdog.gd")
 const Sim = preload("res://simulation/sim.gd")
 const Map = preload("res://world/map_view.gd")
 const LightField = preload("res://world/light_field.gd")
+const TownForms = preload("res://world/town_forms.gd")
 const NightLights = preload("res://world/night_lights.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Geo = preload("res://world/world_gen.gd")
@@ -48,11 +49,13 @@ func run() -> void:
 	map.setup(sim.geo)
 	map.sync_state(sim.state)
 	var camps: Dictionary = map.landing_camps()
-	var west: Dictionary = _with_homes(sim, site, -1.0)
-	var east: Dictionary = _with_homes(sim, site, 1.0)
+	var west: Dictionary = _with_homes(sim, map, site, -1.0)
+	var east: Dictionary = _with_homes(sim, map, site, 1.0)
 	_same_size(west, east)
-	var west_lights: Array = LightField.lights(west, sim.geo, buildings, camps)
-	var east_lights: Array = LightField.lights(east, sim.geo, buildings, camps)
+	map.sync_state(west)
+	var west_lights: Array = LightField.lights(west, sim.geo, buildings, camps, {}, map._surveyed_lights())
+	map.sync_state(east)
+	var east_lights: Array = LightField.lights(east, sim.geo, buildings, camps, {}, map._surveyed_lights())
 	var west_homes: Vector2 = LightField.centroid(_warm(west_lights))
 	var east_homes: Vector2 = LightField.centroid(_warm(east_lights))
 	check(
@@ -69,8 +72,9 @@ func run() -> void:
 		"and in the painted night map: texel x %.1f against %.1f" % [west_map.x, east_map.x]
 	)
 	await _district(map, site, west, east)
+	_remote_facility_light(sim, map, site)
 	_camp(sim, site, camps)
-	_filling(sim, site, camps)
+	_filling(sim, site, camps, west.duplicate(true))
 	_building_site(sim, site, camps)
 	_roads(sim, site)
 	_anchored(sim, camps)
@@ -84,7 +88,7 @@ func run() -> void:
 
 ## A copy of the colony with HOMES homes finished on the general plots furthest to one side, and
 ## people enough to fill them.
-func _with_homes(sim: RefCounted, site: int, side: float) -> Dictionary:
+func _with_homes(sim: RefCounted, map: Node3D, site: int, side: float) -> Dictionary:
 	var shown: Dictionary = sim.state.duplicate(true)
 	var s: Dictionary = shown.settlements[0]
 	var plots: Array = sim.geo.regions[site].plots
@@ -92,11 +96,13 @@ func _with_homes(sim: RefCounted, site: int, side: float) -> Dictionary:
 	for b: Dictionary in s.buildings:
 		taken[int(b.plot)] = true
 	var free: Array = []
+	var eastings: Dictionary = {}
 	for index: int in range(plots.size()):
 		if not taken.has(index) and str(plots[index].kind) == "general":
 			free.append(index)
+			eastings[index] = map.plot_lot(site, index, "habitat").pos.x
 	free.sort_custom(
-		func(a: int, b: int) -> bool: return side * float(plots[a].x) > side * float(plots[b].x)
+		func(a: int, b: int) -> bool: return side * float(eastings[a]) > side * float(eastings[b])
 	)
 	var uid: int = int(shown.next_building_uid)
 	for index: int in free.slice(0, HOMES):
@@ -168,6 +174,40 @@ func _district(map: Node3D, site: int, west: Dictionary, east: Dictionary) -> vo
 	)
 
 
+## Compare the remote light in the far texture to an actual surveyed district address.
+func _remote_facility_light(sim: RefCounted, map: Node3D, site: int) -> void:
+	var shown: Dictionary = sim.state.duplicate(true)
+	var colony: Dictionary = shown.settlements[0]
+	var mine: Dictionary = sim.Production.building_record("mine_ore", 0)
+	mine.uid = int(shown.next_building_uid)
+	mine.active = true
+	var reg: Dictionary = sim.geo.regions[site]
+	var max_gap := -1.0
+	var district := Vector2.ZERO
+	for index: int in range(reg.plots.size()):
+		var at: Vector2 = map.plot_lot(site, index, "mine_ore").pos
+		var previous := Vector2(float(reg.plots[index].x), float(reg.plots[index].z))
+		var gap := at.distance_squared_to(previous)
+		if gap > max_gap:
+			max_gap = gap
+			district = at
+			mine.plot = index
+	colony.buildings = [mine]
+	map.sync_state(shown)
+	var towns: Array = TownForms.towns_now(shown, sim.geo, buildings)
+	var rules: Dictionary = Rules.read("progression").lights
+	var image: Image = TownForms.far_image(shown, sim.geo, buildings, towns, rules, map._surveyed_lights())
+	var lat: float = reg.canonical_lat - district.y / LightField.UNITS_PER_DEGREE
+	var lon: float = reg.canonical_lon + district.x / LightField.UNITS_PER_DEGREE
+	var pixel := Vector2i(
+		floori((wrapf(lon, -180.0, 180.0) + 180.0) * image.get_width() / 360.0),
+		floori((90.0 - lat) * image.get_height() / 180.0)
+	)
+	var light := image.get_pixel(pixel.x, pixel.y).g
+	check(max_gap > 16.0 and light > 0.05, "the far mine light stays on its surveyed district parcel (%.3f)" % light)
+	map.sync_state(sim.state)
+
+
 ## After people arrive, a bus runs from the landing pads to the newest home people live in; with
 ## no arrivals that week there is none.
 func _newcomers_bus(map: Node3D, site: int, shown: Dictionary) -> void:
@@ -218,8 +258,7 @@ func _camp(sim: RefCounted, site: int, camps: Dictionary) -> void:
 
 
 ## Homes light up in the order they were built: half the people, the newest home stays dark.
-func _filling(sim: RefCounted, site: int, camps: Dictionary) -> void:
-	var shown: Dictionary = _with_homes(sim, site, -1.0)
+func _filling(sim: RefCounted, site: int, camps: Dictionary, shown: Dictionary) -> void:
 	var s: Dictionary = shown.settlements[0]
 	var full: Dictionary = LightField.housing_shares(s, buildings)
 	s.population = int(s.base_housing) + int(buildings.habitat.housing)

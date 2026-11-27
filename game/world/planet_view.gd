@@ -275,22 +275,23 @@ func _build_clouds() -> void:
 ## is used, and the few lamps where roads leave town. Repainted only when what it shows has changed.
 func _update_night_lights() -> void:
 	var buildings: Dictionary = Rules.read("economy").buildings
+	var surveyed: Dictionary = _surveyed_lights()
 	var image: Image = NightLights.paint(
-		LightField.lights(state, world, buildings, landing_camps(), harbor_spots(), _surveyed_lights())
+		LightField.lights(state, world, buildings, landing_camps(), harbor_spots(), surveyed)
 	)
 	if night_lights == null:
 		night_lights = ImageTexture.create_from_image(image)
 	else:
 		night_lights.update(image)
-	_update_town_forms()
+	_update_town_forms(surveyed)
 
 
 ## The planet-scale forms (1.11 G), on the globe only: the flat map keeps the per-plot lights.
-func _update_town_forms() -> void:
+func _update_town_forms(surveyed: Dictionary) -> void:
 	var buildings: Dictionary = Rules.read("economy").buildings
 	var rules: Dictionary = Rules.read("progression").get("lights", {})
 	var towns: Array = TownForms.towns_now(state, world, buildings)
-	var far: Image = TownForms.far_image(state, world, buildings, towns, rules)
+	var far: Image = TownForms.far_image(state, world, buildings, towns, rules, surveyed)
 	if far_lights == null:
 		far_lights = ImageTexture.create_from_image(far)
 	else:
@@ -305,11 +306,18 @@ func _surveyed_lights() -> Dictionary:
 	var surveyed: Dictionary = {}
 	if not Geo.is_generated(str(world.version)):
 		return surveyed
+	var buildings: Dictionary = Rules.read("economy").buildings
 	for colony: Dictionary in state.get("settlements", []):
 		var region: int = int(colony.region)
 		var spots: Dictionary = {}
 		for i: int in range(colony.buildings.size()):
 			var facility: Dictionary = colony.buildings[i]
+			var role: String = str(buildings.get(str(facility.kind), {}).get("role", ""))
+			if role == "seabed":
+				continue
+			if role == "harbor" and bool(world.regions[region].get("coast", false)):
+				spots[int(facility.uid)] = harbor_spot(region).shore
+				continue
 			var plot: int = int(facility.get("plot", -1))
 			var lot: Dictionary = plot_lot(region, plot, str(facility.kind)) if plot >= 0 else unplotted_lot(region, i, str(facility.kind))
 			if not lot.is_empty():

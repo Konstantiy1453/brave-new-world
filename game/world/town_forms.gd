@@ -196,7 +196,8 @@ static func weights(distance: float, rules: Dictionary) -> Vector2:
 ## apart (`remote_roles`: mines, harbours, ...) far from their town, painted for the globe's far
 ## view (red warm, green cold, as night_lights.gd). The town's other buildings are its form.
 static func far_image(
-	state: Dictionary, world: Dictionary, buildings: Dictionary, towns: Array, rules: Dictionary
+	state: Dictionary, world: Dictionary, buildings: Dictionary, towns: Array, rules: Dictionary,
+	surveyed: Dictionary = {}
 ) -> Image:
 	var forms: Dictionary = rules.get("forms", {})
 	var image := Image.create(FAR_WIDTH, FAR_HEIGHT, false, Image.FORMAT_RG8)
@@ -217,7 +218,7 @@ static func far_image(
 			var spec: Dictionary = buildings.get(str(b.kind), {})
 			if int(b.get("remaining", 0)) > 0 or not remote.has(str(spec.get("role", ""))):
 				continue
-			var at: Vector2 = LightField.plot_coordinate(world, regions[region], b)
+			var at: Vector2 = LightField.plot_coordinate(world, regions[region], b, surveyed.get(region, {}))
 			if _arc(at, Vector2(centre.x, centre.y)) > centre.z * share:
 				_add(image, at.x, at.y, 0.0, float(forms.get("facility_point", 0.45)))
 	var step: float = float(forms.get("road_step_degrees", 0.25))

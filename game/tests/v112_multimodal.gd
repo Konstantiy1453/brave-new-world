@@ -64,6 +64,15 @@ func _ocean() -> void:
 	sea.setup(ImageTexture.create_from_image(narrow))
 	check(not sea.coordinates(sea._geographic(Vector2(93, 183)), sea._geographic(Vector2(670, 183))).is_empty(), "a navigable sub-grid strait remains visible")
 
+	# The closest water pixel to the departure lies in an enclosed lake.
+	var harbour := Image.create_empty(256, 128, false, Image.FORMAT_RGBA8)
+	harbour.fill(Color(0, 0, 0, 0.25))
+	harbour.fill_rect(Rect2i(90, 45, 22, 30), Color(0, 0, 0, 0.85))
+	harbour.fill_rect(Rect2i(99, 56, 6, 8), Color(0, 0, 0, 0.25))
+	sea.setup(ImageTexture.create_from_image(harbour))
+	var offshore := sea.coordinates(sea._geographic(Vector2(105, 60)), sea._geographic(Vector2(180, 60)))
+	check(offshore.size() > 8 and sea._pixel(offshore[0]).x >= 112, "a harbour beside an isolated lake uses the reachable open coast")
+
 
 func _network() -> void:
 	var sim: RefCounted = Sim.new()

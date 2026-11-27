@@ -237,7 +237,7 @@ func sync_state(data: Dictionary) -> void:
 		_update_night_lights()
 	elif forms_now != forms_signature and timelapse.is_empty():
 		forms_signature = forms_now
-		_update_town_forms()
+		_update_town_forms(_surveyed_lights())
 	_follow_weather()
 	if mode == "region" and not region_busy:
 		var new_signature := _building_signature()

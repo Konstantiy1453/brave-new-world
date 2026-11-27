@@ -14,7 +14,6 @@ const SaveIo = preload("res://simulation/save_io.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Stats = preload("res://simulation/stats.gd")
 const Research = preload("res://simulation/research.gd")
-const ResearchBot = preload("res://tests/balance/bots/research_first_bot.gd")
 const Megaprojects = preload("res://simulation/megaprojects.gd")
 const Logistics = preload("res://simulation/logistics.gd")
 const Sites = preload("res://simulation/sites.gd")
@@ -531,18 +530,19 @@ func _ledger_today(sim: RefCounted, key: String) -> float:
 	return total
 
 
-## Commissioned research on a colony whose labs are at work: the research-first bot plays 150 days
-## with its own commissions off, then the test drives them.
+## Give two teams funded laboratory benches before testing the prices and daily commission charges.
 func _commissions() -> void:
 	var sim: RefCounted = Sim.new()
 	LegacyWorld.new_game(sim, SEED, "science", 1, "normal")
 	sim.state.events_v2.next_draw = 99999
-	var bot: RefCounted = ResearchBot.new()
-	bot.uses_commissions = false
-	bot.begin(sim, SEED)
-	for _day: int in range(150):
-		bot.on_day()
+	check(sim.act("settle", {"site": 0}) == "", "the science colony lands")
+	fund(sim, 1.0e7)
+	check(sim.act("build", {"region": 0, "kind": "lab"}) == "", "the colony orders its lab")
+	for _day: int in range(int(sim.config.buildings.lab.days)):
 		sim.tick()
+	for tech: String in ["survey", "adaptation"]:
+		check(sim.act("research_allocate", {"tech": tech, "staff": 5}) == "", "staffed " + tech)
+	sim.tick()
 	var rules: Dictionary = sim.progression.research.commission
 	var working: Array = []
 	for key: String in sim.state.research.projects:
@@ -551,7 +551,6 @@ func _commissions() -> void:
 	check(working.size() >= 2, "the labs run two projects to commission: %d" % working.size())
 	if working.size() < 2:
 		return
-	fund(sim, 1.0e7)
 	var first: String = working[0]
 	var second: String = working[1]
 	var quote: Dictionary = Research.commission_quote(sim, first, 1)

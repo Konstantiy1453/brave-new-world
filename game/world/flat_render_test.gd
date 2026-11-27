@@ -21,10 +21,12 @@ func check(ok: bool, label: String):
 func shot(name: String):
 	for i in range(12):
 		await process_frame
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(
+	# A hidden native test window still needs a rendered frame before readback.
+	RenderingServer.force_draw(false)
+	var image := root.get_texture().get_image()
+	check(image != null and not image.is_empty() and image.save_png(
 		"res://../evidence/v17/tests/evidence_" + name + suffix + ".png"
-	)
+	) == OK, "saved " + name)
 
 
 func run():
@@ -51,16 +53,24 @@ func run():
 		not required_refinement or responsive_frames > 10,
 		"new-seed detail refinement leaves frame loop responsive"
 	)
-	var route = {"variant": "road", "coordinates": [[world.regions[0].lat, world.regions[0].lon], [world.regions[1].lat, world.regions[1].lon]]}
+	var route := {
+		"id": 0, "a": 0, "b": 1, "variant": "valley", "days": 8,
+		"ready_day": 0, "blocked_until": -1,
+		"coordinates": [
+			[world.regions[0].lat, world.regions[0].lon],
+			[world.regions[1].lat, world.regions[1].lon],
+		],
+	}
 	map.sync_state(
 		{
+			"day": 1,
 			"settlements":
 			[
 				{"region": 0, "base_housing": 80, "buildings": []},
 				{"region": 1, "base_housing": 40, "buildings": []}
 			],
 			"roads": [route],
-			"shipments": [{"from": 0, "to": 1, "remaining": 3, "total_days": 8}],
+			"shipments": [{"road": 0, "from": 0, "to": 1, "resource": "parts", "amount": 2.0, "remaining": 3, "total_days": 8}],
 			"enterprise": {}
 		}
 	)
@@ -94,7 +104,7 @@ func run():
 	)
 	check(map.camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "globe perspective restored")
 	await shot("world_planet_v15_fixture")
-	map.show_region(1)
+	await map.show_region(1)
 	check(
 		map.mode == "region" and map.surface.visible and not map.flat_world.visible,
 		"region still available"
@@ -134,4 +144,6 @@ func run():
 			)
 		)
 	)
+	map.queue_free()
+	await process_frame
 	quit(0 if failures.is_empty() else 1)

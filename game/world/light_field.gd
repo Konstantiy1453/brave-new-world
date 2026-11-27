@@ -128,7 +128,7 @@ static func settlement_lights(
 			)
 	for b: Dictionary in s.get("buildings", []):
 		var uid: int = int(b.get("uid", 0))
-		var spot: Vector2 = surveyed.get(uid, plot_point(reg, b))
+		var spot: Vector2 = plot_point(reg, b, surveyed)
 		# A harbour shines at its quay (`quay_lights`), not on a plot.
 		if str(buildings.get(str(b.kind), {}).get("role", "")) == "harbor":
 			continue
@@ -207,8 +207,11 @@ static func lit_windows(windows: int, share: float) -> int:
 	return clampi(roundi(windows * share), 1, windows)
 
 
-## A building's plot centre in district units; a building without a plot stands in the centre.
-static func plot_point(reg: Dictionary, b: Dictionary) -> Vector2:
+## A surveyed building centre in district units, falling back to the saved plot on older maps.
+static func plot_point(reg: Dictionary, b: Dictionary, surveyed: Dictionary = {}) -> Vector2:
+	var uid: int = int(b.get("uid", 0))
+	if surveyed.has(uid):
+		return surveyed[uid]
 	var plots: Array = reg.get("plots", [])
 	var plot: int = int(b.get("plot", -1))
 	if plot < 0 or plot >= plots.size():
@@ -217,8 +220,10 @@ static func plot_point(reg: Dictionary, b: Dictionary) -> Vector2:
 
 
 ## Where a building's plot lies on the planet, (lat, lon) in degrees (town_forms.gd's remote points).
-static func plot_coordinate(world: Dictionary, reg: Dictionary, b: Dictionary) -> Vector2:
-	var at: Dictionary = _light(world, reg, plot_point(reg, b), 0.0, 0.0)
+static func plot_coordinate(
+	world: Dictionary, reg: Dictionary, b: Dictionary, surveyed: Dictionary = {}
+) -> Vector2:
+	var at: Dictionary = _light(world, reg, plot_point(reg, b, surveyed), 0.0, 0.0)
 	return Vector2(float(at.lat), float(at.lon))
 
 

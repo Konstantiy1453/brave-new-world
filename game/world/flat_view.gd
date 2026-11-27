@@ -402,14 +402,14 @@ func _route_coordinates(route: Dictionary) -> Array[Vector2]:
 
 
 func _route_color(route: Dictionary) -> Color:
+	if str(route.get("variant", "")) == "sea":
+		return Color("96c7d8")
 	var day: int = int(state.get("day", 0))
 	if Geo.road_blocked(route, day):
 		return Color("b47561")
 	if Geo.road_building(route, day):
 		return Color("86959c")
 	match str(route.get("variant", "")):
-		"sea":
-			return Color("96c7d8")
 		"shuttle":
 			return SHUTTLE_COLOR
 	return Color("aa8053")

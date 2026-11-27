@@ -112,7 +112,22 @@ func _berth(p: Vector2) -> int:
 	return best
 
 
-func _search(start: int, finish: int) -> Array[Vector2]:
+## Other potential berths in the same coastal district. Approach distance is weighted
+## so a nearby open coast wins over a shortcut to the far side of a harbour.
+func _nearby_berths(port: Vector2) -> Dictionary:
+	var guess := Vector2i((port + Vector2(0.5, 0.5)) * Vector2(grid) / Vector2(size))
+	var radius := maxi(5, ceili(grid.x / 30.0))
+	var candidates := {}
+	for y in range(maxi(0, guess.y - radius), mini(grid.y, guess.y + radius + 1)):
+		for x in range(guess.x - radius, guess.x + radius + 1):
+			var cell := y * grid.x + posmod(x, grid.x)
+			var coast := _near(port, _center(cell))
+			if _wet(coast):
+				candidates[cell] = 3.0 * port.distance_to(coast)
+	return candidates
+
+
+func _search(starts: Dictionary, finishes: Dictionary, goal: Vector2) -> Array[Vector2]:
 	var scores := PackedFloat64Array()
 	scores.resize(grid.x * grid.y)
 	scores.fill(INF)
@@ -123,20 +138,19 @@ func _search(start: int, finish: int) -> Array[Vector2]:
 	closed.resize(scores.size())
 	var costs := PackedFloat64Array()
 	var cells := PackedInt32Array()
-	scores[start] = 0.0
-	Routes._push(costs, cells, 0.0, start)
-	var goal := _center(finish)
-	while not cells.is_empty():
+	for start: int in starts:
+		var here := _center(start)
+		scores[start] = starts[start]
+		Routes._push(costs, cells, scores[start] + here.distance_to(_near(here, goal)), start)
+	var best_cost := INF
+	var best_finish := -1
+	while not cells.is_empty() and costs[0] < best_cost:
 		var cell := Routes._pop(costs, cells)
-		if cell == finish:
-			var points: Array[Vector2] = []
-			while cell >= 0:
-				points.append(_center(cell))
-				cell = prior[cell]
-			points.reverse()
-			for i in range(1, points.size()):
-				points[i] = _near(points[i - 1], points[i])
-			return points
+		if finishes.has(cell) and prior[cell] >= 0:
+			var cost: float = scores[cell] + finishes[cell]
+			if cost < best_cost:
+				best_finish = cell
+				best_cost = cost
 		if closed[cell]:
 			continue
 		closed[cell] = 1
@@ -154,7 +168,15 @@ func _search(start: int, finish: int) -> Array[Vector2]:
 				scores[next] = cost
 				prior[next] = cell
 				Routes._push(costs, cells, cost + dest.distance_to(_near(dest, goal)), next)
-	return []
+	var points: Array[Vector2] = []
+	var cell := best_finish
+	while cell >= 0:
+		points.append(_center(cell))
+		cell = prior[cell]
+	points.reverse()
+	for i in range(1, points.size()):
+		points[i] = _near(points[i - 1], points[i])
+	return points
 
 
 ## Bow each open-water leg gently. Test both sides and smaller bows in a narrow passage.
@@ -195,7 +217,10 @@ func _plan_at_resolution(from: Vector2, to: Vector2) -> Array[Vector2]:
 	var finish := _berth(to)
 	if start < 0 or finish < 0:
 		return []
-	var path := _search(start, finish)
+	var path := _search({start: 0.0}, {finish: 0.0}, _center(finish))
+	if path.is_empty() and start != finish:
+		# A nearer lake or a cut-off inlet may hide the seaward face of either port.
+		path = _search(_nearby_berths(from), _nearby_berths(to), to)
 	if path.size() < 2:
 		return []
 	var plotted: Array[Vector2] = [_geographic(path[0])]
