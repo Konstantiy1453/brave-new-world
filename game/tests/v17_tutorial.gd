@@ -524,22 +524,27 @@ func _naming() -> void:
 		"lists show what kind it is"
 	)
 	check(game.map._site_text(regions[3], false) == str(regions[3].terrain), "so does the map")
-	var home: int = int(sim.geo.playability.pairs[0][0])
-	game.select_region(home)
-	game.ui.find_child("SettleButton", true, false).pressed.emit()
+	var home: int = regions.size()
+	for region: Dictionary in regions:
+		var site: Dictionary = sim.Placement.view(sim, region.lat, region.lon)
+		if site.refusal == "":
+			game.select_ground({"lat": region.lat, "lon": region.lon, "precision": 0.1, "view":"flat"})
+			break
+	game.ui.find_child("SettleGroundButton", true, false).pressed.emit()
 	await process_frame
 	var edit: LineEdit = game.modal_box.find_child("SiteNameEdit", true, false)
 	check(edit.text == "", "the name starts empty")
-	check(edit.placeholder_text == str(regions[home].name), "with the number as the fallback")
+	check(edit.placeholder_text == Sites.SiteGen.site_number(home), "with the number as the fallback")
 	game.modal_box.find_child("SiteNameCancel", true, false).pressed.emit()
 	await process_frame
 	check(sim.state.settlements.is_empty(), "cancelling settles nothing")
-	game.ui.find_child("SettleButton", true, false).pressed.emit()
+	game.ui.find_child("SettleGroundButton", true, false).pressed.emit()
 	await process_frame
 	edit = game.modal_box.find_child("SiteNameEdit", true, false)
 	edit.text = "  100%d {x} [b]家  "
 	edit.text_submitted.emit(edit.text)
 	await process_frame
+	regions = sim.state.world.regions
 	var named: String = "100%d {x} [b]家"
 	check(sim.settlement(home).name == named, "any text will do, trimmed, and Enter confirms it")
 	check(regions[home].name == named, "the site carries the same name")

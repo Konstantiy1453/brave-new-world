@@ -44,7 +44,7 @@ static func region(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.panel(g, b)
 		return
-	if g.settlement().is_empty() and not g.coach.active() and g.sim.geo.has("grid_width"):
+	if g.settlement().is_empty() and (g.coach == null or not g.coach.active()) and g.sim.geo.has("grid_width"):
 		D.label(b, "选择落脚点", 24, D.INK)
 		D.label(b, "点击球面或平铺地图上的陆地，查看当地水源、地形和矿产。", 16, D.MUTED)
 		return
@@ -92,7 +92,7 @@ static func region_actions(g, b):
 	if not g.ground.is_empty():
 		GroundPanel.actions(g, b)
 		return
-	if g.settlement().is_empty() and not g.coach.active() and g.sim.geo.has("grid_width"):
+	if g.settlement().is_empty() and (g.coach == null or not g.coach.active()) and g.sim.geo.has("grid_width"):
 		return
 	var known: Dictionary = g.sim.site_view(g.selected)
 	if g.settlement().is_empty():
