@@ -1674,3 +1674,9 @@ factories, so the game's cycle and the payback bands stay as they are.
   middle and fades out over 1.4 town extents (the approved still: 0.7). A new town of a few
   buildings stood on a small disc of it ringed by the far ground, sharpest at arid sites (tan
   against rust-brown).
+- The packaged outpost cases start from a save on its licence day (seed 260129, day 179, made
+  headless by the balanced bot, `tools/verify/licence_save.gd`; `placement_driver.gd --save`)
+  instead of playing seed 3's picked capital to the licence inside the game: on CC-GEO-2.3 that
+  capital has no deposit the bot can export from, so the licence never comes and the run ground
+  on for three hours toward day 900. The expedition, arrival, building, save and reload still go
+  through the interface; the capital check compares the capital with its own name.

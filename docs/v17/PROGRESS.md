@@ -40,11 +40,16 @@ which before `c57287f` the founding refused); refusals at sea, at the pole and o
 export check (CC-GEO-2.3 new games, a legacy 2.2 save keeping its generator and settlement places);
 and the district of the played coastal colony from cold (15 of 15: all 58 raw district and terrain
 files open from the PCK, ground textures, shoulders, paving, boulders, toe stones, grass,
-buildings, near-camera models). The two outpost cases (the colony played by the balanced bot to
-the expansion licence inside the running game, then an expedition through the interface to picked
-inland ground from the globe and to coastal ground from the flat map, its arrival, a building
-ordered through the build page, a road, a save and a reload) were still playing to the licence
-after 80 minutes when the release was packaged; their result is added below when they finish.
+buildings, near-camera models). The two outpost cases (2026-11-27, from a save on its licence day,
+seed 260129 day 179, made headless by the balanced bot with `tools/verify/licence_save.gd` and
+loaded through the game's load path): an expedition through the interface from the capital to
+picked inland ground from the globe (2.61°N 74.89°W, an engineered road over the mountains,
+1,667 km, 5 days, ¥ 3,697) and to coastal ground from the flat map (3.75°S 72.25°W, 1,110 km,
+3 days), each taking the quoted days and cost, arriving, a farm ordered through the build page,
+both maps and the district on the same place, and a save, quit and reload keeping both towns, the
+route's end and the capital: 21 of 21 checks each, no script error. Played inside the game from
+seed 3's picked capital, as in 1.10, the colony never earned the licence on CC-GEO-2.3 (no deposit
+there it could export from) and the runs were stopped after three hours.
 
 **Frame times** (packaged PCK, the coastal colony at day 900: 37 buildings, 277 people; Intel Xeon
 2.30 GHz, 4 threads, llvmpipe software rendering (Mesa 25.2.8, OpenGL 4.5), GL Compatibility,

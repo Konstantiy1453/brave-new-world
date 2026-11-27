@@ -18,7 +18,8 @@ extends SceneTree
 ## - outpost: a capital on picked ground, the colony played to the expansion licence (the balanced bot
 ##   through the simulation's own actions), then the expedition to picked inland (--coast=0) or
 ##   coastal (--coast=1) ground through the interface: departure town, route, cost, days, naming,
-##   arrival, a building, a road, a save, a quit and a reload.
+##   arrival, a building, a road, a save, a quit and a reload. With --save=<file> the colony comes
+##   from a save on its licence day instead, loaded through the game's load path.
 
 const MARKER_CLEARANCE_PX: float = 60.0
 const OLD_PICK_RADIUS_PX: float = 43.0
@@ -668,33 +669,56 @@ func _refusal() -> void:
 ## A capital on picked ground, the colony played to the expansion licence, then an expedition to
 ## picked ground through the interface.
 func _outpost() -> void:
-	var pair: Dictionary = _area_pair()
-	var start: Dictionary = pair.points[0]
-	await _pick("planet", float(start.lat), float(start.lon))
-	await _found("远征首都")
 	var sim: RefCounted = game.sim
+	if str(options.get("save", "")) != "":
+		# From a save that holds the licence (`--save`), loaded through the game's own load path
+		# (1.12: CC-GEO-2.3 seed 3's picked capital has no deposit the bot can export from, so it
+		# never earns the licence; the save is a bot-played colony on its first licence day).
+		game.load_path(str(options.save))
+		await _frames(6)
+		while game.map.atlas_refining:
+			await process_frame
+		sim = game.sim
+		record.played_by = "save %s (balanced bot through Sim.act)" % str(options.save).get_file()
+	else:
+		var pair: Dictionary = _area_pair()
+		var start: Dictionary = pair.points[0]
+		await _pick("planet", float(start.lat), float(start.lon))
+		await _found("远征首都")
+		sim = game.sim
 	var capital: Dictionary = (
 		sim.state.settlements[0] if not sim.state.settlements.is_empty() else {}
 	)
-	_check(not capital.is_empty(), "the capital is founded on picked ground")
+	_check(
+		not capital.is_empty(),
+		(
+			"the capital is founded on picked ground"
+			if str(options.get("save", "")) == ""
+			else "the saved colony's capital is loaded: %s" % str(capital.get("name", ""))
+		)
+	)
 	if capital.is_empty():
 		return
 	var capital_region: int = int(capital.region)
 	record.capital = _stored(capital_region)
-	# The colony is played to the expansion licence by the balance harness's balanced bot, through
-	# the simulation's own actions (`Sim.act`), the ones the interface's buttons call.
-	var bot: RefCounted = _bot()
-	_check(bot != null, "the balanced bot is loaded to play the colony to the expansion licence")
-	if bot == null:
-		return
-	bot.begin(sim, int(options.seed))
-	while not sim.state.contract.licences.has("expedition") and int(sim.state.day) < 900:
-		bot.on_day()
-		sim.tick()
+	record.capital_name = str(capital.name)
+	if str(options.get("save", "")) == "":
+		# The colony is played to the expansion licence by the balance harness's balanced bot,
+		# through the simulation's own actions (`Sim.act`), the ones the interface's buttons call.
+		var bot: RefCounted = _bot()
+		_check(
+			bot != null, "the balanced bot is loaded to play the colony to the expansion licence"
+		)
+		if bot == null:
+			return
+		bot.begin(sim, int(options.seed))
+		while not sim.state.contract.licences.has("expedition") and int(sim.state.day) < 900:
+			bot.on_day()
+			sim.tick()
+		record.played_by = (
+			"balanced bot (tests/balance/bots) through Sim.act, days 1-%d" % int(sim.state.day)
+		)
 	record.unlock_day = int(sim.state.day)
-	record.played_by = (
-		"balanced bot (tests/balance/bots) through Sim.act, days 1-%d" % int(sim.state.day)
-	)
 	record.towns_at_unlock = sim.state.settlements.size()
 	_check(
 		sim.state.contract.licences.has("expedition") and sim.state.settlements.size() == 1,
@@ -876,7 +900,7 @@ func _outpost() -> void:
 	var capital_now := Vector2(record.capital_after.lat, record.capital_after.lon)
 	_check(
 		(
-			str(kept_capital.name) == "远征首都"
+			str(kept_capital.name) == str(record.capital_name)
 			and int(sim.state.settlements[0].region) == capital_region
 			and _agrees(capital_now, capital_was, 0.0001)
 		),
