@@ -121,7 +121,7 @@ static func attractiveness(sim: RefCounted, s: Dictionary) -> Dictionary:
 		parts.food = float(rules.food_good)
 	var adults: int = maxi(1, int(s.workers) + int(s.scientists))
 	var unemployed: int = maxi(0, adults - int(s.employed))
-	var vacancies: int = maxi(0, int(s.jobs) - int(s.employed))
+	var vacancies: int = sim.Commuting.vacancies(s)
 	if float(unemployed) / adults >= float(rules.jobless_share):
 		parts.jobs = float(rules.jobless)
 	elif float(vacancies) / adults >= float(rules.jobs_open_share):
@@ -371,7 +371,7 @@ static func _move_workers(sim: RefCounted, from: Dictionary, to: Dictionary, lim
 	# A young outpost keeps its crew: they are waiting for buildings, not out of work for good.
 	var kept: int = maxi(int(from.employed_workers), int(sim.pop_rules.migration.keep_workers))
 	var idle: int = int(from.workers) - kept
-	var open: int = int(to.jobs) - int(to.employed)
+	var open: int = sim.Commuting.vacancies(to)
 	var moving: int = mini(mini(idle, open), mini(free_beds(sim, to), limit))
 	if moving <= 0:
 		return
@@ -577,6 +577,8 @@ static func reconcile_jobs(sim: RefCounted, s: Dictionary) -> void:
 			s.farmers = int(s.farmers) + int(b.employed)
 		if b.kind == "service" and not sim.state.enterprise.is_empty():
 			sim.state.enterprise.employees = b.employed
+	sim.Commuting.trim_outgoing(sim, s, available)
+	s.employed_workers += int(s.get("commute_out", 0))
 	s.employed = int(s.employed_workers) + int(s.employed_scientists)
 
 

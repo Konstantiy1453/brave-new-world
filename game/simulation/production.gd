@@ -394,6 +394,7 @@ static func demolish(sim: RefCounted, region: int, index: int) -> String:
 		return "巨型工程不能拆除"
 	if str(b.kind) in ["port", "power", "water"] and _last_of(s, str(b.kind)):
 		return "这是本据点最后一座，不能拆除"
+	sim.Commuting.release(sim, s, b)
 	s.buildings.remove_at(index)
 	Bay.reroute(sim, s, b)
 	_reclaim_plot(sim, s, b)
@@ -446,7 +447,8 @@ static func _import_price(sim: RefCounted, key: String) -> float:
 	return float(sim.config.prices[key]) * (1.0 + float(sim.config.economy.port_fee))
 
 
-static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
+static func run_settlement(sim: RefCounted, s: Dictionary, shuttle_pool: Dictionary = {}) -> void:
+	var shuttle_reserve: int = int(shuttle_pool.get(int(s.region), {}).get("reserved", 0))
 	s.shortages = []
 	s.jobs = 0
 	s.employed_workers = 0
@@ -515,16 +517,17 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		var special: int = int(d.get("specialists", 0))
 		s.jobs += required + special
 		b.employed = mini(
-			required, maxi(0, int(s.workers) - private_reserved - int(s.employed_workers))
+			required, maxi(0, int(s.workers) - private_reserved - shuttle_reserve - int(s.employed_workers))
 		)
 		b.specialists = mini(special, maxi(0, int(s.scientists) - int(s.employed_scientists)))
 		s.employed_workers += b.employed
+		var visitors: int = sim.Commuting.assign(shuttle_pool, s, b, required - int(b.employed))
 		s.employed_scientists += b.specialists
 		if role in FARMING_ROLES:
 			s.farmers = int(s.farmers) + int(b.employed)
 		b.efficiency = 1.0
 		if required > 0:
-			b.efficiency = float(b.employed) / required
+			b.efficiency = float(int(b.employed) + visitors) / required
 		if special > 0:
 			b.efficiency = minf(b.efficiency, float(b.specialists) / special)
 		if b.efficiency < 1.0:
@@ -590,7 +593,7 @@ static func run_settlement(sim: RefCounted, s: Dictionary) -> void:
 		b.status = Keys.B_RUNNING if b.active else Keys.B_IDLE
 		sim._public_expense(
 			(
-				float(b.employed) * Population.worker_wage(sim)
+				float(int(b.employed) + sim.Commuting.visitors(b)) * Population.worker_wage(sim)
 				+ float(b.specialists) * Population.scientist_wage(sim)
 			),
 			"wages.public",
@@ -997,6 +1000,7 @@ static func batch_toggle(sim: RefCounted, args: Dictionary) -> String:
 		):
 			b.enabled = bool(args.get("enabled", true))
 		if not b.enabled:
+			sim.Commuting.release(sim, s, b)
 			b.active = false
 			b.status = Keys.B_DISABLED
 	sim._refresh(s)
@@ -1011,6 +1015,7 @@ static func toggle(sim: RefCounted, region: int, index: int) -> String:
 	var building: Dictionary = s.buildings[index]
 	building.enabled = not bool(building.get("enabled", true))
 	if not building.enabled:
+		sim.Commuting.release(sim, s, building)
 		building.active = false
 		building.status = Keys.B_DISABLED
 	sim._refresh(s)

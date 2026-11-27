@@ -8,6 +8,7 @@ const WorldGen = preload("res://world/world_gen.gd")
 const Rules = preload("res://simulation/rules.gd")
 const Keys = preload("res://simulation/keys.gd")
 const Research = preload("res://simulation/research.gd")
+const Commuting = preload("res://simulation/commuting.gd")
 const Company = preload("res://simulation/company.gd")
 const EventsV2 = preload("res://simulation/events_v2.gd")
 const Career = preload("res://simulation/career.gd")
@@ -389,10 +390,12 @@ func tick() -> void:
 	Logistics.advance_shipments(self)
 	# Which buildings a crew works on today (crews.gd); the rest of the sites wait.
 	Crews.daily(self)
+	var shuttle_pool: Dictionary = Commuting.begin_day(self)
 	for s: Dictionary in state.settlements:
 		if s.arrival > 0:
 			s.arrival -= 1
-		Production.run_settlement(self, s)
+		Production.run_settlement(self, s, shuttle_pool)
+	Commuting.finish_day(shuttle_pool)
 	Research.tick(self)
 	for s: Dictionary in state.settlements:
 		if s.arrival <= 0:

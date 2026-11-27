@@ -176,6 +176,7 @@ static func adopt(sim: RefCounted, candidate: Dictionary, new_blobs: Dictionary)
 	sim.blobs = new_blobs
 	# The effects cache belongs to the game it was built for (research.gd `bonus`).
 	sim.tech_effects_count = -1
+	sim.AnnualReport.update_open_targets(sim)
 	var issues: Array = sim.audit()
 	if not issues.is_empty():
 		sim.state = old_state
@@ -261,7 +262,7 @@ static func validate(sim: RefCounted, candidate: Variant) -> String:
 		or not sim.progression.difficulty.has(candidate.difficulty)
 	):
 		return "难度配置无效"
-	for validator: Variant in [Research, Company, AnnualReport, Annex, Weather, LightRecord]:
+	for validator: Variant in [Research, Company, AnnualReport, Annex, Weather, LightRecord, sim.Commuting]:
 		error = validator.validate(sim, candidate)
 		if error != "":
 			return error

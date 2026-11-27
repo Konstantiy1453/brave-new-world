@@ -62,6 +62,7 @@ static func ensure_state(state: Dictionary) -> void:
 	var landed: bool = not state.get("settlements", []).is_empty()
 	var year: int = year_days()
 	state.annual = {
+		"target_revision": 1,
 		"landing_day": 0 if landed else -1,
 		"next_ship": (floori(float(state.get("day", 0)) / year) + 1) * year if landed else -1,
 		"year": floori(float(state.get("day", 0)) / year) if landed else 0,
@@ -75,6 +76,18 @@ static func ensure_state(state: Dictionary) -> void:
 		"fines_paid": 0.0,
 		"tribute_delivered": 0.0,
 	}
+
+
+## Current quotas and unsigned reports get the reduction once. Signed history keeps its own rules.
+static func update_open_targets(sim: RefCounted) -> void:
+	var a: Dictionary = sim.state.annual
+	if int(a.get("target_revision", 0)) >= 1:
+		return
+	for targets: Dictionary in [a.targets, a.pending.get("targets", {})]:
+		for line: String in LINES:
+			if targets.has(line):
+				targets[line] = float(targets[line]) * 0.9
+	a.target_revision = 1
 
 
 ## The first settlement is founded: the first ship comes a year later.
@@ -471,4 +484,10 @@ static func validate(_sim: RefCounted, candidate: Dictionary) -> String:
 			return "年度报告账面差额无效"
 	if not annual.history is Array or not annual.pending is Dictionary:
 		return "年度报告数据无效"
+	for targets: Variant in [annual.targets, annual.pending.get("targets", {})]:
+		if not targets is Dictionary:
+			return "年度报告指标无效"
+		for amount: Variant in targets.values():
+			if not (amount is float or amount is int) or not is_finite(float(amount)) or float(amount) < 0.0:
+				return "年度报告指标无效"
 	return ""

@@ -99,7 +99,7 @@ static func found(sim: RefCounted, s: Dictionary, count: int) -> void:
 	var taken: int = mini(count, int(s.workers))
 	s.workers = int(s.workers) - taken
 	s.crew = int(s.get("crew", 0)) + taken
-	_release_jobs(s)
+	sim._reconcile_jobs(s)
 	for _index: int in range(taken):
 		sim.state.crews.teams.append(_new_team(sim.state, int(s.region)))
 
@@ -659,7 +659,7 @@ static func train(sim: RefCounted, region: int) -> String:
 	sim._transfer("public", "external", cost, "invest.crew", false, "train")
 	s.workers = int(s.workers) - 1
 	s.crew = int(s.get("crew", 0)) + 1
-	_release_jobs(s)
+	sim._reconcile_jobs(s)
 	var team: Dictionary = _new_team(sim.state, region)
 	team.task = TRAIN
 	team.until = int(sim.state.day) + int(rule.get("train_days", 0))

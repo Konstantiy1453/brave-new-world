@@ -148,6 +148,7 @@ func company_paths() -> void:
 	var rescue = make()
 	var year: int = rescue.AnnualReport.year_days()
 	rescue.state.day = year
+	rescue.state.contract.deadline_shifts["1"] = year
 	var liquidity: Dictionary = rescue.progression.company.offers.liquidity
 	rescue.state.company.stage = "review"
 	rescue.state.company.deadline = year + 40
@@ -187,6 +188,7 @@ func company_paths() -> void:
 	)
 	check(rescue.audit().is_empty(), "aid delivery repayment preserves cash and goods")
 	var own = make()
+	own.state.contract.deadline_shifts["1"] = year
 	var stable: int = int(own.progression.company.stable_days)
 	own.state.company.stage = "review"
 	own.state.company.deadline = year + stable + 40

@@ -478,8 +478,9 @@
       "weight": 10.0,
       "requires": [],
       "minimum_staff": 3,
-      "description": "道路运力 +40%，运费 -20%。",
+      "description": "道路运力 +40%，运费 -20%。开通低成本通勤穿梭机，每座居住据点每日可送 24 名空闲职工到其他据点。",
       "effects": {
+        "shuttle_seats": 24,
         "road_capacity": 0.4,
         "transport_fee": -0.2
       }

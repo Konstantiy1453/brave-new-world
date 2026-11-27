@@ -286,7 +286,7 @@ static func _settlement_buildings(g, b, s: Dictionary):
 			row.running += 1
 		if int(item.remaining) <= 0:
 			row.built += 1
-			row.staff += int(item.get("employed", 0))
+			row.staff += int(item.get("employed", 0)) + g.sim.Commuting.visitors(item)
 			row.jobs += (
 				g.sim.Production.jobs_for(g.sim, item) if g.sim.config.buildings.has(kind) else 0
 			)
@@ -1665,6 +1665,14 @@ static func population(g, b):
 		),
 		18
 	)
+	var seats: int = g.sim.Commuting.seats(g.sim)
+	if seats > 0:
+		D.label(b, "跨区通勤　·　今日外出 %d 人，外来 %d 人" % [int(s.get("commute_out", 0)), int(s.get("commute_in", 0))], 18, D.TEAL)
+		for route: String in g.sim.Commuting.routes(g.sim, int(s.region)):
+			D.label(b, route, 16)
+		D.label(b, "居住据点每日最多可派出 %d 名空闲职工。穿梭机自动往返，外来职工在家乡食宿。" % seats, 16, D.MUTED)
+	else:
+		D.label(b, "研究「货运调度」可开通穿梭机，把居住据点的空闲职工送往缺人的地区。", 16, D.MUTED)
 	D.label(b, "工资政策（基准工资的倍数）：提高工资增加吸引力、减少离开，但所有工资支出同比增加。", 17, D.MUTED)
 	var wage_row = D.row(b)
 	var wage = D.spin(
