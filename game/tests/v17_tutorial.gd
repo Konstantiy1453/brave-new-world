@@ -370,8 +370,10 @@ func _pages() -> void:
 	var r: Dictionary = game.sim.geo.regions[0]
 	game.select_ground({"lat": r.lat, "lon": r.lon, "precision": 0.1, "view": "planet"})
 	var names: PackedStringArray = _labels(game.sidebar)
-	check(_contains(names, "轨道观测"), "the picked ground shows orbital observations")
-	check(_contains(names, "可建设地块"), "and the building plots available")
+	check(_contains(names, "开局可采"), "the first landing shows its available minerals")
+	check(_contains(names, "土地肥沃度"), "the first landing shows local soil fertility")
+	check(_contains(names, "建设用地") and _contains(names, "农田") and _contains(names, "可采矿地"),
+		"the first landing lists construction, farming and mining districts")
 	check(game.ui.find_child("SettleGroundButton", true, false) != null, "and offers to found on the picked ground")
 	game.clear_ground()
 	game.selected = 0
@@ -379,6 +381,9 @@ func _pages() -> void:
 	var next: Dictionary = game.sim.geo.regions[1]
 	game.select_ground({"lat": next.lat, "lon": next.lon, "precision": 0.1, "view": "flat"})
 	names = _labels(game.sidebar)
+	check(_contains(names, "轨道观测"), "later picked ground shows orbital observations")
+	check(_contains(names, "可建设地块"), "later picked ground shows the estimated building plots")
+	check(not _contains(names, "首府落点勘察"), "later picked ground hides the first landing survey")
 	check(_contains(names, "最近的据点"), "picked ground shows the nearest departure settlement")
 	game.clear_ground()
 	game.selected = 0

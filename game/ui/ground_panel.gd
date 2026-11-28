@@ -55,6 +55,9 @@ static func panel(g, b: Control) -> void:
 	D.label(b, "GROUND  /  自选地点", 13, D.TEAL)
 	var where: Label = D.label(b, coordinate_text(float(report.lat), float(report.lon)), 24, D.INK)
 	D.named(where, "GroundCoordinates")
+	var survey: Dictionary = g.sim.Placement.landing_survey(g.sim, report)
+	if not survey.is_empty():
+		landing_lines(b, survey)
 	var precision: float = float(g.ground.get("precision", 0.0))
 	var km: float = deg_to_rad(precision) * float(g.sim.geo.get("radius_km", 6371.0))
 	D.label(
@@ -83,11 +86,14 @@ static func panel(g, b: Control) -> void:
 		)
 		D.label(b, "淡水：" + _water_words(report), 15, D.INK)
 		D.label(b, "海岸：" + ("靠海，可以建码头、走海运" if bool(report.coast) else "内陆，货物要走陆路"), 15, D.INK)
-		D.label(b, "矿产信号（轨道观测）：" + _signal_words(report.signals), 15, D.INK)
-		_prospecting_lines(g, b, report)
-		D.label(
-			b, "可建设地块约 %d 块 · %.1f°C" % [int(report.slots), float(report.temperature)], 15, D.MUTED
-		)
+		if survey.is_empty():
+			D.label(b, "矿产信号（轨道观测）：" + _signal_words(report.signals), 15, D.INK)
+			_prospecting_lines(g, b, report)
+			D.label(
+				b, "可建设地块约 %d 块 · %.1f°C" % [int(report.slots), float(report.temperature)], 15, D.MUTED
+			)
+		else:
+			D.label(b, "当地气温 %.1f°C" % float(report.temperature), 15, D.MUTED)
 	D.label(b, _distance_words(report), 15, D.MUTED)
 	if not bool(report.first) and str(report.refusal) == "" or not report.route.is_empty():
 		_expedition_lines(g, b, report)
@@ -98,6 +104,32 @@ static func panel(g, b: Control) -> void:
 	else:
 		verdict = D.label(b, "✗ " + refusal, 17, D.RED)
 	D.named(verdict, "GroundVerdict")
+
+
+## Shared by player-picked coordinates and the tutorial's pre-generated sites.
+static func landing_lines(b: Control, survey: Dictionary) -> void:
+	var card := D.col(b)
+	D.named(D.label(card, "首府落点勘察", 18, D.TEAL), "GroundLandingSurvey")
+	var soil := "土地肥沃度　%d%%" % roundi(float(survey.fertility) * 100.0)
+	D.named(D.label(card, soil, 16, D.INK), "GroundLandingFertility")
+	var plots: Dictionary = survey.plots
+	var mines := 0
+	var minerals := PackedStringArray()
+	for good: String in SIGNAL_NAMES:
+		if Features.resource_frozen(good):
+			continue
+		var count := int(plots.get(good, 0))
+		if count > 0:
+			mines += count
+			minerals.append("%s　%s（%d 块矿地）" % [
+				SIGNAL_NAMES[good], Labels.t(float(survey.deposits[good])), count
+			])
+	var zones := "落地前区划　建设用地 %d 块 · 农田 %d 块 · 可采矿地 %d 块" % [
+		plots.general, plots.farm, mines
+	]
+	D.named(D.label(card, zones, 15, D.INK), "GroundLandingPlots")
+	var reserves := "开局可采矿产　无浅层可采矿藏" if minerals.is_empty() else "开局可采储量\n" + "\n".join(minerals)
+	D.named(D.label(card, reserves, 15, D.INK), "GroundLandingMinerals")
 
 
 static func _water_words(report: Dictionary) -> String:

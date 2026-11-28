@@ -46,7 +46,10 @@ static func region(g, b):
 		return
 	if g.settlement().is_empty() and (g.coach == null or not g.coach.active()) and g.sim.geo.has("grid_width"):
 		D.label(b, "选择落脚点", 24, D.INK)
-		D.label(b, "点击球面或平铺地图上的陆地，查看当地水源、地形和矿产。", 16, D.MUTED)
+		var hint := "点击球面或平铺地图上的陆地，查看当地水源、地形和矿产。"
+		if g.sim.Sites.awaiting_first_landing(g.sim):
+			hint = "点击陆地比较矿产、区划和土地肥沃度，再决定首府建在哪里。"
+		D.label(b, hint, 16, D.MUTED)
 		return
 	var r: Dictionary = g.sim.state.world.regions[g.selected]
 	D.label(b, "REGION  /  %02d" % (g.selected + 1), 13, D.TEAL)
@@ -505,7 +508,10 @@ static func _share_text(row: Dictionary, band: float) -> String:
 	return "%d–%d%%" % [float(row.low) * 100.0, float(row.high) * 100.0]
 
 
-static func _site_facts(_g, b, known: Dictionary):
+static func _site_facts(g, b, known: Dictionary):
+	var survey: Dictionary = g.sim.Sites.landing_survey(g.sim, g.sim.state.world.regions[int(known.id)])
+	if not survey.is_empty():
+		GroundPanel.landing_lines(b, survey)
 	var band: float = float(known.band)
 	var level: int = int(known.get("survey_level", known.survey))
 	var quality: String = "精确数据"
@@ -516,13 +522,14 @@ static func _site_facts(_g, b, known: Dictionary):
 			"地面勘察 %d / %d 次 · ±%d%%"
 			% [level, int(known.get("survey_levels", 1)), roundi(band * 100.0)]
 		)
-	D.label(b, quality, 15, D.TEAL)
+	D.label(b, quality if survey.is_empty() else "水源与产量 · " + quality, 15, D.TEAL)
+	var farming: String = "耕作潜力  %s    " % _share_text(known.fertility, band * 0.5) if survey.is_empty() else ""
 	D.label(
 		b,
 		(
-			"耕作潜力  %s    水源  %s\n一座农场约产 %s\n海拔  %d m    建设费 ×%.2f"
+			"%s水源  %s\n一座农场约产 %s\n海拔  %d m    建设费 ×%.2f"
 			% [
-				_share_text(known.fertility, band * 0.5),
+				farming,
 				_share_text(known.water, band * 0.5),
 				Labels.per_day(float(known.farm_yield)),
 				known.elevation,
@@ -532,6 +539,26 @@ static func _site_facts(_g, b, known: Dictionary):
 		16,
 		D.MUTED
 	)
+	if survey.is_empty():
+		_site_reserves_and_plots(b, known, band)
+	var notes: PackedStringArray = []
+	if bool(known.coast):
+		notes.append("沿海")
+	if bool(known.river):
+		notes.append("有河流")
+	if float(known.risks.cold) > 0.3:
+		notes.append("寒冷")
+	if float(known.risks.arid) > 0.3:
+		notes.append("干旱")
+	if float(known.risks.flood) > 0.3:
+		notes.append("易涝")
+	if known.neighbors.is_empty():
+		notes.append("孤立陆地：靠海运相连")
+	if not notes.is_empty():
+		D.label(b, " · ".join(notes), 15, D.GOLD)
+
+
+static func _site_reserves_and_plots(b, known: Dictionary, band: float) -> void:
 	for key: String in ["ore", "copper", "crystal", "nickel", "cobalt"]:
 		# Nickel and cobalt show only where the colony knows of some (towns on picked ground).
 		if not known.deposits.has(key) or float(known.deposits[key].high) <= 0.0:
@@ -555,21 +582,6 @@ static func _site_facts(_g, b, known: Dictionary):
 		if int(plots.get(metal[0], 0)) > 0:
 			free_text += " · %s %d" % [metal[1], int(plots[metal[0]])]
 	D.label(b, free_text, 15, D.MUTED)
-	var notes: PackedStringArray = []
-	if bool(known.coast):
-		notes.append("沿海")
-	if bool(known.river):
-		notes.append("有河流")
-	if float(known.risks.cold) > 0.3:
-		notes.append("寒冷")
-	if float(known.risks.arid) > 0.3:
-		notes.append("干旱")
-	if float(known.risks.flood) > 0.3:
-		notes.append("易涝")
-	if known.neighbors.is_empty():
-		notes.append("孤立陆地：靠海运相连")
-	if not notes.is_empty():
-		D.label(b, " · ".join(notes), 15, D.GOLD)
 
 
 ## The next survey: what it costs, how long it takes and how close it brings the estimates.

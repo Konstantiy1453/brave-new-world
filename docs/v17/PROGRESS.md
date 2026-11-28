@@ -1,5 +1,9 @@
 # Colony Charter — Progress
 
+## 1.12.10 — First landing survey
+
+Before their first settlement, players can compare exact shallow mineral reserves, buildable plots and soil fertility on either map. Free placement uses the same site generator as founding. Tutorial sites use their existing plots.
+
 ## 1.12.9 — Orbital street detail
 
 Completed districts show small lamp clusters and gaps following the block orientation. The original terrain plan still determines each growth phase. The founding camp retains its original lamps. At the ordinary orbital camera distance, fixed Windows captures of three sites at stages III and V showed a median 31% increase in the measured ratio of fine detail to total light and a 5.8% reduction in integrated light. A four-world sweep checked all five stages on 51 legal placements. The exported player loaded the day-1260 expedition.

@@ -1693,3 +1693,7 @@ factories, so the game's cycle and the payback bands stay as they are.
 ## 1.12.9 — Orbital street detail
 
 - Apply local street contrast after assigning settlement growth phases and retain mip filtering at long viewing distances.
+
+## 1.12.10 — First landing survey
+
+- Base opening surveys on accessible shallow reserves and pre-landing plot counts. End the preview when the first settlement is founded and leave later prospecting in place.

@@ -250,13 +250,33 @@ static func free_counts(sim: RefCounted, region: int) -> Dictionary:
 	var reg: Dictionary = sim.state.world.regions[region]
 	var s: Dictionary = sim.settlement(region)
 	var taken: Dictionary = _taken(s) if not s.is_empty() else {}
+	return _available_plots(sim, reg.plots, taken)
+
+
+static func awaiting_first_landing(sim: RefCounted) -> bool:
+	return sim.state.status == "planning" and sim.state.settlements.is_empty()
+
+
+## The site owns its actual shallow reserve totals, with shared deposits counted once.
+## Plot counts describe capacity before the landing party places its buildings.
+static func landing_survey(sim: RefCounted, site: Dictionary) -> Dictionary:
+	if not awaiting_first_landing(sim):
+		return {}
+	return {
+		"fertility": float(site.fertility),
+		"plots": _available_plots(sim, site.plots, {}),
+		"deposits": site.deposits.duplicate(),
+	}
+
+
+static func _available_plots(sim: RefCounted, plots: Array, taken: Dictionary) -> Dictionary:
 	var counts: Dictionary = {"general": 0, "farm": 0}
 	for good: String in MINED:
 		counts[good] = 0
-	for index: int in range(reg.plots.size()):
+	for index: int in range(plots.size()):
 		if taken.has(index):
 			continue
-		var plot: Dictionary = reg.plots[index]
+		var plot: Dictionary = plots[index]
 		if plot.kind == "deposit":
 			if not bool(plot.hidden) and float(plot.reserves) > 0.0:
 				if int(plot.depth) == 0 or sim._has("deep_mining"):

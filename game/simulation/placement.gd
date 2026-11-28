@@ -55,6 +55,21 @@ static func view(
 	return report
 
 
+## The first landing uses the same snapped coordinates, plot layout and mineral field as founding.
+## Only the selected point's sidebar requests this read-only preview.
+static func landing_survey(sim: RefCounted, report: Dictionary) -> Dictionary:
+	if not sim.Sites.awaiting_first_landing(sim) or not report.land or report.lake_here:
+		return {}
+	var site := _site_for_report(sim, report)
+	return sim.Sites.landing_survey(sim, site)
+
+
+static func _site_for_report(sim: RefCounted, report: Dictionary) -> Dictionary:
+	return SiteGen.site_at(
+		sim.geo, sim.progression_geo(), float(report.lat), float(report.lon), sim.state.world.regions.size()
+	)
+
+
 ## What makes the ground itself unsuitable, in the order a player would want to hear it.
 static func _ground_refusal(sim: RefCounted, report: Dictionary) -> String:
 	var rule: Dictionary = rules(sim)
@@ -212,9 +227,7 @@ static func settle_at(
 		return str(report.refusal)
 	var regions: Array = sim.state.world.regions
 	var id: int = regions.size()
-	var site: Dictionary = SiteGen.site_at(
-		sim.geo, sim.progression_geo(), float(report.lat), float(report.lon), id
-	)
+	var site: Dictionary = _site_for_report(sim, report)
 	for plot: Dictionary in site.plots:
 		var shared: String = str(plot.get("deposit", ""))
 		if shared == "":
